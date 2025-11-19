@@ -6,7 +6,7 @@ Sistema de Punto de Venta con arquitectura moderna y multiplataforma. Backend de
 
 ### Stack tecnológico
 - **Backend**: Java 21 LTS, Spring Boot 3.5.7, Maven, MySQL/H2
-- **Frontend**: React Native (por inicializar)
+- **Frontend**: React Native 0.76.5, React 18.3.1, TypeScript 5.0.4
 - **Documentación**: Markdown en `docs/`
 
 ## Directorios y archivos clave
@@ -55,11 +55,49 @@ Sistema de Punto de Venta con arquitectura moderna y multiplataforma. Backend de
 - Consola H2 (desarrollo): `http://localhost:8080/h2-console`
 
 ### Frontend (React Native)
-- Pendiente de inicializar
+- Ejecutar el proyecto: `cd frontend && npm start`
+- Android: `npm run android` (en otra terminal)
+- iOS: `npm run ios` (en otra terminal, solo macOS)
+- Instalar dependencias: `npm install`
+- La app se conecta al backend en `http://localhost:8080`
 
 ### General
 - Al generar código, siempre consulta los archivos de documentación relevantes para requisitos, estructuras de datos y pasos de proceso.
 - Usa español para la documentación y comentarios en el código, siguiendo la convención del proyecto.
+
+## Estrategia de ramas y control de versiones
+El proyecto utiliza una estrategia de branching profesional para mantener el código organizado y facilitar el despliegue:
+
+### Ramas principales
+- **`main`** (producción): Contiene código estable, probado y listo para despliegue en producción. Solo se actualiza mediante merges desde `develop` cuando el código ha sido completamente validado.
+- **`develop`** (desarrollo): Rama de integración donde se fusionan todas las nuevas características. Es la rama base para el desarrollo activo.
+
+### Ramas de trabajo
+- **`feature/<nombre>`**: Para desarrollar nuevas funcionalidades (ej: `feature/auth-login`, `feature/inventario-recetas`). Se crean desde `develop` y se fusionan de vuelta a `develop`.
+- **`hotfix/<nombre>`**: Para correcciones urgentes en producción (ej: `hotfix/error-calculo-total`). Se crean desde `main` y se fusionan tanto a `main` como a `develop`.
+- **`bugfix/<nombre>`**: Para correcciones de errores no urgentes. Se crean desde `develop` y se fusionan de vuelta a `develop`.
+
+### Flujo de trabajo Git
+1. **Desarrollo normal**: `develop` → `feature/nombre` → PR a `develop` → merge
+2. **Release**: `develop` (probado y estable) → PR a `main` → merge → tag versión
+3. **Hotfix urgente**: `main` → `hotfix/nombre` → PR a `main` y `develop` → merge
+
+### Convenciones de commits
+- Usa mensajes descriptivos en español
+- Formato sugerido: `tipo: descripción breve`
+  - `feat:` nueva funcionalidad
+  - `fix:` corrección de errores
+  - `docs:` cambios en documentación
+  - `refactor:` refactorización de código
+  - `test:` añadir o modificar tests
+  - `chore:` tareas de mantenimiento
+- Ejemplo: `feat: añadir endpoint para gestión de inventario`
+
+### Recomendaciones
+- Siempre trabaja en ramas feature, nunca directamente en `develop` o `main`
+- Mantén `develop` sincronizada con `main` después de hotfixes
+- Usa Pull Requests para revisión de código antes de mergear
+- Etiqueta releases en `main` con versionado semántico (v1.0.0, v1.1.0, etc.)
 
 ## Integración y dependencias
 ### Backend
@@ -75,7 +113,10 @@ Sistema de Punto de Venta con arquitectura moderna y multiplataforma. Backend de
 - **Spring Boot DevTools**: Herramientas de desarrollo
 
 ### Frontend
-- Pendiente de definir dependencias React Native
+- **React Native 0.76.5**: Framework multiplataforma
+- **React 18.3.1**: Biblioteca principal
+- **TypeScript 5.0.4**: Tipado estático
+- **Node.js 18+**: Runtime JavaScript
 
 ### Comunicación
 - El frontend consume la API REST del backend mediante peticiones HTTP/HTTPS.
