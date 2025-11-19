@@ -37,7 +37,21 @@ Documentación Swagger: `http://localhost:8080/swagger-ui.html`
 
 ## Frontend (React Native)
 
-_Pendiente de inicializar_
+### Tecnologías
+- React Native 0.76.5
+- React 18.3.1
+- TypeScript 5.0.4
+- Node.js 18+ (recomendado 24+)
+
+### Ejecutar el frontend
+```bash
+cd frontend
+npm install
+npm start
+# En otra terminal: npm run android o npm run ios
+```
+
+La aplicación se conectará al backend en `http://localhost:8080`
 
 ## Documentación
 
