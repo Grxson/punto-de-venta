@@ -2,9 +2,20 @@
 # Instrucciones Copilot para punto-de-venta
 
 ## Descripción general del proyecto
-Este repositorio documenta la arquitectura, los flujos de trabajo y los modelos de datos para un sistema de punto de venta (POS). El código está orientado principalmente a la documentación, con la lógica de negocio, flujos de datos y procedimientos operativos descritos en archivos markdown dentro del directorio `docs/`.
+Sistema de Punto de Venta con arquitectura moderna y multiplataforma. Backend desarrollado en Java con Spring Boot y frontend en React Native.
+
+### Stack tecnológico
+- **Backend**: Java 21 LTS, Spring Boot 3.5.7, Maven, MySQL/H2
+- **Frontend**: React Native (por inicializar)
+- **Documentación**: Markdown en `docs/`
 
 ## Directorios y archivos clave
+- `backend/`: API RESTful en Java con Spring Boot
+  - `src/main/java/com/puntodeventa/backend/`: Código fuente Java
+  - `src/main/resources/`: Configuraciones y recursos
+  - `pom.xml`: Gestión de dependencias Maven
+  - Backend README: `backend/README.md`
+- `frontend/`: Aplicación React Native (por inicializar)
 - `docs/flujo-interno.md`: Flujo interno principal del sistema POS.
 - `docs/admin/`: Documentación administrativa, incluyendo:
   - `vision.md`: Visión y alcance del proyecto.
@@ -21,19 +32,54 @@ Este repositorio documenta la arquitectura, los flujos de trabajo y los modelos 
 - `docs/diagramas/`: Diagramas visuales de flujos para diferentes productos/servicios (por ejemplo, `flujo-pago.md`, `flujo-pedido.md`).
 
 ## Arquitectura y patrones
-- El sistema está diseñado con una clara separación de responsabilidades: administración, datos y flujos operativos se documentan de forma independiente.
+- El sistema sigue una arquitectura cliente-servidor con backend y frontend desacoplados:
+  - **Backend (Java + Spring Boot)**: API RESTful con arquitectura por capas (Controller, Service, Repository, Model).
+  - **Frontend (React Native)**: Aplicación multiplataforma que consume la API REST.
+- La separación de responsabilidades es fundamental: administración, datos y flujos operativos se documentan de forma independiente.
 - Los modelos de datos y especificaciones de la base de datos están centralizados en `docs/datos/`.
 - La lógica de negocio y los procesos se describen en markdown, no en código; los agentes AI deben consultar estos archivos para requisitos y lógica.
 - Los diagramas en `docs/diagramas/` ilustran los flujos de extremo a extremo para productos/servicios específicos.
+- El backend implementa patrones como:
+  - **Repository Pattern**: Para acceso a datos con Spring Data JPA.
+  - **Service Layer**: Para lógica de negocio.
+  - **DTO Pattern**: Para transferencia de datos entre capas.
+  - **Security**: Autenticación y autorización con Spring Security.
 
 ## Flujos de trabajo para desarrolladores
-- No existe automatización de builds o tests; toda la lógica está documentada para futura implementación.
+### Backend (Java + Spring Boot)
+- Ejecutar el proyecto: `cd backend && ./mvnw spring-boot:run`
+- Compilar: `./mvnw clean compile`
+- Crear package: `./mvnw clean package`
+- La API estará disponible en `http://localhost:8080`
+- Documentación Swagger: `http://localhost:8080/swagger-ui.html`
+- Consola H2 (desarrollo): `http://localhost:8080/h2-console`
+
+### Frontend (React Native)
+- Pendiente de inicializar
+
+### General
 - Al generar código, siempre consulta los archivos de documentación relevantes para requisitos, estructuras de datos y pasos de proceso.
 - Usa español para la documentación y comentarios en el código, siguiendo la convención del proyecto.
 
 ## Integración y dependencias
-- No hay dependencias externas ni integraciones definidas aún en el código.
-- Toda la comunicación entre componentes y puntos de integración se describe en los archivos de documentación.
+### Backend
+- **Spring Boot 3.5.7**: Framework principal
+- **Spring Web**: API RESTful
+- **Spring Data JPA**: Persistencia con Hibernate
+- **Spring Security**: Autenticación y autorización
+- **Spring Validation**: Validación de datos
+- **Spring Boot Actuator**: Monitoreo y métricas
+- **H2 Database**: Base de datos en memoria (desarrollo)
+- **MySQL Connector**: Base de datos (producción)
+- **Swagger/OpenAPI**: Documentación de API
+- **Spring Boot DevTools**: Herramientas de desarrollo
+
+### Frontend
+- Pendiente de definir dependencias React Native
+
+### Comunicación
+- El frontend consume la API REST del backend mediante peticiones HTTP/HTTPS.
+- Toda la comunicación se describe en la documentación de endpoints y flujos.
 
 ## Ejemplos y convenciones
 - Para lógica de inventario, consulta `docs/admin/inventario.md` y `docs/datos/modelo-datos.md`.
