@@ -1,13 +1,71 @@
 
 # Instrucciones Copilot para punto-de-venta
 
+## 📌 LEER SIEMPRE PRIMERO
+**Este proyecto usa Java 21 con características modernas. Consultar también:**
+- `.github/copilot-instructions-java21.md` - Guía completa de Java 21
+- `backend/DEVELOPMENT-GUIDE.md` - Guía de desarrollo detallada
+- `backend/JAVA21-UPGRADE.md` - Características de Java 21
+
 ## Descripción general del proyecto
-Sistema de Punto de Venta con arquitectura moderna y multiplataforma. Backend desarrollado en Java con Spring Boot y frontend en React Native.
+Sistema de Punto de Venta con arquitectura moderna y multiplataforma. Backend desarrollado en Java 21 LTS con Spring Boot 3.5.7 y frontend en React Native.
 
 ### Stack tecnológico
-- **Backend**: Java 21 LTS, Spring Boot 3.5.7, Maven, MySQL/H2
+- **Backend**: Java 21 LTS, Spring Boot 3.5.7, Maven, PostgreSQL/MySQL/H2
 - **Frontend**: React Native 0.76.5, React 18.3.1, TypeScript 5.0.4
-- **Documentación**: Markdown en `docs/`
+- **Documentación**: Markdown en `docs/`, Swagger/OpenAPI
+- **Versionado**: Semántico (MAJOR.MINOR.PATCH) en `pom.xml`
+
+## ⚠️ REGLAS CRÍTICAS DE JAVA 21
+
+### 1. DTOs SIEMPRE como Records
+```java
+// ✅ CORRECTO
+public record ProductoDTO(Long id, String nombre, BigDecimal precio) {}
+
+// ❌ INCORRECTO
+public class ProductoDTO {
+    private Long id;
+    private String nombre;
+    // getters, setters...
+}
+```
+
+### 2. Pattern Matching en lugar de if-else
+```java
+// ✅ CORRECTO
+return switch (ex) {
+    case EntityNotFoundException e -> ResponseEntity.notFound().build();
+    case ValidationException e -> ResponseEntity.badRequest().body(e.getMessage());
+    default -> ResponseEntity.internalServerError().build();
+};
+
+// ❌ INCORRECTO
+if (ex instanceof EntityNotFoundException) {
+    return ResponseEntity.notFound().build();
+} else if (ex instanceof ValidationException) {
+    // ...
+}
+```
+
+### 3. Virtual Threads (YA HABILITADOS)
+Virtual threads están activos automáticamente. Para async:
+```java
+@Async
+public CompletableFuture<T> metodoAsync() { }
+```
+
+### 4. Sequenced Collections
+```java
+// ✅ CORRECTO
+productos.getFirst()
+productos.getLast()
+productos.addFirst(item)
+
+// ❌ INCORRECTO
+productos.get(0)
+productos.get(productos.size() - 1)
+```
 
 ## Directorios y archivos clave
 - `backend/`: API RESTful en Java con Spring Boot

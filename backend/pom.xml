@@ -10,26 +10,54 @@
 	</parent>
 	<groupId>com.puntodeventa</groupId>
 	<artifactId>backend</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<name>PuntoDeVentaBackend</name>
-	<description>Demo project for Spring Boot</description>
-	<url/>
+	<description>API RESTful para sistema de Punto de Venta con gestión de inventario, ventas y reportes</description>
+	<url>https://github.com/Grxson/punto-de-venta</url>
+	
 	<licenses>
-		<license/>
+		<license>
+			<name>MIT License</name>
+			<url>https://opensource.org/licenses/MIT</url>
+		</license>
 	</licenses>
+	
 	<developers>
-		<developer/>
+		<developer>
+			<id>grxson</id>
+			<name>Grxson</name>
+			<email>gael.grxson@gmail.com</email>
+			<roles>
+				<role>Lead Developer</role>
+			</roles>
+		</developer>
 	</developers>
+	
 	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
+		<connection>scm:git:git://github.com/Grxson/punto-de-venta.git</connection>
+		<developerConnection>scm:git:ssh://github.com:Grxson/punto-de-venta.git</developerConnection>
+		<url>https://github.com/Grxson/punto-de-venta/tree/develop</url>
 	</scm>
+	
 	<properties>
 		<java.version>21</java.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		
+		<!-- Versión de la aplicación para apps móviles y escritorio -->
+		<app.version.major>1</app.version.major>
+		<app.version.minor>0</app.version.minor>
+		<app.version.patch>0</app.version.patch>
+		<app.version.build>${maven.build.timestamp}</app.version.build>
+		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+		
+		<!-- Versiones de dependencias -->
+		<springdoc.version>2.3.0</springdoc.version>
+		<lombok.version>1.18.34</lombok.version>
+		<mapstruct.version>1.6.3</mapstruct.version>
 	</properties>
 	<dependencies>
+		<!-- Spring Boot Starters -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
@@ -50,13 +78,37 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
+		
+		<!-- CORS para apps móviles y escritorio -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-websocket</artifactId>
+		</dependency>
 
+		<!-- Herramientas de desarrollo -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
 			<scope>runtime</scope>
 			<optional>true</optional>
 		</dependency>
+		
+		<!-- Lombok para reducir boilerplate (Java 21 compatible) -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		
+		<!-- MapStruct para mapeo de DTOs (Java 21 compatible) -->
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>${mapstruct.version}</version>
+		</dependency>
+		
+		<!-- Bases de datos -->
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
@@ -68,10 +120,19 @@
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		
+		<!-- Documentación API (Swagger/OpenAPI) -->
+		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>2.3.0</version>
+			<version>${springdoc.version}</version>
 		</dependency>
+		
+		<!-- Testing -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -86,9 +147,57 @@
 
 	<build>
 		<plugins>
+			<!-- Spring Boot Maven Plugin -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>build-info</goal>
+						</goals>
+						<configuration>
+							<additionalProperties>
+								<app.version>${app.version.major}.${app.version.minor}.${app.version.patch}</app.version>
+								<app.build>${app.version.build}</app.build>
+								<java.version>${java.version}</java.version>
+							</additionalProperties>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			
+			<!-- Compilador Maven con soporte Java 21 -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<release>21</release>
+					<compilerArgs>
+						<arg>-parameters</arg>
+						<arg>--enable-preview</arg>
+					</compilerArgs>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+							<version>${lombok.version}</version>
+						</path>
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>${mapstruct.version}</version>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

@@ -1,0 +1,14 @@
+# Railway ignore file
+node_modules/
+.git/
+.idea/
+.vscode/
+*.log
+*.tmp
+.DS_Store
+target/test-classes/
+src/test/
+*.md
+!README.md
+docs/
+frontend/
