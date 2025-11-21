@@ -1,0 +1,15 @@
+[phases.setup]
+nixPkgs = ["...", "postgresql"]
+
+[phases.build]
+cmds = [
+  "./mvnw clean package -DskipTests"
+]
+
+[phases.deploy]
+cmds = [
+  "java -Dspring.profiles.active=prod -Dserver.port=$PORT -jar target/backend-*.jar"
+]
+
+[start]
+cmd = "java -Dspring.profiles.active=prod -Dserver.port=$PORT -jar target/backend-*.jar"
