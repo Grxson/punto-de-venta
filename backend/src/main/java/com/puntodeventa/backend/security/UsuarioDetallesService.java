@@ -1,8 +1,7 @@
-package com.puntodeventa.backend.security
+package com.puntodeventa.backend.security;
 
-
-import com.puntodeventa.backend.modelo.Usuario;
-import com.puntodeventa.backend.repositorio.UsuarioRepository;
+import com.puntodeventa.backend.model.Usuario;
+import com.puntodeventa.backend.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -37,10 +36,7 @@ public class UsuarioDetallesService implements UserDetailsService {
             .username(usuario.getUsername())
             .password(usuario.getPassword())
             .authorities(authorities)
-            .accountNonExpired(true)
-            .accountNonLocked(true)
-            .credentialsNonExpired(true)
-            .enabled(usuario.getActivo())
+            .disabled(!usuario.getActivo())
             .build();
     }
 }
