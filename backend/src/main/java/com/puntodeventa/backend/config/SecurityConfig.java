@@ -51,6 +51,9 @@ public class SecurityConfig {
                     "/swagger-ui.html",
                     "/h2-console/**",
                     "/actuator/health",
+                    "/actuator/health/**",
+                    "/actuator/health/liveness",
+                    "/actuator/health/readiness",
                     "/actuator/info"
                 ).permitAll()
                 
