@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+    
+    <!-- Configuración optimizada para Railway -->
+    <localRepository>/app/.m2/repository</localRepository>
+    
+    <!-- Configuración de timeouts y reintentos -->
+    <servers>
+        <server>
+            <id>central</id>
+            <configuration>
+                <timeout>300000</timeout> <!-- 5 minutos timeout -->
+                <connectTimeout>60000</connectTimeout> <!-- 1 minuto para conectar -->
+            </configuration>
+        </server>
+    </servers>
+    
+    <!-- Mirrors para mejorar velocidad de descarga -->
+    <mirrors>
+        <!-- Mirror principal: Maven Central -->
+        <mirror>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <mirrorOf>central</mirrorOf>
+        </mirror>
+    </mirrors>
+    
+    <!-- Perfiles para optimizar builds -->
+    <profiles>
+        <profile>
+            <id>railway-build</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <!-- Descargar en paralelo -->
+                <maven.artifact.threads>5</maven.artifact.threads>
+                
+                <!-- Optimizaciones de build -->
+                <skipTests>true</skipTests>
+                <maven.test.skip>true</maven.test.skip>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <maven.source.skip>true</maven.source.skip>
+                
+                <!-- Reducir output para logs más limpios -->
+                <org.slf4j.simpleLogger.defaultLogLevel>WARN</org.slf4j.simpleLogger.defaultLogLevel>
+            </properties>
+        </profile>
+    </profiles>
+    
+    <activeProfiles>
+        <activeProfile>railway-build</activeProfile>
+    </activeProfiles>
+    
+</settings>
