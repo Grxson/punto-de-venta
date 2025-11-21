@@ -6,7 +6,6 @@ builder = "DOCKERFILE"
 dockerfilePath = "backend/Dockerfile"
 
 [deploy]
-startCommand = "java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Dspring.profiles.active=railway -jar app.jar"
 healthcheckPath = "/actuator/health/liveness"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
