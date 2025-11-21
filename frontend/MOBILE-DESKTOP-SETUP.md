@@ -90,6 +90,57 @@ prod: {
 },
 ```
 
+### 3.3 Variables de Entorno (.env)
+
+Para evitar hardcodear URLs y permitir toggles de características usamos `react-native-config`.
+
+1. Instalar dependencia (si no está):
+
+```bash
+npm install react-native-config
+```
+
+2. Crear archivos por ambiente (no se commitean los de producción):
+
+```
+.env.example
+.env.development
+.env.staging
+.env.production
+```
+
+3. Copiar desde `.env.example` y ajustar valores:
+
+```dotenv
+API_URL_DEV=http://localhost:8080/api
+API_URL_STAGING=https://backend-staging-xxxx.up.railway.app/api
+API_URL_PROD=https://backend-production-xxxx.up.railway.app/api
+API_TIMEOUT=30000
+API_RETRIES=3
+FEATURE_SHOW_EXPERIMENTAL=false
+FEATURE_ENABLE_LOGGING=true
+REACT_APP_ENV=development
+```
+
+4. Uso en código (ya integrado en `api.config.ts`):
+
+```typescript
+import Config from 'react-native-config';
+console.log('API base:', Config.API_URL_DEV);
+```
+
+5. Seleccionar archivo de entorno al compilar (Android):
+
+```bash
+ENVFILE=.env.staging npx react-native run-android
+```
+
+6. Para iOS con Xcode puedes definir `ENVFILE` antes de `pod install` si usas scripts avanzados de build.
+
+7. Mantén `.env.production` fuera del repo (usa variables seguras en CI/CD).
+
+8. No pongas secretos extremadamente sensibles en el frontend (tokens a largo plazo, claves privadas); usa flujos de autenticación seguros.
+
 ---
 
 ## 📱 PASO 4: Build para Android

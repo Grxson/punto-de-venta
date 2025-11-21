@@ -18,21 +18,25 @@ interface Environment {
   prod: ApiConfig;
 }
 
+// Cargar variables desde react-native-config (si está disponible)
+// Fallback a valores hardcodeados si no existen.
+import Config from 'react-native-config';
+
 const ENV: Environment = {
   dev: {
-    apiUrl: 'http://localhost:8080/api',
-    timeout: 30000,
-    retries: 3,
+    apiUrl: Config.API_URL_DEV || 'http://localhost:8080/api',
+    timeout: Number(Config.API_TIMEOUT) || 30000,
+    retries: Number(Config.API_RETRIES) || 3,
   },
   staging: {
-    apiUrl: 'https://punto-de-venta-production-d424.up.railway.app/api', // Cambiar después del deploy
-    timeout: 30000,
-    retries: 3,
+    apiUrl: Config.API_URL_STAGING || 'https://punto-de-venta-staging.up.railway.app/api',
+    timeout: Number(Config.API_TIMEOUT) || 30000,
+    retries: Number(Config.API_RETRIES) || 3,
   },
   prod: {
-    apiUrl: 'https://punto-de-venta-production-d424.up.railway.app/api', // Cambiar después del deploy
-    timeout: 30000,
-    retries: 3,
+    apiUrl: Config.API_URL_PROD || 'https://punto-de-venta-production.up.railway.app/api',
+    timeout: Number(Config.API_TIMEOUT) || 30000,
+    retries: Number(Config.API_RETRIES) || 3,
   },
 };
 
@@ -42,7 +46,7 @@ const ENV: Environment = {
 const getEnvVars = (): ApiConfig => {
   // Detectar ambiente
   const nodeEnv = process.env.NODE_ENV || 'development';
-  const reactAppEnv = process.env.REACT_APP_ENV;
+  const reactAppEnv = Config.REACT_APP_ENV || process.env.REACT_APP_ENV;
 
   // En desarrollo
   if (nodeEnv === 'development' || __DEV__) {
