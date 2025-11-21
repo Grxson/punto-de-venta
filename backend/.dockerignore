@@ -1,0 +1,41 @@
+# Archivos a ignorar durante el build de Docker
+
+# Compilados y builds locales
+target/
+!target/*.jar
+*.class
+
+# Maven wrapper (se copiará explícitamente)
+# .mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentación (no necesaria en runtime)
+*.md
+docs/
+
+# Tests
+src/test/
+
+# Configuración local
+application-local.properties
+application-local.yml
