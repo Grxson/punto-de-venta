@@ -1,9 +1,13 @@
 # Configuración de Railway para el backend
 # https://docs.railway.app/reference/config-as-code
+# IMPORTANTE: Si Railway sigue usando un startCommand incorrecto,
+# ve a Railway Dashboard → Settings → Deploy → Custom Start Command
+# y ELIMINA cualquier comando personalizado que esté ahí.
 
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "backend/Dockerfile"
+watchPatterns = ["backend/**"]
 
 [deploy]
 healthcheckPath = "/actuator/health/liveness"
@@ -11,12 +15,7 @@ healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
 
-# Variables de entorno para el build
-[build.env]
-MAVEN_OPTS = "-Xmx2048m -Dmaven.artifact.threads=5"
-JAVA_TOOL_OPTIONS = "-Xmx2048m"
-
 # Variables de entorno para runtime
+# Estas se inyectan en el container creado por el Dockerfile
 [deploy.env]
 SPRING_PROFILES_ACTIVE = "railway"
-JAVA_OPTS = "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"

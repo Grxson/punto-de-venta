@@ -22,8 +22,8 @@ RUN ./mvnw dependency:go-offline -B
 # Copiar el código fuente
 COPY src src
 
-# Compilar la aplicación (sin tests para ahorrar tiempo)
-RUN ./mvnw clean package -DskipTests -B
+# Compilar la aplicación con configuración de memoria para Railway
+RUN MAVEN_OPTS="-Xmx2048m" ./mvnw clean package -DskipTests -B
 
 # ====================================
 # Stage 2: Runtime optimizado
