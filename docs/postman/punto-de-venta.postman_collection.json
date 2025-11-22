@@ -1,0 +1,203 @@
+{
+  "info": {
+    "name": "Punto de Venta API",
+    "description": "Colección de endpoints para el sistema Punto de Venta",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('token', jsonData.token);",
+                  "    pm.environment.set('usuarioId', jsonData.usuario.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"username\": \"admin\", \"password\": \"admin123\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Registrar Usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"Juan\", \"apellido\": \"Pérez\", \"email\": \"juan@example.com\", \"username\": \"juan_perez\", \"password\": \"Pass1234\", \"rolId\": 2, \"sucursalId\": 1}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/registro",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "registro"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Usuario",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/usuarios/{{usuarioId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "usuarios", "{{usuarioId}}"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Usuarios por Sucursal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/usuarios/sucursal/1?activo=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "usuarios", "sucursal", "1"],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar Usuario",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\": \"Juan Carlos\", \"apellido\": \"Pérez López\", \"email\": \"juan.carlos@example.com\", \"username\": \"juan_perez\", \"password\": \"\", \"rolId\": 2, \"sucursalId\": 1}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/usuarios/{{usuarioId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "usuarios", "{{usuarioId}}"]
+            }
+          }
+        },
+        {
+          "name": "Desactivar Usuario",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/usuarios/{{usuarioId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "usuarios", "{{usuarioId}}"]
+            }
+          }
+        },
+        {
+          "name": "Reactivar Usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/usuarios/{{usuarioId}}/reactivar",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "usuarios", "{{usuarioId}}", "reactivar"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Salud",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/actuator/health",
+              "host": ["{{base_url}}"],
+              "path": ["actuator", "health"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "usuarioId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

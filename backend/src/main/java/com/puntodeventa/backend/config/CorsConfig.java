@@ -6,11 +6,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Configuración de CORS para permitir el acceso desde apps móviles y de escritorio.
@@ -23,7 +20,7 @@ import java.util.List;
  * @since Java 21
  */
 @Configuration
-public class CorsConfig implements WebMvcConfigurer {
+public class CorsConfig {
 
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
@@ -40,20 +37,12 @@ public class CorsConfig implements WebMvcConfigurer {
     @Value("${cors.max-age}")
     private long maxAge;
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
-                .allowedOrigins(parseList(allowedOrigins))
-                .allowedMethods(parseList(allowedMethods))
-                .allowedHeaders(parseList(allowedHeaders))
-                .allowCredentials(allowCredentials)
-                .maxAge(maxAge);
-    }
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         var configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(parseList(allowedOrigins)));
+        
+        // Usar allowedOriginPatterns en lugar de allowedOrigins para permitir "*" con credentials
+        configuration.setAllowedOriginPatterns(Arrays.asList(parseList(allowedOrigins)));
         configuration.setAllowedMethods(Arrays.asList(parseList(allowedMethods)));
         configuration.setAllowedHeaders(Arrays.asList(parseList(allowedHeaders)));
         configuration.setAllowCredentials(allowCredentials);
