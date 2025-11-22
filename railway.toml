@@ -1,13 +1,10 @@
 # Configuración de Railway para el backend
 # https://docs.railway.app/reference/config-as-code
-# IMPORTANTE: Si Railway sigue usando un startCommand incorrecto,
-# ve a Railway Dashboard → Settings → Deploy → Custom Start Command
-# y ELIMINA cualquier comando personalizado que esté ahí.
+# IMPORTANTE: Root Directory debe ser "backend" en Railway Dashboard
 
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "backend/Dockerfile"
-watchPatterns = ["backend/**"]
+dockerfilePath = "Dockerfile"
 
 [deploy]
 healthcheckPath = "/actuator/health/liveness"
@@ -16,6 +13,5 @@ restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
 
 # Variables de entorno para runtime
-# Estas se inyectan en el container creado por el Dockerfile
 [deploy.env]
 SPRING_PROFILES_ACTIVE = "railway"
