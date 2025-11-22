@@ -84,24 +84,27 @@ web: java -Dserver.port=$PORT -Dspring.profiles.active=railway -jar target/backe
 
 ## 🚀 Configuración en Railway Dashboard
 
-### Paso 1: Verificar Root Directory
+### ⚠️ CONFIGURACIÓN CRÍTICA - Root Directory
+
+**IMPORTANTE**: Railway debe usar `backend` como Root Directory
+
 1. Ve a tu servicio en Railway
 2. Settings → General
-3. **Root Directory**: Debe estar **VACÍO** o en `/`
-4. Railway debe usar la raíz del repositorio
+3. **Root Directory**: `backend` (ESTO ES CRÍTICO)
+4. Save changes
 
-### Paso 2: Verificar Build Settings
+### Paso 1: Verificar Build Settings
 1. Settings → Build
 2. **Builder**: DOCKERFILE
-3. **Dockerfile Path**: `backend/Dockerfile`
-4. **Watch Paths**: `backend/**`
+3. **Dockerfile Path**: `Dockerfile` (relativo a backend/)
+4. Railway usará el contexto desde backend/
 
-### Paso 3: Eliminar Custom Start Command
+### Paso 2: Eliminar Custom Start Command
 1. Settings → Deploy
 2. **Custom Start Command**: Debe estar **VACÍO**
 3. Railway usará el `ENTRYPOINT` del Dockerfile automáticamente
 
-### Paso 4: Variables de entorno
+### Paso 3: Variables de entorno
 Asegúrate de tener configuradas:
 ```env
 DATABASE_URL=postgresql://...  (Railway lo provee automáticamente)
@@ -113,14 +116,28 @@ PORT=8080  (Railway lo asigna automáticamente)
 
 ```
 Railway Deploy Process:
-├── 1. Root: Repositorio desde la raíz (/)
+├── 1. Root Directory: backend/
 ├── 2. Build: Dockerfile en backend/Dockerfile
-│   ├── Context: Raíz del proyecto
+│   ├── Context: Carpeta backend/
 │   ├── Stage 1: Maven build (compila JAR)
 │   └── Stage 2: Runtime JRE (ejecuta app.jar)
 ├── 3. Runtime: ENTRYPOINT del Dockerfile
 │   └── java $JAVA_OPTS -jar app.jar
 └── 4. Health check: /actuator/health/liveness
+```
+
+### Estructura de archivos:
+
+```
+punto-de-venta/
+├── railway.json          ✅ Config (dockerfilePath: "Dockerfile")
+├── railway.toml          ✅ Config (dockerfilePath: "Dockerfile")
+└── backend/              ← Root Directory en Railway
+    ├── Dockerfile        ✅ Paths relativos desde backend/
+    ├── railway.json      ✅ Config local
+    ├── mvnw              ✅ Se copia como './mvnw'
+    ├── pom.xml           ✅ Se copia como './pom.xml'
+    └── src/              ✅ Se copia como './src'
 ```
 
 ## 🔍 Cómo verificar que funciona
@@ -151,21 +168,20 @@ docker run -p 8080:8080 -e SPRING_PROFILES_ACTIVE=dev punto-venta-backend
 
 ## ⚠️ Checklist antes de deployar
 
-- [ ] Archivo `railway.json` existe en la **RAÍZ** del proyecto
-- [ ] `dockerfilePath` apunta a `backend/Dockerfile`
-- [ ] Dockerfile usa paths con `backend/` (mvnw, .mvn, pom.xml, src)
-- [ ] Root Directory en Railway está **vacío** o es `/`
+- [ ] **Root Directory** en Railway = `backend` (CRÍTICO)
+- [ ] **Dockerfile Path** en Railway = `Dockerfile` (relativo)
+- [ ] Dockerfile usa paths sin prefijo `backend/` (mvnw, .mvn, pom.xml, src)
 - [ ] Custom Start Command está **vacío**
 - [ ] Variables de entorno configuradas en Railway
 - [ ] Perfil Spring Boot es `railway` (no `prod`)
 
 ## 📚 Archivos modificados
 
-1. ✅ `/railway.json` - Creado (configuración principal)
-2. ✅ `/railway.toml` - Ya existía (configuración alternativa)
-3. ✅ `/backend/Dockerfile` - Actualizado (paths desde raíz)
-4. ✅ `/backend/railway.json` - Actualizado (dockerfilePath correcto)
-5. ✅ `/backend/Procfile` - Actualizado (perfil railway)
+1. ✅ `/railway.json` - dockerfilePath: "Dockerfile"
+2. ✅ `/railway.toml` - dockerfilePath: "Dockerfile"  
+3. ✅ `/backend/Dockerfile` - Paths relativos desde backend/
+4. ✅ `/backend/railway.json` - dockerfilePath: "Dockerfile"
+5. ✅ `/backend/Procfile` - Perfil railway
 
 ## 🎯 Resultado esperado
 
