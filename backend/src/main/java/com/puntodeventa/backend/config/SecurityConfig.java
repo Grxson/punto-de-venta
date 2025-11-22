@@ -84,11 +84,13 @@ public class SecurityConfig {
             
             // Configurar autorización de requests
             .authorizeHttpRequests(auth -> auth
-                // Endpoints públicos
+                // Endpoints públicos - IMPORTANTE: El orden importa, estos se evalúan primero
+                .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/actuator/health/**").permitAll()
+                .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/error").permitAll()
                 
                 // Todos los demás endpoints requieren autenticación
                 .anyRequest().authenticated()
