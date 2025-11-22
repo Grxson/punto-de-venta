@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 
+    =================================================
+    Configuración de Logback para Railway (Producción)
+    - Solo logging a CONSOLA (Railway captura automáticamente)
+    - Sin file appenders (permisos de escritura limitados)
+    - Niveles optimizados para producción
+    =================================================
+    -->
+
+    <!-- Patrón de log simplificado para Railway -->
+    <property name="CONSOLE_LOG_PATTERN" 
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- CONSOLA: Todos los logs van aquí (Railway los captura) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- Configuración por paquete para producción -->
+    <logger name="com.puntodeventa.backend" level="INFO"/>
+    <logger name="org.springframework.web" level="WARN"/>
+    <logger name="org.springframework.security" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.hibernate.SQL" level="WARN"/>
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="WARN"/>
+
+    <!-- Root logger: solo consola -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>
