@@ -80,20 +80,68 @@ java -jar target/backend-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
 
 ## Endpoints principales
 
-La documentación completa de la API está disponible en Swagger:
+La documentación completa de la API está disponible en:
+- **Documentación detallada**: [API-ENDPOINTS.md](./API-ENDPOINTS.md)
 - **Swagger UI**: `http://localhost:8080/swagger-ui.html`
 - **OpenAPI JSON**: `http://localhost:8080/v3/api-docs`
 
+### Módulos Implementados
+
+#### ✅ Autenticación
+- Login y registro de usuarios
+- Gestión de usuarios por sucursal
+- Activación/desactivación de cuentas
+
+#### ✅ Inventario Completo
+- **Unidades de Medida**: Gestión con factor de conversión
+- **Proveedores**: CRUD con búsqueda y filtros
+- **Ingredientes**: Gestión con categorización, stock mínimo y costos
+- **Productos**: Productos del menú con precios y disponibilidad
+- **Categorías de Productos**: Organización de productos
+- **Recetas**: Vinculación producto-ingrediente con cantidades y merma
+- **Movimientos**: Registro de ingresos/egresos con trazabilidad
+- **Mermas**: Control de pérdidas con motivos
+
+**Endpoints base**:
+- `/api/auth/*` - Autenticación y usuarios
+- `/api/inventario/unidades` - Unidades de medida
+- `/api/inventario/proveedores` - Proveedores
+- `/api/inventario/ingredientes` - Ingredientes
+- `/api/inventario/productos` - Productos del menú
+- `/api/inventario/categorias-productos` - Categorías
+- `/api/inventario/recetas` - Recetas
+- `/api/inventario/movimientos` - Movimientos de inventario
+- `/api/inventario/mermas` - Registro de mermas
+
+### Colección Postman
+
+Importa la colección completa desde `postman/punto-de-venta.postman_collection.json` para probar todos los endpoints con:
+- Scripts automáticos de captura de IDs
+- Variables de entorno pre-configuradas
+- Organización por carpetas (Autenticación, Salud, Inventario)
+
+### Características de la API
+
+- ✅ **DTOs como Records**: Java 21 records para inmutabilidad
+- ✅ **Borrado Lógico**: Preservación de histórico en todas las entidades
+- ✅ **Filtros Dinámicos**: Búsqueda y filtrado por múltiples criterios
+- ✅ **Validaciones**: Validación automática con Bean Validation
+- ✅ **Manejo de Errores**: Respuestas de error estandarizadas
+- ✅ **Documentación**: Swagger/OpenAPI completo
+- ✅ **Migraciones**: Flyway para control de versiones de BD
+
 ## Próximos pasos
 
-1. Crear entidades según `docs/datos/modelo-datos.md`
-2. Implementar repositorios JPA
-3. Desarrollar servicios con lógica de negocio
-4. Crear controladores REST
-5. Configurar seguridad y roles según `docs/admin/seguridad.md`
-6. Implementar validaciones
-7. Documentar endpoints con anotaciones Swagger
-8. Crear tests unitarios e integración
+1. ~~Crear entidades según `docs/datos/modelo-datos.md`~~ ✅
+2. ~~Implementar repositorios JPA~~ ✅
+3. ~~Desarrollar servicios con lógica de negocio~~ ✅
+4. ~~Crear controladores REST~~ ✅
+5. ~~Documentar endpoints con anotaciones Swagger~~ ✅
+6. Implementar JWT para autenticación (en desarrollo)
+7. Sistema de ventas con cálculo automático de costos
+8. Reportes y analítica
+9. Tests unitarios e integración completos
+10. Consolidar todas las tablas bajo migraciones Flyway
 
 ## Documentación del proyecto
 

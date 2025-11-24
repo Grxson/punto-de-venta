@@ -1,0 +1,206 @@
+{
+  "info": {
+    "_postman_id": "9e6d1c5c-4b3a-4d8f-8fb9-7c2a5c9af312",
+    "name": "Punto de Venta API",
+    "description": "Colección unificada de endpoints del sistema Punto de Venta. Estructura: Autenticación, Salud, Inventario (Unidades, Proveedores, Ingredientes, Productos, Categorías de Productos, Recetas, Movimientos, Mermas). Eliminar cualquier colección previa antes de importar para evitar caché. Última actualización: unificación de carpetas y script mermaId.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.environment.set('token', jsonData.token);",
+                  "  pm.environment.set('usuarioId', jsonData.usuario.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}" },
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Registrar Usuario",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"prueba\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"prueba@example.com\",\n  \"username\": \"pruaba_xd\",\n  \"password\": \"Pass1234\",\n  \"rolId\": 2,\n  \"sucursalId\": 1\n}" },
+            "url": { "raw": "{{base_url}}/api/auth/registro", "host": ["{{base_url}}"], "path": ["api","auth","registro"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener Usuario",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{base_url}}/api/auth/usuarios/{{usuarioId}}", "host": ["{{base_url}}"], "path": ["api","auth","usuarios","{{usuarioId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Obtener Usuarios por Sucursal",
+          "request": {
+            "method": "GET",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{base_url}}/api/auth/usuarios/sucursal/1?activo=true", "host": ["{{base_url}}"], "path": ["api","auth","usuarios","sucursal","1"], "query": [ { "key": "activo", "value": "true" } ] }
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar Usuario",
+          "request": {
+            "method": "PUT",
+            "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Juan Carlos\",\n  \"apellido\": \"Pérez López\",\n  \"email\": \"juan.carlos@example.com\",\n  \"username\": \"juan_perez\",\n  \"password\": \"password\",\n  \"rolId\": 2,\n  \"sucursalId\": 1\n}" },
+            "url": { "raw": "{{base_url}}/api/auth/usuarios/{{usuarioId}}", "host": ["{{base_url}}"], "path": ["api","auth","usuarios","{{usuarioId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Desactivar Usuario",
+          "request": {
+            "method": "DELETE",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{base_url}}/api/auth/usuarios/{{usuarioId}}", "host": ["{{base_url}}"], "path": ["api","auth","usuarios","{{usuarioId}}"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Reactivar Usuario",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+            "url": { "raw": "{{base_url}}/api/auth/usuarios/{{usuarioId}}/reactivar", "host": ["{{base_url}}"], "path": ["api","auth","usuarios","{{usuarioId}}","reactivar"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Salud",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": { "method": "GET", "header": [], "url": { "raw": "{{base_url}}/actuator/health", "host": ["{{base_url}}"], "path": ["actuator","health"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Inventario",
+      "item": [
+        {
+          "name": "Unidades",
+          "item": [
+            { "name": "Obtener todas las unidades", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/unidades", "host": ["{{base_url}}"], "path": ["api","inventario","unidades"] } }, "response": [] },
+            { "name": "Obtener unidad por ID", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/unidades/1", "host": ["{{base_url}}"], "path": ["api","inventario","unidades","1"] } }, "response": [] },
+            { "name": "Crear unidad", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Gramos\",\n  \"abreviatura\": \"g\",\n  \"factorBase\": 1.0,\n  \"descripcion\": \"Unidad base para peso\"\n}" }, "url": { "raw": "{{base_url}}/api/inventario/unidades", "host": ["{{base_url}}"], "path": ["api","inventario","unidades"] } }, "response": [] },
+            { "name": "Actualizar unidad", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Kilogramos\",\n  \"abreviatura\": \"kg\",\n  \"factorBase\": 1000.0,\n  \"descripcion\": \"Unidad para peso - 1kg = 1000g\"\n}" }, "url": { "raw": "{{base_url}}/api/inventario/unidades/1", "host": ["{{base_url}}"], "path": ["api","inventario","unidades","1"] } }, "response": [] },
+            { "name": "Eliminar unidad", "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/unidades/1", "host": ["{{base_url}}"], "path": ["api","inventario","unidades","1"] } }, "response": [] }
+          ]
+        },
+        {
+          "name": "Proveedores",
+          "item": [
+            { "name": "Obtener todos los proveedores", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/proveedores", "host": ["{{base_url}}"], "path": ["api","inventario","proveedores"] } }, "response": [] },
+            { "name": "Obtener proveedores activos", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/proveedores/activos", "host": ["{{base_url}}"], "path": ["api","inventario","proveedores","activos"] } }, "response": [] },
+            { "name": "Obtener proveedor por ID", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/proveedores/1", "host": ["{{base_url}}"], "path": ["api","inventario","proveedores","1"] } }, "response": [] },
+            { "name": "Buscar proveedores por nombre", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/proveedores/buscar?nombre=proveedor", "host": ["{{base_url}}"], "path": ["api","inventario","proveedores","buscar"], "query": [ { "key": "nombre", "value": "proveedor" } ] } }, "response": [] },
+            { "name": "Crear proveedor", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Proveedor ABC\",\n  \"contacto\": \"Juan Pérez\",\n  \"telefono\": \"5512345678\",\n  \"email\": \"contacto@proveedorabc.com\",\n  \"activo\": true\n}" }, "url": { "raw": "{{base_url}}/api/inventario/proveedores", "host": ["{{base_url}}"], "path": ["api","inventario","proveedores"] } }, "response": [] },
+            { "name": "Actualizar proveedor", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Proveedor ABC S.A.\",\n  \"contacto\": \"Juan Carlos Pérez\",\n  \"telefono\": \"5512345678\",\n  \"email\": \"contacto@proveedorabc.com\",\n  \"activo\": true\n}" }, "url": { "raw": "{{base_url}}/api/inventario/proveedores/1", "host": ["{{base_url}}"], "path": ["api","inventario","proveedores","1"] } }, "response": [] },
+            { "name": "Eliminar proveedor", "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/proveedores/1", "host": ["{{base_url}}"], "path": ["api","inventario","proveedores","1"] } }, "response": [] }
+          ]
+        },
+        {
+          "name": "Ingredientes",
+          "item": [
+            { "name": "Obtener todos los ingredientes", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/ingredientes", "host": ["{{base_url}}"], "path": ["api","inventario","ingredientes"] } }, "response": [] },
+            { "name": "Obtener ingredientes activos", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/ingredientes/activos", "host": ["{{base_url}}"], "path": ["api","inventario","ingredientes","activos"] } }, "response": [] },
+            { "name": "Obtener ingrediente por ID", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/ingredientes/{{ingredienteId}}", "host": ["{{base_url}}"], "path": ["api","inventario","ingredientes","{{ingredienteId}}"] } }, "response": [] },
+            { "name": "Obtener categorías de ingredientes", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/ingredientes/categorias", "host": ["{{base_url}}"], "path": ["api","inventario","ingredientes","categorias"] } }, "response": [] },
+            { "name": "Buscar ingredientes por nombre", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/ingredientes/buscar?nombre=harina", "host": ["{{base_url}}"], "path": ["api","inventario","ingredientes","buscar"], "query": [ { "key": "nombre", "value": "harina" } ] } }, "response": [] },
+            { "name": "Crear ingrediente", "event": [ { "listen": "test", "script": { "exec": [ "if (pm.response.code === 201) {", "  const jsonData = pm.response.json();", "  pm.environment.set('ingredienteId', jsonData.id);", "}" ], "type": "text/javascript" } } ], "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Harina de trigo\",\n  \"categoria\": \"Harinas\",\n  \"unidadBaseId\": 1,\n  \"costoUnitarioBase\": 0.025,\n  \"stockMinimo\": 5000,\n  \"proveedorId\": 1,\n  \"sku\": \"HAR-001\",\n  \"activo\": true\n}" }, "url": { "raw": "{{base_url}}/api/inventario/ingredientes", "host": ["{{base_url}}"], "path": ["api","inventario","ingredientes"] } }, "response": [] },
+            { "name": "Actualizar ingrediente", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Harina de trigo integral\",\n  \"categoria\": \"Harinas\",\n  \"unidadBaseId\": 1,\n  \"costoUnitarioBase\": 0.030,\n  \"stockMinimo\": 5000,\n  \"proveedorId\": 1,\n  \"sku\": \"HAR-001\",\n  \"activo\": true\n}" }, "url": { "raw": "{{base_url}}/api/inventario/ingredientes/{{ingredienteId}}", "host": ["{{base_url}}"], "path": ["api","inventario","ingredientes","{{ingredienteId}}"] } }, "response": [] },
+            { "name": "Eliminar ingrediente", "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/ingredientes/{{ingredienteId}}", "host": ["{{base_url}}"], "path": ["api","inventario","ingredientes","{{ingredienteId}}"] } }, "response": [] }
+          ]
+        },
+        {
+          "name": "Productos",
+          "item": [
+            { "name": "Obtener todos los productos", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/productos", "host": ["{{base_url}}"], "path": ["api","inventario","productos"] } }, "response": [] },
+            { "name": "Obtener producto por ID", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/productos/{{productoId}}", "host": ["{{base_url}}"], "path": ["api","inventario","productos","{{productoId}}"] } }, "response": [] },
+            { "name": "Crear producto", "event": [ { "listen": "test", "script": { "exec": [ "if (pm.response.code === 201) {", "  const data = pm.response.json();", "  pm.environment.set('productoId', data.id);", "  console.log('Producto creado ID:', data.id);", "}" ], "type": "text/javascript" } } ], "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Tostada\",\n  \"precio\": 25.00,\n  \"categoriaId\": 1,\n  \"disponibleEnMenu\": true\n}" }, "url": { "raw": "{{base_url}}/api/inventario/productos", "host": ["{{base_url}}"], "path": ["api","inventario","productos"] } }, "response": [] },
+            { "name": "Obtener productos activos", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/productos/activos", "host": ["{{base_url}}"], "path": ["api","inventario","productos","activos"] } }, "response": [] },
+            { "name": "Actualizar producto", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Tostada Grande\",\n  \"precio\": 35.00,\n  \"categoriaId\": 1,\n  \"disponibleEnMenu\": true\n}" }, "url": { "raw": "{{base_url}}/api/inventario/productos/{{productoId}}", "host": ["{{base_url}}"], "path": ["api","inventario","productos","{{productoId}}"] } }, "response": [] },
+            { "name": "Eliminar producto", "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/productos/{{productoId}}", "host": ["{{base_url}}"], "path": ["api","inventario","productos","{{productoId}}"] } }, "response": [] }
+          ]
+        },
+        {
+          "name": "Categorías de Productos",
+          "item": [
+            { "name": "Obtener categorías de productos", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/categorias-productos", "host": ["{{base_url}}"], "path": ["api","inventario","categorias-productos"] } }, "response": [] },
+            { "name": "Crear categoría de producto", "event": [ { "listen": "test", "script": { "exec": [ "if (pm.response.code === 201) {", "  const data = pm.response.json();", "  pm.environment.set('categoriaProductoId', data.id);", "  console.log('Categoría creada ID:', data.id);", "}" ], "type": "text/javascript" } } ], "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Bebidas\",\n  \"descripcion\": \"Categoría para bebidas frías y calientes\"\n}" }, "url": { "raw": "{{base_url}}/api/inventario/categorias-productos", "host": ["{{base_url}}"], "path": ["api","inventario","categorias-productos"] } }, "response": [] },
+            { "name": "Obtener categoría por ID", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/categorias-productos/{{categoriaProductoId}}", "host": ["{{base_url}}"], "path": ["api","inventario","categorias-productos","{{categoriaProductoId}}"] } }, "response": [] },
+            { "name": "Actualizar categoría", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Bebidas y Jugos\",\n  \"descripcion\": \"Incluye bebidas frías, calientes y jugos naturales\"\n}" }, "url": { "raw": "{{base_url}}/api/inventario/categorias-productos/{{categoriaProductoId}}", "host": ["{{base_url}}"], "path": ["api","inventario","categorias-productos","{{categoriaProductoId}}"] } }, "response": [] },
+            { "name": "Eliminar categoría", "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/categorias-productos/{{categoriaProductoId}}", "host": ["{{base_url}}"], "path": ["api","inventario","categorias-productos","{{categoriaProductoId}}"] } }, "response": [] }
+          ]
+        },
+        {
+          "name": "Recetas",
+          "item": [
+            { "name": "Obtener recetas por producto", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/recetas/producto/{{productoId}}", "host": ["{{base_url}}"], "path": ["api","inventario","recetas","producto","{{productoId}}"] } }, "response": [] },
+            { "name": "Obtener recetas por ingrediente", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/recetas/ingrediente/{{ingredienteId}}", "host": ["{{base_url}}"], "path": ["api","inventario","recetas","ingrediente","{{ingredienteId}}"] } }, "response": [] },
+            { "name": "Calcular costo de receta", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/recetas/producto/{{productoId}}/costo", "host": ["{{base_url}}"], "path": ["api","inventario","recetas","producto","{{productoId}}","costo"] } }, "response": [] },
+            { "name": "Crear receta", "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"productoId\": 1,\n  \"ingredienteId\": 1,\n  \"cantidad\": 200,\n  \"unidadId\": 1,\n  \"mermaTeorica\": 0.05\n}" }, "url": { "raw": "{{base_url}}/api/inventario/recetas", "host": ["{{base_url}}"], "path": ["api","inventario","recetas"] } }, "response": [] },
+            { "name": "Actualizar receta", "request": { "method": "PUT", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"productoId\": 1,\n  \"ingredienteId\": 1,\n  \"cantidad\": 250,\n  \"unidadId\": 1,\n  \"mermaTeorica\": 0.07\n}" }, "url": { "raw": "{{base_url}}/api/inventario/recetas/producto/{{productoId}}/ingrediente/{{ingredienteId}}", "host": ["{{base_url}}"], "path": ["api","inventario","recetas","producto","{{productoId}}","ingrediente","{{ingredienteId}}"] } }, "response": [] },
+            { "name": "Eliminar receta específica", "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/recetas/producto/{{productoId}}/ingrediente/{{ingredienteId}}", "host": ["{{base_url}}"], "path": ["api","inventario","recetas","producto","{{productoId}}","ingrediente","{{ingredienteId}}"] } }, "response": [] },
+            { "name": "Eliminar todas las recetas de un producto", "request": { "method": "DELETE", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/recetas/producto/{{productoId}}", "host": ["{{base_url}}"], "path": ["api","inventario","recetas","producto","{{productoId}}"] } }, "response": [] }
+          ]
+        },
+        {
+          "name": "Movimientos",
+          "item": [
+            { "name": "Crear movimiento de inventario", "event": [ { "listen": "test", "script": { "exec": [ "if (pm.response.code === 201) {", "  const data = pm.response.json();", "  pm.environment.set('movimientoId', data.id);", "  console.log('Movimiento creado ID:', data.id);", "}" ], "type": "text/javascript" } } ], "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"ingredienteId\": 1,\n  \"cantidad\": 1000,\n  \"unidadId\": 1,\n  \"costoUnitario\": 0.025,\n  \"tipo\": \"INGRESO\",\n  \"nota\": \"Compra\"\n}" }, "url": { "raw": "{{base_url}}/api/inventario/movimientos", "host": ["{{base_url}}"], "path": ["api","inventario","movimientos"] } }, "response": [] },
+            { "name": "Obtener movimientos por ingrediente", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/movimientos/ingrediente/{{ingredienteId}}", "host": ["{{base_url}}"], "path": ["api","inventario","movimientos","ingrediente","{{ingredienteId}}"] } }, "response": [] },
+            { "name": "Obtener movimientos por ingrediente y tipo", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/movimientos/ingrediente/{{ingredienteId}}/tipo/INGRESO", "host": ["{{base_url}}"], "path": ["api","inventario","movimientos","ingrediente","{{ingredienteId}}","tipo","INGRESO"] } }, "response": [] },
+            { "name": "Obtener movimientos por rango de fechas", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/movimientos/rango?desde=2025-01-01&hasta=2025-12-31", "host": ["{{base_url}}"], "path": ["api","inventario","movimientos","rango"], "query": [ { "key": "desde", "value": "2025-01-01" }, { "key": "hasta", "value": "2025-12-31" } ] } }, "response": [] }
+          ]
+        },
+        {
+          "name": "Mermas",
+          "item": [
+            { "name": "Crear merma", "event": [ { "listen": "test", "script": { "exec": [ "if (pm.response.code === 201) {", "  const data = pm.response.json();", "  if (data.id) { pm.environment.set('mermaId', data.id); }", "}" ], "type": "text/javascript" } } ], "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"ingredienteId\": 1,\n  \"cantidad\": 5,\n  \"unidadId\": 1,\n  \"motivo\": \"Rotura\"\n}" }, "url": { "raw": "{{base_url}}/api/inventario/mermas", "host": ["{{base_url}}"], "path": ["api","inventario","mermas"] } }, "response": [] },
+            { "name": "Obtener mermas por ingrediente", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/mermas/ingrediente/{{ingredienteId}}", "host": ["{{base_url}}"], "path": ["api","inventario","mermas","ingrediente","{{ingredienteId}}"] } }, "response": [] },
+            { "name": "Obtener todas las mermas", "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/mermas", "host": ["{{base_url}}"], "path": ["api","inventario","mermas"] } }, "response": [] }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "usuarioId", "value": "", "type": "string" },
+    { "key": "ingredienteId", "value": "", "type": "string" },
+    { "key": "productoId", "value": "", "type": "string" },
+    { "key": "categoriaProductoId", "value": "", "type": "string" },
+    { "key": "movimientoId", "value": "", "type": "string" },
+    { "key": "mermaId", "value": "", "type": "string" }
+  ]
+}
