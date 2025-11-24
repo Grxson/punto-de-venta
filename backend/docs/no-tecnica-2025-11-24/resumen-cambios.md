@@ -1,21 +1,29 @@
 # Resumen de cambios (2025-11-24)
 
-## Nuevos endpoints de Productos
-- Se agregó el controlador `ProductoController` con rutas:
-  - GET `/api/inventario/productos` (filtros: activo, enMenu, categoriaId, q)
-  - GET `/api/inventario/productos/{id}`
-  - POST `/api/inventario/productos`
-  - PUT `/api/inventario/productos/{id}`
-  - PATCH `/api/inventario/productos/{id}/estado?activo=true|false`
-  - DELETE `/api/inventario/productos/{id}` (borrado lógico)
-- Se añadieron `ProductoService`, `ProductoDTO` y `CategoriaProductoRepository`.
+## Mejoras recientes en el sistema
 
-## Corrección de error en migraciones (columna activo)
-- Se incorporó Flyway para manejar migraciones de base de datos antes de Hibernate.
-- Nueva migración: `V2__add_activo_columns_roles_sucursales.sql` que agrega la columna `activo` con `DEFAULT true` y la marca `NOT NULL` en `roles` y `sucursales`.
-- Configuración en `application-railway.properties` para habilitar Flyway y `baseline-on-migrate`.
+### Reportes y estadísticas más rápidos
+- El sistema ahora puede mostrar reportes de ventas y productos de forma más ágil, incluso si hay mucha información. Esto ayuda a que el sistema no se vuelva lento cuando crece el negocio.
+- Los reportes muestran totales diarios y los productos más vendidos, para tener una visión clara y sencilla.
 
-## Impacto
-- Ahora es posible crear y administrar productos desde la API (antes se requería `productoId` sin forma de generarlo).
-- El despliegue en Railway no debería fallar por el error `column "activo" contains null values`.
+### Historial de costos de productos
+- Se agregó una función para guardar y consultar el historial de costos de cada producto. Así puedes ver cómo ha cambiado el costo a lo largo del tiempo y tomar mejores decisiones.
+- El historial se puede consultar por producto y está organizado por fecha.
+
+### Corrección de errores y validaciones
+- Se corrigió un error que impedía iniciar el sistema por una diferencia en los nombres de los campos de sucursales.
+- Se revisó la estructura de la base de datos para asegurar que todo funcione correctamente.
+
+### Documentación y ayuda
+- Se actualizaron los archivos de ayuda y documentación para que sea más fácil mostrar los avances a tu jefe o equipo.
+
+---
+
+**Carpetas y archivos recomendados para capturas de pantalla:**
+- Reportes y estadísticas: `backend/src/main/java/com/puntodeventa/backend/service/EstadisticasService.java`
+- Historial de costos: `backend/src/main/java/com/puntodeventa/backend/model/ProductoCostoHistorico.java`
+- Documentación técnica: `docs/flujo-interno.md`, `docs/admin/`
+- Archivo principal de ayuda: `README.md`
+
+Estas mejoras hacen que el sistema sea más confiable, rápido y fácil de analizar para la toma de decisiones.
 

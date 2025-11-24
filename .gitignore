@@ -1,0 +1,18 @@
+# Reglas de configuración de herramientas AI (no compartir)
+.cursorrules
+.github/copilot-instructions.md
+.github/copilot-instructions-java21.md
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+server.log
+
+# Archivos temporales
+*.tmp
+*.temp
+*~
+
