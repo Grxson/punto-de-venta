@@ -735,6 +735,405 @@
       ]
     },
     {
+      "name": "Ventas - Métodos de Pago",
+      "item": [
+        {
+          "name": "Obtener todos los métodos de pago",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/metodos-pago",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "metodos-pago"]
+            }
+          }
+        },
+        {
+          "name": "Obtener métodos de pago activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/metodos-pago/activos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "metodos-pago", "activos"]
+            }
+          }
+        },
+        {
+          "name": "Obtener método de pago por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/metodos-pago/{{metodoPagoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "metodos-pago", "{{metodoPagoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Crear método de pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('metodoPagoId', jsonData.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Efectivo\",\n  \"requiereReferencia\": false,\n  \"activo\": true,\n  \"descripcion\": \"Pago en efectivo\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ventas/metodos-pago",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "metodos-pago"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar método de pago",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Efectivo\",\n  \"requiereReferencia\": false,\n  \"activo\": true,\n  \"descripcion\": \"Pago en efectivo al momento de la compra\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ventas/metodos-pago/{{metodoPagoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "metodos-pago", "{{metodoPagoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar método de pago",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/metodos-pago/{{metodoPagoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "metodos-pago", "{{metodoPagoId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ventas",
+      "item": [
+        {
+          "name": "Obtener todas las ventas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas"]
+            }
+          }
+        },
+        {
+          "name": "Obtener venta por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/{{ventaId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "{{ventaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Obtener ventas por estado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/estado/PAGADA",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "estado", "PAGADA"]
+            }
+          }
+        },
+        {
+          "name": "Obtener ventas por sucursal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/sucursal/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "sucursal", "1"]
+            }
+          }
+        },
+        {
+          "name": "Obtener ventas por rango de fechas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/rango?desde=2025-01-01T00:00:00&hasta=2025-12-31T23:59:59",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "rango"],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2025-01-01T00:00:00"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2025-12-31T23:59:59"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear venta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('ventaId', jsonData.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sucursalId\": 1,\n  \"items\": [\n    {\n      \"productoId\": 1,\n      \"cantidad\": 2,\n      \"precioUnitario\": 50.00,\n      \"nota\": \"Sin cebolla\"\n    },\n    {\n      \"productoId\": 2,\n      \"cantidad\": 1,\n      \"precioUnitario\": 35.00,\n      \"nota\": null\n    }\n  ],\n  \"pagos\": [\n    {\n      \"metodoPagoId\": 1,\n      \"monto\": 135.00,\n      \"referencia\": null\n    }\n  ],\n  \"nota\": \"Cliente regular\",\n  \"canal\": \"POS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ventas",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas"]
+            }
+          }
+        },
+        {
+          "name": "Crear venta con múltiples pagos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sucursalId\": 1,\n  \"items\": [\n    {\n      \"productoId\": 1,\n      \"cantidad\": 3,\n      \"precioUnitario\": 50.00\n    }\n  ],\n  \"pagos\": [\n    {\n      \"metodoPagoId\": 1,\n      \"monto\": 100.00,\n      \"referencia\": null\n    },\n    {\n      \"metodoPagoId\": 2,\n      \"monto\": 50.00,\n      \"referencia\": \"AUTH123456\"\n    }\n  ],\n  \"nota\": \"Pago mixto: efectivo + tarjeta\",\n  \"canal\": \"POS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ventas",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Estadísticas",
+      "item": [
+        {
+          "name": "Resumen ventas día",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/estadisticas/ventas/dia?fecha=2025-11-24",
+              "host": ["{{base_url}}"],
+              "path": ["api", "estadisticas", "ventas", "dia"],
+              "query": [
+                {"key": "fecha", "value": "2025-11-24"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Resumen ventas rango",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/estadisticas/ventas/rango?desde=2025-11-01T00:00:00&hasta=2025-11-30T23:59:59",
+              "host": ["{{base_url}}"],
+              "path": ["api", "estadisticas", "ventas", "rango"],
+              "query": [
+                {"key": "desde", "value": "2025-11-01T00:00:00"},
+                {"key": "hasta", "value": "2025-11-30T23:59:59"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Rendimiento productos día",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/estadisticas/productos/dia?fecha=2025-11-24&limite=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "estadisticas", "productos", "dia"],
+              "query": [
+                {"key": "fecha", "value": "2025-11-24"},
+                {"key": "limite", "value": "10"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Rendimiento productos rango",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/estadisticas/productos/rango?desde=2025-11-01T00:00:00&hasta=2025-11-30T23:59:59&limite=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "estadisticas", "productos", "rango"],
+              "query": [
+                {"key": "desde", "value": "2025-11-01T00:00:00"},
+                {"key": "hasta", "value": "2025-11-30T23:59:59"},
+                {"key": "limite", "value": "10"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Costos",
+      "item": [
+        {
+          "name": "Histórico costos producto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inventario/productos/1/costos/historico?pagina=0&tamano=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventario", "productos", "1", "costos", "historico"],
+              "query": [
+                {"key": "pagina", "value": "0"},
+                {"key": "tamano", "value": "50"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Salud",
       "item": [
         {

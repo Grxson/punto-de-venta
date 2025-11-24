@@ -1,0 +1,250 @@
+# 📋 PENDIENTES - Módulo de Ventas
+
+## ⏸️ Funcionalidades Pendientes de Implementar
+
+### 1. **Cálculo de IVA/Impuestos**
+**Estado:** ⏸️ PENDIENTE  
+**Prioridad:** MEDIA  
+**Descripción:**
+- Actualmente el campo `impuestos` en la tabla `ventas` está en cero por defecto
+- Se debe implementar el cálculo automático de IVA según las reglas fiscales
+- Considerar:
+  - Tasa de IVA configurable (16% estándar en México)
+  - Productos exentos de IVA
+  - Desglose de impuestos en el ticket
+
+**Archivos afectados:**
+- `backend/src/main/java/com/puntodeventa/backend/model/Venta.java` (línea 51)
+- `backend/src/main/java/com/puntodeventa/backend/service/VentaService.java` (lógica de cálculo)
+
+**Ejemplo de implementación:**
+```java
+// En VentaService.crearVenta():
+BigDecimal tasaIVA = new BigDecimal("0.16"); // 16%
+BigDecimal impuestos = subtotal.multiply(tasaIVA);
+venta.setImpuestos(impuestos);
+venta.setTotal(subtotal.add(impuestos).subtract(descuento));
+```
+
+---
+
+### 2. **Sistema de Descuentos**
+**Estado:** ⏸️ PENDIENTE  
+**Prioridad:** MEDIA  
+**Descripción:**
+- Actualmente el campo `descuento` está en cero
+- Implementar sistema de descuentos estructurado:
+  - Descuentos por porcentaje o monto fijo
+  - Descuentos por rol de usuario (Admin, Supervisor, Cajero)
+  - Descuentos por promociones o cupones
+  - Auditoría de descuentos aplicados
+
+**Modelo de datos sugerido:**
+```sql
+CREATE TABLE descuentos (
+    id BIGINT PRIMARY KEY,
+    nombre VARCHAR(200) NOT NULL,
+    tipo VARCHAR(20) NOT NULL, -- 'PORCENTAJE' o 'MONTO'
+    valor DECIMAL(12,2) NOT NULL,
+    activo BOOLEAN DEFAULT TRUE,
+    max_por_rol_json TEXT, -- {'ADMIN': 100, 'SUPERVISOR': 50, 'CAJERO': 20}
+    fecha_inicio DATE,
+    fecha_fin DATE
+);
+```
+
+**Archivos afectados:**
+- `backend/src/main/java/com/puntodeventa/backend/model/Venta.java` (línea 55)
+- Crear nueva entidad `Descuento`
+- Agregar lógica en `VentaService`
+
+---
+
+### 3. **Validación de Stock Suficiente**
+**Estado:** ⏸️ PENDIENTE  
+**Prioridad:** ALTA  
+**Descripción:**
+- Validar que haya stock suficiente de ingredientes antes de confirmar una venta
+- Evitar ventas que dejen el inventario en negativo
+- Mostrar alerta cuando un ingrediente esté por debajo del stock mínimo
+
+**Implementación sugerida:**
+```java
+// En VentaService.crearVenta(), antes de crear items:
+for (VentaItemDTO itemDTO : request.items()) {
+    Producto producto = productoRepository.findById(itemDTO.productoId())...;
+    
+    // Validar stock por receta
+    List<Receta> recetas = recetaRepository.findByProductoId(producto.getId());
+    for (Receta receta : recetas) {
+        BigDecimal cantidadNecesaria = receta.getCantidad()
+            .multiply(BigDecimal.valueOf(itemDTO.cantidad()));
+        BigDecimal stockDisponible = receta.getIngrediente().getStockActual();
+        
+        if (stockDisponible.compareTo(cantidadNecesaria) < 0) {
+            throw new InsufficientStockException(
+                "Stock insuficiente de " + receta.getIngrediente().getNombre()
+            );
+        }
+    }
+}
+```
+
+**Requisito previo:**
+- Agregar campo `stockActual` a la entidad `Ingrediente`
+
+---
+
+### 4. **Campo `stockActual` en Ingrediente**
+**Estado:** ⏸️ PENDIENTE  
+**Prioridad:** ALTA  
+**Descripción:**
+- Actualmente la entidad `Ingrediente` no tiene campo para rastrear el stock actual
+- Este campo es necesario para:
+  - Validar stock antes de ventas
+  - Generar alertas de stock mínimo
+  - Reportes de inventario
+
+**Cambios necesarios:**
+```java
+// En Ingrediente.java:
+@PositiveOrZero(message = "El stock actual debe ser positivo o cero")
+@Column(name = "stock_actual", precision = 12, scale = 3)
+private BigDecimal stockActual = BigDecimal.ZERO;
+```
+
+**Actualización automática:**
+- Sumar en movimientos tipo "INGRESO"
+- Restar en movimientos tipo "EGRESO" (ventas)
+- Ajustar en movimientos tipo "AJUSTE"
+
+---
+
+### 5. **Cálculo Automático de Costo de Venta**
+**Estado:** ✅ IMPLEMENTADO (FASE 1)  
+**Prioridad:** MEDIA  
+**Descripción:**
+- El campo `costoEstimado` en `VentaItem` ahora se llena al crear la venta usando `producto.costoEstimado * cantidad`.
+- `producto.costoEstimado` se recalcula desde receta en `ProductoService.recalcularCosto()` considerando merma teórica.
+- Faltante para FASE 2: cálculo dinámico del costo del item si el producto cambia antes de guardar, y opción de recalcular costo histórico por cada venta para análisis retroactivo.
+
+**Archivos implementados:**
+- `backend/src/main/java/com/puntodeventa/backend/model/VentaItem.java`
+- `backend/src/main/java/com/puntodeventa/backend/service/VentaService.java`
+- `backend/src/main/java/com/puntodeventa/backend/service/ProductoService.java`
+
+---
+
+### 6. **Cancelación de Ventas**
+**Estado:** ⏸️ PENDIENTE  
+**Prioridad:** MEDIA  
+**Descripción:**
+- Implementar endpoint para cancelar ventas
+- Revertir movimientos de inventario
+- Registrar auditoría de cancelación
+- Solo permitir a usuarios con permisos (ADMIN, SUPERVISOR)
+
+**Endpoint sugerido:**
+```java
+@PutMapping("/{id}/cancelar")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
+public ResponseEntity<VentaDTO> cancelarVenta(
+    @PathVariable Long id,
+    @RequestParam String motivo
+) {
+    return ResponseEntity.ok(ventaService.cancelarVenta(id, motivo));
+}
+```
+
+---
+
+### 7. **Reportes de Ventas**
+**Estado:** ⏸️ PENDIENTE  
+**Prioridad:** BAJA  
+**Descripción:**
+- Implementar endpoints para reportes avanzados:
+  - Ventas por día/semana/mes
+  - Productos más vendidos
+  - Métodos de pago más usados
+  - Margen de ganancia (ventas - costo)
+  - Comparativa entre sucursales
+
+---
+
+### 8. **Múltiples Pagos por Venta**
+**Estado:** ✅ IMPLEMENTADO  
+**Descripción:**
+- Ya soportado: una venta puede tener múltiples pagos
+- Ejemplo: $200 en efectivo + $150 en tarjeta
+
+---
+
+### 9. **Integración con Cajas y Turnos**
+**Estado:** ⏸️ PENDIENTE  
+**Prioridad:** BAJA  
+**Descripción:**
+- Crear entidades `Caja` y `Turno`
+- Asociar ventas a cajas y turnos específicos
+- Implementar apertura y cierre de caja con arqueo
+
+---
+
+### 10. **Cliente Frecuente / Loyalty**
+**Estado:** ⏸️ PENDIENTE  
+**Prioridad:** BAJA  
+**Descripción:**
+- Crear entidad `Cliente`
+- Asociar ventas a clientes
+- Programa de puntos/recompensas
+
+---
+
+## 📝 Notas de Desarrollo
+
+### Variables de Entorno Sugeridas
+```properties
+# application.properties
+app.ventas.iva.tasa=0.16
+app.ventas.descuento.maximo=1000.00
+app.ventas.validar-stock=true
+```
+
+### Orden de Implementación Recomendado
+1. ✅ **Campo `stockActual` en Ingrediente** (requisito para #3)
+2. ⏸️ **Validación de stock** (#3)
+3. ⏸️ **Cálculo de costo de venta** (#5)
+4. ⏸️ **Cálculo de IVA** (#1)
+5. ⏸️ **Sistema de descuentos** (#2)
+6. ⏸️ **Cancelación de ventas** (#6)
+7. ⏸️ **Reportes** (#7)
+
+---
+
+## 🔗 Referencias
+- Documentación: `docs/datos/modelo-datos.md`
+- Flujo de ventas: `docs/flujo-interno.md`
+- Finanzas: `docs/admin/finanzas.md`
+
+---
+
+### 11. **Histórico de Costos de Producto**
+**Estado:** ✅ IMPLEMENTADO (CAPTURA AUTOMÁTICA)  
+**Prioridad:** MEDIA  
+**Descripción:**
+- Se creó la entidad `ProductoCostoHistorico` para almacenar cada recalculo de costo.
+- Se registra un snapshot cuando cambia el costo estimado tras `recalcularCosto()`.
+- Incluye costo, precio, margen absoluto y porcentaje, fuente y fecha.
+- Faltante: endpoint para consultar historial por producto y limpieza/retención (archivado).  
+
+**Archivos implementados:**
+- `backend/src/main/java/com/puntodeventa/backend/model/ProductoCostoHistorico.java`
+- `backend/src/main/java/com/puntodeventa/backend/repository/ProductoCostoHistoricoRepository.java`
+- `backend/src/main/java/com/puntodeventa/backend/service/ProductoService.java`
+
+**Próximos pasos sugeridos:**
+1. Endpoint `GET /api/productos/{id}/costos/historico` (paginado, orden descendente por fecha)
+2. Política de retención (ej: mantener últimos N registros o últimos 18 meses)
+3. Flag de origen adicional (IMPORTACION, AJUSTE_MANUAL)
+4. Integrar en estadísticas para mostrar tendencia de margen.
+
+**Última actualización:** 24 de noviembre de 2025
