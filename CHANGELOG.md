@@ -94,17 +94,104 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ---
 
+## [1.1.0] - 2025-11-24
+
+### ✨ Agregado
+- **Módulo de Inventario Completo**: Implementación integral del sistema de gestión de inventario
+  - **Unidades de Medida**: Gestión de unidades con factor de conversión
+  - **Proveedores**: CRUD completo con búsqueda y filtros
+  - **Ingredientes**: Gestión con categorización, stock mínimo, costos y SKU
+  - **Productos**: Gestión de productos del menú con precios y disponibilidad
+  - **Categorías de Productos**: Organización de productos en categorías
+  - **Recetas**: Sistema de recetas que vincula productos con ingredientes, cantidades y merma teórica
+  - **Movimientos de Inventario**: Registro de ingresos y egresos con trazabilidad
+  - **Mermas**: Control de pérdidas con motivos y registro histórico
+
+- **DTOs como Records (Java 21)**: Todos los DTOs implementados como records inmutables
+  - `CategoriaProductoDTO`
+  - `ProductoDTO`
+  - `IngredienteDTO`
+  - `UnidadDTO`
+  - `ProveedorDTO`
+  - `RecetaDTO`
+  - `MovimientoInventarioDTO`
+  - `MermaDTO`
+
+- **Servicios de Negocio**: Lógica completa con validaciones y excepciones personalizadas
+  - Borrado lógico en todas las entidades principales
+  - Filtros dinámicos (activo/inactivo, búsqueda por nombre, categoría)
+  - Cálculo automático de costos de recetas
+  - Validación de relaciones y existencia de entidades
+
+- **Controladores REST**: 8 controladores con documentación Swagger
+  - `CategoriaProductoController` - `/api/inventario/categorias-productos`
+  - `ProductoController` - `/api/inventario/productos`
+  - `IngredienteController` - `/api/inventario/ingredientes`
+  - `UnidadController` - `/api/inventario/unidades`
+  - `ProveedorController` - `/api/inventario/proveedores`
+  - `RecetaController` - `/api/inventario/recetas`
+  - `MovimientoInventarioController` - `/api/inventario/movimientos`
+  - `MermaController` - `/api/inventario/mermas`
+
+- **Migraciones Flyway**: Control de versiones de base de datos
+  - `V1__init_core.sql` - Tablas base (roles, sucursales, usuarios)
+  - `V2__add_activo_columns_roles_sucursales.sql` - Columnas de activación
+  - `R__seed_data.sql` - Datos iniciales idempotentes
+
+- **Colección Postman Unificada**: Colección completa organizada por carpetas
+  - Estructura: Autenticación, Salud, Inventario (8 subcarpetas)
+  - Scripts automáticos de captura de IDs (token, usuarioId, productoId, categoriaProductoId, ingredienteId, movimientoId, mermaId)
+  - Variables de entorno configuradas
+  - Archivo: `postman/punto-de-venta.postman_collection.json`
+
+### 🔧 Configuraciones
+- **Flyway**: Migración automática de base de datos habilitada
+  - Baseline deshabilitado
+  - Validación on migrate
+  - Migraciones en `src/main/resources/db/migration/`
+  
+- **JPA/Hibernate**: Configuración híbrida temporal
+  - `ddl-auto=update` para tablas no migradas aún
+  - Futuro: consolidar todas en migraciones Flyway
+
+- **Logging**: Configuración diferenciada por entorno
+  - Desarrollo: Multi-appender (consola + archivo)
+  - Producción (Railway): Solo consola para evitar problemas de almacenamiento efímero
+
+### 🔄 Cambiado
+- **Eliminados `data.sql` y `data-postgresql.sql`**: Reemplazados por migraciones Flyway repetibles
+- **Estructura de Datos**: Semillas ahora idempotentes con `SELECT WHERE NOT EXISTS`
+- **GlobalExceptionHandler**: Mejorado para cubrir todas las excepciones del inventario
+
+### 🐛 Corregido
+- **PK duplicadas en usuarios**: Resuelto con migraciones idempotentes
+- **Fallo healthcheck Railway**: Logging adaptado a filesystem efímero
+- **Dependencia circular Flyway/JPA**: Resuelta con migración V1 inicial
+- **Exit code 143**: Identificado como SIGTERM manual (no error)
+- **404/500 en categorías-productos**: Implementado controlador faltante
+
+### 📚 Documentación
+- **API-ENDPOINTS.md**: Documentación completa de todos los endpoints de inventario
+- **Actualización README.md**: Sección de inventario y endpoints disponibles
+- **Postman**: Colección unificada con instrucciones de importación
+
+### 🧪 Testing
+- Arranque validado en dev con H2 y producción con PostgreSQL
+- Migraciones Flyway aplicadas correctamente en ambos entornos
+- Seed data cargado sin duplicados
+
+---
+
 ## [Unreleased]
 
 ### 🚧 En Desarrollo
-- Implementación de entidades JPA completas
 - Implementación de JWT para autenticación
-- Implementación de roles y permisos detallados
-- Endpoints CRUD para todas las entidades
-- Sistema de inventario con recetas
 - Sistema de ventas con cálculo automático de costos
 - Reportes y analítica
 - Tests unitarios y de integración completos
+
+### 📋 Planificado
+- Consolidar todas las tablas bajo migraciones Flyway (eliminar ddl-auto)
 
 ### 📋 Planificado
 - WebSockets para actualizaciones en tiempo real

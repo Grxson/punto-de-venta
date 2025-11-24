@@ -1,0 +1,119 @@
+{
+  "info": {
+    "_postman_id": "f2a9b4e0-51f6-4b1e-a9c4-202511240002",
+    "name": "Punto de Venta API (Extended)",
+    "description": "Colección extendida con nuevos endpoints: productos, categorías, movimientos e informes de mermas. Si no ves carpetas nuevas, elimina la colección anterior y reimporta.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const j = pm.response.json();",
+                  "  pm.environment.set('token', j.token);",
+                  "  pm.environment.set('usuarioId', j.usuario.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}" },
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api","auth","login"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Productos",
+      "item": [
+        {
+          "name": "Listar productos",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/productos", "host": ["{{base_url}}"], "path": ["api","inventario","productos"] } },
+          "response": []
+        },
+        {
+          "name": "Productos activos",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/productos/activos", "host": ["{{base_url}}"], "path": ["api","inventario","productos","activos"] } },
+          "response": []
+        },
+        {
+          "name": "Crear producto",
+          "event": [
+            { "listen": "test", "script": { "exec": ["if (pm.response.code === 201){ const d=pm.response.json(); pm.environment.set('productoId', d.id);}"], "type": "text/javascript" } }
+          ],
+          "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Tostada\",\n  \"precio\": 25.00,\n  \"categoriaId\": 1,\n  \"disponibleEnMenu\": true\n}" }, "url": { "raw": "{{base_url}}/api/inventario/productos", "host": ["{{base_url}}"], "path": ["api","inventario","productos"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Categorías",
+      "item": [
+        {
+          "name": "Listar categorías",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/categorias-productos", "host": ["{{base_url}}"], "path": ["api","inventario","categorias-productos"] } },
+          "response": []
+        },
+        {
+          "name": "Crear categoría",
+          "event": [ { "listen": "test", "script": { "exec": ["if (pm.response.code === 201){ const d=pm.response.json(); pm.environment.set('categoriaProductoId', d.id);}"], "type": "text/javascript" } } ],
+          "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"nombre\": \"Bebidas\",\n  \"descripcion\": \"Categoria bebidas\"\n}" }, "url": { "raw": "{{base_url}}/api/inventario/categorias-productos", "host": ["{{base_url}}"], "path": ["api","inventario","categorias-productos"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Movimientos",
+      "item": [
+        {
+          "name": "Crear ingreso",
+          "event": [ { "listen": "test", "script": { "exec": ["if(pm.response.code===201){const d=pm.response.json(); pm.environment.set('movimientoId', d.id);}"], "type": "text/javascript" } } ],
+          "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"ingredienteId\": 1,\n  \"cantidad\": 1000,\n  \"unidadId\": 1,\n  \"costoUnitario\": 0.025,\n  \"tipo\": \"INGRESO\"\n}" }, "url": { "raw": "{{base_url}}/api/inventario/movimientos", "host": ["{{base_url}}"], "path": ["api","inventario","movimientos"] } },
+          "response": []
+        },
+        {
+          "name": "Movimientos por ingrediente",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/movimientos/ingrediente/{{ingredienteId}}", "host": ["{{base_url}}"], "path": ["api","inventario","movimientos","ingrediente","{{ingredienteId}}"] } },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Mermas",
+      "item": [
+        {
+          "name": "Crear merma",
+          "request": { "method": "POST", "header": [ { "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" } ], "body": { "mode": "raw", "raw": "{\n  \"ingredienteId\": 1,\n  \"cantidad\": 5,\n  \"unidadId\": 1,\n  \"motivo\": \"Rotura\"\n}" }, "url": { "raw": "{{base_url}}/api/inventario/mermas", "host": ["{{base_url}}"], "path": ["api","inventario","mermas"] } },
+          "response": []
+        },
+        {
+          "name": "Listar mermas",
+          "request": { "method": "GET", "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ], "url": { "raw": "{{base_url}}/api/inventario/mermas", "host": ["{{base_url}}"], "path": ["api","inventario","mermas"] } },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "usuarioId", "value": "", "type": "string" },
+    { "key": "productoId", "value": "", "type": "string" },
+    { "key": "categoriaProductoId", "value": "", "type": "string" },
+    { "key": "movimientoId", "value": "", "type": "string" },
+    { "key": "ingredienteId", "value": "", "type": "string" }
+  ]
+}
