@@ -3,15 +3,18 @@
 
 [phases.setup]
 nixPkgs = ["jdk21", "maven"]
+# Disable automatic providers that might interfere
+aptPkgs = []
+
+[phases.install]
+# Skip automatic install phase
+cmds = ["echo 'Skipping install phase'"]
 
 [phases.build]
 cmds = [
-  "chmod +x mvnw",
+  "chmod +x mvnw || true",
   "./mvnw clean package -DskipTests -B"
 ]
-
-[phases.install]
-# No additional install needed, Maven handles dependencies
 
 [start]
 cmd = "java -Dserver.port=$PORT ${JAVA_OPTS:--XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0} -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-railway} -jar target/backend-*.jar"

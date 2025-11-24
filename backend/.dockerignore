@@ -1,8 +1,9 @@
 # Archivos a ignorar durante el build de Docker
 
 # Compilados y builds locales
-target/
-!target/*.jar
+# NOTA: target/ comentado para que Railpack funcione. El Dockerfile multi-stage no lo necesita.
+# target/
+# !target/*.jar
 *.class
 
 # Maven wrapper (se copiará explícitamente)
