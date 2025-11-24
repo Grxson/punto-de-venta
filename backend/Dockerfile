@@ -1,7 +1,7 @@
 # Dockerfile optimizado para Railway con Java 21 y cache de Maven
 # Usa multi-stage build para reducir el tamaño de la imagen final
-# IMPORTANTE: Railway ejecuta este Dockerfile desde la raíz del proyecto
-# Railway config: Root Directory = "/", dockerfilePath = "backend/Dockerfile"
+# IMPORTANTE: Railway ejecuta este Dockerfile con Root Directory = "backend"
+# Railway config: Root Directory = "backend", dockerfilePath = "Dockerfile"
 
 # ====================================
 # Stage 1: Build con cache de Maven
@@ -11,9 +11,9 @@ FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /app
 
 # Copiar solo archivos de configuración Maven primero (mejor cache)
-COPY backend/mvnw .
-COPY backend/.mvn .mvn
-COPY backend/pom.xml .
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
 
 # Dar permisos de ejecución al wrapper de Maven
 RUN chmod +x mvnw
@@ -22,7 +22,7 @@ RUN chmod +x mvnw
 RUN ./mvnw dependency:go-offline -B
 
 # Copiar el código fuente
-COPY backend/src src
+COPY src src
 
 # Compilar la aplicación con configuración de memoria para Railway
 RUN MAVEN_OPTS="-Xmx2048m" ./mvnw clean package -DskipTests -B
