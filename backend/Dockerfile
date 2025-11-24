@@ -41,8 +41,9 @@ USER spring:spring
 # Copiar el JAR compilado desde el stage anterior
 COPY --from=builder /app/target/*.jar app.jar
 
-# Variables de entorno para Railway
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Dspring.profiles.active=railway"
+# Variables de entorno para Railway / producción
+# Nota: El perfil ya no se fija en JAVA_OPTS; se usa SPRING_PROFILES_ACTIVE para permitir override desde Railway.
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 ENV SERVER_PORT=8080
 ENV SPRING_PROFILES_ACTIVE=railway
 
@@ -53,5 +54,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health/liveness || exit 1
 
-# Ejecutar la aplicación
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+# Ejecutar la aplicación con perfil y puerto explícitos (prioriza variables inyectadas por Railway)
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=$SERVER_PORT -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE -jar app.jar"]

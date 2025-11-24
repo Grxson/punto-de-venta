@@ -1,0 +1,8 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Healthcheck ya definido en Dockerfile, pero Railway puede usar este endpoint
+healthcheckPath = "/actuator/health/liveness"
+healthcheckTimeout = 300
