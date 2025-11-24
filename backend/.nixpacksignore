@@ -1,0 +1,12 @@
+# Nixpacks ignore - permitir target/ para que el build funcione
+.git/
+.idea/
+.vscode/
+*.md
+!README.md
+docs/
+logs/
+*.log
+.DS_Store
+node_modules/
+frontend/
