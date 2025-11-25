@@ -114,7 +114,7 @@ export default function AdminReports() {
 
       // Cargar resumen de ventas
       const resumenResponse = await apiService.get(
-        `${API_ENDPOINTS.STATS_RANGE}?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
+        `${API_ENDPOINTS.STATS_SALES_RANGE}?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
       );
 
       if (resumenResponse.success && resumenResponse.data) {
