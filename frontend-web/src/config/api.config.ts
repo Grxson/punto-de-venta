@@ -112,6 +112,11 @@ export const API_ENDPOINTS = {
   
   // Turnos
   SHIFTS: '/turnos',
+  
+  // Finanzas - Gastos
+  GASTOS: '/finanzas/gastos',
+  CATEGORIAS_GASTO: '/finanzas/categorias-gasto',
+  PROVEEDORES: '/inventario/proveedores',
 };
 
 export default API_CONFIG;

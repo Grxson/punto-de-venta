@@ -23,6 +23,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminReports from './pages/admin/AdminReports';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminFinances from './pages/admin/AdminFinances';
+import AdminExpenses from './pages/admin/AdminExpenses';
 
 // Auth
 import Login from './pages/auth/Login';
@@ -114,10 +115,11 @@ function App() {
                 </AdminRoute>
               }
             >
-              <Route index element={<AdminDashboard />} />
-              <Route path="reports" element={<AdminReports />} />
-              <Route path="inventory" element={<AdminInventory />} />
-              <Route path="finances" element={<AdminFinances />} />
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="reports" element={<AdminReports />} />
+                  <Route path="inventory" element={<AdminInventory />} />
+                  <Route path="finances" element={<AdminFinances />} />
+                  <Route path="expenses" element={<AdminExpenses />} />
             </Route>
 
             {/* Default redirect */}

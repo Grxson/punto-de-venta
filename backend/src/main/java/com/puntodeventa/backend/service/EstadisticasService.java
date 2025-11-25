@@ -6,6 +6,7 @@ import com.puntodeventa.backend.dto.aggregate.ResumenVentasAggregate;
 import com.puntodeventa.backend.dto.aggregate.ProductoRendimientoAggregate;
 import com.puntodeventa.backend.repository.VentaRepository;
 import com.puntodeventa.backend.repository.VentaItemRepository;
+import com.puntodeventa.backend.repository.GastoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,10 +26,12 @@ public class EstadisticasService {
 
     private final VentaRepository ventaRepository;
     private final VentaItemRepository ventaItemRepository;
+    private final GastoRepository gastoRepository;
 
-    public EstadisticasService(VentaRepository ventaRepository, VentaItemRepository ventaItemRepository) {
+    public EstadisticasService(VentaRepository ventaRepository, VentaItemRepository ventaItemRepository, GastoRepository gastoRepository) {
         this.ventaRepository = ventaRepository;
         this.ventaItemRepository = ventaItemRepository;
+        this.gastoRepository = gastoRepository;
     }
 
     public ResumenVentasDiaDTO resumenDia(LocalDate fecha) {
@@ -40,7 +43,17 @@ public class EstadisticasService {
     public ResumenVentasDiaDTO resumenRango(LocalDateTime desde, LocalDateTime hasta, LocalDate fechaRepresentativa) {
         ResumenVentasAggregate agg = ventaRepository.aggregateResumen(desde, hasta);
         BigDecimal totalVentas = agg.totalVentas();
-        BigDecimal totalCostos = agg.totalCostos();
+        BigDecimal totalCostosProductos = agg.totalCostos();
+        
+        // Sumar gastos operativos del período
+        BigDecimal totalGastos = gastoRepository.sumMontoByFechaBetween(desde, hasta);
+        if (totalGastos == null) {
+            totalGastos = BigDecimal.ZERO;
+        }
+        
+        // Total de costos = costos de productos + gastos operativos
+        BigDecimal totalCostos = totalCostosProductos.add(totalGastos);
+        
         long itemsVendidos = agg.itemsVendidos();
         int cantidadVentas = agg.cantidadVentas().intValue();
         BigDecimal margenBruto = totalVentas.subtract(totalCostos);

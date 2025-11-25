@@ -208,7 +208,7 @@ export default function AdminReports() {
     .sort((a, b) => a.unidadesVendidas - b.unidadesVendidas)
     .slice(0, 10);
 
-  return (
+    return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
