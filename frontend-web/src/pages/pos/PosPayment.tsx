@@ -157,13 +157,40 @@ export default function PosPayment() {
           <Typography variant="h6" gutterBottom>
             Resumen de la Venta
           </Typography>
+          
+          {/* Lista de productos */}
+          <Box sx={{ mb: 2, maxHeight: '300px', overflowY: 'auto' }}>
+            {cart.map((item) => (
+              <Box key={item.producto.id} sx={{ mb: 1, pb: 1, borderBottom: '1px solid #eee' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body1" fontWeight="medium">
+                      {item.producto.nombre}
+                      {item.producto.nombreVariante && (
+                        <Typography component="span" variant="body2" color="primary" sx={{ ml: 1, fontWeight: 'bold' }}>
+                          ({item.producto.nombreVariante})
+                        </Typography>
+                      )}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {item.cantidad} x ${item.producto.precio.toFixed(2)}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body1" fontWeight="bold">
+                    ${(item.producto.precio * item.cantidad).toFixed(2)}
+                  </Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+          
+          <Divider sx={{ my: 1 }} />
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
             <Typography variant="body1">Total de productos:</Typography>
             <Typography variant="body1" fontWeight="bold">
               {cart.reduce((sum, item) => sum + item.cantidad, 0)}
             </Typography>
           </Box>
-          <Divider sx={{ my: 1 }} />
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
             <Typography variant="h6">Total a pagar:</Typography>
             <Typography variant="h5" color="primary" fontWeight="bold">

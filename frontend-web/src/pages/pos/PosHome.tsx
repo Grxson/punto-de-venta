@@ -19,6 +19,7 @@ import {
   Chip,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Payment } from '@mui/icons-material';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useCart } from '../../contexts/CartContext';
@@ -122,6 +123,16 @@ export default function PosHome() {
       addToCart(productoSeleccionado);
       setDialogoVariantes(false);
       setProductoSeleccionado(null);
+    }
+  };
+
+  const handleCarritoClick = () => {
+    // Si solo hay 1 producto, ir directo a pago
+    if (itemCount === 1) {
+      navigate('/pos/payment');
+    } else {
+      // Si hay más productos, ir al carrito
+      navigate('/pos/cart');
     }
   };
 
@@ -247,10 +258,11 @@ export default function PosHome() {
             variant="contained"
             color="secondary"
             fullWidth
-            onClick={() => navigate('/pos/cart')}
+            onClick={handleCarritoClick}
             sx={{ minHeight: '48px' }}
+            startIcon={itemCount === 1 ? <Payment /> : undefined}
           >
-            Ver Carrito
+            {itemCount === 1 ? 'Pagar' : 'Ver Carrito'}
           </Button>
         </Box>
       )}

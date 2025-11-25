@@ -17,6 +17,7 @@ import AdminLayout from './layouts/AdminLayout';
 import PosHome from './pages/pos/PosHome';
 import PosCart from './pages/pos/PosCart';
 import PosPayment from './pages/pos/PosPayment';
+import PosExpenses from './pages/pos/PosExpenses';
 
 // Admin Routes
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -104,6 +105,7 @@ function App() {
               <Route index element={<PosHome />} />
               <Route path="cart" element={<PosCart />} />
               <Route path="payment" element={<PosPayment />} />
+              <Route path="expenses" element={<PosExpenses />} />
             </Route>
 
             {/* Admin Routes - Protegidas con verificación de rol */}

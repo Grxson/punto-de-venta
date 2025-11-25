@@ -41,9 +41,16 @@ export default function PosCart() {
               <Card key={item.producto.id}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box>
-                      <Typography variant="h6">{item.producto?.nombre || 'Producto'}</Typography>
-                      <Typography variant="body2" color="text.secondary">
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" component="div">
+                        {item.producto?.nombre || 'Producto'}
+                      </Typography>
+                      {item.producto?.nombreVariante && (
+                        <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold', mt: 0.5 }}>
+                          Tamaño: {item.producto.nombreVariante}
+                        </Typography>
+                      )}
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                         ${item.producto?.precio?.toFixed(2) || '0.00'} c/u
                       </Typography>
                     </Box>

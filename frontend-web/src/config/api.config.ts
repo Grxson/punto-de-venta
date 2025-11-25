@@ -93,15 +93,16 @@ export const API_ENDPOINTS = {
   // Pagos
   PAYMENTS: '/pagos',
   PAYMENT_METHODS: '/ventas/metodos-pago',
+  PAYMENT_METHODS_ACTIVOS: '/ventas/metodos-pago/activos',
   
   // Estadísticas
   STATS_DAILY: '/estadisticas/ventas/dia',
-  STATS_RANGE: '/estadisticas/ventas/rango',
-  STATS_PRODUCTS_DAY: '/estadisticas/productos/dia',
+  STATS_SALES_RANGE: '/estadisticas/ventas/rango',
   STATS_PRODUCTS_RANGE: '/estadisticas/productos/rango',
   
   // Inventario
   INVENTORY: '/inventario',
+  PROVEEDORES: '/inventario/proveedores',
   
   // Reportes
   REPORTS: '/reportes',
@@ -116,7 +117,6 @@ export const API_ENDPOINTS = {
   // Finanzas - Gastos
   GASTOS: '/finanzas/gastos',
   CATEGORIAS_GASTO: '/finanzas/categorias-gasto',
-  PROVEEDORES: '/inventario/proveedores',
 };
 
 export default API_CONFIG;

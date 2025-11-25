@@ -33,7 +33,7 @@ public class ProveedorController {
     
     @GetMapping("/activos")
     @Operation(summary = "Obtener proveedores activos")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE', 'CAJERO', 'SUPERVISOR')")
     public ResponseEntity<List<ProveedorDTO>> obtenerActivos() {
         return ResponseEntity.ok(proveedorService.obtenerActivos());
     }

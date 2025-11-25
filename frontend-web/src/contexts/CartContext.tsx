@@ -7,6 +7,9 @@ interface Producto {
   categoriaId: number | null;
   categoriaNombre: string | null;
   activo: boolean;
+  productoBaseId?: number | null;
+  nombreVariante?: string | null;
+  ordenVariante?: number | null;
 }
 
 interface CartItem {
