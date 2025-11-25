@@ -37,9 +37,36 @@ public class ProductoController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Obtener producto por ID")
+    @Operation(summary = "Obtener producto por ID", description = "Si es un producto base, incluye su lista de variantes")
     public ResponseEntity<ProductoDTO> obtener(@PathVariable Long id) {
-        return ResponseEntity.ok(productoService.obtener(id));
+        ProductoDTO producto = productoService.obtener(id);
+        // Si es un producto base, cargar variantes
+        if (producto.productoBaseId() == null) {
+            List<ProductoDTO> variantes = productoService.obtenerVariantes(id);
+            producto = new ProductoDTO(
+                    producto.id(),
+                    producto.nombre(),
+                    producto.descripcion(),
+                    producto.categoriaId(),
+                    producto.categoriaNombre(),
+                    producto.precio(),
+                    producto.costoEstimado(),
+                    producto.sku(),
+                    producto.activo(),
+                    producto.disponibleEnMenu(),
+                    producto.productoBaseId(),
+                    producto.nombreVariante(),
+                    producto.ordenVariante(),
+                    variantes
+            );
+        }
+        return ResponseEntity.ok(producto);
+    }
+    
+    @GetMapping("/{id}/variantes")
+    @Operation(summary = "Obtener variantes de un producto base")
+    public ResponseEntity<List<ProductoDTO>> obtenerVariantes(@PathVariable Long id) {
+        return ResponseEntity.ok(productoService.obtenerVariantes(id));
     }
 
     @PostMapping

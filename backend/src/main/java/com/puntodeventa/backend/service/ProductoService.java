@@ -45,6 +45,25 @@ public class ProductoService {
 
     @Transactional(readOnly = true)
     public List<ProductoDTO> listar(Optional<Boolean> activo, Optional<Boolean> enMenu, Optional<Long> categoriaId, Optional<String> q) {
+        // Por defecto, solo mostrar productos base (sin variantes) o productos sin variantes
+        List<Producto> productosBase = productoRepository.findByProductoBaseIdIsNull();
+        
+        List<Producto> productosFiltrados = productosBase.stream()
+                .filter(p -> activo.map(a -> a.equals(p.getActivo())).orElse(true))
+                .filter(p -> enMenu.map(m -> m.equals(p.getDisponibleEnMenu())).orElse(true))
+                .filter(p -> categoriaId.map(id -> p.getCategoria() != null && id.equals(p.getCategoria().getId())).orElse(true))
+                .filter(p -> q.map(s -> p.getNombre() != null && p.getNombre().toLowerCase().contains(s.toLowerCase())).orElse(true))
+                .collect(Collectors.toList());
+        
+        // Cargar variantes para cada producto base
+        return productosFiltrados.stream()
+                .map(this::toDTOConVariantes)
+                .collect(Collectors.toList());
+    }
+    
+    @Transactional(readOnly = true)
+    public List<ProductoDTO> listarTodosIncluyendoVariantes(Optional<Boolean> activo, Optional<Boolean> enMenu, Optional<Long> categoriaId, Optional<String> q) {
+        // Listar todos los productos incluyendo variantes
         List<Producto> productos = productoRepository.findAll();
         return productos.stream()
                 .filter(p -> activo.map(a -> a.equals(p.getActivo())).orElse(true))
@@ -54,12 +73,21 @@ public class ProductoService {
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
+    
+    @Transactional(readOnly = true)
+    public List<ProductoDTO> obtenerVariantes(Long productoBaseId) {
+        List<Producto> variantes = productoRepository.findByProductoBaseIdOrderByOrdenVarianteAsc(productoBaseId);
+        return variantes.stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
 
     @Transactional(readOnly = true)
     public ProductoDTO obtener(Long id) {
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
-        return toDTO(p);
+        // Si es un producto base, cargar variantes
+        return toDTOConVariantes(p);
     }
 
     public ProductoDTO crear(ProductoDTO dto) {
@@ -208,6 +236,17 @@ public class ProductoService {
         p.setSku(dto.sku());
         if (dto.activo() != null) p.setActivo(dto.activo());
         if (dto.disponibleEnMenu() != null) p.setDisponibleEnMenu(dto.disponibleEnMenu());
+        
+        // Manejar variantes
+        if (dto.productoBaseId() != null) {
+            Producto productoBase = productoRepository.findById(dto.productoBaseId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Producto base no encontrado con id: " + dto.productoBaseId()));
+            p.setProductoBase(productoBase);
+        } else {
+            p.setProductoBase(null);
+        }
+        p.setNombreVariante(dto.nombreVariante());
+        p.setOrdenVariante(dto.ordenVariante());
     }
 
     private ProductoDTO toDTO(Producto p) {
@@ -221,7 +260,38 @@ public class ProductoService {
                 p.getCostoEstimado(),
                 p.getSku(),
                 p.getActivo(),
-                p.getDisponibleEnMenu()
+                p.getDisponibleEnMenu(),
+                p.getProductoBase() != null ? p.getProductoBase().getId() : null,
+                p.getNombreVariante(),
+                p.getOrdenVariante()
+        );
+    }
+    
+    private ProductoDTO toDTOConVariantes(Producto p) {
+        // Si es un producto base, cargar sus variantes
+        List<ProductoDTO> variantes = null;
+        if (p.getProductoBase() == null) {
+            List<Producto> variantesProducto = productoRepository.findByProductoBaseIdOrderByOrdenVarianteAsc(p.getId());
+            variantes = variantesProducto.stream()
+                    .map(this::toDTO)
+                    .collect(Collectors.toList());
+        }
+        
+        return new ProductoDTO(
+                p.getId(),
+                p.getNombre(),
+                p.getDescripcion(),
+                p.getCategoria() != null ? p.getCategoria().getId() : null,
+                p.getCategoria() != null ? p.getCategoria().getNombre() : null,
+                p.getPrecio(),
+                p.getCostoEstimado(),
+                p.getSku(),
+                p.getActivo(),
+                p.getDisponibleEnMenu(),
+                p.getProductoBase() != null ? p.getProductoBase().getId() : null,
+                p.getNombreVariante(),
+                p.getOrdenVariante(),
+                variantes
         );
     }
 

@@ -1,5 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Box, Card, CardContent, Typography, Button, CircularProgress, Alert } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  CircularProgress,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Divider,
+  Chip,
+} from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
@@ -12,6 +30,10 @@ interface Producto {
   categoriaId: number | null;
   categoriaNombre: string | null;
   activo: boolean;
+  productoBaseId?: number | null;
+  nombreVariante?: string | null;
+  ordenVariante?: number | null;
+  variantes?: Producto[]; // Lista de variantes si este es un producto base
 }
 
 export default function PosHome() {
@@ -24,6 +46,8 @@ export default function PosHome() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ventaExitosa, setVentaExitosa] = useState(false);
+  const [dialogoVariantes, setDialogoVariantes] = useState(false);
+  const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
 
   useEffect(() => {
     // Verificar si hay mensaje de venta exitosa
@@ -75,6 +99,31 @@ export default function PosHome() {
   const productosFiltrados = categoriaSeleccionada
     ? productos.filter(p => p.categoriaId === categoriaSeleccionada)
     : productos;
+
+  const handleProductoClick = (producto: Producto) => {
+    // Si el producto tiene variantes, mostrar diálogo de selección
+    if (producto.variantes && producto.variantes.length > 0) {
+      setProductoSeleccionado(producto);
+      setDialogoVariantes(true);
+    } else {
+      // Si no tiene variantes, agregar directamente al carrito
+      addToCart(producto);
+    }
+  };
+
+  const handleSeleccionarVariante = (variante: Producto) => {
+    addToCart(variante);
+    setDialogoVariantes(false);
+    setProductoSeleccionado(null);
+  };
+
+  const handleAgregarProductoBase = () => {
+    if (productoSeleccionado) {
+      addToCart(productoSeleccionado);
+      setDialogoVariantes(false);
+      setProductoSeleccionado(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -147,15 +196,24 @@ export default function PosHome() {
                 boxShadow: 4,
               },
             }}
-            onClick={() => addToCart(producto)}
+            onClick={() => handleProductoClick(producto)}
           >
             <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
               <Typography variant="h6" component="div" gutterBottom>
                 {producto.nombre}
               </Typography>
-              <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold' }}>
-                ${producto.precio.toFixed(2)}
-              </Typography>
+              {producto.variantes && producto.variantes.length > 0 ? (
+                <Chip
+                  label={`${producto.variantes.length} ${producto.variantes.length === 1 ? 'variante' : 'variantes'}`}
+                  size="small"
+                  color="primary"
+                  sx={{ mb: 1 }}
+                />
+              ) : (
+                <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold' }}>
+                  ${producto.precio.toFixed(2)}
+                </Typography>
+              )}
               <Typography variant="body2" color="text.secondary">
                 {producto.categoriaNombre || 'Sin categoría'}
               </Typography>
@@ -196,6 +254,80 @@ export default function PosHome() {
           </Button>
         </Box>
       )}
+
+      {/* Diálogo para seleccionar variantes */}
+      <Dialog
+        open={dialogoVariantes}
+        onClose={() => {
+          setDialogoVariantes(false);
+          setProductoSeleccionado(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Seleccionar {productoSeleccionado?.nombre}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Este producto tiene diferentes tamaños/presentaciones disponibles. Selecciona una opción:
+          </Typography>
+          <List>
+            {productoSeleccionado?.variantes?.map((variante, index) => (
+              <div key={variante.id}>
+                <ListItem disablePadding>
+                  <ListItemButton onClick={() => handleSeleccionarVariante(variante)}>
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="h6">
+                            {variante.nombreVariante || variante.nombre}
+                          </Typography>
+                          <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+                            ${variante.precio.toFixed(2)}
+                          </Typography>
+                        </Box>
+                      }
+                      secondary={variante.descripcion}
+                    />
+                  </ListItemButton>
+                </ListItem>
+                {index < (productoSeleccionado?.variantes?.length || 0) - 1 && <Divider />}
+              </div>
+            ))}
+          </List>
+          {productoSeleccionado && productoSeleccionado.precio > 0 && (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={handleAgregarProductoBase}
+                sx={{ minHeight: '48px' }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                  <Typography variant="body1">
+                    {productoSeleccionado.nombre} (Precio base)
+                  </Typography>
+                  <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+                    ${productoSeleccionado.precio.toFixed(2)}
+                  </Typography>
+                </Box>
+              </Button>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setDialogoVariantes(false);
+              setProductoSeleccionado(null);
+            }}
+          >
+            Cancelar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

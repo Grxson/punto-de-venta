@@ -182,22 +182,121 @@ public class DataInitializer {
                             "Licuado de Mango", "Licuado natural de mango", 1, 38.00, true, true
                         );
                         
-                        // Jugos
-                        jdbcTemplate.update(
-                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
-                            "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Jugo de Naranja", "Jugo natural de naranja", 2, 25.00, true, true
-                        );
-                        jdbcTemplate.update(
-                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
-                            "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Jugo de Zanahoria", "Jugo natural de zanahoria", 2, 28.00, true, true
-                        );
-                        jdbcTemplate.update(
-                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
-                            "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Jugo Verde", "Jugo de verduras y frutas", 2, 30.00, true, true
-                        );
+                        // Jugos - Productos base con variantes
+                        // Jugo de Naranja (producto base)
+                        Long jugoNaranjaId = null;
+                        try {
+                            jugoNaranjaId = jdbcTemplate.queryForObject(
+                                "SELECT id FROM productos WHERE nombre = 'Jugo de Naranja' AND producto_base_id IS NULL",
+                                Long.class
+                            );
+                        } catch (Exception e) {
+                            // No existe aún
+                        }
+                        
+                        if (jugoNaranjaId == null) {
+                            jdbcTemplate.update(
+                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "Jugo de Naranja", "Jugo natural de naranja", 2, 25.00, true, true, null, null, null
+                            );
+                            jugoNaranjaId = jdbcTemplate.queryForObject(
+                                "SELECT id FROM productos WHERE nombre = 'Jugo de Naranja' AND producto_base_id IS NULL",
+                                Long.class
+                            );
+                            
+                            // Variantes de Jugo de Naranja
+                            jdbcTemplate.update(
+                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "Jugo de Naranja", "Jugo natural de naranja - 1 Litro", 2, 25.00, true, true, jugoNaranjaId, "1 Litro", 1
+                            );
+                            jdbcTemplate.update(
+                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "Jugo de Naranja", "Jugo natural de naranja - 500ml", 2, 15.00, true, true, jugoNaranjaId, "500ml", 2
+                            );
+                            jdbcTemplate.update(
+                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "Jugo de Naranja", "Jugo natural de naranja - Bolsa 250ml", 2, 10.00, true, true, jugoNaranjaId, "Bolsa 250ml", 3
+                            );
+                        }
+                        
+                        // Jugo de Zanahoria (producto base)
+                        Long jugoZanahoriaId = null;
+                        try {
+                            jugoZanahoriaId = jdbcTemplate.queryForObject(
+                                "SELECT id FROM productos WHERE nombre = 'Jugo de Zanahoria' AND producto_base_id IS NULL",
+                                Long.class
+                            );
+                        } catch (Exception e) {
+                            // No existe aún
+                        }
+                        
+                        if (jugoZanahoriaId == null) {
+                            jdbcTemplate.update(
+                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "Jugo de Zanahoria", "Jugo natural de zanahoria", 2, 28.00, true, true, null, null, null
+                            );
+                            jugoZanahoriaId = jdbcTemplate.queryForObject(
+                                "SELECT id FROM productos WHERE nombre = 'Jugo de Zanahoria' AND producto_base_id IS NULL",
+                                Long.class
+                            );
+                            
+                            // Variantes de Jugo de Zanahoria
+                            jdbcTemplate.update(
+                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "Jugo de Zanahoria", "Jugo natural de zanahoria - 1 Litro", 2, 28.00, true, true, jugoZanahoriaId, "1 Litro", 1
+                            );
+                            jdbcTemplate.update(
+                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "Jugo de Zanahoria", "Jugo natural de zanahoria - 500ml", 2, 18.00, true, true, jugoZanahoriaId, "500ml", 2
+                            );
+                        }
+                        
+                        // Jugo Verde (producto base)
+                        Long jugoVerdeId = null;
+                        try {
+                            jugoVerdeId = jdbcTemplate.queryForObject(
+                                "SELECT id FROM productos WHERE nombre = 'Jugo Verde' AND producto_base_id IS NULL",
+                                Long.class
+                            );
+                        } catch (Exception e) {
+                            // No existe aún
+                        }
+                        
+                        if (jugoVerdeId == null) {
+                            jdbcTemplate.update(
+                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "Jugo Verde", "Jugo de verduras y frutas", 2, 30.00, true, true, null, null, null
+                            );
+                            jugoVerdeId = jdbcTemplate.queryForObject(
+                                "SELECT id FROM productos WHERE nombre = 'Jugo Verde' AND producto_base_id IS NULL",
+                                Long.class
+                            );
+                            
+                            // Variantes de Jugo Verde
+                            jdbcTemplate.update(
+                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "Jugo Verde", "Jugo de verduras y frutas - 1 Litro", 2, 30.00, true, true, jugoVerdeId, "1 Litro", 1
+                            );
+                            jdbcTemplate.update(
+                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "Jugo Verde", "Jugo de verduras y frutas - 500ml", 2, 20.00, true, true, jugoVerdeId, "500ml", 2
+                            );
+                            jdbcTemplate.update(
+                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
+                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                "Jugo Verde", "Jugo de verduras y frutas - Bolsa 250ml", 2, 12.00, true, true, jugoVerdeId, "Bolsa 250ml", 3
+                            );
+                        }
                         
                         // Lonches
                         jdbcTemplate.update(
@@ -228,9 +327,17 @@ public class DataInitializer {
                             "Flan", "Flan casero", 4, 30.00, true, true
                         );
                         
+                        // Contar productos totales (incluyendo variantes)
+                        Long totalProductos = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM productos", Long.class);
+                        Long productosBase = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM productos WHERE producto_base_id IS NULL", Long.class);
+                        Long variantes = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM productos WHERE producto_base_id IS NOT NULL", Long.class);
+                        
                         System.out.println(">>> ✅ Categorías y productos cargados:");
                         System.out.println("    - 4 Categorías (Licuados, Jugos, Lonches, Postres)");
-                        System.out.println("    - 11 Productos de ejemplo");
+                        System.out.println("    - " + productosBase + " Productos base");
+                        System.out.println("    - " + variantes + " Variantes de productos");
+                        System.out.println("    - Total: " + totalProductos + " productos");
+                        System.out.println("    - Productos con variantes: Jugo de Naranja (3 variantes), Jugo de Zanahoria (2 variantes), Jugo Verde (3 variantes)");
                     } else {
                         System.out.println(">>> Categorías y productos ya existen (" + categoriaCount + " categorías)");
                     }
