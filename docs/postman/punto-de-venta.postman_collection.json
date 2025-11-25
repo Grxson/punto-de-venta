@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Punto de Venta API",
-    "description": "Colección de endpoints para el sistema Punto de Venta",
+    "description": "Colección de endpoints para el sistema Punto de Venta. Ver REGLAS-ENDPOINTS.md para reglas de mantenimiento.",
     "version": "1.0.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -735,6 +735,855 @@
       ]
     },
     {
+      "name": "Ventas - Métodos de Pago",
+      "item": [
+        {
+          "name": "Obtener todos los métodos de pago",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/metodos-pago",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "metodos-pago"]
+            }
+          }
+        },
+        {
+          "name": "Obtener métodos de pago activos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/metodos-pago/activos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "metodos-pago", "activos"]
+            }
+          }
+        },
+        {
+          "name": "Obtener método de pago por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/metodos-pago/{{metodoPagoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "metodos-pago", "{{metodoPagoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Crear método de pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('metodoPagoId', jsonData.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Efectivo\",\n  \"requiereReferencia\": false,\n  \"activo\": true,\n  \"descripcion\": \"Pago en efectivo\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ventas/metodos-pago",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "metodos-pago"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar método de pago",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Efectivo\",\n  \"requiereReferencia\": false,\n  \"activo\": true,\n  \"descripcion\": \"Pago en efectivo al momento de la compra\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ventas/metodos-pago/{{metodoPagoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "metodos-pago", "{{metodoPagoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar método de pago",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/metodos-pago/{{metodoPagoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "metodos-pago", "{{metodoPagoId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ventas",
+      "item": [
+        {
+          "name": "Obtener todas las ventas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas"]
+            }
+          }
+        },
+        {
+          "name": "Obtener venta por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/{{ventaId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "{{ventaId}}"]
+            }
+          }
+        },
+        {
+          "name": "Obtener ventas por estado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/estado/PAGADA",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "estado", "PAGADA"]
+            }
+          }
+        },
+        {
+          "name": "Obtener ventas por sucursal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/sucursal/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "sucursal", "1"]
+            }
+          }
+        },
+        {
+          "name": "Obtener ventas por rango de fechas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/rango?desde=2025-01-01T00:00:00&hasta=2025-12-31T23:59:59",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "rango"],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2025-01-01T00:00:00"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2025-12-31T23:59:59"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear venta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('ventaId', jsonData.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sucursalId\": 1,\n  \"items\": [\n    {\n      \"productoId\": 1,\n      \"cantidad\": 2,\n      \"precioUnitario\": 50.00,\n      \"nota\": \"Sin cebolla\"\n    },\n    {\n      \"productoId\": 2,\n      \"cantidad\": 1,\n      \"precioUnitario\": 35.00,\n      \"nota\": null\n    }\n  ],\n  \"pagos\": [\n    {\n      \"metodoPagoId\": 1,\n      \"monto\": 135.00,\n      \"referencia\": null\n    }\n  ],\n  \"nota\": \"Cliente regular\",\n  \"canal\": \"POS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ventas",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas"]
+            }
+          }
+        },
+        {
+          "name": "Crear venta con múltiples pagos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sucursalId\": 1,\n  \"items\": [\n    {\n      \"productoId\": 1,\n      \"cantidad\": 3,\n      \"precioUnitario\": 50.00\n    }\n  ],\n  \"pagos\": [\n    {\n      \"metodoPagoId\": 1,\n      \"monto\": 100.00,\n      \"referencia\": null\n    },\n    {\n      \"metodoPagoId\": 2,\n      \"monto\": 50.00,\n      \"referencia\": \"AUTH123456\"\n    }\n  ],\n  \"nota\": \"Pago mixto: efectivo + tarjeta\",\n  \"canal\": \"POS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ventas",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar venta",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sucursalId\": 1,\n  \"items\": [\n    {\n      \"productoId\": 1,\n      \"cantidad\": 2,\n      \"precioUnitario\": 50.00,\n      \"nota\": \"Sin cebolla\"\n    }\n  ],\n  \"pagos\": [\n    {\n      \"metodoPagoId\": 1,\n      \"monto\": 100.00,\n      \"referencia\": null\n    }\n  ],\n  \"nota\": \"Venta corregida\",\n  \"canal\": \"POS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ventas/{{ventaId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "{{ventaId}}"]
+            },
+            "description": "Actualiza una venta existente, revirtiendo y recalculando movimientos de inventario. Solo permite editar ventas de las últimas 24 horas y que no estén canceladas. Cualquier empleado autenticado puede editar."
+          }
+        },
+        {
+          "name": "Cancelar venta",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/{{ventaId}}/cancelar?motivo=Error en el pedido",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "{{ventaId}}", "cancelar"],
+              "query": [
+                {
+                  "key": "motivo",
+                  "value": "Error en el pedido",
+                  "description": "Motivo obligatorio de la cancelación"
+                }
+              ]
+            },
+            "description": "Cancela una venta y revierte los movimientos de inventario asociados. Solo permite cancelar ventas de las últimas 24 horas. Requiere motivo obligatorio. Cualquier empleado autenticado puede cancelar."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Finanzas - Gastos",
+      "item": [
+        {
+          "name": "Obtener todos los gastos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/gastos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "gastos"]
+            }
+          }
+        },
+        {
+          "name": "Obtener gasto por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/gastos/{{gastoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "gastos", "{{gastoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Obtener gastos por sucursal",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/gastos/sucursal/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "gastos", "sucursal", "1"]
+            }
+          }
+        },
+        {
+          "name": "Obtener gastos por categoría",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/gastos/categoria/{{categoriaGastoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "gastos", "categoria", "{{categoriaGastoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Obtener gastos por rango de fechas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/gastos/rango?desde=2025-11-01T00:00:00&hasta=2025-11-30T23:59:59",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "gastos", "rango"],
+              "query": [
+                {
+                  "key": "desde",
+                  "value": "2025-11-01T00:00:00"
+                },
+                {
+                  "key": "hasta",
+                  "value": "2025-11-30T23:59:59"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar nuevo gasto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('gastoId', jsonData.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoriaGastoId\": 1,\n  \"proveedorId\": 1,\n  \"sucursalId\": 1,\n  \"monto\": 500.00,\n  \"fecha\": \"2025-11-25T10:00:00\",\n  \"metodoPagoId\": 1,\n  \"referencia\": \"REF-001\",\n  \"nota\": \"Compra de ingredientes\",\n  \"comprobanteUrl\": null\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/gastos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "gastos"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar gasto",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/gastos/{{gastoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "gastos", "{{gastoId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Finanzas - Categorías de Gastos",
+      "item": [
+        {
+          "name": "Obtener todas las categorías de gastos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/categorias-gasto",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "categorias-gasto"]
+            }
+          }
+        },
+        {
+          "name": "Obtener categorías activas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/categorias-gasto/activas",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "categorias-gasto", "activas"]
+            }
+          }
+        },
+        {
+          "name": "Obtener categoría por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/categorias-gasto/{{categoriaGastoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "categorias-gasto", "{{categoriaGastoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Crear categoría de gasto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('categoriaGastoId', jsonData.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ingredientes\",\n  \"descripcion\": \"Gastos en compra de ingredientes\",\n  \"presupuestoMensual\": 10000.00,\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/categorias-gasto",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "categorias-gasto"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar categoría de gasto",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ingredientes y Materias Primas\",\n  \"descripcion\": \"Gastos en compra de ingredientes y materias primas\",\n  \"presupuestoMensual\": 12000.00,\n  \"activo\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/categorias-gasto/{{categoriaGastoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "categorias-gasto", "{{categoriaGastoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Eliminar categoría de gasto",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/finanzas/categorias-gasto/{{categoriaGastoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "finanzas", "categorias-gasto", "{{categoriaGastoId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Estadísticas",
+      "item": [
+        {
+          "name": "Resumen ventas día",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/estadisticas/ventas/dia?fecha=2025-11-24",
+              "host": ["{{base_url}}"],
+              "path": ["api", "estadisticas", "ventas", "dia"],
+              "query": [
+                {"key": "fecha", "value": "2025-11-24"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Resumen ventas rango",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/estadisticas/ventas/rango?desde=2025-11-01T00:00:00&hasta=2025-11-30T23:59:59",
+              "host": ["{{base_url}}"],
+              "path": ["api", "estadisticas", "ventas", "rango"],
+              "query": [
+                {"key": "desde", "value": "2025-11-01T00:00:00"},
+                {"key": "hasta", "value": "2025-11-30T23:59:59"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Rendimiento productos día",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/estadisticas/productos/dia?fecha=2025-11-24&limite=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "estadisticas", "productos", "dia"],
+              "query": [
+                {"key": "fecha", "value": "2025-11-24"},
+                {"key": "limite", "value": "10"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Rendimiento productos rango",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/estadisticas/productos/rango?desde=2025-11-01T00:00:00&hasta=2025-11-30T23:59:59&limite=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "estadisticas", "productos", "rango"],
+              "query": [
+                {"key": "desde", "value": "2025-11-01T00:00:00"},
+                {"key": "hasta", "value": "2025-11-30T23:59:59"},
+                {"key": "limite", "value": "10"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inventario - Productos",
+      "item": [
+        {
+          "name": "Obtener variantes de producto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inventario/productos/{{productoId}}/variantes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventario", "productos", "{{productoId}}", "variantes"]
+            }
+          }
+        },
+        {
+          "name": "Obtener producto por ID (con variantes)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inventario/productos/{{productoId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventario", "productos", "{{productoId}}"]
+            }
+          }
+        },
+        {
+          "name": "Activar/Desactivar producto",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inventario/productos/{{productoId}}/estado?activo=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventario", "productos", "{{productoId}}", "estado"],
+              "query": [
+                {
+                  "key": "activo",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener costo y margen del producto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inventario/productos/{{productoId}}/costo",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventario", "productos", "{{productoId}}", "costo"]
+            }
+          }
+        },
+        {
+          "name": "Recalcular costo del producto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inventario/productos/{{productoId}}/recalcular-costo",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventario", "productos", "{{productoId}}", "recalcular-costo"]
+            }
+          }
+        },
+        {
+          "name": "Recalcular costos masivo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inventario/productos/recalcular-costos",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventario", "productos", "recalcular-costos"]
+            }
+          }
+        },
+        {
+          "name": "Histórico costos producto",
+          "request": {
+            "method": "GET",
+            "header": [
+              {"key": "Authorization", "value": "Bearer {{token}}"}
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/inventario/productos/{{productoId}}/costos/historico?pagina=0&tamano=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "inventario", "productos", "{{productoId}}", "costos", "historico"],
+              "query": [
+                {"key": "pagina", "value": "0"},
+                {"key": "tamano", "value": "50"}
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
       "name": "Salud",
       "item": [
         {
@@ -774,6 +1623,16 @@
     },
     {
       "key": "productoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "gastoId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "categoriaGastoId",
       "value": "",
       "type": "string"
     }
