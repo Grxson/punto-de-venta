@@ -2,6 +2,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Typography, Button } from '@mui/material';
 import { ShoppingCart, Home, Logout } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import DailyStatsPanel from '../components/DailyStatsPanel';
 
 export default function PosLayout() {
   const navigate = useNavigate();
@@ -62,6 +63,9 @@ export default function PosLayout() {
       <Box sx={{ flex: 1, overflow: 'auto', padding: 2 }}>
         <Outlet />
       </Box>
+
+      {/* Panel de estadísticas del día */}
+      <DailyStatsPanel />
     </Box>
   );
 }

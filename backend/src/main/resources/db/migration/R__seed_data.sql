@@ -55,6 +55,11 @@ WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE username = 'gerente')
     AND EXISTS (SELECT 1 FROM roles WHERE nombre = 'GERENTE')
     AND EXISTS (SELECT 1 FROM sucursales WHERE nombre = 'Sucursal Principal');
 
+-- Métodos de pago (solo si la tabla existe - creada por Hibernate)
+-- Estos también se cargan en DataInitializer.java para desarrollo
+-- NOTA: Esta migración puede fallar si la tabla aún no existe (creada por Hibernate)
+-- En ese caso, los métodos se crearán automáticamente vía DataInitializer.java
+
 -- NOTA: Las categorías y productos de prueba se cargan automáticamente
 -- a través de DataInitializer.java después de que Hibernate crea las tablas.
 -- Esto evita problemas de orden de ejecución entre Flyway y Hibernate.

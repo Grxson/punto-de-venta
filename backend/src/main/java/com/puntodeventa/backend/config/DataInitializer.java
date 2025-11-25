@@ -1,5 +1,7 @@
 package com.puntodeventa.backend.config;
 
+import com.puntodeventa.backend.dto.MetodoPagoDTO;
+import com.puntodeventa.backend.service.MetodoPagoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +27,9 @@ public class DataInitializer {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired(required = false)
+    private MetodoPagoService metodoPagoService;
 
     @Bean
     public CommandLineRunner loadData() {
@@ -87,6 +92,52 @@ public class DataInitializer {
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
                     3, "gerente", gerentePassword, "María", "González", "gerente@puntodeventa.com", true, 3, 1
                 );
+
+                // Cargar métodos de pago usando el servicio (más robusto)
+                if (metodoPagoService != null) {
+                    try {
+                        var metodosExistentes = metodoPagoService.obtenerTodos();
+                        if (metodosExistentes.isEmpty()) {
+                            System.out.println(">>> Cargando métodos de pago...");
+                            
+                            // Crear métodos de pago usando el servicio
+                            metodoPagoService.crear(new MetodoPagoDTO(null, "Efectivo", false, true, "Pago en efectivo"));
+                            metodoPagoService.crear(new MetodoPagoDTO(null, "Tarjeta", false, true, "Pago con tarjeta de débito o crédito"));
+                            metodoPagoService.crear(new MetodoPagoDTO(null, "Transferencia", true, true, "Transferencia bancaria"));
+                            
+                            System.out.println(">>> ✅ Métodos de pago cargados (Efectivo, Tarjeta, Transferencia)");
+                        } else {
+                            System.out.println(">>> Métodos de pago ya existen (" + metodosExistentes.size() + " métodos)");
+                        }
+                    } catch (Exception e) {
+                        System.err.println(">>> ⚠️  No se pudieron cargar métodos de pago usando servicio: " + e.getMessage());
+                        // Fallback: intentar con SQL directo después de un delay
+                        try {
+                            Thread.sleep(2000); // Esperar 2 segundos para que Hibernate cree las tablas
+                            Long metodoPagoCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM metodos_pago", Long.class);
+                            if (metodoPagoCount == null || metodoPagoCount == 0) {
+                                System.out.println(">>> Reintentando cargar métodos de pago con SQL directo...");
+                                jdbcTemplate.execute(
+                                    "INSERT INTO metodos_pago (nombre, requiere_referencia, activo, descripcion) " +
+                                    "VALUES ('Efectivo', false, true, 'Pago en efectivo')"
+                                );
+                                jdbcTemplate.execute(
+                                    "INSERT INTO metodos_pago (nombre, requiere_referencia, activo, descripcion) " +
+                                    "VALUES ('Tarjeta', false, true, 'Pago con tarjeta de débito o crédito')"
+                                );
+                                jdbcTemplate.execute(
+                                    "INSERT INTO metodos_pago (nombre, requiere_referencia, activo, descripcion) " +
+                                    "VALUES ('Transferencia', true, true, 'Transferencia bancaria')"
+                                );
+                                System.out.println(">>> ✅ Métodos de pago cargados en segundo intento (SQL directo)");
+                            }
+                        } catch (Exception retryException) {
+                            System.err.println(">>> ❌ Error en segundo intento de cargar métodos de pago: " + retryException.getMessage());
+                        }
+                    }
+                } else {
+                    System.err.println(">>> ⚠️  MetodoPagoService no disponible, métodos de pago no se cargarán automáticamente");
+                }
 
                 // Cargar categorías y productos de prueba
                 try {

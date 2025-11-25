@@ -92,7 +92,10 @@ export const API_ENDPOINTS = {
   
   // Pagos
   PAYMENTS: '/pagos',
-  PAYMENT_METHODS: '/metodos-pago',
+  PAYMENT_METHODS: '/ventas/metodos-pago',
+  
+  // Estadísticas
+  STATS_DAILY: '/estadisticas/ventas/dia',
   
   // Inventario
   INVENTORY: '/inventario',

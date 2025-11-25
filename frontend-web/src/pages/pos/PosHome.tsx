@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Box, Card, CardContent, Typography, Button, CircularProgress, Alert } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useCart } from '../../contexts/CartContext';
@@ -16,12 +16,25 @@ interface Producto {
 
 export default function PosHome() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { cart, addToCart, itemCount, total } = useCart();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<{ id: number; nombre: string }[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [ventaExitosa, setVentaExitosa] = useState(false);
+
+  useEffect(() => {
+    // Verificar si hay mensaje de venta exitosa
+    if (location.state?.ventaExitosa) {
+      setVentaExitosa(true);
+      // Limpiar el estado después de 5 segundos
+      setTimeout(() => setVentaExitosa(false), 5000);
+      // Limpiar el estado de navegación
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   useEffect(() => {
     loadData();
@@ -76,6 +89,12 @@ export default function PosHome() {
       <Typography variant="h4" gutterBottom>
         Seleccionar Productos
       </Typography>
+
+      {ventaExitosa && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setVentaExitosa(false)}>
+          ¡Venta procesada exitosamente!
+        </Alert>
+      )}
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
