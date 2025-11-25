@@ -54,3 +54,7 @@ SELECT 'gerente', '$2a$10$8cjz7Z3sRzpLq5hqHQKLKeF7J0LKQr1MJzF9vK5nZ4kL1qJ8mK2Li'
 WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE username = 'gerente')
     AND EXISTS (SELECT 1 FROM roles WHERE nombre = 'GERENTE')
     AND EXISTS (SELECT 1 FROM sucursales WHERE nombre = 'Sucursal Principal');
+
+-- NOTA: Las categorías y productos de prueba se cargan automáticamente
+-- a través de DataInitializer.java después de que Hibernate crea las tablas.
+-- Esto evita problemas de orden de ejecución entre Flyway y Hibernate.

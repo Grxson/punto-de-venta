@@ -8,10 +8,8 @@ interface Producto {
   id: number;
   nombre: string;
   precio: number;
-  categoria: {
-    id: number;
-    nombre: string;
-  };
+  categoriaId: number | null;
+  categoriaNombre: string | null;
   activo: boolean;
 }
 
@@ -42,7 +40,14 @@ export default function PosHome() {
       // Cargar productos
       const productosResponse = await apiService.get(API_ENDPOINTS.PRODUCTS);
       if (productosResponse.success && productosResponse.data) {
-        setProductos(productosResponse.data.filter((p: Producto) => p.activo));
+        // Filtrar productos activos y asegurar que el precio sea un número
+        const productosActivos = productosResponse.data
+          .filter((p: any) => p.activo)
+          .map((p: any) => ({
+            ...p,
+            precio: typeof p.precio === 'number' ? p.precio : parseFloat(p.precio) || 0,
+          }));
+        setProductos(productosActivos);
       } else {
         setError(productosResponse.error || 'Error al cargar productos');
       }
@@ -54,7 +59,7 @@ export default function PosHome() {
   };
 
   const productosFiltrados = categoriaSeleccionada
-    ? productos.filter(p => p.categoria.id === categoriaSeleccionada)
+    ? productos.filter(p => p.categoriaId === categoriaSeleccionada)
     : productos;
 
   const agregarAlCarrito = (producto: Producto) => {
@@ -147,7 +152,7 @@ export default function PosHome() {
                 ${producto.precio.toFixed(2)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {producto.categoria.nombre}
+                {producto.categoriaNombre || 'Sin categoría'}
               </Typography>
             </CardContent>
           </Card>

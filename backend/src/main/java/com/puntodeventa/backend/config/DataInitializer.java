@@ -88,6 +88,106 @@ public class DataInitializer {
                     3, "gerente", gerentePassword, "María", "González", "gerente@puntodeventa.com", true, 3, 1
                 );
 
+                // Cargar categorías y productos de prueba
+                try {
+                    // Verificar si ya hay categorías
+                    Long categoriaCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM categorias_productos", Long.class);
+                    if (categoriaCount == null || categoriaCount == 0) {
+                        System.out.println(">>> Cargando categorías y productos de prueba...");
+                        
+                        // Insertar categorías de productos
+                        jdbcTemplate.execute(
+                            "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
+                            "VALUES (1, 'Licuados', 'Licuados de frutas', true)"
+                        );
+                        jdbcTemplate.execute(
+                            "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
+                            "VALUES (2, 'Jugos', 'Jugos naturales', true)"
+                        );
+                        jdbcTemplate.execute(
+                            "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
+                            "VALUES (3, 'Lonches', 'Lonches y sándwiches', true)"
+                        );
+                        jdbcTemplate.execute(
+                            "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
+                            "VALUES (4, 'Postres', 'Postres y dulces', true)"
+                        );
+                        
+                        // Insertar productos de ejemplo
+                        // Licuados
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Licuado de Fresa", "Licuado natural de fresa", 1, 35.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Licuado de Plátano", "Licuado de plátano con leche", 1, 35.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Licuado de Mango", "Licuado natural de mango", 1, 38.00, true, true
+                        );
+                        
+                        // Jugos
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Jugo de Naranja", "Jugo natural de naranja", 2, 25.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Jugo de Zanahoria", "Jugo natural de zanahoria", 2, 28.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Jugo Verde", "Jugo de verduras y frutas", 2, 30.00, true, true
+                        );
+                        
+                        // Lonches
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Lonche de Jamón", "Lonche con jamón, queso y vegetales", 3, 45.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Lonche de Pollo", "Lonche con pollo deshebrado", 3, 50.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Mollete", "Mollete con frijoles y queso", 3, 35.00, true, true
+                        );
+                        
+                        // Postres
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Pastel de Chocolate", "Rebanada de pastel de chocolate", 4, 40.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Flan", "Flan casero", 4, 30.00, true, true
+                        );
+                        
+                        System.out.println(">>> ✅ Categorías y productos cargados:");
+                        System.out.println("    - 4 Categorías (Licuados, Jugos, Lonches, Postres)");
+                        System.out.println("    - 11 Productos de ejemplo");
+                    } else {
+                        System.out.println(">>> Categorías y productos ya existen (" + categoriaCount + " categorías)");
+                    }
+                } catch (Exception e) {
+                    System.err.println(">>> ⚠️  No se pudieron cargar categorías/productos (tablas pueden no existir aún): " + e.getMessage());
+                    // No es crítico, las tablas se crearán con Hibernate y Flyway las poblará
+                }
+
                 System.out.println(">>> ✅ Datos iniciales cargados correctamente:");
                 System.out.println("    - 1 Sucursal");
                 System.out.println("    - 3 Roles (ADMIN, CAJERO, GERENTE)");
