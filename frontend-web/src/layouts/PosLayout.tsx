@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Typography, Button, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
-import { ShoppingCart, Home, Logout, AdminPanelSettings, Menu as MenuIcon, AttachMoney } from '@mui/icons-material';
+import { ShoppingCart, Home, Logout, AdminPanelSettings, Menu as MenuIcon, AttachMoney, PointOfSale } from '@mui/icons-material';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DailyStatsPanel from '../components/DailyStatsPanel';
@@ -14,6 +14,7 @@ export default function PosLayout() {
   const menuItems = [
     { text: 'Inicio', icon: <Home />, path: '/pos' },
     { text: 'Carrito', icon: <ShoppingCart />, path: '/pos/cart' },
+    { text: 'Mis Ventas', icon: <PointOfSale />, path: '/pos/sales' },
     { text: 'Registrar Gasto', icon: <AttachMoney />, path: '/pos/expenses' },
   ];
 

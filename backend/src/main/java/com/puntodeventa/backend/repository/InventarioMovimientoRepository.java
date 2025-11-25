@@ -37,4 +37,10 @@ public interface InventarioMovimientoRepository extends JpaRepository<Inventario
         @Param("fechaInicio") LocalDateTime fechaInicio,
         @Param("fechaFin") LocalDateTime fechaFin
     );
+    
+    /**
+     * Buscar movimientos de inventario relacionados con una venta específica.
+     * Usado para revertir el consumo de inventario al cancelar una venta.
+     */
+    List<InventarioMovimiento> findByRefTipoAndRefId(String refTipo, Long refId);
 }

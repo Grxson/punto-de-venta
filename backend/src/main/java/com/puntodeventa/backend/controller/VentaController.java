@@ -1,11 +1,13 @@
 package com.puntodeventa.backend.controller;
 
 import com.puntodeventa.backend.dto.CrearVentaRequest;
+import com.puntodeventa.backend.dto.ActualizarVentaRequest;
 import com.puntodeventa.backend.dto.VentaDTO;
 import com.puntodeventa.backend.service.VentaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -72,5 +74,31 @@ public class VentaController {
     public ResponseEntity<VentaDTO> crearVenta(@Valid @RequestBody CrearVentaRequest request) {
         VentaDTO ventaCreada = ventaService.crearVenta(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ventaCreada);
+    }
+    
+    @PutMapping("/{id}")
+    @Operation(summary = "Actualizar venta", 
+               description = "Actualiza una venta existente, revirtiendo y recalculando movimientos de inventario. " +
+                            "Solo permite editar ventas de las últimas 24 horas y que no estén canceladas. " +
+                            "Cualquier empleado autenticado puede editar.")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<VentaDTO> actualizarVenta(
+            @PathVariable Long id,
+            @Valid @RequestBody ActualizarVentaRequest request) {
+        VentaDTO ventaActualizada = ventaService.actualizarVenta(id, request);
+        return ResponseEntity.ok(ventaActualizada);
+    }
+    
+    @PutMapping("/{id}/cancelar")
+    @Operation(summary = "Cancelar venta", 
+               description = "Cancela una venta y revierte los movimientos de inventario asociados. " +
+                            "Solo permite cancelar ventas de las últimas 24 horas. " +
+                            "Requiere motivo obligatorio. Cualquier empleado autenticado puede cancelar.")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<VentaDTO> cancelarVenta(
+            @PathVariable Long id,
+            @RequestParam @NotBlank(message = "El motivo de cancelación es obligatorio") String motivo) {
+        VentaDTO ventaCancelada = ventaService.cancelarVenta(id, motivo);
+        return ResponseEntity.ok(ventaCancelada);
     }
 }

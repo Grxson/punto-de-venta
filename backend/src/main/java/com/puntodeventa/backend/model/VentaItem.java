@@ -36,6 +36,11 @@ public class VentaItem {
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
     
+    // Nombre completo del producto al momento de la venta (incluye variante si aplica)
+    // Ejemplo: "Jugo de Naranja - 1 Litro" o "Jugo de Naranja"
+    @Column(name = "producto_nombre", length = 255)
+    private String productoNombre;
+    
     @NotNull(message = "La cantidad es obligatoria")
     @Positive(message = "La cantidad debe ser mayor a cero")
     @Column(nullable = false)

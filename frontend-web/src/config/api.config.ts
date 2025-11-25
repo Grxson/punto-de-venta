@@ -89,6 +89,7 @@ export const API_ENDPOINTS = {
   // Ventas
   SALES: '/ventas',
   SALES_ITEMS: '/ventas/items',
+  SALES_CANCELAR: '/ventas', // Base path, se usa con /{id}/cancelar
   
   // Pagos
   PAYMENTS: '/pagos',

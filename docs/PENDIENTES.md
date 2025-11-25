@@ -135,19 +135,22 @@ private BigDecimal stockActual = BigDecimal.ZERO;
 
 ---
 
-### 6. **Cancelación de Ventas**
-**Estado:** ⏸️ PENDIENTE  
+### 6. **Cancelación y Edición de Ventas**
+**Estado:** ✅ IMPLEMENTADO  
 **Prioridad:** MEDIA  
 **Descripción:**
-- Implementar endpoint para cancelar ventas
-- Revertir movimientos de inventario
-- Registrar auditoría de cancelación
-- Solo permitir a usuarios con permisos (ADMIN, SUPERVISOR)
+- ✅ Endpoint para cancelar ventas implementado
+- ✅ Endpoint para editar/actualizar ventas implementado
+- ✅ Reversión de movimientos de inventario automática al cancelar o editar
+- ✅ Recalculo de movimientos de inventario al editar
+- ✅ Auditoría de cancelación y edición (motivo y usuario en nota)
+- ✅ Solo permite cancelar/editar ventas de las últimas 24 horas
+- ✅ Cualquier empleado autenticado puede cancelar y editar (permisos actualizados)
 
-**Endpoint sugerido:**
+**Endpoint implementado:**
 ```java
 @PutMapping("/{id}/cancelar")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
+@PreAuthorize("isAuthenticated()")  // Cualquier empleado autenticado puede cancelar
 public ResponseEntity<VentaDTO> cancelarVenta(
     @PathVariable Long id,
     @RequestParam String motivo
@@ -155,6 +158,35 @@ public ResponseEntity<VentaDTO> cancelarVenta(
     return ResponseEntity.ok(ventaService.cancelarVenta(id, motivo));
 }
 ```
+
+**Endpoints implementados:**
+```java
+@PutMapping("/{id}")
+@PreAuthorize("isAuthenticated()")  // Cualquier empleado autenticado puede editar
+public ResponseEntity<VentaDTO> actualizarVenta(
+    @PathVariable Long id,
+    @Valid @RequestBody ActualizarVentaRequest request
+) {
+    return ResponseEntity.ok(ventaService.actualizarVenta(id, request));
+}
+
+@PutMapping("/{id}/cancelar")
+@PreAuthorize("isAuthenticated()")  // Cualquier empleado autenticado puede cancelar
+public ResponseEntity<VentaDTO> cancelarVenta(
+    @PathVariable Long id,
+    @RequestParam String motivo
+) {
+    return ResponseEntity.ok(ventaService.cancelarVenta(id, motivo));
+}
+```
+
+**Archivos implementados:**
+- `backend/src/main/java/com/puntodeventa/backend/dto/ActualizarVentaRequest.java` - DTO para actualizar ventas
+- `backend/src/main/java/com/puntodeventa/backend/service/VentaService.java` - Métodos `cancelarVenta()`, `actualizarVenta()` y `revertirMovimientosInventario()`
+- `backend/src/main/java/com/puntodeventa/backend/controller/VentaController.java` - Endpoints `/api/ventas/{id}` y `/api/ventas/{id}/cancelar`
+- `backend/src/main/java/com/puntodeventa/backend/repository/InventarioMovimientoRepository.java` - Método `findByRefTipoAndRefId()`
+- `frontend-web/src/pages/admin/AdminSales.tsx` - UI para gestionar, editar y cancelar ventas (área admin)
+- `frontend-web/src/pages/pos/PosSales.tsx` - UI para que empleados vean, editen y cancelen sus ventas (área POS)
 
 ---
 

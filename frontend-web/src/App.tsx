@@ -18,6 +18,7 @@ import PosHome from './pages/pos/PosHome';
 import PosCart from './pages/pos/PosCart';
 import PosPayment from './pages/pos/PosPayment';
 import PosExpenses from './pages/pos/PosExpenses';
+import PosSales from './pages/pos/PosSales';
 
 // Admin Routes
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -25,6 +26,7 @@ import AdminReports from './pages/admin/AdminReports';
 import AdminInventory from './pages/admin/AdminInventory';
 import AdminFinances from './pages/admin/AdminFinances';
 import AdminExpenses from './pages/admin/AdminExpenses';
+import AdminSales from './pages/admin/AdminSales';
 
 // Auth
 import Login from './pages/auth/Login';
@@ -106,6 +108,7 @@ function App() {
               <Route path="cart" element={<PosCart />} />
               <Route path="payment" element={<PosPayment />} />
               <Route path="expenses" element={<PosExpenses />} />
+              <Route path="sales" element={<PosSales />} />
             </Route>
 
             {/* Admin Routes - Protegidas con verificación de rol */}
@@ -122,6 +125,7 @@ function App() {
                   <Route path="inventory" element={<AdminInventory />} />
                   <Route path="finances" element={<AdminFinances />} />
                   <Route path="expenses" element={<AdminExpenses />} />
+                  <Route path="sales" element={<AdminSales />} />
             </Route>
 
             {/* Default redirect */}

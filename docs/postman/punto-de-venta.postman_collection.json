@@ -1030,6 +1030,57 @@
               "path": ["api", "ventas"]
             }
           }
+        },
+        {
+          "name": "Actualizar venta",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sucursalId\": 1,\n  \"items\": [\n    {\n      \"productoId\": 1,\n      \"cantidad\": 2,\n      \"precioUnitario\": 50.00,\n      \"nota\": \"Sin cebolla\"\n    }\n  ],\n  \"pagos\": [\n    {\n      \"metodoPagoId\": 1,\n      \"monto\": 100.00,\n      \"referencia\": null\n    }\n  ],\n  \"nota\": \"Venta corregida\",\n  \"canal\": \"POS\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ventas/{{ventaId}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "{{ventaId}}"]
+            },
+            "description": "Actualiza una venta existente, revirtiendo y recalculando movimientos de inventario. Solo permite editar ventas de las últimas 24 horas y que no estén canceladas. Cualquier empleado autenticado puede editar."
+          }
+        },
+        {
+          "name": "Cancelar venta",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/ventas/{{ventaId}}/cancelar?motivo=Error en el pedido",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ventas", "{{ventaId}}", "cancelar"],
+              "query": [
+                {
+                  "key": "motivo",
+                  "value": "Error en el pedido",
+                  "description": "Motivo obligatorio de la cancelación"
+                }
+              ]
+            },
+            "description": "Cancela una venta y revierte los movimientos de inventario asociados. Solo permite cancelar ventas de las últimas 24 horas. Requiere motivo obligatorio. Cualquier empleado autenticado puede cancelar."
+          }
         }
       ]
     },

@@ -1,11 +1,12 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Typography, Button, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
-import { Dashboard, Assessment, Inventory, AccountBalance, AttachMoney, Menu as MenuIcon, Logout } from '@mui/icons-material';
+import { Dashboard, Assessment, Inventory, AccountBalance, AttachMoney, PointOfSale, Menu as MenuIcon, Logout } from '@mui/icons-material';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const menuItems = [
       { text: 'Dashboard', icon: <Dashboard />, path: '/admin' },
+      { text: 'Ventas', icon: <PointOfSale />, path: '/admin/sales' },
       { text: 'Reportes', icon: <Assessment />, path: '/admin/reports' },
       { text: 'Inventario', icon: <Inventory />, path: '/admin/inventory' },
       { text: 'Finanzas', icon: <AccountBalance />, path: '/admin/finances' },

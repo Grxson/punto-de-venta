@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
+import java.sql.SQLException;
+
 /**
  * Configuración personalizada de Flyway.
  * En desarrollo, permite que las migraciones se ejecuten incluso si algunas tablas no existen aún
@@ -26,29 +28,52 @@ public class FlywayConfig {
                 // Ejecutar migraciones normalmente
                 flyway.migrate();
             } catch (Exception e) {
-                // Si falla porque una tabla no existe, verificar el mensaje de error
+                // Capturar específicamente errores de SQL cuando la tabla no existe
+                Throwable rootCause = e;
+                while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+                    rootCause = rootCause.getCause();
+                }
+                
+                // Verificar si es un error de tabla no encontrada (SQLException)
+                if (rootCause instanceof SQLException) {
+                    String errorMessage = rootCause.getMessage();
+                    if (errorMessage != null && (
+                        errorMessage.contains("Table \"PRODUCTOS\" not found") ||
+                        errorMessage.contains("Table \"productos\" not found") ||
+                        errorMessage.contains("Table PRODUCTOS not found") ||
+                        errorMessage.contains("not found"))) {
+                        System.out.println(">>> ⚠️  Migración Flyway falló porque la tabla no existe aún.");
+                        System.out.println(">>> ✅ Esto es normal en desarrollo. Hibernate creará la tabla con las columnas correctas automáticamente.");
+                        // Continuar sin error - Hibernate creará las tablas con las columnas correctas
+                        return; // Salir sin error
+                    }
+                }
+                
+                // Verificar mensajes de error genéricos
                 String errorMessage = e.getMessage();
-                Throwable cause = e.getCause();
-                String causeMessage = cause != null ? cause.getMessage() : null;
+                String rootCauseMessage = rootCause.getMessage();
                 
                 boolean tablaNoEncontrada = (errorMessage != null && 
                     (errorMessage.contains("Table \"PRODUCTOS\" not found") ||
                      errorMessage.contains("Table \"productos\" not found") ||
                      errorMessage.contains("Table PRODUCTOS not found") ||
                      errorMessage.contains("not found"))) ||
-                    (causeMessage != null && 
-                    (causeMessage.contains("Table \"PRODUCTOS\" not found") ||
-                     causeMessage.contains("Table \"productos\" not found") ||
-                     causeMessage.contains("Table PRODUCTOS not found") ||
-                     causeMessage.contains("not found")));
+                    (rootCauseMessage != null && 
+                    (rootCauseMessage.contains("Table \"PRODUCTOS\" not found") ||
+                     rootCauseMessage.contains("Table \"productos\" not found") ||
+                     rootCauseMessage.contains("Table PRODUCTOS not found") ||
+                     rootCauseMessage.contains("not found")));
                 
                 if (tablaNoEncontrada) {
-                    System.out.println(">>> ⚠️  Migración V4 falló porque la tabla productos no existe aún.");
+                    System.out.println(">>> ⚠️  Migración Flyway falló porque la tabla no existe aún.");
                     System.out.println(">>> ✅ Esto es normal en desarrollo. Hibernate creará la tabla con las columnas correctas automáticamente.");
                     // Continuar sin error - Hibernate creará las tablas con las columnas correctas
                     return; // Salir sin error
                 }
+                
                 // Re-lanzar otros errores
+                System.err.println(">>> ❌ Error en migración Flyway que no es de tabla no encontrada:");
+                System.err.println(">>> " + e.getMessage());
                 throw e;
             }
         };

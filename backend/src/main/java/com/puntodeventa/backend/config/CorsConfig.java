@@ -42,11 +42,34 @@ public class CorsConfig {
         var configuration = new CorsConfiguration();
         
         // Usar allowedOriginPatterns en lugar de allowedOrigins para permitir "*" con credentials
-        configuration.setAllowedOriginPatterns(Arrays.asList(parseList(allowedOrigins)));
-        configuration.setAllowedMethods(Arrays.asList(parseList(allowedMethods)));
-        configuration.setAllowedHeaders(Arrays.asList(parseList(allowedHeaders)));
+        var origins = parseList(allowedOrigins);
+        var methods = parseList(allowedMethods);
+        var headers = parseList(allowedHeaders);
+        
+        if (origins.length > 0) {
+            configuration.setAllowedOriginPatterns(Arrays.asList(origins));
+        } else {
+            // Fallback: permitir todos los orígenes en desarrollo si no hay configuración
+            configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        }
+        
+        if (methods.length > 0) {
+            configuration.setAllowedMethods(Arrays.asList(methods));
+        } else {
+            configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        }
+        
+        if (headers.length > 0) {
+            configuration.setAllowedHeaders(Arrays.asList(headers));
+        } else {
+            configuration.setAllowedHeaders(Arrays.asList("*"));
+        }
+        
         configuration.setAllowCredentials(allowCredentials);
         configuration.setMaxAge(maxAge);
+        
+        // Exponer headers necesarios para el frontend
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Total-Count"));
 
         var source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -56,11 +79,18 @@ public class CorsConfig {
     /**
      * Parsea una cadena separada por comas en un array de strings.
      * Utiliza características de Java 21 para procesamiento eficiente.
+     * Elimina espacios en blanco alrededor de cada valor.
      * 
      * @param value Cadena separada por comas
      * @return Array de strings
      */
     private String[] parseList(String value) {
-        return value != null ? value.split(",") : new String[0];
+        if (value == null || value.isBlank()) {
+            return new String[0];
+        }
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
     }
 }
