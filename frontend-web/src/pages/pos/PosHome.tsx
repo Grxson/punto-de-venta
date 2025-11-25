@@ -3,6 +3,7 @@ import { Box, Card, CardContent, Typography, Button, CircularProgress, Alert } f
 import { useNavigate } from 'react-router-dom';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
+import { useCart } from '../../contexts/CartContext';
 
 interface Producto {
   id: number;
@@ -15,12 +16,12 @@ interface Producto {
 
 export default function PosHome() {
   const navigate = useNavigate();
+  const { cart, addToCart, itemCount, total } = useCart();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<{ id: number; nombre: string }[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cart, setCart] = useState<Array<{ producto: Producto; cantidad: number }>>([]);
 
   useEffect(() => {
     loadData();
@@ -61,21 +62,6 @@ export default function PosHome() {
   const productosFiltrados = categoriaSeleccionada
     ? productos.filter(p => p.categoriaId === categoriaSeleccionada)
     : productos;
-
-  const agregarAlCarrito = (producto: Producto) => {
-    const itemExistente = cart.find(item => item.producto.id === producto.id);
-    if (itemExistente) {
-      setCart(cart.map(item =>
-        item.producto.id === producto.id
-          ? { ...item, cantidad: item.cantidad + 1 }
-          : item
-      ));
-    } else {
-      setCart([...cart, { producto, cantidad: 1 }]);
-    }
-  };
-
-  const totalCarrito = cart.reduce((sum, item) => sum + (item.producto.precio * item.cantidad), 0);
 
   if (loading) {
     return (
@@ -142,7 +128,7 @@ export default function PosHome() {
                 boxShadow: 4,
               },
             }}
-            onClick={() => agregarAlCarrito(producto)}
+            onClick={() => addToCart(producto)}
           >
             <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
               <Typography variant="h6" component="div" gutterBottom>
@@ -175,10 +161,10 @@ export default function PosHome() {
           }}
         >
           <Typography variant="h6" gutterBottom>
-            Carrito: {cart.length} {cart.length === 1 ? 'producto' : 'productos'}
+            Carrito: {itemCount} {itemCount === 1 ? 'producto' : 'productos'}
           </Typography>
           <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
-            Total: ${totalCarrito.toFixed(2)}
+            Total: ${total.toFixed(2)}
           </Typography>
           <Button
             variant="contained"

@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 
 // Context
 import { AuthProvider } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -83,8 +84,9 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
+        <CartProvider>
+          <BrowserRouter>
+            <Routes>
             {/* Auth */}
             <Route path="/login" element={<Login />} />
 
@@ -121,6 +123,7 @@ function App() {
             <Route path="/" element={<Navigate to="/pos" replace />} />
           </Routes>
         </BrowserRouter>
+        </CartProvider>
       </AuthProvider>
     </ThemeProvider>
   );

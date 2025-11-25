@@ -1,13 +1,11 @@
-import { useState } from 'react';
 import { Box, Typography, Card, CardContent, Button, IconButton, Divider, Stack } from '@mui/material';
 import { Add, Remove, Delete, ArrowBack, Payment } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useCart } from '../../contexts/CartContext';
 
-// TODO: Implementar estado global del carrito
-// Por ahora, placeholder
 export default function PosCart() {
   const navigate = useNavigate();
-  const [cart] = useState<any[]>([]);
+  const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
 
   return (
     <Box>
@@ -39,8 +37,8 @@ export default function PosCart() {
       ) : (
         <>
           <Stack spacing={2}>
-            {cart.map((item, index) => (
-              <Card key={index}>
+            {cart.map((item) => (
+              <Card key={item.producto.id}>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box>
@@ -52,28 +50,22 @@ export default function PosCart() {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <IconButton
                         size="small"
-                        onClick={() => {
-                          // TODO: Decrementar cantidad
-                        }}
+                        onClick={() => updateQuantity(item.producto.id, item.cantidad - 1)}
                       >
                         <Remove />
                       </IconButton>
                       <Typography variant="h6" sx={{ minWidth: '40px', textAlign: 'center' }}>
-                        {item.cantidad || 0}
+                        {item.cantidad}
                       </Typography>
                       <IconButton
                         size="small"
-                        onClick={() => {
-                          // TODO: Incrementar cantidad
-                        }}
+                        onClick={() => updateQuantity(item.producto.id, item.cantidad + 1)}
                       >
                         <Add />
                       </IconButton>
                       <IconButton
                         color="error"
-                        onClick={() => {
-                          // TODO: Eliminar del carrito
-                        }}
+                        onClick={() => removeFromCart(item.producto.id)}
                       >
                         <Delete />
                       </IconButton>
@@ -91,7 +83,7 @@ export default function PosCart() {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Typography variant="h6">Total:</Typography>
                 <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                  $0.00
+                  ${total.toFixed(2)}
                 </Typography>
               </Box>
               <Button
