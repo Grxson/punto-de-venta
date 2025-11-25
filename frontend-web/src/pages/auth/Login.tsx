@@ -2,21 +2,31 @@ import { useState, useEffect } from 'react';
 import { Box, Card, CardContent, TextField, Button, Typography, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import apiService from '../../services/api.service';
+import { API_ENDPOINTS } from '../../config/api.config';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, usuario } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Si ya está autenticado, redirigir
+  // Si ya está autenticado, redirigir según rol
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/pos', { replace: true });
+    if (isAuthenticated && usuario) {
+      // Obtener el rol (puede venir como 'rol' o 'rolNombre')
+      const rol = usuario.rol || usuario.rolNombre || '';
+      
+      // Detectar rol y redirigir automáticamente
+      if (rol === 'ADMIN' || rol === 'GERENTE') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/pos', { replace: true });
+      }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, usuario, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,11 +34,31 @@ export default function Login() {
     setLoading(true);
 
     try {
+      // Hacer login usando el contexto (actualiza el estado automáticamente)
       await login(username, password);
-      navigate('/pos', { replace: true });
+      
+      // Esperar un momento para que el estado se actualice
+      // El useEffect también manejará la redirección, pero hacemos esto como respaldo
+      setTimeout(() => {
+        const storedUsuario = localStorage.getItem('auth_usuario');
+        if (storedUsuario) {
+          const usuarioData = JSON.parse(storedUsuario);
+          // Obtener el rol (puede venir como 'rol' o 'rolNombre')
+          const rol = usuarioData.rol || usuarioData.rolNombre || '';
+          
+          // Redirigir según el rol del usuario
+          if (rol === 'ADMIN' || rol === 'GERENTE') {
+            navigate('/admin', { replace: true });
+          } else {
+            navigate('/pos', { replace: true });
+          }
+        } else {
+          // Fallback: redirigir a POS si no se puede obtener el usuario
+          navigate('/pos', { replace: true });
+        }
+      }, 100);
     } catch (err: any) {
       setError(err.message || 'Credenciales inválidas');
-    } finally {
       setLoading(false);
     }
   };
@@ -88,12 +118,6 @@ export default function Login() {
               {loading ? 'Iniciando...' : 'Iniciar Sesión'}
             </Button>
           </form>
-
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              Credenciales por defecto: admin / admin123
-            </Typography>
-          </Box>
         </CardContent>
       </Card>
     </Box>

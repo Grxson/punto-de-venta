@@ -1,6 +1,6 @@
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Typography, Button } from '@mui/material';
-import { ShoppingCart, Home, Logout } from '@mui/icons-material';
+import { ShoppingCart, Home, Logout, AdminPanelSettings } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import DailyStatsPanel from '../components/DailyStatsPanel';
 
@@ -18,7 +18,7 @@ export default function PosLayout() {
           </Typography>
           {usuario && (
             <Typography variant="body2" sx={{ mr: 2 }}>
-              {usuario.nombre} ({usuario.rol})
+              {usuario.nombre} ({usuario.rol || usuario.rolNombre || 'Usuario'})
             </Typography>
           )}
           <Button
@@ -43,6 +43,19 @@ export default function PosLayout() {
           >
             Carrito
           </Button>
+          {usuario && ((usuario.rol || usuario.rolNombre) === 'ADMIN' || (usuario.rol || usuario.rolNombre) === 'GERENTE') && (
+            <Button
+              color="inherit"
+              startIcon={<AdminPanelSettings />}
+              onClick={() => navigate('/admin')}
+              sx={{
+                minHeight: '48px',
+                marginRight: 1,
+              }}
+            >
+              Admin
+            </Button>
+          )}
           <Button
             color="inherit"
             startIcon={<Logout />}

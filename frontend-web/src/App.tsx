@@ -7,6 +7,7 @@ import { CartProvider } from './contexts/CartContext';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 
 // Layouts
 import PosLayout from './layouts/PosLayout';
@@ -104,13 +105,13 @@ function App() {
               <Route path="payment" element={<PosPayment />} />
             </Route>
 
-            {/* Admin Routes - Protegidas */}
+            {/* Admin Routes - Protegidas con verificación de rol */}
             <Route
               path="/admin"
               element={
-                <ProtectedRoute>
+                <AdminRoute>
                   <AdminLayout />
-                </ProtectedRoute>
+                </AdminRoute>
               }
             >
               <Route index element={<AdminDashboard />} />

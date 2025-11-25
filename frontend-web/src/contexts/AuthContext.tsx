@@ -6,7 +6,8 @@ interface Usuario {
   id: number;
   username: string;
   nombre: string;
-  rol: string;
+  rol?: string; // Para compatibilidad
+  rolNombre?: string; // Campo real del backend
 }
 
 interface AuthContextType {
@@ -31,8 +32,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUsuario = localStorage.getItem('auth_usuario');
 
     if (storedToken && storedUsuario) {
+      const usuarioData = JSON.parse(storedUsuario);
+      // Normalizar el rol al cargar desde localStorage
+      const usuarioNormalizado: Usuario = {
+        ...usuarioData,
+        rol: usuarioData.rol || usuarioData.rolNombre || '',
+      };
       setToken(storedToken);
-      setUsuario(JSON.parse(storedUsuario));
+      setUsuario(usuarioNormalizado);
       apiService.setAuthToken(storedToken);
     }
     setLoading(false);
@@ -50,13 +57,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // El backend retorna: { token, usuario, mensaje }
         const { token: newToken, usuario: newUsuario } = response.data as { token: string; usuario: Usuario; mensaje?: string };
         
+        // Normalizar el rol: usar rolNombre si existe, sino usar rol
+        const usuarioNormalizado: Usuario = {
+          ...newUsuario,
+          rol: newUsuario.rolNombre || newUsuario.rol || '',
+        };
+        
         // Guardar en estado
         setToken(newToken);
-        setUsuario(newUsuario);
+        setUsuario(usuarioNormalizado);
         
-        // Guardar en localStorage
+        // Guardar en localStorage (con rol normalizado)
         localStorage.setItem('auth_token', newToken);
-        localStorage.setItem('auth_usuario', JSON.stringify(newUsuario));
+        localStorage.setItem('auth_usuario', JSON.stringify(usuarioNormalizado));
         
         // Configurar token en apiService
         apiService.setAuthToken(newToken);

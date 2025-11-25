@@ -34,7 +34,7 @@ export default function AdminLayout() {
           </Typography>
           {usuario && (
             <Typography variant="body2" sx={{ mr: 2 }}>
-              {usuario.nombre} ({usuario.rol})
+              {usuario.nombre} ({usuario.rol || usuario.rolNombre || 'Usuario'})
             </Typography>
           )}
           <Button
