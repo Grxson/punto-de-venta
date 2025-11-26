@@ -15,9 +15,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Chip,
-  Tabs,
-  Tab,
 } from '@mui/material';
 import { Add, Refresh, Search } from '@mui/icons-material';
 import type { Producto } from '../../types/productos.types';
@@ -279,13 +276,22 @@ export default function AdminInventory() {
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Estado</InputLabel>
             <Select
-              value={filtroActivo}
+              value={filtroActivo === 'todos' ? 'todos' : filtroActivo === true ? 'true' : 'false'}
               label="Estado"
-              onChange={(e) => setFiltroActivo(e.target.value as boolean | 'todos')}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === 'todos') {
+                  setFiltroActivo('todos');
+                } else if (val === 'true') {
+                  setFiltroActivo(true);
+                } else {
+                  setFiltroActivo(false);
+                }
+              }}
             >
               <MenuItem value="todos">Todos</MenuItem>
-              <MenuItem value={true}>Activos</MenuItem>
-              <MenuItem value={false}>Inactivos</MenuItem>
+              <MenuItem value="true">Activos</MenuItem>
+              <MenuItem value="false">Inactivos</MenuItem>
             </Select>
           </FormControl>
 

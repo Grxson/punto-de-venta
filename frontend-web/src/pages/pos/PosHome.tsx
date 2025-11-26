@@ -22,7 +22,7 @@ import {
   Badge,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Payment, ShoppingCart, ExpandLess, ExpandMore } from '@mui/icons-material';
+import { Payment, ShoppingCart, ExpandMore } from '@mui/icons-material';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useCart } from '../../contexts/CartContext';
@@ -396,7 +396,7 @@ export default function PosHome() {
                           </Typography>
                         </Box>
                       }
-                      secondary={variante.descripcion}
+                      secondary={variante.descripcion || ''}
                     />
                   </ListItemButton>
                 </ListItem>
