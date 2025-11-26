@@ -1,9 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import { useEffect } from 'react';
 
 // Context
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { DashboardProvider, useDashboard } from './contexts/DashboardContext';
+import { websocketService } from './services/websocket.service';
 
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
@@ -84,13 +87,44 @@ const theme = createTheme({
   },
 });
 
+function WebSocketHandlers() {
+  const { triggerRefresh } = useDashboard();
+
+  useEffect(() => {
+    websocketService.connect();
+
+    // Handler global para estadísticas
+    const unsubscribeEstadisticas = websocketService.on('estadisticas', (message) => {
+      if (message.tipo === 'ESTADISTICAS_ACTUALIZADAS') {
+        triggerRefresh();
+      }
+    });
+
+    // Handler global para ventas
+    const unsubscribeVentas = websocketService.on('ventas', (message) => {
+      if (message.tipo === 'VENTA_CREADA') {
+        triggerRefresh();
+      }
+    });
+
+    return () => {
+      unsubscribeEstadisticas();
+      unsubscribeVentas();
+    };
+  }, [triggerRefresh]);
+
+  return null;
+}
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
         <CartProvider>
-          <BrowserRouter>
+          <DashboardProvider>
+            <WebSocketHandlers />
+            <BrowserRouter>
             <Routes>
             {/* Auth */}
             <Route path="/login" element={<Login />} />
@@ -132,6 +166,7 @@ function App() {
             <Route path="/" element={<Navigate to="/pos" replace />} />
           </Routes>
         </BrowserRouter>
+          </DashboardProvider>
         </CartProvider>
       </AuthProvider>
     </ThemeProvider>

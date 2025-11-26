@@ -17,12 +17,16 @@ import {
   ListItemText,
   Divider,
   Chip,
+  IconButton,
+  Collapse,
+  Badge,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Payment } from '@mui/icons-material';
+import { Payment, ShoppingCart, ExpandLess, ExpandMore } from '@mui/icons-material';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useCart } from '../../contexts/CartContext';
+import { websocketService } from '../../services/websocket.service';
 
 interface Producto {
   id: number;
@@ -49,6 +53,7 @@ export default function PosHome() {
   const [ventaExitosa, setVentaExitosa] = useState(false);
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
+  const [carritoExpandido, setCarritoExpandido] = useState(true);
 
   useEffect(() => {
     // Verificar si hay mensaje de venta exitosa
@@ -63,6 +68,21 @@ export default function PosHome() {
 
   useEffect(() => {
     loadData();
+
+    // Conectar WebSocket para actualizaciones en tiempo real
+    websocketService.connect();
+
+    // Escuchar eventos de productos
+    const unsubscribe = websocketService.on('productos', (message) => {
+      if (message.tipo === 'PRODUCTO_CREADO' || message.tipo === 'PRODUCTO_ACTUALIZADO') {
+        // Recargar productos cuando hay cambios
+        loadData();
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const loadData = async () => {
@@ -76,12 +96,12 @@ export default function PosHome() {
         setCategorias(categoriasResponse.data);
       }
 
-      // Cargar productos
-      const productosResponse = await apiService.get(API_ENDPOINTS.PRODUCTS);
+      // Cargar productos activos y disponibles en menú
+      const productosResponse = await apiService.get(`${API_ENDPOINTS.PRODUCTS}?activo=true&enMenu=true`);
       if (productosResponse.success && productosResponse.data) {
-        // Filtrar productos activos y asegurar que el precio sea un número
+        // Asegurar que el precio sea un número y filtrar solo activos y disponibles en menú
         const productosActivos = productosResponse.data
-          .filter((p: any) => p.activo)
+          .filter((p: any) => p.activo && p.disponibleEnMenu)
           .map((p: any) => ({
             ...p,
             precio: typeof p.precio === 'number' ? p.precio : parseFloat(p.precio) || 0,
@@ -193,6 +213,7 @@ export default function PosHome() {
             md: 'repeat(4, 1fr)',
           },
           gap: 2,
+          pb: cart.length > 0 ? (carritoExpandido ? '180px' : '80px') : 2, // Espacio para el carrito
         }}
       >
         {productosFiltrados.map(producto => (
@@ -240,30 +261,84 @@ export default function PosHome() {
             position: 'fixed',
             bottom: 16,
             right: 16,
-            backgroundColor: 'primary.main',
-            color: 'white',
-            padding: 2,
-            borderRadius: 2,
-            boxShadow: 4,
-            minWidth: '200px',
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: 1,
           }}
         >
-          <Typography variant="h6" gutterBottom>
-            Carrito: {itemCount} {itemCount === 1 ? 'producto' : 'productos'}
-          </Typography>
-          <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
-            Total: ${total.toFixed(2)}
-          </Typography>
-          <Button
-            variant="contained"
-            color="secondary"
-            fullWidth
-            onClick={handleCarritoClick}
-            sx={{ minHeight: '48px' }}
-            startIcon={itemCount === 1 ? <Payment /> : undefined}
-          >
-            {itemCount === 1 ? 'Pagar' : 'Ver Carrito'}
-          </Button>
+          {/* Botón minimizado */}
+          {!carritoExpandido && (
+            <Badge badgeContent={itemCount} color="error">
+              <IconButton
+                onClick={() => setCarritoExpandido(true)}
+                sx={{
+                  backgroundColor: 'primary.main',
+                  color: 'white',
+                  width: 56,
+                  height: 56,
+                  boxShadow: 4,
+                  '&:hover': {
+                    backgroundColor: 'primary.dark',
+                  },
+                }}
+              >
+                <ShoppingCart />
+              </IconButton>
+            </Badge>
+          )}
+
+          {/* Carrito expandido */}
+          <Collapse in={carritoExpandido} orientation="vertical">
+            <Card
+              sx={{
+                backgroundColor: 'primary.main',
+                color: 'white',
+                minWidth: '280px',
+                maxWidth: '320px',
+                boxShadow: 6,
+              }}
+            >
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                    Carrito
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={() => setCarritoExpandido(false)}
+                    sx={{ color: 'white' }}
+                  >
+                    <ExpandMore />
+                  </IconButton>
+                </Box>
+                
+                <Typography variant="body2" sx={{ mb: 2, opacity: 0.9 }}>
+                  {itemCount} {itemCount === 1 ? 'producto' : 'productos'}
+                </Typography>
+                
+                <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
+                  Total: ${total.toFixed(2)}
+                </Typography>
+                
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  fullWidth
+                  onClick={handleCarritoClick}
+                  sx={{ 
+                    minHeight: '48px',
+                    fontWeight: 'bold',
+                    textTransform: 'none',
+                  }}
+                  startIcon={itemCount === 1 ? <Payment /> : <ShoppingCart />}
+                >
+                  {itemCount === 1 ? 'Pagar Ahora' : 'Ver Carrito'}
+                </Button>
+              </CardContent>
+            </Card>
+          </Collapse>
         </Box>
       )}
 

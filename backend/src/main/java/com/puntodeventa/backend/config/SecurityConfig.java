@@ -90,7 +90,11 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs", "/api-docs/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/ws/**", "/topic/**", "/queue/**", "/user/**", "/app/**").permitAll() // WebSocket endpoints
                 .requestMatchers("/error").permitAll()
+                
+                // Permitir OPTIONS para CORS preflight
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 
                 // Todos los demás endpoints requieren autenticación
                 .anyRequest().authenticated()

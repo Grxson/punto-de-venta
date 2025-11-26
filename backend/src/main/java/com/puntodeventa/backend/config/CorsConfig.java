@@ -47,6 +47,7 @@ public class CorsConfig {
         var headers = parseList(allowedHeaders);
         
         if (origins.length > 0) {
+            // Usar allowedOriginPatterns que permite wildcards y funciona con credentials
             configuration.setAllowedOriginPatterns(Arrays.asList(origins));
         } else {
             // Fallback: permitir todos los orígenes en desarrollo si no hay configuración

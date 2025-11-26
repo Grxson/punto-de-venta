@@ -28,4 +28,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<Producto> findByProductoBaseIdIsNullAndActivoTrue();
     
     List<Producto> findByProductoBaseIdIsNullAndDisponibleEnMenuTrue();
+    
+    // Buscar por SKU
+    java.util.Optional<Producto> findBySku(String sku);
 }
