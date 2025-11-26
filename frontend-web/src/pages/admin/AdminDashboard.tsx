@@ -3,11 +3,13 @@ import { Box, Typography, Card, CardContent, CircularProgress, Alert } from '@mu
 import { TrendingUp, ShoppingCart, Inventory, AccountBalance } from '@mui/icons-material';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
+import { useDashboard } from '../../contexts/DashboardContext';
 
 interface DailyStats {
   fecha: string;
   totalVentas: number;
   totalCostos: number;
+  totalGastos: number; // Gastos operativos (no incluye costos de productos)
   margenBruto: number;
   cantidadVentas: number;
   itemsVendidos: number;
@@ -20,10 +22,21 @@ export default function AdminDashboard() {
   const [productosCount, setProductosCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { refreshTrigger } = useDashboard();
 
+  // Cargar datos iniciales al montar
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, []); // Solo al montar
+
+  // Escuchar cambios en refreshTrigger para recargar datos automáticamente
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      requestAnimationFrame(() => {
+        loadDashboardData();
+      });
+    }
+  }, [refreshTrigger]); // Se ejecuta cuando refreshTrigger cambia
 
   const loadDashboardData = async () => {
     try {
@@ -34,16 +47,18 @@ export default function AdminDashboard() {
       const statsResponse = await apiService.get(API_ENDPOINTS.STATS_DAILY);
       if (statsResponse.success && statsResponse.data) {
         const data = statsResponse.data;
-        setStats({
+        const nuevosStats = {
           fecha: data.fecha || new Date().toISOString().split('T')[0],
           totalVentas: parseFloat(data.totalVentas) || 0,
           totalCostos: parseFloat(data.totalCostos) || 0,
+          totalGastos: parseFloat(data.totalGastos) || 0,
           margenBruto: parseFloat(data.margenBruto) || 0,
           cantidadVentas: data.cantidadVentas || 0,
           itemsVendidos: data.itemsVendidos || 0,
           ticketPromedio: parseFloat(data.ticketPromedio) || 0,
           margenPorcentaje: parseFloat(data.margenPorcentaje) || 0,
-        });
+        };
+        setStats(nuevosStats);
       }
 
       // Cargar cantidad de productos
@@ -139,44 +154,70 @@ export default function AdminDashboard() {
         ))}
       </Box>
 
-      {/* Información adicional */}
-      {stats && stats.cantidadVentas > 0 && (
-        <Box sx={{ mt: 4 }}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Resumen del Día
-              </Typography>
+      {/* Información adicional - Resumen del Día */}
+      <Box sx={{ mt: 4 }}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Resumen del Día
+            </Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2, mt: 2 }}>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Venta
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                  ${stats?.totalVentas.toFixed(2) || '0.00'}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Gastos
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                  ${(stats?.totalGastos || 0).toFixed(2)}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Utilidad
+                </Typography>
+                <Typography variant="h5" sx={{ fontWeight: 'bold', color: (stats?.margenBruto || 0) >= 0 ? 'success.main' : 'error.main' }}>
+                  ${stats?.margenBruto.toFixed(2) || '0.00'}
+                </Typography>
+              </Box>
+            </Box>
+            {stats && stats.cantidadVentas > 0 && (
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 2, mt: 2 }}>
                 <Box>
                   <Typography variant="body2" color="text.secondary">
-                    Ticket Promedio
+                    {stats.cantidadVentas} ventas
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                    ${stats.ticketPromedio.toFixed(2)}
+                  <Typography variant="body2" color="text.secondary">
+                    Ticket: ${stats.ticketPromedio.toFixed(2)}
                   </Typography>
                 </Box>
                 <Box>
                   <Typography variant="body2" color="text.secondary">
                     Items Vendidos
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                  <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
                     {stats.itemsVendidos}
                   </Typography>
                 </Box>
                 <Box>
                   <Typography variant="body2" color="text.secondary">
-                    Margen Bruto
+                    Margen
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 'bold', color: stats.margenBruto >= 0 ? 'success.main' : 'error.main' }}>
-                    ${stats.margenBruto.toFixed(2)} ({stats.margenPorcentaje.toFixed(2)}%)
+                  <Typography variant="body1" sx={{ fontWeight: 'bold', color: stats.margenPorcentaje >= 0 ? 'success.main' : 'error.main' }}>
+                    {stats.margenPorcentaje.toFixed(2)}%
                   </Typography>
                 </Box>
               </Box>
-            </CardContent>
-          </Card>
-        </Box>
-      )}
+            )}
+          </CardContent>
+        </Card>
+      </Box>
     </Box>
   );
 }

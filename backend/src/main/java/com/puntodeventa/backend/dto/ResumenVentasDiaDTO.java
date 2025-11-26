@@ -10,6 +10,7 @@ public record ResumenVentasDiaDTO(
         LocalDate fecha,
         BigDecimal totalVentas,
         BigDecimal totalCostos,
+        BigDecimal totalGastos, // Gastos operativos (separado de costos de productos)
         BigDecimal margenBruto,
         int cantidadVentas,
         long itemsVendidos,

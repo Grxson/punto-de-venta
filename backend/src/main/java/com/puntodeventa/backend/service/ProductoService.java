@@ -13,6 +13,7 @@ import com.puntodeventa.backend.repository.CategoriaProductoRepository;
 import com.puntodeventa.backend.repository.ProductoRepository;
 import com.puntodeventa.backend.repository.RecetaRepository;
 import com.puntodeventa.backend.repository.ProductoCostoHistoricoRepository;
+import com.puntodeventa.backend.repository.VentaItemRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -32,15 +33,21 @@ public class ProductoService {
     private final CategoriaProductoRepository categoriaRepository;
     private final RecetaRepository recetaRepository;
     private final ProductoCostoHistoricoRepository costoHistoricoRepository;
+    private final VentaItemRepository ventaItemRepository;
+    private final WebSocketNotificationService notificationService;
 
     public ProductoService(ProductoRepository productoRepository,
                            CategoriaProductoRepository categoriaRepository,
                            RecetaRepository recetaRepository,
-                           ProductoCostoHistoricoRepository costoHistoricoRepository) {
+                           ProductoCostoHistoricoRepository costoHistoricoRepository,
+                           VentaItemRepository ventaItemRepository,
+                           WebSocketNotificationService notificationService) {
         this.productoRepository = productoRepository;
         this.categoriaRepository = categoriaRepository;
         this.recetaRepository = recetaRepository;
         this.costoHistoricoRepository = costoHistoricoRepository;
+        this.ventaItemRepository = ventaItemRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional(readOnly = true)
@@ -93,6 +100,13 @@ public class ProductoService {
     public ProductoDTO crear(ProductoDTO dto) {
         Producto p = new Producto();
         apply(dto, p);
+        
+        // Generar SKU automáticamente si no se proporciona
+        if (p.getSku() == null || p.getSku().trim().isEmpty()) {
+            String skuGenerado = generarSkuUnico(p.getNombre());
+            p.setSku(skuGenerado);
+        }
+        
         Producto guardado = productoRepository.save(p);
         return toDTO(guardado);
     }
@@ -102,7 +116,14 @@ public class ProductoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
         apply(dto, p);
         Producto guardado = productoRepository.save(p);
-        return toDTO(guardado);
+        ProductoDTO productoDTO = toDTO(guardado);
+        
+        // Notificar actualización de producto en tiempo real
+        if (notificationService != null) {
+            notificationService.notificarProductoActualizado(guardado.getId(), productoDTO);
+        }
+        
+        return productoDTO;
     }
 
     public void eliminar(Long id) {
@@ -111,13 +132,63 @@ public class ProductoService {
         // Borrado lógico
         p.setActivo(false);
         productoRepository.save(p);
+        
+        // Notificar eliminación (borrado lógico) en tiempo real
+        if (notificationService != null) {
+            notificationService.notificarProductoActualizado(id, toDTO(p));
+        }
+    }
+
+    public void eliminarDefinitivamente(Long id) {
+        Producto p = productoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
+        
+        // Validaciones antes de eliminar
+        
+        // 1. Verificar si tiene ventas asociadas
+        boolean tieneVentas = ventaItemRepository.findAll().stream()
+                .anyMatch(item -> item.getProducto().getId().equals(id));
+        if (tieneVentas) {
+            throw new IllegalStateException("No se puede eliminar el producto porque tiene ventas asociadas");
+        }
+        
+        // 2. Verificar si tiene recetas asociadas
+        List<Receta> recetas = recetaRepository.findByProductoId(id);
+        if (!recetas.isEmpty()) {
+            throw new IllegalStateException("No se puede eliminar el producto porque tiene recetas asociadas. Elimine las recetas primero.");
+        }
+        
+        // 3. Si es producto base, verificar que no tenga variantes
+        if (p.getProductoBase() == null) {
+            List<Producto> variantes = productoRepository.findByProductoBaseIdOrderByOrdenVarianteAsc(id);
+            if (!variantes.isEmpty()) {
+                throw new IllegalStateException("No se puede eliminar el producto porque tiene variantes asociadas. Elimine las variantes primero.");
+            }
+        }
+        
+        // 4. Si es variante, verificar que no esté en uso (ya validado con ventas arriba)
+        
+        // 5. Eliminar histórico de costos asociado
+        List<ProductoCostoHistorico> historicos = costoHistoricoRepository.findByProductoIdOrderByFechaCalculoDesc(id);
+        costoHistoricoRepository.deleteAll(historicos);
+        
+        // Eliminar físicamente
+        productoRepository.delete(p);
     }
 
     public ProductoDTO cambiarEstado(Long id, boolean activo) {
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
         p.setActivo(activo);
-        return toDTO(productoRepository.save(p));
+        Producto guardado = productoRepository.save(p);
+        ProductoDTO dto = toDTO(guardado);
+        
+        // Notificar cambio de estado en tiempo real
+        if (notificationService != null) {
+            notificationService.notificarProductoActualizado(id, dto);
+        }
+        
+        return dto;
     }
 
     /* ===================== COSTEO ===================== */
@@ -219,6 +290,58 @@ public class ProductoService {
 
     private boolean tieneReceta(Long productoId) {
         return !recetaRepository.findByProductoId(productoId).isEmpty();
+    }
+
+    /**
+     * Genera un SKU único basándose en el nombre del producto.
+     * Formato: INICIALES-XXX (ej: WAFF-001, TOST-002)
+     */
+    private String generarSkuUnico(String nombre) {
+        if (nombre == null || nombre.trim().isEmpty()) {
+            return "PROD-001";
+        }
+        
+        // Obtener iniciales del nombre (máximo 4 palabras, máximo 4 letras por palabra)
+        String[] palabras = nombre.trim().toUpperCase()
+                .replaceAll("[^A-Z0-9\\s]", "") // Eliminar caracteres especiales
+                .split("\\s+");
+        
+        StringBuilder iniciales = new StringBuilder();
+        int palabrasUsadas = 0;
+        for (String palabra : palabras) {
+            if (palabrasUsadas >= 4) break; // Máximo 4 palabras
+            if (palabra.length() > 0) {
+                // Tomar hasta 4 letras de cada palabra
+                int letrasATomar = Math.min(palabra.length(), 4);
+                iniciales.append(palabra.substring(0, letrasATomar));
+                palabrasUsadas++;
+            }
+        }
+        
+        // Si no hay iniciales, usar "PROD"
+        if (iniciales.length() == 0) {
+            iniciales.append("PROD");
+        }
+        
+        // Limitar a máximo 8 caracteres para las iniciales
+        String prefijo = iniciales.length() > 8 
+                ? iniciales.substring(0, 8) 
+                : iniciales.toString();
+        
+        // Buscar el siguiente número disponible
+        int numero = 1;
+        String sku;
+        do {
+            sku = String.format("%s-%03d", prefijo, numero);
+            numero++;
+            // Evitar bucle infinito (máximo 9999 productos con el mismo prefijo)
+            if (numero > 9999) {
+                sku = String.format("%s-%d", prefijo, System.currentTimeMillis() % 10000);
+                break;
+            }
+        } while (productoRepository.findBySku(sku).isPresent());
+        
+        return sku;
     }
 
     private void apply(ProductoDTO dto, Producto p) {

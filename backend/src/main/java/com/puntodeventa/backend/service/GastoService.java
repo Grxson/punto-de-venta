@@ -28,6 +28,7 @@ public class GastoService {
     private final SucursalRepository sucursalRepository;
     private final MetodoPagoRepository metodoPagoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final WebSocketNotificationService notificationService;
     
     public List<GastoDTO> obtenerTodos() {
         return gastoRepository.findAll().stream()
@@ -105,8 +106,34 @@ public class GastoService {
             gasto.setUsuario(usuario);
         }
         
-        gasto = gastoRepository.save(gasto);
-        return toDTO(gasto);
+        Gasto guardado = gastoRepository.save(gasto);
+        GastoDTO gastoDTO = toDTO(guardado);
+        
+        // Notificar creación de gasto en tiempo real (después del commit)
+        // Usar TransactionSynchronizationManager para enviar después del commit
+        long inicioNotificacion = System.currentTimeMillis();
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+            new org.springframework.transaction.support.TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    long tiempoCommit = System.currentTimeMillis() - inicioNotificacion;
+                    org.slf4j.LoggerFactory.getLogger(GastoService.class)
+                        .info("Gasto {} confirmado en BD. Tiempo transacción: {}ms. Enviando notificación WebSocket...", 
+                            guardado.getId(), tiempoCommit);
+                    
+                    long inicioNotif = System.currentTimeMillis();
+                    if (notificationService != null) {
+                        notificationService.notificarEstadisticasActualizadas();
+                        long tiempoNotif = System.currentTimeMillis() - inicioNotif;
+                        org.slf4j.LoggerFactory.getLogger(GastoService.class)
+                            .info("Notificación WebSocket enviada para gasto {}. Tiempo notificación: {}ms", 
+                                guardado.getId(), tiempoNotif);
+                    }
+                }
+            }
+        );
+        
+        return gastoDTO;
     }
     
     @Transactional

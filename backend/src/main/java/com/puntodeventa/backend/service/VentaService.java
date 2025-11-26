@@ -31,6 +31,7 @@ public class VentaService {
     private final RecetaRepository recetaRepository;
     private final IngredienteRepository ingredienteRepository;
     private final UsuarioRepository usuarioRepository;
+    private final WebSocketNotificationService notificationService;
     
     public List<VentaDTO> obtenerTodas() {
         return ventaRepository.findAll().stream()
@@ -166,7 +167,33 @@ public class VentaService {
         // 6. Descontar inventario automáticamente (consumo por recetas)
         descontarInventario(ventaGuardada);
         
-        return toDTO(ventaGuardada);
+        VentaDTO ventaDTO = toDTO(ventaGuardada);
+        
+        // 7. Notificar creación de venta en tiempo real (después del commit)
+        // Usar TransactionSynchronizationManager para enviar después del commit
+        long inicioNotificacion = System.currentTimeMillis();
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+            new org.springframework.transaction.support.TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    long tiempoCommit = System.currentTimeMillis() - inicioNotificacion;
+                    org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                        .info("Venta {} confirmada en BD. Tiempo transacción: {}ms. Enviando notificación WebSocket...", 
+                            ventaGuardada.getId(), tiempoCommit);
+                    
+                    long inicioNotif = System.currentTimeMillis();
+                    if (notificationService != null) {
+                        notificationService.notificarVentaCreada(ventaGuardada.getId(), ventaDTO);
+                        long tiempoNotif = System.currentTimeMillis() - inicioNotif;
+                        org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                            .info("Notificación WebSocket enviada para venta {}. Tiempo notificación: {}ms", 
+                                ventaGuardada.getId(), tiempoNotif);
+                    }
+                }
+            }
+        );
+        
+        return ventaDTO;
     }
     
     /**

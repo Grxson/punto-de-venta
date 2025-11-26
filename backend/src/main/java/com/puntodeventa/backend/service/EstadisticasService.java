@@ -67,6 +67,7 @@ public class EstadisticasService {
                 fechaRepresentativa,
                 totalVentas.setScale(2, RoundingMode.HALF_UP),
                 totalCostos.setScale(4, RoundingMode.HALF_UP),
+                totalGastos.setScale(2, RoundingMode.HALF_UP), // Gastos operativos separados
                 margenBruto.setScale(2, RoundingMode.HALF_UP),
                 cantidadVentas,
                 itemsVendidos,
