@@ -26,6 +26,7 @@ import { productosService } from '../../services/productos.service';
 import { categoriasService } from '../../services/categorias.service';
 import { useAuth } from '../../contexts/AuthContext';
 import { websocketService } from '../../services/websocket.service';
+import { userPreferencesService } from '../../services/userPreferences.service';
 import ProductosTable from '../../components/productos/ProductosTable';
 import ProductoForm from '../../components/productos/ProductoForm';
 import VariantesManager from '../../components/productos/VariantesManager';
@@ -51,11 +52,19 @@ export default function AdminInventory() {
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
   const [openDeletePermanenteConfirm, setOpenDeletePermanenteConfirm] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState(() => {
+    // Restaurar la pestaña guardada al montar el componente
+    return userPreferencesService.getAdminInventoryTab();
+  });
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Guardar la pestaña activa cuando cambia
+  useEffect(() => {
+    userPreferencesService.setAdminInventoryTab(tabValue);
+  }, [tabValue]);
 
   const loadData = async () => {
     try {

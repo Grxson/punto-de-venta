@@ -27,6 +27,7 @@ import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useCart } from '../../contexts/CartContext';
 import { websocketService } from '../../services/websocket.service';
+import { userPreferencesService } from '../../services/userPreferences.service';
 
 interface Producto {
   id: number;
@@ -85,6 +86,11 @@ export default function PosHome() {
     };
   }, []);
 
+  // Guardar la categoría seleccionada cuando cambia
+  useEffect(() => {
+    userPreferencesService.setPosSelectedCategory(categoriaSeleccionada);
+  }, [categoriaSeleccionada]);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -93,7 +99,22 @@ export default function PosHome() {
       // Cargar categorías
       const categoriasResponse = await apiService.get(API_ENDPOINTS.CATEGORIES);
       if (categoriasResponse.success && categoriasResponse.data) {
-        setCategorias(categoriasResponse.data);
+        const categoriasCargadas = categoriasResponse.data;
+        setCategorias(categoriasCargadas);
+        
+        // Validar y restaurar la categoría seleccionada guardada
+        const categoriaGuardada = userPreferencesService.getPosSelectedCategory();
+        if (categoriaGuardada !== null) {
+          // Verificar que la categoría guardada existe en las categorías cargadas
+          const categoriaExiste = categoriasCargadas.some((cat: { id: number }) => cat.id === categoriaGuardada);
+          if (categoriaExiste) {
+            setCategoriaSeleccionada(categoriaGuardada);
+          } else {
+            // Si la categoría no existe, limpiar la preferencia
+            userPreferencesService.setPosSelectedCategory(null);
+            setCategoriaSeleccionada(null);
+          }
+        }
       }
 
       // Cargar productos activos y disponibles en menú

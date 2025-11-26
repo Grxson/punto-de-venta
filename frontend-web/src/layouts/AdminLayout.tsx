@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Typography, Button, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { Dashboard, Assessment, Inventory, AccountBalance, AttachMoney, PointOfSale, Menu as MenuIcon, Logout } from '@mui/icons-material';
 import { useState } from 'react';
@@ -15,8 +15,16 @@ const menuItems = [
 
 export default function AdminLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { usuario, logout } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const isActiveRoute = (path: string) => {
+    if (path === '/admin') {
+      return location.pathname === '/admin';
+    }
+    return location.pathname.startsWith(path);
+  };
 
   return (
     <Box sx={{ display: 'flex', height: '100vh' }}>
@@ -79,6 +87,7 @@ export default function AdminLayout() {
                   navigate(item.path);
                   setDrawerOpen(false);
                 }}
+                selected={isActiveRoute(item.path)}
                 sx={{ minHeight: '56px' }}
               >
                 <ListItemIcon>{item.icon}</ListItemIcon>

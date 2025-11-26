@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import static com.puntodeventa.backend.config.DataInitializerMenuHelper.crearProductoConVariantes;
+
 /**
  * Inicializador de datos para desarrollo.
  * Carga datos de prueba en la base de datos H2 al iniciar la aplicación.
@@ -139,192 +141,235 @@ public class DataInitializer {
                     System.err.println(">>> ⚠️  MetodoPagoService no disponible, métodos de pago no se cargarán automáticamente");
                 }
 
-                // Cargar categorías y productos de prueba
+                // Cargar categorías y productos del menú "Jugos y Licuados Doña Chuy"
                 try {
                     // Verificar si ya hay categorías
                     Long categoriaCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM categorias_productos", Long.class);
                     if (categoriaCount == null || categoriaCount == 0) {
-                        System.out.println(">>> Cargando categorías y productos de prueba...");
+                        System.out.println(">>> Cargando categorías y productos del menú 'Jugos y Licuados Doña Chuy'...");
                         
                         // Insertar categorías de productos
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
-                            "VALUES (1, 'Licuados', 'Licuados de frutas', true)"
+                            "VALUES (1, 'Jugos Naturales', 'Jugos naturales de frutas y verduras', true)"
                         );
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
-                            "VALUES (2, 'Jugos', 'Jugos naturales', true)"
+                            "VALUES (2, 'Licuados y Chocomiles', 'Licuados de frutas y chocomiles', true)"
                         );
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
-                            "VALUES (3, 'Lonches', 'Lonches y sándwiches', true)"
+                            "VALUES (3, 'Desayunos', 'Desayunos y platillos del día', true)"
                         );
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
-                            "VALUES (4, 'Postres', 'Postres y dulces', true)"
+                            "VALUES (4, 'Molletes', 'Molletes dulces y salados', true)"
+                        );
+                        jdbcTemplate.execute(
+                            "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
+                            "VALUES (5, 'Lonches y Sandwiches', 'Lonches y sandwiches con diferentes rellenos', true)"
+                        );
+                        jdbcTemplate.execute(
+                            "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
+                            "VALUES (6, 'Complementos', 'Postres, bebidas y productos complementarios', true)"
                         );
                         
-                        // Insertar productos de ejemplo
-                        // Licuados
+                        // ============================================
+                        // JUGOS NATURALES (Categoría 1)
+                        // ============================================
+                        
+                        // Naranja (separado de Toronja aunque tengan el mismo precio)
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Jugo de Naranja", "Jugo natural de naranja", 1L, 40.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "40.00"}, {"Grande", "65.00"}});
+                        
+                        // Toronja (separado de Naranja aunque tengan el mismo precio)
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Jugo de Toronja", "Jugo natural de toronja", 1L, 40.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "40.00"}, {"Grande", "65.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Jugo de Zanahoria", "Jugo natural de zanahoria", 1L, 30.00,
+                            new String[][]{{"Chico", "20.00"}, {"Mediano", "30.00"}, {"Grande", "50.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Jugo Mixto", "Jugo mixto (naranja, zanahoria, betabel)", 1L, 35.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "55.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Jugo Verde", "Jugo verde de verduras y frutas", 1L, 40.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "40.00"}, {"Grande", "65.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Jugo Verde Especial", "Jugo verde especial de verduras y frutas", 1L, 50.00,
+                            new String[][]{{"Chico", "35.00"}, {"Mediano", "50.00"}, {"Grande", "80.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Jugo de Betabel", "Jugo natural de betabel", 1L, 45.00,
+                            new String[][]{{"Chico", "30.00"}, {"Mediano", "45.00"}, {"Grande", "70.00"}});
+                        
+                        // ============================================
+                        // LICUADOS Y CHOCOMILES (Categoría 2)
+                        // ============================================
+                        
+                        // Licuados separados por sabor (aunque tengan el mismo precio)
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Licuado de Fresa", "Licuado de fresa", 2L, 35.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Licuado de Platano", "Licuado de plátano", 2L, 35.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Licuado de Manzana", "Licuado de manzana", 2L, 35.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Licuado de Papaya", "Licuado de papaya", 2L, 35.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Licuado de Frutas", "Licuado de frutas", 2L, 35.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Licuado de Cereales", "Licuado de cereales", 2L, 35.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
+                        
+                        // Chocomiles separados por sabor
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Chocomilk de Chocolate", "Chocomilk de chocolate", 2L, 25.00,
+                            new String[][]{{"Chico", "18.00"}, {"Mediano", "25.00"}, {"Grande", "40.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Chocomilk de Fresa", "Chocomilk de fresa", 2L, 25.00,
+                            new String[][]{{"Chico", "18.00"}, {"Mediano", "25.00"}, {"Grande", "40.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Chocomilk de Vainilla", "Chocomilk de vainilla", 2L, 25.00,
+                            new String[][]{{"Chico", "18.00"}, {"Mediano", "25.00"}, {"Grande", "40.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Chocomilk de Cafe", "Chocomilk de café", 2L, 35.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
+                        
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Chocomilk de Fresa Natural", "Chocomilk de fresa natural", 2L, 35.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
+                        
+                        // ============================================
+                        // DESAYUNOS (Categoría 3) - Sin variantes
+                        // ============================================
+                        
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Licuado de Fresa", "Licuado natural de fresa", 1, 35.00, true, true
-                        );
-                        jdbcTemplate.update(
-                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
-                            "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Licuado de Plátano", "Licuado de plátano con leche", 1, 35.00, true, true
-                        );
-                        jdbcTemplate.update(
-                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
-                            "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Licuado de Mango", "Licuado natural de mango", 1, 38.00, true, true
-                        );
-                        
-                        // Jugos - Productos base con variantes
-                        // Jugo de Naranja (producto base)
-                        Long jugoNaranjaId = null;
-                        try {
-                            jugoNaranjaId = jdbcTemplate.queryForObject(
-                                "SELECT id FROM productos WHERE nombre = 'Jugo de Naranja' AND producto_base_id IS NULL",
-                                Long.class
-                            );
-                        } catch (Exception e) {
-                            // No existe aún
-                        }
-                        
-                        if (jugoNaranjaId == null) {
-                            jdbcTemplate.update(
-                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                "Jugo de Naranja", "Jugo natural de naranja", 2, 25.00, true, true, null, null, null
-                            );
-                            jugoNaranjaId = jdbcTemplate.queryForObject(
-                                "SELECT id FROM productos WHERE nombre = 'Jugo de Naranja' AND producto_base_id IS NULL",
-                                Long.class
-                            );
-                            
-                            // Variantes de Jugo de Naranja
-                            jdbcTemplate.update(
-                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                "Jugo de Naranja", "Jugo natural de naranja - 1 Litro", 2, 25.00, true, true, jugoNaranjaId, "1 Litro", 1
-                            );
-                            jdbcTemplate.update(
-                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                "Jugo de Naranja", "Jugo natural de naranja - 500ml", 2, 15.00, true, true, jugoNaranjaId, "500ml", 2
-                            );
-                            jdbcTemplate.update(
-                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                "Jugo de Naranja", "Jugo natural de naranja - Bolsa 250ml", 2, 10.00, true, true, jugoNaranjaId, "Bolsa 250ml", 3
-                            );
-                        }
-                        
-                        // Jugo de Zanahoria (producto base)
-                        Long jugoZanahoriaId = null;
-                        try {
-                            jugoZanahoriaId = jdbcTemplate.queryForObject(
-                                "SELECT id FROM productos WHERE nombre = 'Jugo de Zanahoria' AND producto_base_id IS NULL",
-                                Long.class
-                            );
-                        } catch (Exception e) {
-                            // No existe aún
-                        }
-                        
-                        if (jugoZanahoriaId == null) {
-                            jdbcTemplate.update(
-                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                "Jugo de Zanahoria", "Jugo natural de zanahoria", 2, 28.00, true, true, null, null, null
-                            );
-                            jugoZanahoriaId = jdbcTemplate.queryForObject(
-                                "SELECT id FROM productos WHERE nombre = 'Jugo de Zanahoria' AND producto_base_id IS NULL",
-                                Long.class
-                            );
-                            
-                            // Variantes de Jugo de Zanahoria
-                            jdbcTemplate.update(
-                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                "Jugo de Zanahoria", "Jugo natural de zanahoria - 1 Litro", 2, 28.00, true, true, jugoZanahoriaId, "1 Litro", 1
-                            );
-                            jdbcTemplate.update(
-                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                "Jugo de Zanahoria", "Jugo natural de zanahoria - 500ml", 2, 18.00, true, true, jugoZanahoriaId, "500ml", 2
-                            );
-                        }
-                        
-                        // Jugo Verde (producto base)
-                        Long jugoVerdeId = null;
-                        try {
-                            jugoVerdeId = jdbcTemplate.queryForObject(
-                                "SELECT id FROM productos WHERE nombre = 'Jugo Verde' AND producto_base_id IS NULL",
-                                Long.class
-                            );
-                        } catch (Exception e) {
-                            // No existe aún
-                        }
-                        
-                        if (jugoVerdeId == null) {
-                            jdbcTemplate.update(
-                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                "Jugo Verde", "Jugo de verduras y frutas", 2, 30.00, true, true, null, null, null
-                            );
-                            jugoVerdeId = jdbcTemplate.queryForObject(
-                                "SELECT id FROM productos WHERE nombre = 'Jugo Verde' AND producto_base_id IS NULL",
-                                Long.class
-                            );
-                            
-                            // Variantes de Jugo Verde
-                            jdbcTemplate.update(
-                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                "Jugo Verde", "Jugo de verduras y frutas - 1 Litro", 2, 30.00, true, true, jugoVerdeId, "1 Litro", 1
-                            );
-                            jdbcTemplate.update(
-                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                "Jugo Verde", "Jugo de verduras y frutas - 500ml", 2, 20.00, true, true, jugoVerdeId, "500ml", 2
-                            );
-                            jdbcTemplate.update(
-                                "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
-                                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                "Jugo Verde", "Jugo de verduras y frutas - Bolsa 250ml", 2, 12.00, true, true, jugoVerdeId, "Bolsa 250ml", 3
-                            );
-                        }
-                        
-                        // Lonches
-                        jdbcTemplate.update(
-                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
-                            "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Lonche de Jamón", "Lonche con jamón, queso y vegetales", 3, 45.00, true, true
+                            "Chilaquiles", "Orden de chilaquiles rojos acompañados de frijoles, huevo al gusto y bolillo", 3, 65.00, true, true
                         );
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Lonche de Pollo", "Lonche con pollo deshebrado", 3, 50.00, true, true
+                            "Huevos al gusto", "Orden de Huevos al gusto acompañados de frijoles y bolillo", 3, 45.00, true, true
                         );
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Mollete", "Mollete con frijoles y queso", 3, 35.00, true, true
+                            "Waffles", "Waffles con untado de mermelada, lechera, miel, nutella, fruta y cereal de tu elección", 3, 60.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Mini Hot Cakes", "Mini hot cakes con untado de mermelada, lechera, miel, nutella, fruta y cereal de tu elección", 3, 45.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Burritas y Quesadillas", "Burritas y quesadillas acompañadas con crema, mayonesa, lechuga, jitomate, cebolla y chile jalapeño", 3, 15.00, true, true
                         );
                         
-                        // Postres
+                        // ============================================
+                        // MOLLETES (Categoría 4) - Sin variantes
+                        // ============================================
+                        
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Pastel de Chocolate", "Rebanada de pastel de chocolate", 4, 40.00, true, true
+                            "Molletes Dulces", "Molletes dulces con mantequilla, azúcar y canela", 4, 25.00, true, true
                         );
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Flan", "Flan casero", 4, 30.00, true, true
+                            "Molletes con Untado", "Molletes con untado de mermelada, nutella, lechera o miel", 4, 35.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Molletes Salados", "Molletes salados con frijoles con queso o salsa mexicana", 4, 40.00, true, true
+                        );
+                        
+                        // ============================================
+                        // LONCHES Y SANDWICHES (Categoría 5) - Con variantes Lonche/Sandwich
+                        // ============================================
+                        
+                        // Lonche/Sandwich de Pierna o combinado
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Lonche/Sandwich de Pierna o Combinado", "Lonche o sandwich de pierna o combinado", 5L, 65.00,
+                            new String[][]{{"Lonche", "65.00"}, {"Sandwich", "55.00"}});
+                        
+                        // Lonche/Sandwich de Jamón
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Lonche/Sandwich de Jamón", "Lonche o sandwich de jamón", 5L, 45.00,
+                            new String[][]{{"Lonche", "45.00"}, {"Sandwich", "35.00"}});
+                        
+                        // Lonche/Sandwich de Panela
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Lonche/Sandwich de Panela", "Lonche o sandwich de panela", 5L, 55.00,
+                            new String[][]{{"Lonche", "55.00"}, {"Sandwich", "45.00"}});
+                        
+                        // Lonche/Sandwich de Jamón y Panela
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Lonche/Sandwich de Jamón y Panela", "Lonche o sandwich de jamón y panela", 5L, 55.00,
+                            new String[][]{{"Lonche", "55.00"}, {"Sandwich", "45.00"}});
+                        
+                        // Lonche/Sandwich de Chilaquiles
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Lonche/Sandwich de Chilaquiles", "Lonche o sandwich de chilaquiles", 5L, 45.00,
+                            new String[][]{{"Lonche", "45.00"}, {"Sandwich", "35.00"}});
+                        
+                        // ============================================
+                        // COMPLEMENTOS (Categoría 6) - Sin variantes
+                        // ============================================
+                        
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Bionicos", "Bionicos", 6, 55.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Panecitos 3 pzs", "Panecitos (3 piezas)", 6, 10.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Galletas Nuez o Avena", "Galletas de nuez o avena", 6, 10.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Pay Queso", "Pay de queso", 6, 25.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Mantecadas", "Mantecadas", 6, 20.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Yakult", "Yakult", 6, 10.00, true, true
                         );
                         
                         // Contar productos totales (incluyendo variantes)
@@ -332,12 +377,15 @@ public class DataInitializer {
                         Long productosBase = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM productos WHERE producto_base_id IS NULL", Long.class);
                         Long variantes = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM productos WHERE producto_base_id IS NOT NULL", Long.class);
                         
-                        System.out.println(">>> ✅ Categorías y productos cargados:");
-                        System.out.println("    - 4 Categorías (Licuados, Jugos, Lonches, Postres)");
+                        System.out.println(">>> ✅ Categorías y productos del menú 'Jugos y Licuados Doña Chuy' cargados:");
+                        System.out.println("    - 6 Categorías (Jugos Naturales, Licuados y Chocomiles, Desayunos, Molletes, Lonches y Sandwiches, Complementos)");
                         System.out.println("    - " + productosBase + " Productos base");
                         System.out.println("    - " + variantes + " Variantes de productos");
                         System.out.println("    - Total: " + totalProductos + " productos");
-                        System.out.println("    - Productos con variantes: Jugo de Naranja (3 variantes), Jugo de Zanahoria (2 variantes), Jugo Verde (3 variantes)");
+                        System.out.println("    - Productos con variantes:");
+                        System.out.println("      * 7 Jugos Naturales (21 variantes: Chico/Mediano/Grande)");
+                        System.out.println("      * 11 Licuados/Chocomiles (33 variantes: Chico/Mediano/Grande)");
+                        System.out.println("      * 5 Lonches/Sandwiches (10 variantes: Lonche/Sandwich)");
                     } else {
                         System.out.println(">>> Categorías y productos ya existen (" + categoriaCount + " categorías)");
                     }
