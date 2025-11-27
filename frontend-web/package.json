@@ -7,12 +7,18 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:prod": "tsc -b && vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview",
+    "preview:prod": "vite preview --host 0.0.0.0 --port 4173",
     "electron": "electron .",
     "electron:dev": "concurrently \"npm run dev\" \"sleep 3 && electron .\"",
-    "build:electron": "npm run build && electron-builder",
-    "dist": "electron-builder --win --x64"
+    "build:electron": "npm run build:prod && electron-builder",
+    "build:electron:prod": "npm run build:prod && RAILWAY_FRONTEND_URL=${RAILWAY_FRONTEND_URL:-https://punto-de-venta-frontend.up.railway.app} electron-builder",
+    "dist": "electron-builder --win --x64",
+    "dist:linux": "electron-builder --linux --x64",
+    "dist:all": "electron-builder --win --linux --x64",
+    "verify": "node verify-build.js"
   },
   "build": {
     "appId": "com.puntodeventa.app",

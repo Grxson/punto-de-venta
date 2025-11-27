@@ -2,6 +2,9 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const isDev = require('electron-is-dev');
 
+// URL de producción desde Railway (configurable mediante variable de entorno)
+const RAILWAY_FRONTEND_URL = process.env.RAILWAY_FRONTEND_URL || 'https://punto-de-venta-frontend.up.railway.app';
+
 // Deshabilitar sandbox en Linux para desarrollo (evita error de permisos)
 if (process.platform === 'linux' && isDev) {
   app.commandLine.appendSwitch('--no-sandbox');
@@ -21,6 +24,7 @@ function createWindow() {
       contextIsolation: true,
       enableRemoteModule: false,
       sandbox: false, // Deshabilitar sandbox para Linux (solo desarrollo)
+      webSecurity: true, // Habilitar seguridad web
     },
     icon: path.join(__dirname, '../public/icon.png'), // Opcional: icono de la app
   });
@@ -55,8 +59,16 @@ function createWindow() {
     // Abrir DevTools en desarrollo
     mainWindow.webContents.openDevTools();
   } else {
-    // En producción, cargar desde archivos locales
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    // En producción, cargar desde Railway
+    console.log(`Cargando aplicación desde: ${RAILWAY_FRONTEND_URL}`);
+    mainWindow.loadURL(RAILWAY_FRONTEND_URL).catch((error) => {
+      console.error('Error al cargar desde Railway:', error);
+      // Fallback: intentar cargar desde archivos locales si Railway falla
+      console.log('Intentando cargar desde archivos locales como fallback...');
+      mainWindow.loadFile(path.join(__dirname, '../dist/index.html')).catch((fallbackError) => {
+        console.error('Error al cargar archivos locales:', fallbackError);
+      });
+    });
   }
 
   // Manejar cierre de ventana
@@ -64,15 +76,38 @@ function createWindow() {
     mainWindow = null;
   });
 
-  // Prevenir navegación a URLs externas
+  // Prevenir navegación a URLs externas (excepto Railway en producción)
   mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
     if (!isDev) {
       const parsedUrl = new URL(navigationUrl);
-      // Permitir solo archivos locales en producción
-      if (!parsedUrl.protocol.startsWith('file:')) {
+      const railwayUrl = new URL(RAILWAY_FRONTEND_URL);
+      
+      // Permitir navegación dentro de Railway o archivos locales
+      const isRailwayUrl = parsedUrl.hostname === railwayUrl.hostname;
+      const isLocalFile = parsedUrl.protocol.startsWith('file:');
+      
+      if (!isRailwayUrl && !isLocalFile) {
         event.preventDefault();
+        console.warn('Navegación bloqueada a:', navigationUrl);
       }
     }
+  });
+
+  // Manejar enlaces externos (abrir en navegador por defecto)
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (!isDev) {
+      const parsedUrl = new URL(url);
+      const railwayUrl = new URL(RAILWAY_FRONTEND_URL);
+      
+      // Permitir abrir enlaces dentro de Railway
+      if (parsedUrl.hostname === railwayUrl.hostname) {
+        return { action: 'allow' };
+      }
+    }
+    
+    // Abrir enlaces externos en el navegador del sistema
+    require('electron').shell.openExternal(url);
+    return { action: 'deny' };
   });
 }
 
