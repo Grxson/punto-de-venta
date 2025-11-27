@@ -13,7 +13,6 @@ export default function PosLayout() {
 
   const menuItems = [
     { text: 'Inicio', icon: <Home />, path: '/pos' },
-    { text: 'Carrito', icon: <ShoppingCart />, path: '/pos/cart' },
     { text: 'Mis Ventas', icon: <PointOfSale />, path: '/pos/sales' },
     { text: 'Registrar Gasto', icon: <AttachMoney />, path: '/pos/expenses' },
   ];

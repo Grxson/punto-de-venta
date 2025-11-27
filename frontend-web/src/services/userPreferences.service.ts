@@ -4,12 +4,6 @@
 
 const STORAGE_KEY_PREFIX = 'puntodeventa_prefs_';
 
-interface UserPreferences {
-  lastRoute?: string;
-  adminInventoryTab?: number;
-  [key: string]: any; // Permitir otras preferencias
-}
-
 class UserPreferencesService {
   private getStorageKey(key: string): string {
     return `${STORAGE_KEY_PREFIX}${key}`;
@@ -95,7 +89,23 @@ class UserPreferencesService {
    * Obtiene la categoría seleccionada en POS
    */
   getPosSelectedCategory(): number | null {
-    return this.getPreference<number | null>('posSelectedCategory', null);
+    const value = this.getPreference<number | null>('posSelectedCategory', null);
+    return value ?? null;
+  }
+
+  /**
+   * Guarda la subcategoría seleccionada en Desayunos
+   */
+  setPosDesayunosSubcategory(subcategoryId: string | null): void {
+    this.setPreference('posDesayunosSubcategory', subcategoryId);
+  }
+
+  /**
+   * Obtiene la subcategoría seleccionada en Desayunos
+   */
+  getPosDesayunosSubcategory(): string | null {
+    const value = this.getPreference<string | null>('posDesayunosSubcategory', null);
+    return value ?? null;
   }
 
   /**

@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static com.puntodeventa.backend.config.DataInitializerMenuHelper.crearProductoConVariantes;
+import static com.puntodeventa.backend.config.DataInitializerMenuHelper.crearProductoSimple;
 
 /**
  * Inicializador de datos para desarrollo.
@@ -151,111 +152,110 @@ public class DataInitializer {
                         // Insertar categorías de productos
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
-                            "VALUES (1, 'Jugos Naturales', 'Jugos naturales de frutas y verduras', true)"
+                            "VALUES (1, 'Jugos', 'Jugos naturales de frutas y verduras', true)"
                         );
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
-                            "VALUES (2, 'Licuados y Chocomiles', 'Licuados de frutas y chocomiles', true)"
+                            "VALUES (2, 'Licuados y Chocomiles', 'Licuados y chocomiles de diferentes sabores', true)"
                         );
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
-                            "VALUES (3, 'Desayunos', 'Desayunos y platillos del día', true)"
+                            "VALUES (3, 'Desayunos', 'Desayunos, molletes, lonches y sandwiches', true)"
                         );
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
-                            "VALUES (4, 'Molletes', 'Molletes dulces y salados', true)"
+                            "VALUES (4, 'Adicionales', 'Ingredientes y adiciones extra', true)"
                         );
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
-                            "VALUES (5, 'Lonches y Sandwiches', 'Lonches y sandwiches con diferentes rellenos', true)"
+                            "VALUES (5, 'Postres', 'Postres y productos dulces', true)"
                         );
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
-                            "VALUES (6, 'Complementos', 'Postres, bebidas y productos complementarios', true)"
+                            "VALUES (6, 'Bebidas', 'Bebidas complementarias (café, té, etc.)', true)"
                         );
                         
                         // ============================================
-                        // JUGOS NATURALES (Categoría 1)
+                        // JUGOS (Categoría 1) - Actualizados según menú (Chico/Mediano/Grande)
                         // ============================================
-                        
-                        // Naranja (separado de Toronja aunque tengan el mismo precio)
+
+                        // Naranja y Toronja separados (aunque tengan el mismo precio)
                         crearProductoConVariantes(jdbcTemplate,
-                            "Jugo de Naranja", "Jugo natural de naranja", 1L, 40.00,
+                            "Naranja", "Jugo natural de naranja", 1L, 40.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "40.00"}, {"Grande", "65.00"}});
-                        
-                        // Toronja (separado de Naranja aunque tengan el mismo precio)
+
                         crearProductoConVariantes(jdbcTemplate,
-                            "Jugo de Toronja", "Jugo natural de toronja", 1L, 40.00,
+                            "Toronja", "Jugo natural de toronja", 1L, 40.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "40.00"}, {"Grande", "65.00"}});
-                        
+
                         crearProductoConVariantes(jdbcTemplate,
-                            "Jugo de Zanahoria", "Jugo natural de zanahoria", 1L, 30.00,
+                            "Zanahoria", "Jugo natural de zanahoria", 1L, 30.00,
                             new String[][]{{"Chico", "20.00"}, {"Mediano", "30.00"}, {"Grande", "50.00"}});
+
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Mixto", "Jugo mixto (naranja, zanahoria, betabel)", 1L, 35.00,
+                            new String[][]{{"Chico", "22.00"}, {"Mediano", "35.00"}, {"Grande", "55.00"}});
+
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Verde", "Jugo verde de verduras y frutas (apio, perejil, nopal, espinaca, piña)", 1L, 40.00,
+                            new String[][]{{"Chico", "25.00"}, {"Mediano", "40.00"}, {"Grande", "70.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
-                            "Jugo Mixto", "Jugo mixto (naranja, zanahoria, betabel)", 1L, 35.00,
-                            new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "55.00"}});
+                            "Verde Especial", "Jugo verde especial de verduras y frutas", 1L, 50.00,
+                            new String[][]{{"Chico", "30.00"}, {"Mediano", "50.00"}, {"Grande", "90.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
-                            "Jugo Verde", "Jugo verde de verduras y frutas", 1L, 40.00,
-                            new String[][]{{"Chico", "25.00"}, {"Mediano", "40.00"}, {"Grande", "65.00"}});
-                        
-                        crearProductoConVariantes(jdbcTemplate,
-                            "Jugo Verde Especial", "Jugo verde especial de verduras y frutas", 1L, 50.00,
-                            new String[][]{{"Chico", "35.00"}, {"Mediano", "50.00"}, {"Grande", "80.00"}});
-                        
-                        crearProductoConVariantes(jdbcTemplate,
-                            "Jugo de Betabel", "Jugo natural de betabel", 1L, 45.00,
-                            new String[][]{{"Chico", "30.00"}, {"Mediano", "45.00"}, {"Grande", "70.00"}});
+                            "Mixto Betabel", "Jugo mixto con betabel", 1L, 45.00,
+                            new String[][]{{"Chico", "28.00"}, {"Mediano", "45.00"}, {"Grande", "80.00"}});
                         
                         // ============================================
                         // LICUADOS Y CHOCOMILES (Categoría 2)
                         // ============================================
                         
-                        // Licuados separados por sabor (aunque tengan el mismo precio)
+                        // Licuados separados por sabor
                         crearProductoConVariantes(jdbcTemplate,
-                            "Licuado de Fresa", "Licuado de fresa", 2L, 35.00,
+                            "Fresa", "Licuado de fresa", 2L, 35.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
-                            "Licuado de Platano", "Licuado de plátano", 2L, 35.00,
+                            "Plátano", "Licuado de plátano", 2L, 35.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
-                            "Licuado de Manzana", "Licuado de manzana", 2L, 35.00,
+                            "Manzana", "Licuado de manzana", 2L, 35.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
-                            "Licuado de Papaya", "Licuado de papaya", 2L, 35.00,
+                            "Papaya", "Licuado de papaya", 2L, 35.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
-                            "Licuado de Frutas", "Licuado de frutas", 2L, 35.00,
+                            "Frutas", "Licuado de frutas", 2L, 35.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
-                            "Licuado de Cereales", "Licuado de cereales", 2L, 35.00,
+                            "Cereales", "Licuado de cereales", 2L, 35.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
                         
                         // Chocomiles separados por sabor
                         crearProductoConVariantes(jdbcTemplate,
-                            "Chocomilk de Chocolate", "Chocomilk de chocolate", 2L, 25.00,
+                            "Chocomilk Chocolate", "Chocomilk de chocolate", 2L, 25.00,
                             new String[][]{{"Chico", "18.00"}, {"Mediano", "25.00"}, {"Grande", "40.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
-                            "Chocomilk de Fresa", "Chocomilk de fresa", 2L, 25.00,
+                            "Chocomilk Fresa", "Chocomilk de fresa", 2L, 25.00,
                             new String[][]{{"Chico", "18.00"}, {"Mediano", "25.00"}, {"Grande", "40.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
-                            "Chocomilk de Vainilla", "Chocomilk de vainilla", 2L, 25.00,
+                            "Chocomilk Vainilla", "Chocomilk de vainilla", 2L, 25.00,
                             new String[][]{{"Chico", "18.00"}, {"Mediano", "25.00"}, {"Grande", "40.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
-                            "Chocomilk de Cafe", "Chocomilk de café", 2L, 35.00,
+                            "Chocomilk Cafe", "Chocomilk de café", 2L, 35.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
-                            "Chocomilk de Fresa Natural", "Chocomilk de fresa natural", 2L, 35.00,
+                            "Chocomilk Fresa Natural", "Chocomilk de fresa natural", 2L, 35.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
                         
                         // ============================================
@@ -270,17 +270,22 @@ public class DataInitializer {
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Huevos al gusto", "Orden de Huevos al gusto acompañados de frijoles y bolillo", 3, 45.00, true, true
+                            "Huevos al gusto", "Orden de Huevos al gusto acompañados de frijoles y bolillo", 3, 50.00, true, true
+                        );
+                        
+                        // Waffles con variantes Chico/Grande
+                        crearProductoConVariantes(jdbcTemplate,
+                            "Waffles", "Waffles con untado de mermelada, lechera, miel, nutella, fruta y cereal de tu elección", 3L, 60.00,
+                            new String[][]{{"Chico", "35.00"}, {"Grande", "60.00"}});
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Mini Hot Cakes (15 pzs)", "Mini hot cakes (15 piezas) con untado de mermelada, lechera, miel, nutella, fruta y cereal de tu elección", 3, 55.00, true, true
                         );
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Waffles", "Waffles con untado de mermelada, lechera, miel, nutella, fruta y cereal de tu elección", 3, 60.00, true, true
-                        );
-                        jdbcTemplate.update(
-                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
-                            "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Mini Hot Cakes", "Mini hot cakes con untado de mermelada, lechera, miel, nutella, fruta y cereal de tu elección", 3, 45.00, true, true
+                            "Mini Hot Cakes (10 pzs)", "Mini hot cakes (10 piezas) con untado de mermelada, lechera, miel, nutella, fruta y cereal de tu elección", 3, 45.00, true, true
                         );
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
@@ -288,88 +293,137 @@ public class DataInitializer {
                             "Burritas y Quesadillas", "Burritas y quesadillas acompañadas con crema, mayonesa, lechuga, jitomate, cebolla y chile jalapeño", 3, 15.00, true, true
                         );
                         
-                        // ============================================
-                        // MOLLETES (Categoría 4) - Sin variantes
-                        // ============================================
-                        
-                        jdbcTemplate.update(
+                        // MOLLETES (ahora en Desayunos)
+                            jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Molletes Dulces", "Molletes dulces con mantequilla, azúcar y canela", 4, 25.00, true, true
-                        );
-                        jdbcTemplate.update(
+                            "Molletes Dulces", "Molletes dulces con mantequilla, azúcar y canela", 3, 30.00, true, true
+                            );
+                            jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Molletes con Untado", "Molletes con untado de mermelada, nutella, lechera o miel", 4, 35.00, true, true
-                        );
-                        jdbcTemplate.update(
+                            "Molletes con Untado", "Molletes con untado de mermelada, nutella, lechera o miel", 3, 35.00, true, true
+                            );
+                            jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Molletes Salados", "Molletes salados con frijoles con queso o salsa mexicana", 4, 40.00, true, true
+                            "Molletes Salados", "Molletes salados con frijoles con queso o salsa mexicana", 3, 40.00, true, true
                         );
                         
-                        // ============================================
-                        // LONCHES Y SANDWICHES (Categoría 5) - Con variantes Lonche/Sandwich
-                        // ============================================
+                        // LONCHES Y SANDWICHES (ahora en Desayunos) - Separados individualmente
+                            jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Lonches y Sincronizadas", "Lonches y sincronizadas con crema, mayonesa, lechuga, jitomate, cebolla y chile jalapeño", 3, 35.00, true, true
+                        );
                         
-                        // Lonche/Sandwich de Pierna o combinado
-                        crearProductoConVariantes(jdbcTemplate,
-                            "Lonche/Sandwich de Pierna o Combinado", "Lonche o sandwich de pierna o combinado", 5L, 65.00,
-                            new String[][]{{"Lonche", "65.00"}, {"Sandwich", "55.00"}});
+                        // Lonches separados
+                        crearProductoSimple(jdbcTemplate, "Lonche de Pierna o Combinado", "Lonche de pierna o combinado", 3L, 65.00);
+                        crearProductoSimple(jdbcTemplate, "Lonche de Jamón", "Lonche de jamón", 3L, 45.00);
+                        crearProductoSimple(jdbcTemplate, "Lonche de Panela", "Lonche de panela", 3L, 55.00);
+                        crearProductoSimple(jdbcTemplate, "Lonche de Jamón y Panela", "Lonche de jamón y panela", 3L, 55.00);
+                        crearProductoSimple(jdbcTemplate, "Lonche de Chilaquiles", "Lonche de chilaquiles", 3L, 45.00);
                         
-                        // Lonche/Sandwich de Jamón
-                        crearProductoConVariantes(jdbcTemplate,
-                            "Lonche/Sandwich de Jamón", "Lonche o sandwich de jamón", 5L, 45.00,
-                            new String[][]{{"Lonche", "45.00"}, {"Sandwich", "35.00"}});
-                        
-                        // Lonche/Sandwich de Panela
-                        crearProductoConVariantes(jdbcTemplate,
-                            "Lonche/Sandwich de Panela", "Lonche o sandwich de panela", 5L, 55.00,
-                            new String[][]{{"Lonche", "55.00"}, {"Sandwich", "45.00"}});
-                        
-                        // Lonche/Sandwich de Jamón y Panela
-                        crearProductoConVariantes(jdbcTemplate,
-                            "Lonche/Sandwich de Jamón y Panela", "Lonche o sandwich de jamón y panela", 5L, 55.00,
-                            new String[][]{{"Lonche", "55.00"}, {"Sandwich", "45.00"}});
-                        
-                        // Lonche/Sandwich de Chilaquiles
-                        crearProductoConVariantes(jdbcTemplate,
-                            "Lonche/Sandwich de Chilaquiles", "Lonche o sandwich de chilaquiles", 5L, 45.00,
-                            new String[][]{{"Lonche", "45.00"}, {"Sandwich", "35.00"}});
+                        // Sandwiches separados
+                        crearProductoSimple(jdbcTemplate, "Sandwich de Pierna o Combinado", "Sandwich de pierna o combinado", 3L, 55.00);
+                        crearProductoSimple(jdbcTemplate, "Sandwich de Jamón", "Sandwich de jamón", 3L, 35.00);
+                        crearProductoSimple(jdbcTemplate, "Sandwich de Panela", "Sandwich de panela", 3L, 45.00);
+                        crearProductoSimple(jdbcTemplate, "Sandwich de Jamón y Panela", "Sandwich de jamón y panela", 3L, 45.00);
+                        crearProductoSimple(jdbcTemplate, "Sandwich de Chilaquiles", "Sandwich de chilaquiles", 3L, 35.00);
                         
                         // ============================================
-                        // COMPLEMENTOS (Categoría 6) - Sin variantes
+                        // ADICIONALES (Categoría 4) - Sin variantes
+                        // ============================================
+                        
+                            jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Miel", "Miel", 4, 5.00, true, true
+                            );
+                            jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Deslactosada", "Leche deslactosada", 4, 5.00, true, true
+                            );
+                            jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Cereal", "Cereal", 4, 5.00, true, true
+                            );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Rompope", "Rompope", 4, 15.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Jerez", "Jerez", 4, 15.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Huevo Pata", "Huevo de pata", 4, 15.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Huevo Gallina", "Huevo de gallina", 4, 5.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Huevo Codorniz", "Huevo de codorniz", 4, 2.50, true, true
+                        );
+                        
+                        // ============================================
+                        // POSTRES (Categoría 5) - Sin variantes
                         // ============================================
                         
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Bionicos", "Bionicos", 6, 55.00, true, true
+                            "Bionicos", "Bionicos", 5, 55.00, true, true
                         );
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Panecitos 3 pzs", "Panecitos (3 piezas)", 6, 10.00, true, true
+                            "Panecitos 3 pzs", "Panecitos (3 piezas)", 5, 10.00, true, true
                         );
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Galletas Nuez o Avena", "Galletas de nuez o avena", 6, 10.00, true, true
+                            "Galletas Nuez o Avena", "Galletas de nuez o avena", 5, 10.00, true, true
                         );
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Pay Queso", "Pay de queso", 6, 25.00, true, true
+                            "Pay Queso", "Pay de queso", 5, 25.00, true, true
                         );
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Mantecadas", "Mantecadas", 6, 20.00, true, true
+                            "Mantecadas", "Mantecadas", 5, 25.00, true, true
                         );
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Yakult", "Yakult", 6, 10.00, true, true
+                            "Yakult", "Yakult", 5, 10.00, true, true
+                        );
+                        
+                        // ============================================
+                        // BEBIDAS (Categoría 6) - Sin variantes
+                        // ============================================
+                        
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Cafe", "Café", 6, 20.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Té", "Té", 6, 15.00, true, true
                         );
                         
                         // Contar productos totales (incluyendo variantes)
@@ -378,14 +432,30 @@ public class DataInitializer {
                         Long variantes = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM productos WHERE producto_base_id IS NOT NULL", Long.class);
                         
                         System.out.println(">>> ✅ Categorías y productos del menú 'Jugos y Licuados Doña Chuy' cargados:");
-                        System.out.println("    - 6 Categorías (Jugos Naturales, Licuados y Chocomiles, Desayunos, Molletes, Lonches y Sandwiches, Complementos)");
+                        System.out.println("    - 6 Categorías (Jugos, Chocomiles, Desayunos, Adicionales, Postres, Bebidas)");
                         System.out.println("    - " + productosBase + " Productos base");
                         System.out.println("    - " + variantes + " Variantes de productos");
                         System.out.println("    - Total: " + totalProductos + " productos");
                         System.out.println("    - Productos con variantes:");
-                        System.out.println("      * 7 Jugos Naturales (21 variantes: Chico/Mediano/Grande)");
-                        System.out.println("      * 11 Licuados/Chocomiles (33 variantes: Chico/Mediano/Grande)");
-                        System.out.println("      * 5 Lonches/Sandwiches (10 variantes: Lonche/Sandwich)");
+                        System.out.println("      * 13 Jugos y Licuados (39 variantes: Chico/Mediano/Grande)");
+                        System.out.println("      * 5 Chocomiles (15 variantes: Chico/Mediano/Grande)");
+                        System.out.println("      * 1 Waffles (2 variantes: Chico/Grande)");
+                        System.out.println("    - Productos sin variantes:");
+                        System.out.println("      * 10 Lonches y Sandwiches (separados individualmente)");
+                        System.out.println("    - Reorganización:");
+                        System.out.println("      * 'Jugos Naturales' renombrado a 'Jugos' e incluye licuados");
+                        System.out.println("      * 'Licuados y Chocomiles' separado en 'Jugos' (licuados) y 'Chocomiles'");
+                        System.out.println("      * Nombres clarificados: 'Jugo de Naranja', 'Licuado de Fresa', etc.");
+                        System.out.println("      * Molletes, Lonches y Sandwiches movidos a 'Desayunos'");
+                        System.out.println("      * Nueva categoría 'Adicionales' con ingredientes extra");
+                        System.out.println("      * 'Rompope' y 'Jerez' separados como productos individuales");
+                        System.out.println("      * 'Complementos' dividido en 'Postres' y 'Bebidas'");
+                        System.out.println("    - Productos actualizados:");
+                        System.out.println("      * Jugos: Incluye jugos naturales y licuados con nombres claros");
+                        System.out.println("      * Chocomiles: Categoría separada para mejor organización");
+                        System.out.println("      * Desayunos: Huevos al gusto ($50), Waffles (Chico $35/Grande $60), Mini Hot Cakes (15pzs $55, 10pzs $45)");
+                        System.out.println("      * Postres: Bionicos, Panecitos, Galletas, Pay Queso, Mantecadas, Yakult");
+                        System.out.println("      * Bebidas: Café ($20), Té ($15)");
                     } else {
                         System.out.println(">>> Categorías y productos ya existen (" + categoriaCount + " categorías)");
                     }

@@ -99,6 +99,7 @@ export const API_ENDPOINTS = {
   // Estadísticas
   STATS_DAILY: '/estadisticas/ventas/dia',
   STATS_SALES_RANGE: '/estadisticas/ventas/rango',
+  STATS_PRODUCTS_DAY: '/estadisticas/productos/dia',
   STATS_PRODUCTS_RANGE: '/estadisticas/productos/rango',
   
   // Inventario

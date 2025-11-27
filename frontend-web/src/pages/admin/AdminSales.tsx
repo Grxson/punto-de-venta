@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -29,6 +29,8 @@ import {
   Divider,
   Snackbar,
   Tooltip,
+  ClickAwayListener,
+  Popper,
   List,
   ListItem,
   ListItemButton,
@@ -40,6 +42,8 @@ import { es } from 'date-fns/locale';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
+import DateRangeFilter from '../../components/common/DateRangeFilter';
+import type { DateRangeValue } from '../../types/dateRange.types';
 
 interface VentaItem {
   id: number;
@@ -87,6 +91,12 @@ export default function AdminSales() {
   const [cancelando, setCancelando] = useState<number | null>(null);
   const [editando, setEditando] = useState<number | null>(null);
   
+  // Estado para el filtro de fechas
+  const [dateRange, setDateRange] = useState<DateRangeValue>({
+    desde: new Date().toISOString().split('T')[0],
+    hasta: new Date().toISOString().split('T')[0],
+  });
+  
   // Estado para el diálogo de cancelación
   const [dialogoCancelacion, setDialogoCancelacion] = useState(false);
   const [ventaSeleccionada, setVentaSeleccionada] = useState<Venta | null>(null);
@@ -106,6 +116,8 @@ export default function AdminSales() {
     message: '',
     tipo: 'info',
   });
+  const [tooltipOpen, setTooltipOpen] = useState<{ [key: number]: boolean }>({});
+  const tooltipRefs = useRef<{ [key: number]: HTMLElement | null }>({});
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
   const [productoSeleccionadoParaVariante, setProductoSeleccionadoParaVariante] = useState<any | null>(null);
   const [indiceItemParaVariante, setIndiceItemParaVariante] = useState<number | null>(null);
@@ -159,6 +171,45 @@ export default function AdminSales() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Filtrar ventas por rango de fechas
+  const ventasFiltradas = useMemo(() => {
+    if (!dateRange.desde || !dateRange.hasta) return ventas;
+    
+    // Crear fechas en zona horaria local
+    const desde = new Date(dateRange.desde + 'T00:00:00');
+    const hasta = new Date(dateRange.hasta + 'T23:59:59');
+    
+    console.log('Filtro de ventas:', {
+      desde: desde.toISOString(),
+      hasta: hasta.toISOString(),
+      totalVentas: ventas.length,
+      ventasEjemplo: ventas.slice(0, 3).map(v => ({ id: v.id, fecha: v.fecha }))
+    });
+    
+    const filtradas = ventas.filter(venta => {
+      const fechaVenta = new Date(venta.fecha);
+      const cumpleFiltro = fechaVenta >= desde && fechaVenta <= hasta;
+      
+      if (ventas.length <= 5) { // Solo log si hay pocas ventas para no saturar
+        console.log('Venta', venta.id, {
+          fechaVenta: fechaVenta.toISOString(),
+          desde: desde.toISOString(),
+          hasta: hasta.toISOString(),
+          cumpleFiltro
+        });
+      }
+      
+      return cumpleFiltro;
+    });
+    
+    console.log('Ventas filtradas:', filtradas.length);
+    return filtradas;
+  }, [ventas, dateRange]);
+
+  const handleDateRangeChange = (range: DateRangeValue) => {
+    setDateRange(range);
   };
 
   const handleAbrirDialogoCancelacion = (venta: Venta) => {
@@ -660,11 +711,28 @@ export default function AdminSales() {
         </Button>
       </Box>
 
+      {/* Filtro de fechas */}
+      <DateRangeFilter 
+        onChange={handleDateRangeChange} 
+        initialRange={dateRange}
+        label="Filtrar ventas por fecha"
+      />
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
+
+      {/* Resumen de resultados */}
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          Mostrando {ventasFiltradas.length} de {ventas.length} ventas
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Total: ${ventasFiltradas.reduce((sum, v) => sum + v.total, 0).toFixed(2)}
+        </Typography>
+      </Box>
 
       <TableContainer component={Paper}>
         <Table>
@@ -681,16 +749,16 @@ export default function AdminSales() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {ventas.length === 0 ? (
+            {ventasFiltradas.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                    No hay ventas registradas
+                    No hay ventas en el rango de fechas seleccionado
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              ventas.map((venta) => (
+              ventasFiltradas.map((venta) => (
                 <TableRow key={venta.id}>
                   <TableCell>#{venta.id}</TableCell>
                   <TableCell>
@@ -708,7 +776,91 @@ export default function AdminSales() {
                       size="small"
                     />
                   </TableCell>
-                  <TableCell>{venta.items.length} producto(s)</TableCell>
+                  <TableCell>
+                    <Box sx={{ maxWidth: 250 }}>
+                      {venta.items.length === 1 ? (
+                        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                          {venta.items[0].cantidad}x {venta.items[0].productoNombre}
+                        </Typography>
+                      ) : (
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 0.5 }}>
+                            {venta.items.length} productos:
+                          </Typography>
+                          {venta.items.slice(0, 2).map((item, index) => (
+                            <Typography key={index} variant="caption" display="block" color="text.secondary">
+                              {item.cantidad}x {item.productoNombre}
+                            </Typography>
+                          ))}
+                          {venta.items.length > 2 && (
+                            <>
+                              <Typography 
+                                ref={(el) => { 
+                                  if (el) {
+                                    tooltipRefs.current[venta.id] = el;
+                                  } else {
+                                    delete tooltipRefs.current[venta.id];
+                                  }
+                                }}
+                                variant="caption" 
+                                color="primary" 
+                                onClick={() => setTooltipOpen(prev => ({ ...prev, [venta.id]: !prev[venta.id] }))}
+                                sx={{ 
+                                  fontStyle: 'italic', 
+                                  cursor: 'pointer',
+                                  textDecoration: 'underline',
+                                  '&:hover': { color: 'primary.dark' }
+                                }}
+                              >
+                                +{venta.items.length - 2} más... (ver todos)
+                              </Typography>
+                              {tooltipOpen[venta.id] && tooltipRefs.current[venta.id] && (
+                                <Popper
+                                  open={true}
+                                  anchorEl={tooltipRefs.current[venta.id]}
+                                  placement="right-start"
+                                  sx={{ zIndex: 1300 }}
+                                  disablePortal={false}
+                                  modifiers={[
+                                    {
+                                      name: 'preventOverflow',
+                                      enabled: true,
+                                      options: {
+                                        altAxis: true,
+                                        altBoundary: true,
+                                        tether: true,
+                                        rootBoundary: 'document',
+                                      },
+                                    },
+                                  ]}
+                                >
+                                  <ClickAwayListener onClickAway={() => setTooltipOpen(prev => ({ ...prev, [venta.id]: false }))}>
+                                    <Paper
+                                      elevation={8}
+                                      sx={{
+                                        p: 2,
+                                        maxWidth: 300,
+                                        ml: 1
+                                      }}
+                                    >
+                                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                                        Todos los productos:
+                                      </Typography>
+                                      {venta.items.map((item, index) => (
+                                        <Typography key={index} variant="body2" display="block" sx={{ mb: 0.5 }}>
+                                          {item.cantidad}x {item.productoNombre} - ${(item.precioUnitario * item.cantidad).toFixed(2)}
+                                        </Typography>
+                                      ))}
+                                    </Paper>
+                                  </ClickAwayListener>
+                                </Popper>
+                              )}
+                            </>
+                          )}
+                        </Box>
+                      )}
+                    </Box>
+                  </TableCell>
                   <TableCell>
                     {venta.pagos.map(p => p.metodoPagoNombre).join(', ')}
                   </TableCell>
@@ -1313,4 +1465,3 @@ export default function AdminSales() {
     </Box>
   );
 }
-

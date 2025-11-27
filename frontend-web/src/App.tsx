@@ -19,7 +19,6 @@ import AdminLayout from './layouts/AdminLayout';
 
 // POS Routes
 import PosHome from './pages/pos/PosHome';
-import PosCart from './pages/pos/PosCart';
 import PosPayment from './pages/pos/PosPayment';
 import PosExpenses from './pages/pos/PosExpenses';
 import PosSales from './pages/pos/PosSales';
@@ -94,16 +93,18 @@ function WebSocketHandlers() {
   useEffect(() => {
     websocketService.connect();
 
-    // Handler global para estadísticas
+    // Handler global para estadísticas - ejecutar inmediatamente
     const unsubscribeEstadisticas = websocketService.on('estadisticas', (message) => {
       if (message.tipo === 'ESTADISTICAS_ACTUALIZADAS') {
+        // Ejecutar inmediatamente sin delay
         triggerRefresh();
       }
     });
 
-    // Handler global para ventas
+    // Handler global para ventas - ejecutar inmediatamente
     const unsubscribeVentas = websocketService.on('ventas', (message) => {
       if (message.tipo === 'VENTA_CREADA') {
+        // Ejecutar inmediatamente sin delay
         triggerRefresh();
       }
     });
@@ -112,7 +113,8 @@ function WebSocketHandlers() {
       unsubscribeEstadisticas();
       unsubscribeVentas();
     };
-  }, [triggerRefresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo ejecutar una vez al montar - triggerRefresh es estable
 
   return null;
 }
@@ -174,46 +176,45 @@ function AppRoutes() {
     <>
       <RouteTracker />
       <RouteRestorer />
-      <Routes>
-        {/* Auth */}
-        <Route path="/login" element={<Login />} />
+            <Routes>
+            {/* Auth */}
+            <Route path="/login" element={<Login />} />
 
-        {/* POS Routes - Protegidas */}
-        <Route
-          path="/pos"
-          element={
-            <ProtectedRoute>
-              <PosLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<PosHome />} />
-          <Route path="cart" element={<PosCart />} />
-          <Route path="payment" element={<PosPayment />} />
-          <Route path="expenses" element={<PosExpenses />} />
-          <Route path="sales" element={<PosSales />} />
-        </Route>
+            {/* POS Routes - Protegidas */}
+            <Route
+              path="/pos"
+              element={
+                <ProtectedRoute>
+                  <PosLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<PosHome />} />
+              <Route path="payment" element={<PosPayment />} />
+              <Route path="expenses" element={<PosExpenses />} />
+              <Route path="sales" element={<PosSales />} />
+            </Route>
 
-        {/* Admin Routes - Protegidas con verificación de rol */}
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminLayout />
-            </AdminRoute>
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-          <Route path="reports" element={<AdminReports />} />
-          <Route path="inventory" element={<AdminInventory />} />
-          <Route path="finances" element={<AdminFinances />} />
-          <Route path="expenses" element={<AdminExpenses />} />
-          <Route path="sales" element={<AdminSales />} />
-        </Route>
+            {/* Admin Routes - Protegidas con verificación de rol */}
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }
+            >
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="reports" element={<AdminReports />} />
+                  <Route path="inventory" element={<AdminInventory />} />
+                  <Route path="finances" element={<AdminFinances />} />
+                  <Route path="expenses" element={<AdminExpenses />} />
+                  <Route path="sales" element={<AdminSales />} />
+            </Route>
 
-        {/* Default redirect */}
-        <Route path="/" element={<Navigate to="/pos" replace />} />
-      </Routes>
+            {/* Default redirect */}
+            <Route path="/" element={<Navigate to="/pos" replace />} />
+          </Routes>
     </>
   );
 }
@@ -228,7 +229,7 @@ function App() {
             <WebSocketHandlers />
             <BrowserRouter>
               <AppRoutes />
-            </BrowserRouter>
+        </BrowserRouter>
           </DashboardProvider>
         </CartProvider>
       </AuthProvider>

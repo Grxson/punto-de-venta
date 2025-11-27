@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -13,7 +12,7 @@ import {
   Typography,
   Tooltip,
 } from '@mui/material';
-import { Edit, DeleteForever, Visibility, CheckCircle, Cancel, Block, VisibilityOff } from '@mui/icons-material';
+import { Edit, DeleteForever, Visibility, CheckCircle, Cancel, VisibilityOff } from '@mui/icons-material';
 import type { Producto } from '../../types/productos.types';
 import { useAuth } from '../../contexts/AuthContext';
 

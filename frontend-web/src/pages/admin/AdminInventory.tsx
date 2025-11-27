@@ -15,11 +15,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Chip,
-  Tabs,
-  Tab,
+  TablePagination,
 } from '@mui/material';
-import { Add, Refresh, Search } from '@mui/icons-material';
+import { Add, Refresh, Search, FileDownload } from '@mui/icons-material';
 import type { Producto } from '../../types/productos.types';
 import type { CategoriaProducto } from '../../types/categorias.types';
 import { productosService } from '../../services/productos.service';
@@ -45,6 +43,10 @@ export default function AdminInventory() {
   const [filtroActivo, setFiltroActivo] = useState<boolean | 'todos'>('todos');
   const [filtroCategoria, setFiltroCategoria] = useState<number | ''>('');
   const [busqueda, setBusqueda] = useState('');
+  
+  // Paginación
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Estados de diálogos
   const [openForm, setOpenForm] = useState(false);
@@ -237,6 +239,55 @@ export default function AdminInventory() {
     return true;
   });
 
+  // Productos paginados
+  const productosPaginados = productosFiltrados.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Exportar a CSV
+  const handleExportarCSV = () => {
+    const headers = ['Nombre', 'Categoría', 'Precio', 'Costo Estimado', 'SKU', 'Estado', 'En Menú'];
+    const rows = productosFiltrados.map(p => [
+      p.nombre,
+      p.categoriaNombre || 'Sin categoría',
+      p.precio?.toFixed(2) || '0.00',
+      p.costoEstimado?.toFixed(4) || '',
+      p.sku || '',
+      p.activo ? 'Activo' : 'Inactivo',
+      p.disponibleEnMenu ? 'Sí' : 'No',
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `productos_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Resetear página cuando cambian los filtros
+  useEffect(() => {
+    setPage(0);
+  }, [filtroActivo, filtroCategoria, busqueda]);
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -279,13 +330,22 @@ export default function AdminInventory() {
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Estado</InputLabel>
             <Select
-              value={filtroActivo}
+              value={filtroActivo === 'todos' ? 'todos' : filtroActivo === true ? 'true' : 'false'}
               label="Estado"
-              onChange={(e) => setFiltroActivo(e.target.value as boolean | 'todos')}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === 'todos') {
+                  setFiltroActivo('todos');
+                } else if (val === 'true') {
+                  setFiltroActivo(true);
+                } else {
+                  setFiltroActivo(false);
+                }
+              }}
             >
               <MenuItem value="todos">Todos</MenuItem>
-              <MenuItem value={true}>Activos</MenuItem>
-              <MenuItem value={false}>Inactivos</MenuItem>
+              <MenuItem value="true">Activos</MenuItem>
+              <MenuItem value="false">Inactivos</MenuItem>
             </Select>
           </FormControl>
 
@@ -313,6 +373,16 @@ export default function AdminInventory() {
           >
             Actualizar
           </Button>
+
+          <Button
+            variant="outlined"
+            startIcon={<FileDownload />}
+            onClick={handleExportarCSV}
+            disabled={productosFiltrados.length === 0}
+            sx={{ ml: 'auto' }}
+          >
+            Exportar CSV
+          </Button>
         </Box>
       </Paper>
 
@@ -322,14 +392,27 @@ export default function AdminInventory() {
           <CircularProgress />
         </Box>
       ) : (
-        <ProductosTable
-          productos={productosFiltrados}
-          loading={loading}
-          onEdit={handleEditarProducto}
-          onDelete={handleEliminarProducto}
-          onDeletePermanente={isAdmin ? handleEliminarPermanente : undefined}
-          onView={handleVerVariantes}
-        />
+        <Box>
+          <ProductosTable
+            productos={productosPaginados}
+            loading={loading}
+            onEdit={handleEditarProducto}
+            onDelete={handleEliminarProducto}
+            onDeletePermanente={isAdmin ? handleEliminarPermanente : undefined}
+            onView={handleVerVariantes}
+          />
+          <TablePagination
+            component="div"
+            count={productosFiltrados.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25, 50, 100]}
+            labelRowsPerPage="Productos por página:"
+            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
+          />
+        </Box>
       )}
 
       {/* Diálogo de formulario de producto */}
@@ -366,7 +449,7 @@ export default function AdminInventory() {
                 Esta acción hará que el producto aparezca nuevamente en el menú y esté disponible para ventas.
               </>
             )}
-          </Typography>
+      </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDeleteConfirm(false)} disabled={loading}>
@@ -404,7 +487,7 @@ export default function AdminInventory() {
                 <li>No tiene recetas asociadas</li>
                 <li>No tiene variantes (si es producto base)</li>
               </ul>
-            </Typography>
+      </Typography>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenDeletePermanenteConfirm(false)} disabled={loading}>

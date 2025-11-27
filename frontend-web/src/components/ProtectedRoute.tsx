@@ -1,5 +1,4 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { CircularProgress, Box } from '@mui/material';
 import { useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';

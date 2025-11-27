@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
   Card,
   CardContent,
-  Button,
-  ButtonGroup,
   Table,
   TableBody,
   TableCell,
@@ -30,12 +28,10 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { es } from 'date-fns/locale';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
+import DateRangeFilter from '../../components/common/DateRangeFilter';
+import type { DateRangeValue } from '../../types/dateRange.types';
 
 interface ResumenVentas {
   fecha: string;
@@ -61,14 +57,13 @@ interface ProductoRendimiento {
   margenBrutoTotal: number;
 }
 
-type PeriodoFiltro = 'hoy' | 'semana' | 'mes' | 'rango';
-
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export default function AdminReports() {
-  const [periodo, setPeriodo] = useState<PeriodoFiltro>('hoy');
-  const [fechaInicio, setFechaInicio] = useState<Date | null>(new Date());
-  const [fechaFin, setFechaFin] = useState<Date | null>(new Date());
+  const [dateRange, setDateRange] = useState<DateRangeValue>({
+    desde: new Date().toISOString().split('T')[0],
+    hasta: new Date().toISOString().split('T')[0],
+  });
   const [resumen, setResumen] = useState<ResumenVentas | null>(null);
   const [productosTop, setProductosTop] = useState<ProductoRendimiento[]>([]);
   const [loading, setLoading] = useState(false);
@@ -76,41 +71,30 @@ export default function AdminReports() {
 
   useEffect(() => {
     loadData();
-  }, [periodo]);
-
-  const calcularRangoFechas = (periodoSeleccionado: PeriodoFiltro) => {
-    const hoy = new Date();
-    hoy.setHours(23, 59, 59, 999);
-    const inicio = new Date();
-    inicio.setHours(0, 0, 0, 0);
-
-    switch (periodoSeleccionado) {
-      case 'hoy':
-        return { desde: inicio, hasta: hoy };
-      case 'semana':
-        inicio.setDate(inicio.getDate() - 7);
-        return { desde: inicio, hasta: hoy };
-      case 'mes':
-        inicio.setMonth(inicio.getMonth() - 1);
-        return { desde: inicio, hasta: hoy };
-      case 'rango':
-        return { desde: fechaInicio || inicio, hasta: fechaFin || hoy };
-      default:
-        return { desde: inicio, hasta: hoy };
-    }
-  };
+  }, [dateRange]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const { desde, hasta } = calcularRangoFechas(periodo);
+      if (!dateRange.desde || !dateRange.hasta) {
+        setError('Selecciona un rango de fechas válido');
+        return;
+      }
+
+      // Crear fechas en zona horaria local
+      const desde = new Date(dateRange.desde + 'T00:00:00');
+      const hasta = new Date(dateRange.hasta + 'T23:59:59');
 
       // Formatear fechas para el backend (ISO 8601: yyyy-MM-ddTHH:mm:ss)
-      // El backend espera formato ISO_DATE_TIME sin zona horaria
       const desdeISO = desde.toISOString().split('.')[0]; // yyyy-MM-ddTHH:mm:ss
       const hastaISO = hasta.toISOString().split('.')[0]; // yyyy-MM-ddTHH:mm:ss
+
+      console.log('Cargando reportes para rango:', {
+        desde: desdeISO,
+        hasta: hastaISO
+      });
 
       // Cargar resumen de ventas
       const resumenResponse = await apiService.get(
@@ -120,7 +104,7 @@ export default function AdminReports() {
       if (resumenResponse.success && resumenResponse.data) {
         const data = resumenResponse.data;
         setResumen({
-          fecha: data.fecha || desde.toISOString().split('T')[0],
+          fecha: data.fecha || dateRange.desde,
           totalVentas: parseFloat(data.totalVentas) || 0,
           totalCostos: parseFloat(data.totalCostos) || 0,
           margenBruto: parseFloat(data.margenBruto) || 0,
@@ -158,16 +142,8 @@ export default function AdminReports() {
     }
   };
 
-  const handlePeriodoChange = (nuevoPeriodo: PeriodoFiltro) => {
-    setPeriodo(nuevoPeriodo);
-  };
-
-  const handleAplicarFiltro = () => {
-    if (periodo === 'rango' && (!fechaInicio || !fechaFin)) {
-      setError('Selecciona ambas fechas para el rango personalizado');
-      return;
-    }
-    loadData();
+  const handleDateRangeChange = (range: DateRangeValue) => {
+    setDateRange(range);
   };
 
   // Datos para gráficas
@@ -210,7 +186,6 @@ export default function AdminReports() {
     .slice(0, 10);
 
     return (
-    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4">Reportes y Estadísticas</Typography>
@@ -222,63 +197,29 @@ export default function AdminReports() {
           </Alert>
         )}
 
-        {/* Filtros */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Filtros de Período
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', mt: 2 }}>
-              <ButtonGroup variant="outlined" aria-label="Filtros de período">
-                <Button
-                  variant={periodo === 'hoy' ? 'contained' : 'outlined'}
-                  onClick={() => handlePeriodoChange('hoy')}
-                >
-                  Hoy
-                </Button>
-                <Button
-                  variant={periodo === 'semana' ? 'contained' : 'outlined'}
-                  onClick={() => handlePeriodoChange('semana')}
-                >
-                  Última Semana
-                </Button>
-                <Button
-                  variant={periodo === 'mes' ? 'contained' : 'outlined'}
-                  onClick={() => handlePeriodoChange('mes')}
-                >
-                  Último Mes
-                </Button>
-                <Button
-                  variant={periodo === 'rango' ? 'contained' : 'outlined'}
-                  onClick={() => handlePeriodoChange('rango')}
-                >
-                  Rango Personalizado
-                </Button>
-              </ButtonGroup>
+        {/* Filtro de rango de fechas */}
+        <DateRangeFilter 
+          onChange={handleDateRangeChange} 
+          initialRange={dateRange}
+          label="Período de análisis"
+        />
 
-              {periodo === 'rango' && (
-                <>
-                  <DatePicker
-                    label="Fecha Inicio"
-                    value={fechaInicio}
-                    onChange={(newValue) => setFechaInicio(newValue)}
-                    slotProps={{ textField: { size: 'small' } }}
-                  />
-                  <DatePicker
-                    label="Fecha Fin"
-                    value={fechaFin}
-                    onChange={(newValue) => setFechaFin(newValue)}
-                    slotProps={{ textField: { size: 'small' } }}
-                  />
-                </>
-              )}
-
-              <Button variant="contained" onClick={handleAplicarFiltro} disabled={loading}>
-                {loading ? <CircularProgress size={20} /> : 'Aplicar Filtro'}
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
+        {/* Resumen del período */}
+        {resumen && (
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Resumen del Período Seleccionado
+              </Typography>
+              <Typography variant="body1">
+                Período: {new Date(dateRange.desde).toLocaleDateString('es-ES')} - {new Date(dateRange.hasta).toLocaleDateString('es-ES')}
+              </Typography>
+              <Typography variant="body1">
+                Total de ventas: {resumen.cantidadVentas} | Ingresos: ${resumen.totalVentas.toFixed(2)} | Items vendidos: {resumen.itemsVendidos}
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
 
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -629,6 +570,5 @@ export default function AdminReports() {
           <Alert severity="info">No hay datos disponibles para el período seleccionado</Alert>
         )}
       </Box>
-    </LocalizationProvider>
   );
 }

@@ -9,6 +9,7 @@ interface Usuario {
   nombre: string;
   rol?: string; // Para compatibilidad
   rolNombre?: string; // Campo real del backend
+  sucursalId?: number; // ID de la sucursal del usuario
 }
 
 interface AuthContextType {
