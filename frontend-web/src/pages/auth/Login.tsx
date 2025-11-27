@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Box, Card, CardContent, TextField, Button, Typography, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import apiService from '../../services/api.service';
-import { API_ENDPOINTS } from '../../config/api.config';
+
+
 
 export default function Login() {
   const navigate = useNavigate();

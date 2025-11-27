@@ -26,7 +26,7 @@ import {
   IconButton,
   Chip,
 } from '@mui/material';
-import { Add, Edit, Delete, AttachMoney } from '@mui/icons-material';
+import { Add, Delete, AttachMoney } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -235,7 +235,7 @@ export default function AdminExpenses() {
       const request = {
         categoriaGastoId: categoriaId,
         proveedorId: proveedorId || null,
-        sucursalId: usuario?.sucursalId || null,
+        sucursalId: usuario?.idSucursal || null,
         monto: parseFloat(monto),
         fecha: fechaISO,
         metodoPagoId: metodoPagoId || null,

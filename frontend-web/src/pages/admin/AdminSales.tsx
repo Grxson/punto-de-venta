@@ -25,10 +25,8 @@ import {
   MenuItem,
   Select,
   FormControl,
-  InputLabel,
   Divider,
   Snackbar,
-  Tooltip,
   ClickAwayListener,
   Popper,
   List,
@@ -36,7 +34,7 @@ import {
   ListItemButton,
   ListItemText,
 } from '@mui/material';
-import { Cancel, Visibility, Refresh, Edit, Add, Delete, Remove, AutoFixHigh } from '@mui/icons-material';
+import { Cancel, Refresh, Edit, Add, Delete, Remove } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import apiService from '../../services/api.service';
@@ -576,6 +574,7 @@ export default function AdminSales() {
       metodoPagoNombre: metodosPago[0].nombre,
       monto: restante > 0 ? restante : 0, // Auto-completar con el restante
       referencia: '',
+      fecha: new Date().toISOString(),
     };
     setPagosEditados([...pagosEditados, nuevoPago]);
     setSnackbar({
@@ -1255,6 +1254,7 @@ export default function AdminSales() {
                         metodoPagoNombre: metodo.nombre,
                         monto: totalVenta, // Auto-completar con el total pendiente
                         referencia: '',
+                        fecha: new Date().toISOString(),
                       };
                       setPagosEditados([...pagosEditados, nuevoPago]);
                       setSnackbar({
@@ -1295,6 +1295,7 @@ export default function AdminSales() {
                     metodoPagoNombre: metodosPago[0]?.nombre || '',
                     monto: restante > 0 ? restante : 0, // Auto-completar con el restante
                     referencia: '',
+                    fecha: new Date().toISOString(),
                   };
                   setPagosEditados([...pagosEditados, nuevoPago]);
                   setSnackbar({

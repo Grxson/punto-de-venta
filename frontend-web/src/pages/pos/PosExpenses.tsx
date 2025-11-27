@@ -251,7 +251,7 @@ export default function PosExpenses() {
       return;
     }
 
-    if (!usuario?.sucursalId) {
+        if (!usuario?.idSucursal) {
       setError('No se pudo obtener la sucursal del usuario. Intenta iniciar sesión de nuevo.');
       setSubmitting(false);
       return;
@@ -261,7 +261,7 @@ export default function PosExpenses() {
       const request: CrearGastoRequest = {
         categoriaGastoId: categoriaGastoId as number,
         proveedorId: proveedorId ? (proveedorId as number) : undefined,
-        sucursalId: usuario.sucursalId,
+            sucursalId: usuario.idSucursal,
         monto: parseFloat(monto),
         fecha: fecha ? fecha.toISOString() : undefined,
         metodoPagoId: metodoPagoId ? (metodoPagoId as number) : undefined,
