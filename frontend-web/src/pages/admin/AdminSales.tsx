@@ -317,7 +317,7 @@ export default function AdminSales() {
         );
         
         // Agregar productos de la venta que no estén en la lista (por si son variantes o productos eliminados)
-        const productosIdsEnVenta = new Set(venta.items.map(item => item.productoId));
+        // const productosIdsEnVenta = new Set(venta.items.map(item => item.productoId)); // No usado
         const productosIdsDisponibles = new Set(productosConVariantes.map(p => p.id));
         const productosFaltantes = venta.items
           .filter(item => !productosIdsDisponibles.has(item.productoId))
@@ -562,27 +562,28 @@ export default function AdminSales() {
     setIndiceItemParaVariante(null);
   };
 
-  const handleAgregarPago = () => {
-    if (metodosPago.length === 0) return;
-    const totalVenta = calcularTotal();
-    const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
-    const restante = Math.max(0, totalVenta - totalPagos);
-    
-    const nuevoPago: Pago = {
-      id: 0,
-      metodoPagoId: metodosPago[0].id,
-      metodoPagoNombre: metodosPago[0].nombre,
-      monto: restante > 0 ? restante : 0, // Auto-completar con el restante
-      referencia: '',
-      fecha: new Date().toISOString(),
-    };
-    setPagosEditados([...pagosEditados, nuevoPago]);
-    setSnackbar({
-      open: true,
-      message: `✓ Pago agregado ($${nuevoPago.monto.toFixed(2)})`,
-      tipo: 'success',
-    });
-  };
+  // Función no usada - comentada completamente
+  // const handleAgregarPago = () => {
+  //   if (metodosPago.length === 0) return;
+  //   const totalVenta = calcularTotal();
+  //   const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
+  //   const restante = Math.max(0, totalVenta - totalPagos);
+  //   
+  //   const nuevoPago: Pago = {
+  //     id: 0,
+  //     metodoPagoId: metodosPago[0].id,
+  //     metodoPagoNombre: metodosPago[0].nombre,
+  //     monto: restante > 0 ? restante : 0,
+  //     referencia: '',
+  //     fecha: new Date().toISOString(),
+  //   };
+  //   setPagosEditados([...pagosEditados, nuevoPago]);
+  //   setSnackbar({
+  //     open: true,
+  //     message: `✓ Pago agregado ($${nuevoPago.monto.toFixed(2)})`,
+  //     tipo: 'success',
+  //   });
+  // };
 
   const handleEliminarPago = (index: number) => {
     const pagoEliminado = pagosEditados[index];
@@ -993,7 +994,7 @@ export default function AdminSales() {
           </Typography>
           <Stack spacing={2} sx={{ mb: 3 }}>
             {itemsEditados.map((item, index) => {
-              const producto = productos.find(p => p.id === item.productoId);
+              // const producto = productos.find(p => p.id === item.productoId); // No usado
               return (
                 <Card key={index} variant="outlined" sx={{ borderRadius: 2 }}>
                   <CardContent>
@@ -1148,8 +1149,8 @@ export default function AdminSales() {
             {/* Lista de pagos existentes - Compacta */}
             {pagosEditados.map((pago, index) => {
               const metodo = metodosPago.find(m => m.id === pago.metodoPagoId);
-              const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
-              const restante = calcularTotal() - totalPagos;
+              // const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0); // No usado aquí
+              // const restante = calcularTotal() - totalPagos; // No usado aquí
               
               return (
                 <Card key={index} variant="outlined" sx={{ mb: 1.5, borderRadius: 2 }}>

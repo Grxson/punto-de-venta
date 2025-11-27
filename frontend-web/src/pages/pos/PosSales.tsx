@@ -500,27 +500,28 @@ export default function PosSales() {
     setIndiceItemParaVariante(null);
   };
 
-  const handleAgregarPago = () => {
-    if (metodosPago.length === 0) return;
-    const totalVenta = calcularTotal();
-    const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
-    const restante = Math.max(0, totalVenta - totalPagos);
-    
-    const nuevoPago: Pago = {
-      id: 0,
-      metodoPagoId: metodosPago[0].id,
-      metodoPagoNombre: metodosPago[0].nombre,
-      monto: restante > 0 ? restante : 0, // Auto-completar con el restante
-      referencia: '',
-      fecha: new Date().toISOString(),
-    };
-    setPagosEditados([...pagosEditados, nuevoPago]);
-    setSnackbar({
-      open: true,
-      message: `✓ Pago agregado ($${nuevoPago.monto.toFixed(2)})`,
-      tipo: 'success',
-    });
-  };
+  // Función no usada - comentada completamente
+  // const handleAgregarPago = () => {
+  //   if (metodosPago.length === 0) return;
+  //   const totalVenta = calcularTotal();
+  //   const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
+  //   const restante = Math.max(0, totalVenta - totalPagos);
+  //   
+  //   const nuevoPago: Pago = {
+  //     id: 0,
+  //     metodoPagoId: metodosPago[0].id,
+  //     metodoPagoNombre: metodosPago[0].nombre,
+  //     monto: restante > 0 ? restante : 0,
+  //     referencia: '',
+  //     fecha: new Date().toISOString(),
+  //   };
+  //   setPagosEditados([...pagosEditados, nuevoPago]);
+  //   setSnackbar({
+  //     open: true,
+  //     message: `✓ Pago agregado ($${nuevoPago.monto.toFixed(2)})`,
+  //     tipo: 'success',
+  //   });
+  // };
 
   const handleEliminarPago = (index: number) => {
     const pagoEliminado = pagosEditados[index];

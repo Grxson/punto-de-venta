@@ -33,7 +33,7 @@ class WebSocketService {
   private connected: boolean = false;
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
-  private handlersRegistered: Set<string> = new Set(); // Track registered handlers
+  // private handlersRegistered: Set<string> = new Set(); // Track registered handlers
 
   constructor() {
     this.initializeClient();
@@ -41,7 +41,7 @@ class WebSocketService {
 
   private initializeClient() {
     const wsUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-    const wsEndpoint = `${wsUrl.replace(/^https?/, 'ws')}/ws`;
+    // const wsEndpoint = `${wsUrl.replace(/^https?/, 'ws')}/ws`;
 
     this.client = new Client({
       webSocketFactory: () => new SockJS(`${wsUrl}/ws`) as any,
@@ -143,7 +143,7 @@ class WebSocketService {
   }
 
   on(topic: string, handler: MessageHandler): () => void {
-    const handlerId = `${topic}-${handler.toString().slice(0, 50)}`;
+    // const handlerId = `${topic}-${handler.toString().slice(0, 50)}`;
     
     if (!this.handlers.has(topic)) {
       this.handlers.set(topic, new Set());
