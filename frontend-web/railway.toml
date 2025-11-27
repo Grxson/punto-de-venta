@@ -3,8 +3,9 @@ builder = "NIXPACKS"
 nixpacksConfigPath = "nixpacks.toml"
 
 [deploy]
-# Healthcheck para Railway
-healthcheckPath = "/actuator/health/liveness"
-healthcheckTimeout = 300
+startCommand = "npx vite preview --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/"
+healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
+
