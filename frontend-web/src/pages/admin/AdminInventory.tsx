@@ -404,7 +404,7 @@ export default function AdminInventory() {
             onRowsPerPageChange={handleChangeRowsPerPage}
             rowsPerPageOptions={[5, 10, 25, 50, 100]}
             labelRowsPerPage="Productos por página:"
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
+            labelDisplayedRows={({ from, to, count }: { from: number; to: number; count: number }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
           />
         </Box>
       )}
