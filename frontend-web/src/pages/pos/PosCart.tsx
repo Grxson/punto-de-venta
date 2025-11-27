@@ -5,7 +5,7 @@ import { useCart } from '../../contexts/CartContext';
 
 export default function PosCart() {
   const navigate = useNavigate();
-  const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
+  const { cart, updateQuantity, removeFromCart, total } = useCart();
 
   return (
     <Box>
