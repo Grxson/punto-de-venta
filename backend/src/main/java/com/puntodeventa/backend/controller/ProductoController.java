@@ -1,14 +1,11 @@
 package com.puntodeventa.backend.controller;
 
 import com.puntodeventa.backend.dto.ProductoDTO;
-import com.puntodeventa.backend.dto.ProductoCostoDTO;
-import com.puntodeventa.backend.dto.ProductoCostoHistoricoPageDTO;
 import com.puntodeventa.backend.service.ProductoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,36 +35,9 @@ public class ProductoController {
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Obtener producto por ID", description = "Si es un producto base, incluye su lista de variantes")
+    @Operation(summary = "Obtener producto por ID")
     public ResponseEntity<ProductoDTO> obtener(@PathVariable Long id) {
-        ProductoDTO producto = productoService.obtener(id);
-        // Si es un producto base, cargar variantes
-        if (producto.productoBaseId() == null) {
-            List<ProductoDTO> variantes = productoService.obtenerVariantes(id);
-            producto = new ProductoDTO(
-                    producto.id(),
-                    producto.nombre(),
-                    producto.descripcion(),
-                    producto.categoriaId(),
-                    producto.categoriaNombre(),
-                    producto.precio(),
-                    producto.costoEstimado(),
-                    producto.sku(),
-                    producto.activo(),
-                    producto.disponibleEnMenu(),
-                    producto.productoBaseId(),
-                    producto.nombreVariante(),
-                    producto.ordenVariante(),
-                    variantes
-            );
-        }
-        return ResponseEntity.ok(producto);
-    }
-    
-    @GetMapping("/{id}/variantes")
-    @Operation(summary = "Obtener variantes de un producto base")
-    public ResponseEntity<List<ProductoDTO>> obtenerVariantes(@PathVariable Long id) {
-        return ResponseEntity.ok(productoService.obtenerVariantes(id));
+        return ResponseEntity.ok(productoService.obtener(id));
     }
 
     @PostMapping
@@ -94,42 +64,5 @@ public class ProductoController {
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         productoService.eliminar(id);
         return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/{id}/permanente")
-    @Operation(summary = "Eliminar producto definitivamente", 
-               description = "Elimina físicamente el producto de la base de datos. Solo ADMIN. Valida que no tenga ventas, recetas o variantes asociadas.")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> eliminarDefinitivamente(@PathVariable Long id) {
-        productoService.eliminarDefinitivamente(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    /* ===================== COSTEO ===================== */
-
-    @GetMapping("/{id}/costo")
-    @Operation(summary = "Obtener costo y margen del producto", description = "Incluye costoEstimado, margen absoluto y porcentaje. Si no hay receta, costoEstimado = null.")
-    public ResponseEntity<ProductoCostoDTO> obtenerCosto(@PathVariable Long id) {
-        return ResponseEntity.ok(productoService.obtenerCosto(id));
-    }
-
-    @PostMapping("/{id}/recalcular-costo")
-    @Operation(summary = "Recalcular costo del producto desde su receta", description = "Recalcula costoEstimado en base a ingredientes y merma. Devuelve nuevo margen.")
-    public ResponseEntity<ProductoCostoDTO> recalcularCosto(@PathVariable Long id) {
-        return new ResponseEntity<>(productoService.recalcularCosto(id), HttpStatus.OK);
-    }
-
-    @PostMapping("/recalcular-costos")
-    @Operation(summary = "Recalcular costos de todos los productos", description = "Procesa cada producto y actualiza su costoEstimado si tiene receta.")
-    public ResponseEntity<List<ProductoCostoDTO>> recalcularCostosMasivo() {
-        return ResponseEntity.ok(productoService.recalcularCostosMasivo());
-    }
-
-    @GetMapping("/{id}/costos/historico")
-    @Operation(summary = "Histórico de costos del producto", description = "Devuelve snapshots históricos del costo y margen ordenados desc por fecha de cálculo.")
-    public ResponseEntity<ProductoCostoHistoricoPageDTO> historialCostos(@PathVariable Long id,
-                                                                        @RequestParam(defaultValue = "0") int pagina,
-                                                                        @RequestParam(defaultValue = "50") int tamano) {
-        return ResponseEntity.ok(productoService.historialCostos(id, pagina, tamano));
     }
 }
