@@ -156,7 +156,7 @@ public class DataInitializer {
                         );
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
-                            "VALUES (2, 'Licuados y Chocomiles', 'Licuados de frutas y chocomiles', true)"
+                            "VALUES (2, 'Licuados y Chocomiles', 'Licuados y chocomiles de diferentes sabores', true)"
                         );
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
@@ -168,7 +168,11 @@ public class DataInitializer {
                         );
                         jdbcTemplate.execute(
                             "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
-                            "VALUES (5, 'Complementos', 'Postres, bebidas y productos complementarios', true)"
+                            "VALUES (5, 'Postres', 'Postres y productos dulces', true)"
+                        );
+                        jdbcTemplate.execute(
+                            "INSERT INTO categorias_productos (id, nombre, descripcion, activa) " +
+                            "VALUES (6, 'Bebidas', 'Bebidas complementarias (café, té, etc.)', true)"
                         );
                         
                         // ============================================
@@ -205,16 +209,16 @@ public class DataInitializer {
                             new String[][]{{"Chico", "28.00"}, {"Mediano", "45.00"}, {"Grande", "80.00"}});
                         
                         // ============================================
-                        // LICUADOS Y CHOCOMILES (Categoría 2) - Separados por sabor (Chico/Mediano/Grande)
+                        // LICUADOS Y CHOCOMILES (Categoría 2)
                         // ============================================
                         
-                        // Licuados separados por sabor (aunque tengan el mismo precio)
+                        // Licuados separados por sabor
                         crearProductoConVariantes(jdbcTemplate,
                             "Fresa", "Licuado de fresa", 2L, 35.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
-                            "Platano", "Licuado de plátano", 2L, 35.00,
+                            "Plátano", "Licuado de plátano", 2L, 35.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
                         
                         crearProductoConVariantes(jdbcTemplate,
@@ -233,7 +237,7 @@ public class DataInitializer {
                             "Cereales", "Licuado de cereales", 2L, 35.00,
                             new String[][]{{"Chico", "25.00"}, {"Mediano", "35.00"}, {"Grande", "60.00"}});
                         
-                        // Chocomiles separados por sabor (con prefijo para diferenciarlos de licuados)
+                        // Chocomiles separados por sabor
                         crearProductoConVariantes(jdbcTemplate,
                             "Chocomilk Chocolate", "Chocomilk de chocolate", 2L, 25.00,
                             new String[][]{{"Chico", "18.00"}, {"Mediano", "25.00"}, {"Grande", "40.00"}});
@@ -346,11 +350,16 @@ public class DataInitializer {
                             "VALUES (?, ?, ?, ?, ?, ?)",
                             "Cereal", "Cereal", 4, 5.00, true, true
                             );
-                            jdbcTemplate.update(
+                        jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Rompope, Jerez", "Rompope o jerez", 4, 15.00, true, true
-                            );
+                            "Rompope", "Rompope", 4, 15.00, true, true
+                        );
+                        jdbcTemplate.update(
+                            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                            "Jerez", "Jerez", 4, 15.00, true, true
+                        );
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
@@ -368,7 +377,7 @@ public class DataInitializer {
                         );
                         
                         // ============================================
-                        // COMPLEMENTOS (Categoría 5) - Sin variantes
+                        // POSTRES (Categoría 5) - Sin variantes
                         // ============================================
                         
                         jdbcTemplate.update(
@@ -401,15 +410,20 @@ public class DataInitializer {
                             "VALUES (?, ?, ?, ?, ?, ?)",
                             "Yakult", "Yakult", 5, 10.00, true, true
                         );
+                        
+                        // ============================================
+                        // BEBIDAS (Categoría 6) - Sin variantes
+                        // ============================================
+                        
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Cafe", "Café", 5, 20.00, true, true
+                            "Cafe", "Café", 6, 20.00, true, true
                         );
                         jdbcTemplate.update(
                             "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
-                            "Té", "Té", 5, 15.00, true, true
+                            "Té", "Té", 6, 15.00, true, true
                         );
                         
                         // Contar productos totales (incluyendo variantes)
@@ -418,27 +432,30 @@ public class DataInitializer {
                         Long variantes = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM productos WHERE producto_base_id IS NOT NULL", Long.class);
                         
                         System.out.println(">>> ✅ Categorías y productos del menú 'Jugos y Licuados Doña Chuy' cargados:");
-                        System.out.println("    - 5 Categorías (Jugos, Licuados y Chocomiles, Desayunos, Adicionales, Complementos)");
+                        System.out.println("    - 6 Categorías (Jugos, Chocomiles, Desayunos, Adicionales, Postres, Bebidas)");
                         System.out.println("    - " + productosBase + " Productos base");
                         System.out.println("    - " + variantes + " Variantes de productos");
                         System.out.println("    - Total: " + totalProductos + " productos");
                         System.out.println("    - Productos con variantes:");
-                        System.out.println("      * 7 Jugos (21 variantes: Chico/Mediano/Grande)");
-                        System.out.println("      * 11 Licuados/Chocomiles (33 variantes: Chico/Mediano/Grande)");
+                        System.out.println("      * 13 Jugos y Licuados (39 variantes: Chico/Mediano/Grande)");
+                        System.out.println("      * 5 Chocomiles (15 variantes: Chico/Mediano/Grande)");
                         System.out.println("      * 1 Waffles (2 variantes: Chico/Grande)");
                         System.out.println("    - Productos sin variantes:");
                         System.out.println("      * 10 Lonches y Sandwiches (separados individualmente)");
                         System.out.println("    - Reorganización:");
-                        System.out.println("      * 'Jugos Naturales' renombrado a 'Jugos'");
-                        System.out.println("      * Nombres de jugos simplificados (sin 'Jugo de')");
-                        System.out.println("      * Naranja y Toronja separados como productos individuales");
+                        System.out.println("      * 'Jugos Naturales' renombrado a 'Jugos' e incluye licuados");
+                        System.out.println("      * 'Licuados y Chocomiles' separado en 'Jugos' (licuados) y 'Chocomiles'");
+                        System.out.println("      * Nombres clarificados: 'Jugo de Naranja', 'Licuado de Fresa', etc.");
                         System.out.println("      * Molletes, Lonches y Sandwiches movidos a 'Desayunos'");
                         System.out.println("      * Nueva categoría 'Adicionales' con ingredientes extra");
-                        System.out.println("      * 'Complementos' actualizado con Café y Té");
+                        System.out.println("      * 'Rompope' y 'Jerez' separados como productos individuales");
+                        System.out.println("      * 'Complementos' dividido en 'Postres' y 'Bebidas'");
                         System.out.println("    - Productos actualizados:");
+                        System.out.println("      * Jugos: Incluye jugos naturales y licuados con nombres claros");
+                        System.out.println("      * Chocomiles: Categoría separada para mejor organización");
                         System.out.println("      * Desayunos: Huevos al gusto ($50), Waffles (Chico $35/Grande $60), Mini Hot Cakes (15pzs $55, 10pzs $45)");
-                        System.out.println("      * Molletes: Molletes Dulces ($30), Ingrediente Extra ($5)");
-                        System.out.println("      * Lonches: Lonches y Sincronizadas ($35)");
+                        System.out.println("      * Postres: Bionicos, Panecitos, Galletas, Pay Queso, Mantecadas, Yakult");
+                        System.out.println("      * Bebidas: Café ($20), Té ($15)");
                     } else {
                         System.out.println(">>> Categorías y productos ya existen (" + categoriaCount + " categorías)");
                     }

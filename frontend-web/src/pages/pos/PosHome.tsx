@@ -201,6 +201,33 @@ export default function PosHome() {
     return 'otros';
   };
 
+  // Función para obtener el tipo específico de producto en "Licuados y Chocomiles"
+  const obtenerTipoProducto = (producto: Producto): string => {
+    // Si no es de la categoría "Licuados y Chocomiles", retornar el nombre de la categoría normal
+    if (producto.categoriaNombre !== 'Licuados y Chocomiles') {
+      return producto.categoriaNombre || 'Sin categoría';
+    }
+    
+    // Si es de "Licuados y Chocomiles", determinar si es "Licuado" o "Chocomilk"
+    const nombreLower = producto.nombre.toLowerCase();
+    
+    // Lista de nombres de licuados (sin prefijo "Licuado de")
+    const licuados = ['fresa', 'plátano', 'platano', 'manzana', 'papaya', 'frutas', 'cereales'];
+    
+    // Si el nombre contiene "chocomilk", es un chocomilk
+    if (nombreLower.includes('chocomilk')) {
+      return 'Chocomilk';
+    }
+    
+    // Si el nombre está en la lista de licuados, es un licuado
+    if (licuados.some(licuado => nombreLower === licuado || nombreLower.includes(licuado))) {
+      return 'Licuado';
+    }
+    
+    // Por defecto, retornar el nombre de la categoría
+    return producto.categoriaNombre || 'Sin categoría';
+  };
+
   // Filtrar productos
   let productosFiltrados = categoriaSeleccionada
     ? productos.filter(p => p.categoriaId === categoriaSeleccionada)
@@ -387,7 +414,7 @@ export default function PosHome() {
                 </Typography>
               )}
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                {producto.categoriaNombre || 'Sin categoría'}
+                {obtenerTipoProducto(producto)}
               </Typography>
             </CardContent>
           </Card>

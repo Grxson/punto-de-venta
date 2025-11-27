@@ -222,9 +222,6 @@ export default function DailyStatsPanel() {
                   <Typography variant="caption">
                     {stats.cantidadVentas} ventas
                   </Typography>
-                  <Typography variant="caption">
-                    Ticket: ${stats.ticketPromedio.toFixed(2)}
-                  </Typography>
                 </Box>
               </Box>
             ) : (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -31,6 +31,8 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  ClickAwayListener,
+  Popper,
 } from '@mui/material';
 import { Cancel, Refresh, ArrowBack, Edit, Add, Delete, Remove } from '@mui/icons-material';
 import { format } from 'date-fns';
@@ -106,6 +108,8 @@ export default function PosSales() {
     message: '',
     tipo: 'info',
   });
+  const [tooltipOpen, setTooltipOpen] = useState<{ [key: number]: boolean }>({});
+  const tooltipRefs = useRef<{ [key: number]: HTMLElement | null }>({});
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
   const [productoSeleccionadoParaVariante, setProductoSeleccionadoParaVariante] = useState<any | null>(null);
   const [indiceItemParaVariante, setIndiceItemParaVariante] = useState<number | null>(null); // Para saber si es nuevo item o edición
@@ -730,7 +734,91 @@ export default function PosSales() {
                           size="small"
                         />
                       </TableCell>
-                      <TableCell>{venta.items.length} producto(s)</TableCell>
+                      <TableCell>
+                        <Box sx={{ maxWidth: 250 }}>
+                          {venta.items.length === 1 ? (
+                            <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                              {venta.items[0].cantidad}x {venta.items[0].productoNombre}
+                            </Typography>
+                          ) : (
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 0.5 }}>
+                                {venta.items.length} productos:
+                              </Typography>
+                              {venta.items.slice(0, 2).map((item, index) => (
+                                <Typography key={index} variant="caption" display="block" color="text.secondary">
+                                  {item.cantidad}x {item.productoNombre}
+                                </Typography>
+                              ))}
+                              {venta.items.length > 2 && (
+                                <>
+                                  <Typography 
+                                    ref={(el) => { 
+                                      if (el) {
+                                        tooltipRefs.current[venta.id] = el;
+                                      } else {
+                                        delete tooltipRefs.current[venta.id];
+                                      }
+                                    }}
+                                    variant="caption" 
+                                    color="primary" 
+                                    onClick={() => setTooltipOpen(prev => ({ ...prev, [venta.id]: !prev[venta.id] }))}
+                                    sx={{ 
+                                      fontStyle: 'italic', 
+                                      cursor: 'pointer',
+                                      textDecoration: 'underline',
+                                      '&:hover': { color: 'primary.dark' }
+                                    }}
+                                  >
+                                    +{venta.items.length - 2} más... (ver todos)
+                                  </Typography>
+                                  {tooltipOpen[venta.id] && tooltipRefs.current[venta.id] && (
+                                    <Popper
+                                      open={true}
+                                      anchorEl={tooltipRefs.current[venta.id]}
+                                      placement="right-start"
+                                      sx={{ zIndex: 1300 }}
+                                      disablePortal={false}
+                                      modifiers={[
+                                        {
+                                          name: 'preventOverflow',
+                                          enabled: true,
+                                          options: {
+                                            altAxis: true,
+                                            altBoundary: true,
+                                            tether: true,
+                                            rootBoundary: 'document',
+                                          },
+                                        },
+                                      ]}
+                                    >
+                                      <ClickAwayListener onClickAway={() => setTooltipOpen(prev => ({ ...prev, [venta.id]: false }))}>
+                                        <Paper
+                                          elevation={8}
+                                          sx={{
+                                            p: 2,
+                                            maxWidth: 300,
+                                            ml: 1
+                                          }}
+                                        >
+                                          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                                            Todos los productos:
+                                          </Typography>
+                                          {venta.items.map((item, index) => (
+                                            <Typography key={index} variant="body2" display="block" sx={{ mb: 0.5 }}>
+                                              {item.cantidad}x {item.productoNombre} - ${(item.precioUnitario * item.cantidad).toFixed(2)}
+                                            </Typography>
+                                          ))}
+                                        </Paper>
+                                      </ClickAwayListener>
+                                    </Popper>
+                                  )}
+                                </>
+                              )}
+                            </Box>
+                          )}
+                        </Box>
+                      </TableCell>
                       <TableCell>
                         {venta.pagos.map(p => p.metodoPagoNombre).join(', ')}
                       </TableCell>
