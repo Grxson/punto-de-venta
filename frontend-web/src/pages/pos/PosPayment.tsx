@@ -137,7 +137,7 @@ export default function PosPayment() {
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
         <Button
           startIcon={<ArrowBack />}
-          onClick={() => navigate('/pos/cart')}
+          onClick={() => navigate('/pos')}
           sx={{ mr: 2, minHeight: '48px' }}
         >
           Volver
@@ -159,7 +159,26 @@ export default function PosPayment() {
           </Typography>
           
           {/* Lista de productos */}
-          <Box sx={{ mb: 2, maxHeight: '300px', overflowY: 'auto' }}>
+          <Box sx={{ 
+            mb: 2, 
+            maxHeight: '300px', 
+            overflowY: 'auto',
+            pr: 1, // Padding derecho para separar del scrollbar
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: '#f1f1f1',
+              borderRadius: '4px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: '#888',
+              borderRadius: '4px',
+              '&:hover': {
+                background: '#555',
+              },
+            },
+          }}>
             {cart.map((item) => (
               <Box key={item.producto.id} sx={{ mb: 1, pb: 1, borderBottom: '1px solid #eee' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

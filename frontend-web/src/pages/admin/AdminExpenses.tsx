@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -31,9 +31,12 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { es } from 'date-fns/locale';
+import { format } from 'date-fns';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
+import DateRangeFilter from '../../components/common/DateRangeFilter';
+import type { DateRangeValue } from '../../types/dateRange.types';
 
 interface CategoriaGasto {
   id: number;
@@ -90,6 +93,12 @@ export default function AdminExpenses() {
   const [error, setError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingGasto, setEditingGasto] = useState<Gasto | null>(null);
+  
+  // Estado para el filtro de fechas
+  const [dateRange, setDateRange] = useState<DateRangeValue>({
+    desde: new Date().toISOString().split('T')[0],
+    hasta: new Date().toISOString().split('T')[0],
+  });
 
   // Form state
   const [categoriaId, setCategoriaId] = useState<number | ''>('');
@@ -137,6 +146,45 @@ export default function AdminExpenses() {
     } finally {
       setLoadingData(false);
     }
+  };
+
+  // Filtrar gastos por rango de fechas
+  const gastosFiltrados = useMemo(() => {
+    if (!dateRange.desde || !dateRange.hasta) return gastos;
+    
+    // Crear fechas en zona horaria local
+    const desde = new Date(dateRange.desde + 'T00:00:00');
+    const hasta = new Date(dateRange.hasta + 'T23:59:59');
+    
+    console.log('Filtro de gastos:', {
+      desde: desde.toISOString(),
+      hasta: hasta.toISOString(),
+      totalGastos: gastos.length,
+      gastosEjemplo: gastos.slice(0, 3).map(g => ({ id: g.id, fecha: g.fecha }))
+    });
+    
+    const filtrados = gastos.filter(gasto => {
+      const fechaGasto = new Date(gasto.fecha);
+      const cumpleFiltro = fechaGasto >= desde && fechaGasto <= hasta;
+      
+      if (gastos.length <= 5) { // Solo log si hay pocos gastos para no saturar
+        console.log('Gasto', gasto.id, {
+          fechaGasto: fechaGasto.toISOString(),
+          desde: desde.toISOString(),
+          hasta: hasta.toISOString(),
+          cumpleFiltro
+        });
+      }
+      
+      return cumpleFiltro;
+    });
+    
+    console.log('Gastos filtrados:', filtrados.length);
+    return filtrados;
+  }, [gastos, dateRange]);
+
+  const handleDateRangeChange = (range: DateRangeValue) => {
+    setDateRange(range);
   };
 
   const handleOpenDialog = (gasto?: Gasto) => {
@@ -235,8 +283,8 @@ export default function AdminExpenses() {
     }
   };
 
-  // Calcular total de gastos
-  const totalGastos = gastos.reduce((sum, gasto) => sum + gasto.monto, 0);
+  // Calcular total de gastos (filtrados)
+  const totalGastosFiltrados = gastosFiltrados.reduce((sum, gasto) => sum + gasto.monto, 0);
 
   if (loadingData) {
     return (
@@ -261,6 +309,13 @@ export default function AdminExpenses() {
           </Button>
         </Box>
 
+        {/* Filtro de fechas */}
+        <DateRangeFilter 
+          onChange={handleDateRangeChange} 
+          initialRange={dateRange}
+          label="Filtrar gastos por fecha"
+        />
+
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
             {error}
@@ -274,13 +329,13 @@ export default function AdminExpenses() {
               <AttachMoney sx={{ fontSize: 40, color: 'error.main' }} />
               <Box>
                 <Typography variant="body2" color="text.secondary">
-                  Total de Gastos Registrados
+                  Total de Gastos (rango seleccionado)
                 </Typography>
                 <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                  ${totalGastos.toFixed(2)}
+                  ${totalGastosFiltrados.toFixed(2)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  {gastos.length} {gastos.length === 1 ? 'gasto' : 'gastos'} registrados
+                  {gastosFiltrados.length} de {gastos.length} {gastos.length === 1 ? 'gasto' : 'gastos'}
                 </Typography>
               </Box>
             </Box>
@@ -304,17 +359,11 @@ export default function AdminExpenses() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {gastos.length > 0 ? (
-                    gastos.map((gasto) => (
+                  {gastosFiltrados.length > 0 ? (
+                    gastosFiltrados.map((gasto) => (
                       <TableRow key={gasto.id}>
                         <TableCell>
-                          {new Date(gasto.fecha).toLocaleDateString('es-MX', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
+                          {format(new Date(gasto.fecha), 'dd/MM/yyyy HH:mm', { locale: es })}
                         </TableCell>
                         <TableCell>
                           <Chip label={gasto.categoriaGastoNombre} size="small" color="primary" />
@@ -340,7 +389,7 @@ export default function AdminExpenses() {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={7} align="center">
-                        No hay gastos registrados
+                        No hay gastos en el rango de fechas seleccionado
                       </TableCell>
                     </TableRow>
                   )}

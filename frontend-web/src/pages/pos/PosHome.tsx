@@ -22,7 +22,7 @@ import {
   Badge,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Payment, ShoppingCart, ExpandMore } from '@mui/icons-material';
+import { Payment, ShoppingCart, ExpandMore, Add, Remove, Restaurant, LunchDining, Fastfood, BreakfastDining } from '@mui/icons-material';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useCart } from '../../contexts/CartContext';
@@ -45,10 +45,18 @@ interface Producto {
 export default function PosHome() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cart, addToCart, itemCount, total } = useCart();
+  const { cart, addToCart, removeFromCart, updateQuantity, itemCount, total } = useCart();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<{ id: number; nombre: string }[]>([]);
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(null);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(() => {
+    // Intentar restaurar la categoría guardada al inicializar
+    // Nota: esto puede ser null si aún no se han cargado las categorías
+    return userPreferencesService.getPosSelectedCategory();
+  });
+  const [subcategoriaDesayunos, setSubcategoriaDesayunos] = useState<string | null>(() => {
+    // Restaurar la subcategoría guardada al montar el componente
+    return userPreferencesService.getPosDesayunosSubcategory();
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ventaExitosa, setVentaExitosa] = useState(false);
@@ -68,7 +76,12 @@ export default function PosHome() {
   }, [location]);
 
   useEffect(() => {
-    loadData();
+    // Cargar datos y restaurar preferencias
+    const initializeData = async () => {
+      await loadData();
+    };
+    
+    initializeData();
 
     // Conectar WebSocket para actualizaciones en tiempo real
     websocketService.connect();
@@ -77,7 +90,7 @@ export default function PosHome() {
     const unsubscribe = websocketService.on('productos', (message) => {
       if (message.tipo === 'PRODUCTO_CREADO' || message.tipo === 'PRODUCTO_ACTUALIZADO') {
         // Recargar productos cuando hay cambios
-        loadData();
+    loadData();
       }
     });
 
@@ -86,10 +99,37 @@ export default function PosHome() {
     };
   }, []);
 
+  // Determinar si la categoría seleccionada es "Desayunos" (debe estar antes de los useEffect que lo usan)
+  const categoriaDesayunos = categorias.find(c => c.nombre === 'Desayunos');
+  const esCategoriaDesayunos = categoriaSeleccionada === categoriaDesayunos?.id;
+
   // Guardar la categoría seleccionada cuando cambia
   useEffect(() => {
-    userPreferencesService.setPosSelectedCategory(categoriaSeleccionada);
-  }, [categoriaSeleccionada]);
+    // Solo guardar si las categorías ya están cargadas
+    if (categorias.length > 0) {
+      userPreferencesService.setPosSelectedCategory(categoriaSeleccionada);
+      
+      // Resetear subcategoría cuando cambia la categoría principal (solo si no es Desayunos)
+      if (categoriaSeleccionada !== null) {
+        const categoriaNombre = categorias.find(c => c.id === categoriaSeleccionada)?.nombre;
+        if (categoriaNombre !== 'Desayunos') {
+          setSubcategoriaDesayunos(null);
+          userPreferencesService.setPosDesayunosSubcategory(null);
+        }
+      } else {
+        setSubcategoriaDesayunos(null);
+        userPreferencesService.setPosDesayunosSubcategory(null);
+      }
+    }
+  }, [categoriaSeleccionada, categorias]);
+
+  // Guardar la subcategoría de Desayunos cuando cambia
+  useEffect(() => {
+    // Solo guardar si estamos en Desayunos y las categorías están cargadas
+    if (esCategoriaDesayunos && categorias.length > 0) {
+      userPreferencesService.setPosDesayunosSubcategory(subcategoriaDesayunos);
+    }
+  }, [subcategoriaDesayunos, esCategoriaDesayunos, categorias]);
 
   const loadData = async () => {
     try {
@@ -102,17 +142,31 @@ export default function PosHome() {
         const categoriasCargadas = categoriasResponse.data;
         setCategorias(categoriasCargadas);
         
-        // Validar y restaurar la categoría seleccionada guardada
+        // Siempre restaurar la categoría seleccionada guardada al cargar las categorías
         const categoriaGuardada = userPreferencesService.getPosSelectedCategory();
         if (categoriaGuardada !== null) {
           // Verificar que la categoría guardada existe en las categorías cargadas
           const categoriaExiste = categoriasCargadas.some((cat: { id: number }) => cat.id === categoriaGuardada);
           if (categoriaExiste) {
+            // Restaurar la categoría (puede ser diferente a la inicializada si las categorías cambiaron)
             setCategoriaSeleccionada(categoriaGuardada);
+            
+            // Si la categoría guardada es Desayunos, restaurar también la subcategoría
+            const categoriaDesayunos = categoriasCargadas.find((cat: { id: number; nombre: string }) => cat.nombre === 'Desayunos');
+            if (categoriaGuardada === categoriaDesayunos?.id) {
+              const subcategoriaGuardada = userPreferencesService.getPosDesayunosSubcategory();
+              // Restaurar la subcategoría guardada (puede ser null si estaba en "TODOS")
+              setSubcategoriaDesayunos(subcategoriaGuardada);
+            } else {
+              // Si no es Desayunos, asegurarse de limpiar la subcategoría
+              setSubcategoriaDesayunos(null);
+            }
           } else {
             // Si la categoría no existe, limpiar la preferencia
             userPreferencesService.setPosSelectedCategory(null);
+            userPreferencesService.setPosDesayunosSubcategory(null);
             setCategoriaSeleccionada(null);
+            setSubcategoriaDesayunos(null);
           }
         }
       }
@@ -138,9 +192,36 @@ export default function PosHome() {
     }
   };
 
-  const productosFiltrados = categoriaSeleccionada
+  // Función para determinar la subcategoría de un producto de desayunos
+  const obtenerSubcategoriaDesayuno = (nombreProducto: string): string => {
+    const nombreLower = nombreProducto.toLowerCase();
+    if (nombreLower.includes('mollete')) return 'molletes';
+    if (nombreLower.includes('lonche') && !nombreLower.includes('sandwich')) return 'lonches';
+    if (nombreLower.includes('sandwich')) return 'sandwiches';
+    return 'otros';
+  };
+
+  // Filtrar productos
+  let productosFiltrados = categoriaSeleccionada
     ? productos.filter(p => p.categoriaId === categoriaSeleccionada)
     : productos;
+
+  // Si estamos en Desayunos y hay una subcategoría seleccionada, filtrar por subcategoría
+  if (esCategoriaDesayunos && subcategoriaDesayunos) {
+    productosFiltrados = productosFiltrados.filter(p => {
+      const subcat = obtenerSubcategoriaDesayuno(p.nombre);
+      return subcat === subcategoriaDesayunos;
+    });
+  }
+
+  // Subcategorías de Desayunos
+  const subcategoriasDesayunos = [
+    { id: 'todos', label: 'TODOS', icon: <Restaurant /> },
+    { id: 'molletes', label: 'MOLLETES', icon: <BreakfastDining /> },
+    { id: 'lonches', label: 'LONCHES', icon: <LunchDining /> },
+    { id: 'sandwiches', label: 'SANDWICHES', icon: <Fastfood /> },
+    { id: 'otros', label: 'PLATOS PRINCIPALES', icon: <Restaurant /> },
+  ];
 
   const handleProductoClick = (producto: Producto) => {
     // Si el producto tiene variantes, mostrar diálogo de selección
@@ -168,13 +249,8 @@ export default function PosHome() {
   };
 
   const handleCarritoClick = () => {
-    // Si solo hay 1 producto, ir directo a pago
-    if (itemCount === 1) {
+    // Ir directamente a pago desde el carrito flotante
       navigate('/pos/payment');
-    } else {
-      // Si hay más productos, ir al carrito
-      navigate('/pos/cart');
-    }
   };
 
   if (loading) {
@@ -204,10 +280,14 @@ export default function PosHome() {
       )}
 
       {/* Filtros por categoría */}
-      <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: esCategoriaDesayunos ? 2 : 0 }}>
         <Button
           variant={categoriaSeleccionada === null ? 'contained' : 'outlined'}
-          onClick={() => setCategoriaSeleccionada(null)}
+            onClick={() => {
+              setCategoriaSeleccionada(null);
+              setSubcategoriaDesayunos(null);
+            }}
           sx={{ minHeight: '48px' }}
         >
           Todas
@@ -216,12 +296,39 @@ export default function PosHome() {
           <Button
             key={cat.id}
             variant={categoriaSeleccionada === cat.id ? 'contained' : 'outlined'}
-            onClick={() => setCategoriaSeleccionada(cat.id)}
+              onClick={() => {
+                setCategoriaSeleccionada(cat.id);
+                if (cat.nombre !== 'Desayunos') {
+                  setSubcategoriaDesayunos(null);
+                }
+              }}
             sx={{ minHeight: '48px' }}
           >
             {cat.nombre}
           </Button>
         ))}
+        </Box>
+
+        {/* Subcategorías de Desayunos */}
+        {esCategoriaDesayunos && (
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2, p: 1.5, backgroundColor: 'rgba(25, 118, 210, 0.08)', borderRadius: 2 }}>
+            {subcategoriasDesayunos.map(subcat => (
+              <Button
+                key={subcat.id}
+                variant={subcategoriaDesayunos === subcat.id ? 'contained' : 'outlined'}
+                onClick={() => setSubcategoriaDesayunos(subcat.id === 'todos' ? null : subcat.id)}
+                size="small"
+                sx={{ 
+                  minHeight: '36px',
+                  textTransform: 'none',
+                }}
+                startIcon={subcat.icon}
+              >
+                {subcat.label}
+              </Button>
+            ))}
+          </Box>
+        )}
       </Box>
 
       {/* Grid de productos */}
@@ -232,9 +339,11 @@ export default function PosHome() {
             xs: 'repeat(2, 1fr)',
             sm: 'repeat(3, 1fr)',
             md: 'repeat(4, 1fr)',
+            lg: 'repeat(5, 1fr)',
+            xl: 'repeat(6, 1fr)',
           },
           gap: 2,
-          pb: cart.length > 0 ? (carritoExpandido ? '180px' : '80px') : 2, // Espacio para el carrito
+          pb: cart.length > 0 ? (carritoExpandido ? '320px' : '80px') : 2, // Espacio para el carrito
         }}
       >
         {productosFiltrados.map(producto => (
@@ -245,14 +354,24 @@ export default function PosHome() {
               display: 'flex',
               flexDirection: 'column',
               cursor: 'pointer',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': {
-                boxShadow: 4,
+                transform: 'translateY(-8px) scale(1.02)',
+                boxShadow: 8,
+                zIndex: 1,
               },
             }}
             onClick={() => handleProductoClick(producto)}
           >
             <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
-              <Typography variant="h6" component="div" gutterBottom>
+              <Typography variant="h6" component="div" gutterBottom sx={{ 
+                fontWeight: 600,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}>
                 {producto.nombre}
               </Typography>
               {producto.variantes && producto.variantes.length > 0 ? (
@@ -267,7 +386,7 @@ export default function PosHome() {
                   ${producto.precio.toFixed(2)}
                 </Typography>
               )}
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                 {producto.categoriaNombre || 'Sin categoría'}
               </Typography>
             </CardContent>
@@ -291,21 +410,42 @@ export default function PosHome() {
         >
           {/* Botón minimizado */}
           {!carritoExpandido && (
-            <Badge badgeContent={itemCount} color="error">
+            <Badge 
+              badgeContent={itemCount} 
+              color="error"
+              sx={{
+                '& .MuiBadge-badge': {
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                },
+                '@keyframes pulse': {
+                  '0%, 100%': {
+                    opacity: 1,
+                  },
+                  '50%': {
+                    opacity: 0.7,
+                  },
+                },
+              }}
+            >
               <IconButton
                 onClick={() => setCarritoExpandido(true)}
                 sx={{
                   backgroundColor: 'primary.main',
-                  color: 'white',
-                  width: 56,
-                  height: 56,
-                  boxShadow: 4,
+            color: 'white',
+                  width: 64,
+                  height: 64,
+                  boxShadow: 6,
+                  transition: 'all 0.3s ease',
                   '&:hover': {
                     backgroundColor: 'primary.dark',
+                    transform: 'scale(1.1)',
+                    boxShadow: 8,
                   },
                 }}
               >
-                <ShoppingCart />
+                <ShoppingCart sx={{ fontSize: 28 }} />
               </IconButton>
             </Badge>
           )}
@@ -316,15 +456,18 @@ export default function PosHome() {
               sx={{
                 backgroundColor: 'primary.main',
                 color: 'white',
-                minWidth: '280px',
-                maxWidth: '320px',
-                boxShadow: 6,
-              }}
-            >
-              <CardContent>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                minWidth: '320px',
+                maxWidth: '400px',
+                maxHeight: '70vh',
+                boxShadow: 12,
+                display: 'flex',
+                flexDirection: 'column',
+          }}
+        >
+              <CardContent sx={{ flex: 1, overflow: 'auto', pb: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    Carrito
+                    Carrito ({itemCount} {itemCount === 1 ? 'item' : 'items'})
                   </Typography>
                   <IconButton
                     size="small"
@@ -335,28 +478,108 @@ export default function PosHome() {
                   </IconButton>
                 </Box>
                 
-                <Typography variant="body2" sx={{ mb: 2, opacity: 0.9 }}>
-                  {itemCount} {itemCount === 1 ? 'producto' : 'productos'}
-                </Typography>
+                {/* Lista de items del carrito */}
+                <List sx={{ mb: 2, maxHeight: '300px', overflow: 'auto' }}>
+                  {cart.map((item, index) => (
+                    <ListItem
+                      key={`${item.producto.id}-${index}`}
+                      sx={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        borderRadius: 1,
+                        mb: 1,
+                        py: 1,
+                        flexDirection: 'column',
+                        alignItems: 'stretch',
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                        {item.producto.nombreVariante 
+                          ? `${item.producto.nombre} - ${item.producto.nombreVariante}`
+                          : item.producto.nombre}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (item.cantidad > 1) {
+                                updateQuantity(item.producto.id, item.cantidad - 1);
+                              } else {
+                                removeFromCart(item.producto.id);
+                              }
+                            }}
+                            sx={{ 
+                              color: 'white',
+                              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                              width: 28,
+                              height: 28,
+                              '&:hover': {
+                                backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                              },
+                            }}
+                          >
+                            <Remove sx={{ fontSize: 18 }} />
+                          </IconButton>
+                          <Typography variant="body2" component="span" sx={{ minWidth: '24px', textAlign: 'center', fontWeight: 600 }}>
+                            {item.cantidad}
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateQuantity(item.producto.id, item.cantidad + 1);
+                            }}
+                            sx={{ 
+                              color: 'white',
+                              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                              width: 28,
+                              height: 28,
+                              '&:hover': {
+                                backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                              },
+                            }}
+                          >
+                            <Add sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Box>
+                        <Typography variant="body2" component="span" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+                          ${(item.producto.precio * item.cantidad).toFixed(2)}
+                        </Typography>
+                      </Box>
+                    </ListItem>
+                  ))}
+                </List>
                 
-                <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>
-                  Total: ${total.toFixed(2)}
-                </Typography>
+                <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.3)', my: 2 }} />
                 
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  fullWidth
-                  onClick={handleCarritoClick}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                    Total:
+          </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                    ${total.toFixed(2)}
+          </Typography>
+                </Box>
+                
+          <Button
+            variant="contained"
+            color="secondary"
+            fullWidth
+            onClick={handleCarritoClick}
                   sx={{ 
                     minHeight: '48px',
                     fontWeight: 'bold',
                     textTransform: 'none',
+                    boxShadow: 4,
+                    '&:hover': {
+                      boxShadow: 6,
+                    },
                   }}
-                  startIcon={itemCount === 1 ? <Payment /> : <ShoppingCart />}
-                >
-                  {itemCount === 1 ? 'Pagar Ahora' : 'Ver Carrito'}
-                </Button>
+                  startIcon={<Payment />}
+          >
+                  Ir a Pagar
+          </Button>
               </CardContent>
             </Card>
           </Collapse>
@@ -396,7 +619,7 @@ export default function PosHome() {
                           </Typography>
                         </Box>
                       }
-                      secondary={variante.descripcion || ''}
+                      secondary={variante.nombreVariante || variante.nombre}
                     />
                   </ListItemButton>
                 </ListItem>

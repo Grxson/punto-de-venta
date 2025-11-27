@@ -84,6 +84,12 @@ public class VentaService {
             venta.setSucursal(sucursal);
         }
         
+        // 2.1. Asignar usuario actual si está autenticado
+        Usuario usuarioActual = obtenerUsuarioActual();
+        if (usuarioActual != null) {
+            venta.setUsuario(usuarioActual);
+        }
+        
         // 3. Procesar items y calcular subtotal
         BigDecimal subtotal = BigDecimal.ZERO;
         

@@ -103,7 +103,7 @@ export default function AdminLayout() {
         component="main"
         sx={{
           flexGrow: 1,
-          padding: 3,
+          p: 3,
           marginTop: '64px',
           overflow: 'auto',
         }}

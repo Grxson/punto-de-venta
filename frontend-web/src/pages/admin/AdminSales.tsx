@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -40,6 +40,8 @@ import { es } from 'date-fns/locale';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
+import DateRangeFilter from '../../components/common/DateRangeFilter';
+import type { DateRangeValue } from '../../types/dateRange.types';
 
 interface VentaItem {
   id: number;
@@ -86,6 +88,12 @@ export default function AdminSales() {
   const [error, setError] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState<number | null>(null);
   const [editando, setEditando] = useState<number | null>(null);
+  
+  // Estado para el filtro de fechas
+  const [dateRange, setDateRange] = useState<DateRangeValue>({
+    desde: new Date().toISOString().split('T')[0],
+    hasta: new Date().toISOString().split('T')[0],
+  });
   
   // Estado para el diálogo de cancelación
   const [dialogoCancelacion, setDialogoCancelacion] = useState(false);
@@ -159,6 +167,45 @@ export default function AdminSales() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Filtrar ventas por rango de fechas
+  const ventasFiltradas = useMemo(() => {
+    if (!dateRange.desde || !dateRange.hasta) return ventas;
+    
+    // Crear fechas en zona horaria local
+    const desde = new Date(dateRange.desde + 'T00:00:00');
+    const hasta = new Date(dateRange.hasta + 'T23:59:59');
+    
+    console.log('Filtro de ventas:', {
+      desde: desde.toISOString(),
+      hasta: hasta.toISOString(),
+      totalVentas: ventas.length,
+      ventasEjemplo: ventas.slice(0, 3).map(v => ({ id: v.id, fecha: v.fecha }))
+    });
+    
+    const filtradas = ventas.filter(venta => {
+      const fechaVenta = new Date(venta.fecha);
+      const cumpleFiltro = fechaVenta >= desde && fechaVenta <= hasta;
+      
+      if (ventas.length <= 5) { // Solo log si hay pocas ventas para no saturar
+        console.log('Venta', venta.id, {
+          fechaVenta: fechaVenta.toISOString(),
+          desde: desde.toISOString(),
+          hasta: hasta.toISOString(),
+          cumpleFiltro
+        });
+      }
+      
+      return cumpleFiltro;
+    });
+    
+    console.log('Ventas filtradas:', filtradas.length);
+    return filtradas;
+  }, [ventas, dateRange]);
+
+  const handleDateRangeChange = (range: DateRangeValue) => {
+    setDateRange(range);
   };
 
   const handleAbrirDialogoCancelacion = (venta: Venta) => {
@@ -660,11 +707,28 @@ export default function AdminSales() {
         </Button>
       </Box>
 
+      {/* Filtro de fechas */}
+      <DateRangeFilter 
+        onChange={handleDateRangeChange} 
+        initialRange={dateRange}
+        label="Filtrar ventas por fecha"
+      />
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
+
+      {/* Resumen de resultados */}
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          Mostrando {ventasFiltradas.length} de {ventas.length} ventas
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Total: ${ventasFiltradas.reduce((sum, v) => sum + v.total, 0).toFixed(2)}
+        </Typography>
+      </Box>
 
       <TableContainer component={Paper}>
         <Table>
@@ -681,16 +745,16 @@ export default function AdminSales() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {ventas.length === 0 ? (
+            {ventasFiltradas.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                    No hay ventas registradas
+                    No hay ventas en el rango de fechas seleccionado
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              ventas.map((venta) => (
+              ventasFiltradas.map((venta) => (
                 <TableRow key={venta.id}>
                   <TableCell>#{venta.id}</TableCell>
                   <TableCell>

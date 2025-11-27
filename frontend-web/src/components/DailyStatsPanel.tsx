@@ -11,11 +11,13 @@ import {
 import { TrendingUp, TrendingDown, ExpandMore } from '@mui/icons-material';
 import apiService from '../services/api.service';
 import { API_ENDPOINTS } from '../config/api.config';
+import { websocketService } from '../services/websocket.service';
 
 interface DailyStats {
   fecha: string;
   totalVentas: number;
   totalCostos: number;
+  totalGastos?: number; // Gastos operativos (separado de costos de productos)
   margenBruto: number;
   cantidadVentas: number;
   itemsVendidos: number;
@@ -31,9 +33,28 @@ export default function DailyStatsPanel() {
 
   useEffect(() => {
     loadStats();
-    // Actualizar cada 30 segundos
+    
+    // Escuchar eventos WebSocket para actualización inmediata
+    const unsubscribeEstadisticas = websocketService.on('estadisticas', (message) => {
+      if (message.tipo === 'ESTADISTICAS_ACTUALIZADAS') {
+        loadStats(); // Actualizar inmediatamente
+      }
+    });
+    
+    const unsubscribeVentas = websocketService.on('ventas', (message) => {
+      if (message.tipo === 'VENTA_CREADA') {
+        loadStats(); // Actualizar inmediatamente
+      }
+    });
+    
+    // Actualizar cada 30 segundos como fallback
     const interval = setInterval(loadStats, 30000);
-    return () => clearInterval(interval);
+    
+    return () => {
+      unsubscribeEstadisticas();
+      unsubscribeVentas();
+      clearInterval(interval);
+    };
   }, []);
 
   const loadStats = async () => {
@@ -46,6 +67,7 @@ export default function DailyStatsPanel() {
           fecha: data.fecha || new Date().toISOString().split('T')[0],
           totalVentas: parseFloat(data.totalVentas) || 0,
           totalCostos: parseFloat(data.totalCostos) || 0,
+          totalGastos: parseFloat(data.totalGastos) || 0,
           margenBruto: parseFloat(data.margenBruto) || 0,
           cantidadVentas: data.cantidadVentas || 0,
           itemsVendidos: data.itemsVendidos || 0,
@@ -152,7 +174,7 @@ export default function DailyStatsPanel() {
                       Gastos
                     </Typography>
                     <Typography variant="h6" color="error" fontWeight="bold">
-                      ${stats.totalCostos.toFixed(2)}
+                      ${(stats.totalGastos || 0).toFixed(2)}
                     </Typography>
                   </Box>
 

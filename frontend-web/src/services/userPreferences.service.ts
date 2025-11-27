@@ -94,6 +94,21 @@ class UserPreferencesService {
   }
 
   /**
+   * Guarda la subcategoría seleccionada en Desayunos
+   */
+  setPosDesayunosSubcategory(subcategoryId: string | null): void {
+    this.setPreference('posDesayunosSubcategory', subcategoryId);
+  }
+
+  /**
+   * Obtiene la subcategoría seleccionada en Desayunos
+   */
+  getPosDesayunosSubcategory(): string | null {
+    const value = this.getPreference<string | null>('posDesayunosSubcategory', null);
+    return value ?? null;
+  }
+
+  /**
    * Limpia todas las preferencias del usuario
    */
   clearAll(): void {

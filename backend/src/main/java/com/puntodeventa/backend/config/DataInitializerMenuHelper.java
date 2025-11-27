@@ -74,5 +74,40 @@ public class DataInitializerMenuHelper {
         
         return productoBaseId;
     }
+    
+    /**
+     * Crea un producto simple sin variantes.
+     * @param jdbcTemplate El JdbcTemplate para ejecutar queries
+     * @param nombre Nombre del producto
+     * @param descripcion Descripción del producto
+     * @param categoriaId ID de la categoría
+     * @param precio Precio del producto
+     */
+    public static void crearProductoSimple(
+            JdbcTemplate jdbcTemplate,
+            String nombre,
+            String descripcion,
+            Long categoriaId,
+            double precio) {
+        
+        // Verificar si ya existe
+        try {
+            Long idExistente = jdbcTemplate.queryForObject(
+                "SELECT id FROM productos WHERE nombre = ? AND producto_base_id IS NULL",
+                Long.class,
+                nombre
+            );
+            return; // Ya existe, no crear
+        } catch (Exception e) {
+            // No existe, crear nuevo
+        }
+        
+        // Crear producto simple
+        jdbcTemplate.update(
+            "INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            nombre, descripcion, categoriaId, precio, true, true, null, null, null
+        );
+    }
 }
 
