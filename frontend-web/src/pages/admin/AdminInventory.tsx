@@ -40,7 +40,7 @@ export default function AdminInventory() {
   const [success, setSuccess] = useState<string | null>(null);
 
   // Filtros
-  const [filtroActivo, setFiltroActivo] = useState<boolean | 'todos'>('todos');
+  const [filtroActivo, setFiltroActivo] = useState<string>('todos');
   const [filtroCategoria, setFiltroCategoria] = useState<number | ''>('');
   const [busqueda, setBusqueda] = useState('');
   
@@ -231,7 +231,7 @@ export default function AdminInventory() {
   };
 
   const productosFiltrados = productos.filter((p) => {
-    if (filtroActivo !== 'todos' && p.activo !== filtroActivo) return false;
+    if (filtroActivo !== 'todos' && p.activo !== (filtroActivo === 'true')) return false;
     if (filtroCategoria && p.categoriaId !== Number(filtroCategoria)) return false;
     if (busqueda.trim() && !p.nombre.toLowerCase().includes(busqueda.toLowerCase())) {
       return false;
@@ -330,17 +330,11 @@ export default function AdminInventory() {
           <FormControl size="small" sx={{ minWidth: 150 }}>
             <InputLabel>Estado</InputLabel>
             <Select
-              value={filtroActivo === 'todos' ? 'todos' : filtroActivo === true ? 'true' : 'false'}
+              value={filtroActivo}
               label="Estado"
               onChange={(e) => {
                 const val = e.target.value;
-                if (val === 'todos') {
-                  setFiltroActivo('todos');
-                } else if (val === 'true') {
-                  setFiltroActivo(true);
-                } else {
-                  setFiltroActivo(false);
-                }
+                setFiltroActivo(val);
               }}
             >
               <MenuItem value="todos">Todos</MenuItem>
