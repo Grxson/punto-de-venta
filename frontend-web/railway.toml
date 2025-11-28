@@ -1,6 +1,6 @@
 [build]
-builder = "NIXPACKS"
-nixpacksConfigPath = "nixpacks.toml"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "npx vite preview --host 0.0.0.0 --port $PORT"
