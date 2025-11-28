@@ -1,29 +1,14 @@
-# Nixpacks configuration for Railway - Frontend Web (Vite + React)# Nixpacks configuration for Railway - Frontend Web (Vite + React)
+# Nixpacks configuration for Railway - Frontend Web (Vite + React)
+# This file configures Railway to build and deploy the Vite frontend
 
-# This file configures Railway to build and deploy the Vite frontend# This file configures Railway to build and deploy the Vite frontend
+[phases.setup]
+nixPkgs = ["nodejs_20"]
 
+[phases.install]
+cmds = ["npm ci"]
 
+[phases.build]
+cmds = ["npm run build"]
 
-[phases.setup][phases.setup]
-
-nixPkgs = ["nodejs_20"]nixPkgs = ["nodejs_20"]
-
-
-
-[phases.install][phases.install]
-
-cmds = ["npm ci"]cmds = ["npm ci"]
-
-
-
-[phases.build][phases.build]
-
-cmds = ["npm run build"]cmds = ["npm run build"]
-
-
-
-[start][start]
-
-cmd = "npx vite preview --host 0.0.0.0 --port $PORT"cmd = "npx vite preview --host 0.0.0.0 --port $PORT"
-
-
+[start]
+cmd = "npx vite preview --host 0.0.0.0 --port $PORT"
