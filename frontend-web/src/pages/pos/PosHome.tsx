@@ -64,6 +64,21 @@ export default function PosHome() {
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [carritoExpandido, setCarritoExpandido] = useState(true);
 
+  // Obtiene el nombre base sin el sufijo de variante (Chico/Mediano/Grande)
+  const obtenerNombreBase = (p: Producto): string => {
+    if (!p?.nombreVariante) return p?.nombre ?? '';
+    let nombre = (p?.nombre || '').trim();
+    const sufijos = ['Chico', 'Mediano', 'Grande'];
+    for (const sufijo of sufijos) {
+      const re = new RegExp(`\\s+${sufijo}$`, 'i');
+      if (re.test(nombre)) {
+        nombre = nombre.replace(re, '').trim();
+        break;
+      }
+    }
+    return nombre;
+  };
+
   useEffect(() => {
     // Verificar si hay mensaje de venta exitosa
     if (location.state?.ventaExitosa) {
@@ -510,8 +525,8 @@ export default function PosHome() {
                       }}
                     >
                       <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                        {item.producto.nombreVariante 
-                          ? `${item.producto.nombre} - ${item.producto.nombreVariante}`
+                        {item.producto.nombreVariante
+                          ? `${obtenerNombreBase(item.producto)} - ${item.producto.nombreVariante}`
                           : item.producto.nombre}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between' }}>
