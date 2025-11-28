@@ -34,6 +34,21 @@ export default function PosPayment() {
   const [loadingMetodos, setLoadingMetodos] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Obtiene el nombre base sin el sufijo de variante (Chico/Mediano/Grande)
+  const obtenerNombreBase = (p: any): string => {
+    if (!p?.nombreVariante) return p?.nombre ?? '';
+    let nombre = (p?.nombre || '').trim();
+    const sufijos = ['Chico', 'Mediano', 'Grande'];
+    for (const sufijo of sufijos) {
+      const re = new RegExp(`\\s+${sufijo}$`, 'i');
+      if (re.test(nombre)) {
+        nombre = nombre.replace(re, '').trim();
+        break;
+      }
+    }
+    return nombre;
+  };
+
   useEffect(() => {
     loadMetodosPago();
   }, []);
@@ -184,12 +199,9 @@ export default function PosPayment() {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="body1" fontWeight="medium">
-                      {item.producto.nombre}
-                      {item.producto.nombreVariante && (
-                        <Typography component="span" variant="body2" color="primary" sx={{ ml: 1, fontWeight: 'bold' }}>
-                          ({item.producto.nombreVariante})
-                        </Typography>
-                      )}
+                      {item.producto.nombreVariante
+                        ? `${obtenerNombreBase(item.producto)} - ${item.producto.nombreVariante}`
+                        : item.producto.nombre}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {item.cantidad} x ${item.producto.precio.toFixed(2)}
