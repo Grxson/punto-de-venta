@@ -14,6 +14,21 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Inyectar variables de entorno para build
+# En Railway estas variables se pasan via ENV en docker build
+ARG VITE_API_URL_PROD=${VITE_API_URL_PROD:-https://punto-de-venta-production-d424.up.railway.app/api}
+ARG VITE_API_URL_STAGING=${VITE_API_URL_STAGING:-https://punto-de-venta-staging.up.railway.app/api}
+ARG VITE_API_TIMEOUT=${VITE_API_TIMEOUT:-30000}
+ARG VITE_API_RETRIES=${VITE_API_RETRIES:-3}
+ARG VITE_APP_ENV=${VITE_APP_ENV:-production}
+
+# Exportar variables de entorno para npm run build
+ENV VITE_API_URL_PROD=${VITE_API_URL_PROD}
+ENV VITE_API_URL_STAGING=${VITE_API_URL_STAGING}
+ENV VITE_API_TIMEOUT=${VITE_API_TIMEOUT}
+ENV VITE_API_RETRIES=${VITE_API_RETRIES}
+ENV VITE_APP_ENV=${VITE_APP_ENV}
+
 # Build the application
 RUN npm run build
 
