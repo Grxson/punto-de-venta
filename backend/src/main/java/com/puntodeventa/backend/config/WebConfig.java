@@ -22,28 +22,24 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         // Configuración CORS global para permitir requests del frontend
         registry.addMapping("/api/**")
-            .allowedOrigins(
-                "http://localhost:5173",           // Vite dev server (local)
-                "http://localhost:3000",           // Fallback dev server
-                "http://localhost:8080",           // Backend mismo (para websockets/health)
-                "https://punto-de-venta-production-d424.up.railway.app", // Frontend en Railway
-                "https://punto-de-venta-staging.up.railway.app"          // Staging
+            .allowedOriginPatterns(
+                "http://localhost:.*",
+                "http://127\\.0\\.0\\.1:.*",
+                "https://.*\\.up\\.railway\\.app"
             )
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
             .allowedHeaders("*")
             .allowCredentials(true)
             .maxAge(3600);
         
-        // CORS para websockets
+        // CORS para websockets - SockJS hace requests HTTP a /ws/info
         registry.addMapping("/ws/**")
-            .allowedOrigins(
-                "http://localhost:5173",
-                "http://localhost:3000",
-                "http://localhost:8080",
-                "https://punto-de-venta-production-d424.up.railway.app",
-                "https://punto-de-venta-staging.up.railway.app"
+            .allowedOriginPatterns(
+                "http://localhost:.*",
+                "http://127\\.0\\.0\\.1:.*",
+                "https://.*\\.up\\.railway\\.app"
             )
-            .allowedMethods("GET", "POST")
+            .allowedMethods("GET", "POST", "OPTIONS")
             .allowedHeaders("*")
             .allowCredentials(true)
             .maxAge(3600);

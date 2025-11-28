@@ -42,11 +42,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // Por eso necesitamos permitir CORS explícitamente
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns(
-                    "http://localhost:5173",           // Vite dev
-                    "http://localhost:3000",           // Dev fallback
-                    "http://localhost:8080",           // Backend mismo
-                    "https://punto-de-venta-production-d424.up.railway.app", // Producción
-                    "https://punto-de-venta-staging.up.railway.app"          // Staging
+                    "http://localhost:*",
+                    "http://127.0.0.1:*",
+                    "https://*.up.railway.app"
                 )
                 .withSockJS()                          // Fallback para navegadores sin WebSocket nativo
                 .setClientLibraryUrl("https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"); // CDN para SockJS
