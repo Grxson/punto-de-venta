@@ -13,22 +13,15 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Inyectar variables de entorno para build
-# En Railway estas variables se pasan via ENV en docker build
-ARG VITE_API_URL_PROD=${VITE_API_URL_PROD:-https://punto-de-venta-production-d424.up.railway.app/api}
-ARG VITE_API_URL_STAGING=${VITE_API_URL_STAGING:-https://punto-de-venta-staging.up.railway.app/api}
-ARG VITE_API_TIMEOUT=${VITE_API_TIMEOUT:-30000}
-ARG VITE_API_RETRIES=${VITE_API_RETRIES:-3}
-ARG VITE_APP_ENV=${VITE_APP_ENV:-production}
+# Asegurar que .env.production existe con las variables correctas
+# Vite leerá .env.production automáticamente durante npm run build
+RUN echo "VITE_API_URL_PROD=https://punto-de-venta-production-d424.up.railway.app/api" > .env.production && \
+    echo "VITE_API_URL_STAGING=https://punto-de-venta-staging.up.railway.app/api" >> .env.production && \
+    echo "VITE_API_TIMEOUT=30000" >> .env.production && \
+    echo "VITE_API_RETRIES=3" >> .env.production && \
+    echo "VITE_APP_ENV=production" >> .env.production
 
-# Exportar variables de entorno para npm run build
-ENV VITE_API_URL_PROD=${VITE_API_URL_PROD}
-ENV VITE_API_URL_STAGING=${VITE_API_URL_STAGING}
-ENV VITE_API_TIMEOUT=${VITE_API_TIMEOUT}
-ENV VITE_API_RETRIES=${VITE_API_RETRIES}
-ENV VITE_APP_ENV=${VITE_APP_ENV}
-
-# Build the application
+# Build the application (Vite leerá .env.production automáticamente)
 RUN npm run build
 
 # Production stage
