@@ -71,7 +71,7 @@ public class VentaService {
         Venta venta = Venta.builder()
             .fecha(ahora)
             .canal(request.canal())
-            .estado("PAGADA")
+            .estado("cerrada")
             .nota(request.nota())
             .impuestos(BigDecimal.ZERO) // TODO: Implementar IVA
             .descuento(BigDecimal.ZERO) // TODO: Implementar descuentos
@@ -345,7 +345,7 @@ public class VentaService {
             .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con ID: " + ventaId));
         
         // Validar que no esté ya cancelada
-        if ("CANCELADA".equals(venta.getEstado())) {
+        if ("cancelada".equals(venta.getEstado())) {
             throw new IllegalArgumentException("La venta ya está cancelada");
         }
         
@@ -365,12 +365,12 @@ public class VentaService {
         // Revertir movimientos de inventario si existen
         revertirMovimientosInventario(venta);
         
-        // Cambiar estado a CANCELADA
-        venta.setEstado("CANCELADA");
+    // Cambiar estado a cancelada
+    venta.setEstado("cancelada");
         
         // Guardar motivo en la nota (o actualizar nota existente)
         String notaCancelacion = String.format(
-            "[CANCELADA] Motivo: %s | Usuario: %s | Fecha: %s",
+            "[cancelada] Motivo: %s | Usuario: %s | Fecha: %s",
             motivo.trim(),
             usuarioCancelacion != null ? usuarioCancelacion.getNombre() : "Sistema",
             ahora
@@ -444,7 +444,7 @@ public class VentaService {
             .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con ID: " + ventaId));
         
         // Validar que no esté cancelada
-        if ("CANCELADA".equals(venta.getEstado())) {
+        if ("cancelada".equals(venta.getEstado())) {
             throw new IllegalArgumentException("No se puede editar una venta cancelada");
         }
         
