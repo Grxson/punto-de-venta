@@ -24,7 +24,7 @@ public class Usuario {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, columnDefinition = "INTEGER DEFAULT 1")
+    @Column(nullable = false, columnDefinition = "INTEGER")
     private Boolean activo = true;
 
     @ManyToOne(fetch = FetchType.EAGER)
