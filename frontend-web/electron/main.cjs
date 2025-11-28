@@ -5,10 +5,12 @@ const isDev = require('electron-is-dev');
 // URL de producción desde Railway (configurable mediante variable de entorno)
 const RAILWAY_FRONTEND_URL = process.env.RAILWAY_FRONTEND_URL || 'https://punto-de-venta-frontend.up.railway.app';
 
-// Deshabilitar sandbox en Linux para desarrollo (evita error de permisos)
-if (process.platform === 'linux' && isDev) {
+// Deshabilitar sandbox y habilitar flags para Linux (evita errores de /dev/shm)
+if (process.platform === 'linux') {
   app.commandLine.appendSwitch('--no-sandbox');
   app.commandLine.appendSwitch('--disable-setuid-sandbox');
+  app.commandLine.appendSwitch('--disable-dev-shm-usage');
+  app.commandLine.appendSwitch('--disable-gpu');
 }
 
 let mainWindow;
