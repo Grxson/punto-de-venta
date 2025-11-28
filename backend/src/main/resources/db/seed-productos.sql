@@ -39,18 +39,27 @@ DECLARE
 BEGIN
   SELECT id INTO cat_id FROM categorias_productos WHERE nombre='Jugos';
   
-  INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu)
-  VALUES ('Naranja', 'Jugo natural de naranja', cat_id, 40.00, 1, 1)
-  ON CONFLICT (nombre) DO UPDATE SET precio = EXCLUDED.precio
-  RETURNING id INTO base_id;
+  -- Verificar si ya existe el producto base
+  SELECT id INTO base_id FROM productos WHERE nombre='Naranja' AND categoria_id=cat_id;
   
-  -- Variantes
+  IF base_id IS NULL THEN
+    INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu)
+    VALUES ('Naranja', 'Jugo natural de naranja', cat_id, 40.00, 1, 1)
+    RETURNING id INTO base_id;
+  END IF;
+  
+  -- Variantes (solo insertar si no existen)
   INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante)
-  VALUES 
-    ('Naranja Chico', 'Jugo natural de naranja', cat_id, 25.00, 1, 1, base_id, 'Chico', 1),
-    ('Naranja Mediano', 'Jugo natural de naranja', cat_id, 40.00, 1, 1, base_id, 'Mediano', 2),
-    ('Naranja Grande', 'Jugo natural de naranja', cat_id, 65.00, 1, 1, base_id, 'Grande', 3)
-  ON CONFLICT (nombre) DO NOTHING;
+  SELECT 'Naranja Chico', 'Jugo natural de naranja', cat_id, 25.00, 1, 1, base_id, 'Chico', 1
+  WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre='Naranja Chico');
+  
+  INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante)
+  SELECT 'Naranja Mediano', 'Jugo natural de naranja', cat_id, 40.00, 1, 1, base_id, 'Mediano', 2
+  WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre='Naranja Mediano');
+  
+  INSERT INTO productos (nombre, descripcion, categoria_id, precio, activo, disponible_en_menu, producto_base_id, nombre_variante, orden_variante)
+  SELECT 'Naranja Grande', 'Jugo natural de naranja', cat_id, 65.00, 1, 1, base_id, 'Grande', 3
+  WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre='Naranja Grande');
 END $$;
 
 -- Toronja (Base: Mediano $40)

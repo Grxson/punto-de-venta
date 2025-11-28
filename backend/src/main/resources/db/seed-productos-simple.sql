@@ -69,25 +69,26 @@ $$ LANGUAGE plpgsql;
 -- ============================================
 -- JUGOS (Categoría 1) - 7 productos x 3 variantes = 28 total
 -- ============================================
-SELECT crear_producto_con_variantes('Naranja', 'Jugo natural de naranja', 'Jugos', 40.00, 25.00, 65.00);
-SELECT crear_producto_con_variantes('Toronja', 'Jugo natural de toronja', 'Jugos', 40.00, 25.00, 65.00);
-SELECT crear_producto_con_variantes('Zanahoria', 'Jugo natural de zanahoria', 'Jugos', 30.00, 20.00, 50.00);
-SELECT crear_producto_con_variantes('Mixto', 'Jugo mixto (naranja, zanahoria, betabel)', 'Jugos', 35.00, 22.00, 55.00);
-SELECT crear_producto_con_variantes('Verde', 'Jugo verde de verduras y frutas (apio, perejil, nopal, espinaca, piña)', 'Jugos', 40.00, 25.00, 70.00);
-SELECT crear_producto_con_variantes('Verde Especial', 'Jugo verde especial de verduras y frutas', 'Jugos', 50.00, 30.00, 90.00);
-SELECT crear_producto_con_variantes('Mixto Betabel', 'Jugo mixto con betabel', 'Jugos', 45.00, 28.00, 80.00);
+-- NOMBRES CON "Jugo de" para que el modal diga "Seleccionar Jugo de Naranja"
+SELECT crear_producto_con_variantes('Jugo de Naranja', 'Jugo natural de naranja', 'Jugos', 40.00, 25.00, 65.00);
+SELECT crear_producto_con_variantes('Jugo de Toronja', 'Jugo natural de toronja', 'Jugos', 40.00, 25.00, 65.00);
+SELECT crear_producto_con_variantes('Jugo de Zanahoria', 'Jugo natural de zanahoria', 'Jugos', 30.00, 20.00, 50.00);
+SELECT crear_producto_con_variantes('Jugo Mixto', 'Jugo mixto (naranja, zanahoria, betabel)', 'Jugos', 35.00, 22.00, 55.00);
+SELECT crear_producto_con_variantes('Jugo Verde', 'Jugo verde de verduras y frutas (apio, perejil, nopal, espinaca, piña)', 'Jugos', 40.00, 25.00, 70.00);
+SELECT crear_producto_con_variantes('Jugo Verde Especial', 'Jugo verde especial de verduras y frutas', 'Jugos', 50.00, 30.00, 90.00);
+SELECT crear_producto_con_variantes('Jugo Mixto Betabel', 'Jugo mixto con betabel', 'Jugos', 45.00, 28.00, 80.00);
 
 -- ============================================
 -- LICUADOS Y CHOCOMILES (Categoría 2) - 11 productos x 3 variantes = 44 total
 -- ============================================
 
--- Licuados (6 productos)
-SELECT crear_producto_con_variantes('Fresa', 'Licuado de fresa', 'Licuados y Chocomiles', 35.00, 25.00, 60.00);
-SELECT crear_producto_con_variantes('Plátano', 'Licuado de plátano', 'Licuados y Chocomiles', 35.00, 25.00, 60.00);
-SELECT crear_producto_con_variantes('Manzana', 'Licuado de manzana', 'Licuados y Chocomiles', 35.00, 25.00, 60.00);
-SELECT crear_producto_con_variantes('Papaya', 'Licuado de papaya', 'Licuados y Chocomiles', 35.00, 25.00, 60.00);
-SELECT crear_producto_con_variantes('Frutas', 'Licuado de frutas', 'Licuados y Chocomiles', 35.00, 25.00, 60.00);
-SELECT crear_producto_con_variantes('Cereales', 'Licuado de cereales', 'Licuados y Chocomiles', 35.00, 25.00, 60.00);
+-- Licuados (6 productos) - NOMBRES CON "Licuado de"
+SELECT crear_producto_con_variantes('Licuado de Fresa', 'Licuado de fresa', 'Licuados y Chocomiles', 35.00, 25.00, 60.00);
+SELECT crear_producto_con_variantes('Licuado de Plátano', 'Licuado de plátano', 'Licuados y Chocomiles', 35.00, 25.00, 60.00);
+SELECT crear_producto_con_variantes('Licuado de Manzana', 'Licuado de manzana', 'Licuados y Chocomiles', 35.00, 25.00, 60.00);
+SELECT crear_producto_con_variantes('Licuado de Papaya', 'Licuado de papaya', 'Licuados y Chocomiles', 35.00, 25.00, 60.00);
+SELECT crear_producto_con_variantes('Licuado de Frutas', 'Licuado de frutas', 'Licuados y Chocomiles', 35.00, 25.00, 60.00);
+SELECT crear_producto_con_variantes('Licuado de Cereales', 'Licuado de cereales', 'Licuados y Chocomiles', 35.00, 25.00, 60.00);
 
 -- Chocomiles básicos (3 productos - precio mediano $25)
 SELECT crear_producto_con_variantes('Chocomilk Chocolate', 'Chocomilk de chocolate', 'Licuados y Chocomiles', 25.00, 18.00, 40.00);
