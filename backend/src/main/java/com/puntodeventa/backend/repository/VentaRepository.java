@@ -38,4 +38,22 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
     
     @Query("SELECT v FROM Venta v WHERE v.sucursal.id = :sucursalId AND v.fecha BETWEEN :fechaInicio AND :fechaFin")
     List<Venta> findBySucursalAndFechaBetween(Long sucursalId, LocalDateTime fechaInicio, LocalDateTime fechaFin);
+    
+    /**
+     * Obtiene el desglose de ventas por método de pago para un rango de fechas.
+     * Solo cuenta ventas con estado 'cerrada'.
+     * 
+     * @return Lista de arreglos donde [0]=nombre método de pago, [1]=total (BigDecimal)
+     */
+    @Query("""
+        SELECT mp.nombre, COALESCE(SUM(p.monto), 0)
+        FROM Pago p
+        JOIN p.metodoPago mp
+        JOIN p.venta v
+        WHERE v.estado = 'cerrada' AND v.fecha BETWEEN :inicio AND :fin
+        GROUP BY mp.id, mp.nombre
+        ORDER BY mp.nombre
+        """)
+    List<Object[]> sumByMetodoPago(@Param("inicio") LocalDateTime inicio,
+                                    @Param("fin") LocalDateTime fin);
 }

@@ -3,6 +3,7 @@ package com.puntodeventa.backend.controller;
 import com.puntodeventa.backend.dto.CrearVentaRequest;
 import com.puntodeventa.backend.dto.ActualizarVentaRequest;
 import com.puntodeventa.backend.dto.VentaDTO;
+import com.puntodeventa.backend.dto.DesglosePagoDTO;
 import com.puntodeventa.backend.service.VentaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -100,5 +101,18 @@ public class VentaController {
             @RequestParam @NotBlank(message = "El motivo de cancelación es obligatorio") String motivo) {
         VentaDTO ventaCancelada = ventaService.cancelarVenta(id, motivo);
         return ResponseEntity.ok(ventaCancelada);
+    }
+    
+    @GetMapping("/resumen/metodos-pago")
+    @Operation(summary = "Obtener desglose de ventas por método de pago", 
+               description = "Devuelve el total recaudado por cada método de pago (Efectivo, Tarjeta, etc.) " +
+                            "para un rango de fechas. Solo cuenta ventas con estado 'cerrada'. " +
+                            "Formato de fechas: yyyy-MM-dd'T'HH:mm:ss (ejemplo: 2025-01-01T00:00:00)")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
+    public ResponseEntity<List<DesglosePagoDTO>> obtenerDesglosePorMetodoPago(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta) {
+        List<DesglosePagoDTO> desglose = ventaService.obtenerDesglosePorMetodoPago(desde, hasta);
+        return ResponseEntity.ok(desglose);
     }
 }

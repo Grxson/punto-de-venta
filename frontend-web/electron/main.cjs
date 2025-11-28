@@ -3,7 +3,14 @@ const path = require('path');
 const isDev = require('electron-is-dev');
 
 // URL de producción desde Railway (configurable mediante variable de entorno)
-const RAILWAY_FRONTEND_URL = process.env.RAILWAY_FRONTEND_URL || 'https://punto-de-venta-frontend.up.railway.app';
+const RAILWAY_FRONTEND_URL = process.env.RAILWAY_FRONTEND_URL || 'https://frontend-production-ac0b.up.railway.app';
+
+// Forzar modo producción si se especifica FORCE_PRODUCTION o RAILWAY_FRONTEND_URL
+const isProduction = process.env.FORCE_PRODUCTION === 'true' || 
+                     (process.env.RAILWAY_FRONTEND_URL && !isDev);
+
+// Determinar si debemos usar Railway (producción forzada o NODE_ENV=production)
+const useRailway = isProduction || process.env.NODE_ENV === 'production';
 
 // Deshabilitar sandbox y habilitar flags para Linux (evita errores de /dev/shm)
 if (process.platform === 'linux') {
@@ -32,8 +39,19 @@ function createWindow() {
   });
 
   // Cargar app web o local
-  if (isDev) {
-    // En desarrollo, cargar desde Vite dev server
+  if (useRailway) {
+    // En producción o con RAILWAY_FRONTEND_URL, cargar desde Railway
+    console.log(`Cargando aplicación desde: ${RAILWAY_FRONTEND_URL}`);
+    mainWindow.loadURL(RAILWAY_FRONTEND_URL).catch((error) => {
+      console.error('Error al cargar desde Railway:', error);
+      // Fallback: intentar cargar desde archivos locales si Railway falla
+      console.log('Intentando cargar desde archivos locales como fallback...');
+      mainWindow.loadFile(path.join(__dirname, '../dist/index.html')).catch((fallbackError) => {
+        console.error('Error al cargar archivos locales:', fallbackError);
+      });
+    });
+  } else if (isDev) {
+    // En desarrollo local, cargar desde Vite dev server
     // Vite puede usar diferentes puertos (5173, 5174, 5175, etc.)
     // Intentar cargar y si falla, esperar un momento y reintentar
     const tryLoad = () => {

@@ -658,4 +658,23 @@ public class VentaService {
         }
         return null;
     }
+    
+    /**
+     * Obtiene el desglose de ventas por método de pago para un rango de fechas.
+     * Solo cuenta ventas con estado 'cerrada'.
+     * 
+     * @param inicio Fecha y hora de inicio del período
+     * @param fin Fecha y hora de fin del período
+     * @return Lista de DesglosePagoDTO con el total por cada método de pago
+     */
+    public List<DesglosePagoDTO> obtenerDesglosePorMetodoPago(LocalDateTime inicio, LocalDateTime fin) {
+        List<Object[]> resultados = ventaRepository.sumByMetodoPago(inicio, fin);
+        
+        return resultados.stream()
+            .map(row -> new DesglosePagoDTO(
+                (String) row[0],           // nombre del método de pago
+                (BigDecimal) row[1]        // total
+            ))
+            .toList();
+    }
 }
