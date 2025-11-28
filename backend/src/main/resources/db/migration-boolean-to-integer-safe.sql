@@ -93,17 +93,17 @@ USING (
 ALTER TABLE proveedores ALTER COLUMN activo SET DEFAULT 1;
 COMMIT;
 
--- Categorias_producto.activo
+-- Categorias_productos.activa
 BEGIN;
-ALTER TABLE categorias_producto ALTER COLUMN activo DROP DEFAULT;
-ALTER TABLE categorias_producto ALTER COLUMN activo TYPE INTEGER
+ALTER TABLE categorias_productos ALTER COLUMN activa DROP DEFAULT;
+ALTER TABLE categorias_productos ALTER COLUMN activa TYPE INTEGER
 USING (
   CASE
-    WHEN activo::text IN ('t','true','1') THEN 1
+    WHEN activa::text IN ('t','true','1') THEN 1
     ELSE 0
   END
 );
-ALTER TABLE categorias_producto ALTER COLUMN activo SET DEFAULT 1;
+ALTER TABLE categorias_productos ALTER COLUMN activa SET DEFAULT 1;
 COMMIT;
 
 -- Productos.activo
