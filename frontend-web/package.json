@@ -1,9 +1,12 @@
 {
   "name": "frontend-web",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "main": "electron/main.js",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build --mode production",
@@ -11,6 +14,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "preview:prod": "vite preview --host 0.0.0.0 --port 4173",
+    "start": "serve -s dist -l $PORT",
     "electron": "electron .",
     "electron:dev": "concurrently \"npm run dev\" \"sleep 3 && electron .\"",
     "build:electron": "npm run build:prod && electron-builder",
@@ -62,6 +66,7 @@
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.6",
     "recharts": "^3.5.0",
+    "serve": "^14.2.4",
     "sockjs-client": "^1.6.1"
   },
   "devDependencies": {
