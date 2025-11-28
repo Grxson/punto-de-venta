@@ -37,10 +37,19 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Endpoint para conexión WebSocket
+        // Endpoint para conexión WebSocket con CORS
+        // SockJS intenta hacer requests HTTP a /ws/info para verificar disponibilidad
+        // Por eso necesitamos permitir CORS explícitamente
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*") // Permitir todos los orígenes (ajustar en producción)
-                .withSockJS(); // Fallback para navegadores que no soportan WebSocket nativo
+                .setAllowedOriginPatterns(
+                    "http://localhost:5173",           // Vite dev
+                    "http://localhost:3000",           // Dev fallback
+                    "http://localhost:8080",           // Backend mismo
+                    "https://punto-de-venta-production-d424.up.railway.app", // Producción
+                    "https://punto-de-venta-staging.up.railway.app"          // Staging
+                )
+                .withSockJS()                          // Fallback para navegadores sin WebSocket nativo
+                .setClientLibraryUrl("https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"); // CDN para SockJS
     }
 }
 
