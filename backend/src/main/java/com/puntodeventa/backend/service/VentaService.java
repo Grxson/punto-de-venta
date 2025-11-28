@@ -229,10 +229,40 @@ public class VentaService {
     }
 
     /**
+     * Verifica si una tabla existe en la base de datos usando metadatos JDBC.
+     * Este método NO afecta el estado transaccional porque usa solo metadatos.
+     */
+    private boolean existeTabla(String nombreTabla) {
+        try {
+            // Usar JDBC metadata para verificar existencia de tabla sin ejecutar query
+            var connection = entityManager.unwrap(java.sql.Connection.class);
+            var metaData = connection.getMetaData();
+            // Buscar la tabla en mayúsculas y minúsculas (H2 usa mayúsculas, PostgreSQL minúsculas)
+            try (var rs = metaData.getTables(null, null, nombreTabla.toUpperCase(), new String[]{"TABLE"})) {
+                if (rs.next()) return true;
+            }
+            try (var rs = metaData.getTables(null, null, nombreTabla.toLowerCase(), new String[]{"TABLE"})) {
+                if (rs.next()) return true;
+            }
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                .debug("Error verificando existencia de tabla '{}': {}", nombreTabla, e.getMessage());
+        }
+        return false;
+    }
+
+    /**
      * Selecciona una caja activa preferentemente por sucursal. Si no hay activa, toma cualquiera.
-     * Lanza IllegalStateException si no existe ninguna caja.
+     * Retorna ID por defecto si la tabla no existe (modo desarrollo H2).
      */
     private Long seleccionarCajaActiva(Long sucursalId) {
+        // Verificar si la tabla cajas existe antes de ejecutar queries
+        if (!existeTabla("cajas")) {
+            org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                .warn("Tabla 'cajas' no existe. Usando cajaId por defecto = 1 (modo desarrollo H2)");
+            return 1L;
+        }
+
         // Intentar por sucursal y activa
         try {
             var query = new StringBuilder("select id from cajas where activa = true");
@@ -246,32 +276,48 @@ public class VentaService {
             if (!res.isEmpty()) {
                 return ((Number) res.getFirst()).longValue();
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                .debug("Error buscando caja activa por sucursal: {}", e.getMessage());
+        }
 
         // Cualquiera activa
         try {
             var res = entityManager.createNativeQuery("select id from cajas where activa = true order by id limit 1")
                 .getResultList();
             if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                .debug("Error buscando cualquier caja activa: {}", e.getMessage());
+        }
 
         // Cualquiera existente
         try {
             var res = entityManager.createNativeQuery("select id from cajas order by id limit 1").getResultList();
             if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                .debug("Error buscando cualquier caja: {}", e.getMessage());
+        }
 
-        // Fallback: si no existe la tabla cajas (H2 local), retornar ID por defecto
+        // Fallback: retornar ID por defecto
         org.slf4j.LoggerFactory.getLogger(VentaService.class)
-            .warn("No se pudo acceder a tabla 'cajas'. Usando cajaId por defecto = 1 (modo desarrollo H2)");
+            .warn("No se encontró ninguna caja. Usando cajaId por defecto = 1");
         return 1L;
     }
 
     /**
      * Selecciona un turno activo preferentemente por caja/sucursal. Si no hay activo, toma el más reciente.
-     * Lanza IllegalStateException si no existe ningún turno.
+     * Retorna ID por defecto si la tabla no existe (modo desarrollo H2).
      */
     private Long seleccionarTurnoActivo(Long sucursalId, Long cajaId) {
+        // Verificar si la tabla turnos existe antes de ejecutar queries
+        if (!existeTabla("turnos")) {
+            org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                .warn("Tabla 'turnos' no existe. Usando turnoId por defecto = 1 (modo desarrollo H2)");
+            return 1L;
+        }
+
         // Intentar activo por caja
         try {
             var sb = new StringBuilder("select id from turnos where activo = true");
@@ -283,24 +329,33 @@ public class VentaService {
             if (sucursalId != null) q.setParameter("suc", sucursalId);
             var res = q.getResultList();
             if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                .debug("Error buscando turno activo por caja/sucursal: {}", e.getMessage());
+        }
 
         // Activo cualquiera
         try {
             var res = entityManager.createNativeQuery("select id from turnos where activo = true order by fecha_apertura desc limit 1")
                 .getResultList();
             if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                .debug("Error buscando cualquier turno activo: {}", e.getMessage());
+        }
 
         // El más reciente
         try {
             var res = entityManager.createNativeQuery("select id from turnos order by fecha_apertura desc nulls last, id desc limit 1").getResultList();
             if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                .debug("Error buscando turno más reciente: {}", e.getMessage());
+        }
 
-        // Fallback: si no existe la tabla turnos (H2 local), retornar ID por defecto
+        // Fallback: retornar ID por defecto
         org.slf4j.LoggerFactory.getLogger(VentaService.class)
-            .warn("No se pudo acceder a tabla 'turnos'. Usando turnoId por defecto = 1 (modo desarrollo H2)");
+            .warn("No se encontró ningún turno. Usando turnoId por defecto = 1");
         return 1L;
     }
     
