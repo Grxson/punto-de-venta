@@ -390,32 +390,22 @@ export default function PosHome() {
             }}
             onClick={() => handleProductoClick(producto)}
           >
-            <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
-              <Typography variant="h6" component="div" gutterBottom sx={{ 
+            <CardContent sx={{ flexGrow: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <Typography variant="h6" component="div" sx={{ 
                 fontWeight: 600,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 display: '-webkit-box',
-                WebkitLineClamp: 2,
+                WebkitLineClamp: 3,
                 WebkitBoxOrient: 'vertical',
               }}>
                 {producto.nombre}
               </Typography>
-              {producto.variantes && producto.variantes.length > 0 ? (
-                <Chip
-                  label={`${producto.variantes.length} ${producto.variantes.length === 1 ? 'variante' : 'variantes'}`}
-                  size="small"
-                  color="primary"
-                  sx={{ mb: 1 }}
-                />
-              ) : (
-                <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold' }}>
+              {!(producto.variantes && producto.variantes.length > 0) && (
+                <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold', mt: 2 }}>
                   ${producto.precio.toFixed(2)}
                 </Typography>
               )}
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                {obtenerTipoProducto(producto)}
-              </Typography>
             </CardContent>
           </Card>
         ))}
