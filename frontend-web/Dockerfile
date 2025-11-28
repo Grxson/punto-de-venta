@@ -21,15 +21,15 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy built files and package files
+# Install serve for production static file serving
+RUN npm install -g serve
+
+# Copy built files only (no node_modules needed)
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
 
-# Install only production dependencies
-RUN npm ci --omit=dev
-
-# Expose port
+# Railway uses PORT env variable
+ENV PORT=8080
 EXPOSE 8080
 
-# Start the preview server
-CMD ["npx", "vite", "preview", "--host", "0.0.0.0", "--port", "8080"]
+# Use serve for production (more reliable than vite preview)
+CMD ["sh", "-c", "serve -s dist -l $PORT"]
