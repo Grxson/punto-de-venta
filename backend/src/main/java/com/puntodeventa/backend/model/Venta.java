@@ -15,7 +15,7 @@ import java.util.List;
 
 /**
  * Entidad que representa una venta realizada en el punto de venta.
- * Estados: PENDIENTE, PAGADA, CANCELADA
+ * Estados válidos (según BD): abierta, cerrada, cancelada
  */
 @Entity
 @Table(name = "ventas", indexes = {
@@ -75,7 +75,7 @@ public class Venta {
     
     @NotNull(message = "El estado es obligatorio")
     @Column(nullable = false, length = 20)
-    private String estado = "PAGADA"; // PENDIENTE, PAGADA, CANCELADA
+    private String estado = "cerrada"; // abierta, cerrada, cancelada
     
     @Column(columnDefinition = "TEXT")
     private String nota;

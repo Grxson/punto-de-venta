@@ -27,11 +27,11 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
             COALESCE(SUM(v.total), 0),
             COALESCE(SUM(v.subtotal), 0),
             COUNT(DISTINCT v.id),
-            (SELECT COALESCE(SUM(i2.cantidad), 0) FROM VentaItem i2 JOIN i2.venta v2 WHERE v2.estado = 'PAGADA' AND v2.fecha BETWEEN :inicio AND :fin),
-            (SELECT COALESCE(SUM(i3.costoEstimado), 0) FROM VentaItem i3 JOIN i3.venta v3 WHERE v3.estado = 'PAGADA' AND v3.fecha BETWEEN :inicio AND :fin)
+            (SELECT COALESCE(SUM(i2.cantidad), 0) FROM VentaItem i2 JOIN i2.venta v2 WHERE v2.estado = 'cerrada' AND v2.fecha BETWEEN :inicio AND :fin),
+            (SELECT COALESCE(SUM(i3.costoEstimado), 0) FROM VentaItem i3 JOIN i3.venta v3 WHERE v3.estado = 'cerrada' AND v3.fecha BETWEEN :inicio AND :fin)
         )
         FROM Venta v
-        WHERE v.estado = 'PAGADA' AND v.fecha BETWEEN :inicio AND :fin
+        WHERE v.estado = 'cerrada' AND v.fecha BETWEEN :inicio AND :fin
         """)
     ResumenVentasAggregate aggregateResumen(@Param("inicio") LocalDateTime inicio,
                                             @Param("fin") LocalDateTime fin);

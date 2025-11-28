@@ -44,7 +44,7 @@ public class VentaController {
     }
     
     @GetMapping("/estado/{estado}")
-    @Operation(summary = "Obtener ventas por estado", description = "Estados: PENDIENTE, PAGADA, CANCELADA")
+    @Operation(summary = "Obtener ventas por estado", description = "Estados: abierta, cerrada, cancelada")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     public ResponseEntity<List<VentaDTO>> obtenerPorEstado(@PathVariable String estado) {
         return ResponseEntity.ok(ventaService.obtenerPorEstado(estado));
