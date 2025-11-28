@@ -15,8 +15,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Autenticación", description = "Endpoints para autenticación y gestión de usuarios")
-@CrossOrigin(origins = "*", maxAge = 3600)
-
 public class AutenticacionController {
     @Autowired
     private UsuarioServicio usuarioServicio;
