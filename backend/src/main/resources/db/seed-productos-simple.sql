@@ -69,14 +69,14 @@ $$ LANGUAGE plpgsql;
 -- ============================================
 -- JUGOS (Categoría 1) - 7 productos x 3 variantes = 28 total
 -- ============================================
--- NOMBRES CON "Jugo de" para que el modal diga "Seleccionar Jugo de Naranja"
-SELECT crear_producto_con_variantes('Jugo de Naranja', 'Jugo natural de naranja', 'Jugos', 40.00, 25.00, 65.00);
-SELECT crear_producto_con_variantes('Jugo de Toronja', 'Jugo natural de toronja', 'Jugos', 40.00, 25.00, 65.00);
-SELECT crear_producto_con_variantes('Jugo de Zanahoria', 'Jugo natural de zanahoria', 'Jugos', 30.00, 20.00, 50.00);
-SELECT crear_producto_con_variantes('Jugo Mixto', 'Jugo mixto (naranja, zanahoria, betabel)', 'Jugos', 35.00, 22.00, 55.00);
-SELECT crear_producto_con_variantes('Jugo Verde', 'Jugo verde de verduras y frutas (apio, perejil, nopal, espinaca, piña)', 'Jugos', 40.00, 25.00, 70.00);
-SELECT crear_producto_con_variantes('Jugo Verde Especial', 'Jugo verde especial de verduras y frutas', 'Jugos', 50.00, 30.00, 90.00);
-SELECT crear_producto_con_variantes('Jugo Mixto Betabel', 'Jugo mixto con betabel', 'Jugos', 45.00, 28.00, 80.00);
+-- NOMBRES SIN "Jugo" - solo la fruta/verdura
+SELECT crear_producto_con_variantes('Naranja', 'Jugo natural de naranja', 'Jugos', 40.00, 25.00, 65.00);
+SELECT crear_producto_con_variantes('Toronja', 'Jugo natural de toronja', 'Jugos', 40.00, 25.00, 65.00);
+SELECT crear_producto_con_variantes('Zanahoria', 'Jugo natural de zanahoria', 'Jugos', 30.00, 20.00, 50.00);
+SELECT crear_producto_con_variantes('Mixto', 'Jugo mixto (naranja, zanahoria, betabel)', 'Jugos', 35.00, 22.00, 55.00);
+SELECT crear_producto_con_variantes('Verde', 'Jugo verde de verduras y frutas (apio, perejil, nopal, espinaca, piña)', 'Jugos', 40.00, 25.00, 70.00);
+SELECT crear_producto_con_variantes('Verde Especial', 'Jugo verde especial de verduras y frutas', 'Jugos', 50.00, 30.00, 90.00);
+SELECT crear_producto_con_variantes('Mixto Betabel', 'Jugo mixto con betabel', 'Jugos', 45.00, 28.00, 80.00);
 
 -- ============================================
 -- LICUADOS Y CHOCOMILES (Categoría 2) - 11 productos x 3 variantes = 44 total
@@ -128,25 +128,31 @@ END $$;
 -- Hot cakes y antojitos
 SELECT crear_producto_simple('Mini Hot Cakes (15 pzs)', 'Mini hot cakes (15 piezas) con untado de mermelada, lechera, miel, nutella, fruta y cereal de tu elección', 'Desayunos', 55.00);
 SELECT crear_producto_simple('Mini Hot Cakes (10 pzs)', 'Mini hot cakes (10 piezas) con untado de mermelada, lechera, miel, nutella, fruta y cereal de tu elección', 'Desayunos', 45.00);
-SELECT crear_producto_simple('Burritas y Quesadillas', 'Burritas y quesadillas acompañadas con crema, mayonesa, lechuga, jitomate, cebolla y chile jalapeño', 'Desayunos', 15.00);
+
+-- Burritas y Quesadillas (SEPARADOS)
+SELECT crear_producto_simple('Burritas', 'Burritas acompañadas con crema, mayonesa, lechuga, jitomate, cebolla y chile jalapeño', 'Desayunos', 15.00);
+SELECT crear_producto_simple('Quesadillas', 'Quesadillas acompañadas con crema, mayonesa, lechuga, jitomate, cebolla y chile jalapeño', 'Desayunos', 15.00);
 
 -- Molletes
 SELECT crear_producto_simple('Molletes Dulces', 'Molletes dulces con mantequilla, azúcar y canela', 'Desayunos', 30.00);
 SELECT crear_producto_simple('Molletes con Untado', 'Molletes con untado de mermelada, nutella, lechera o miel', 'Desayunos', 35.00);
 SELECT crear_producto_simple('Molletes Salados', 'Molletes salados con frijoles con queso o salsa mexicana', 'Desayunos', 40.00);
 
--- Lonches y sincronizadas
-SELECT crear_producto_simple('Lonches y Sincronizadas', 'Lonches y sincronizadas con crema, mayonesa, lechuga, jitomate, cebolla y chile jalapeño', 'Desayunos', 35.00);
+-- Lonches y sincronizadas (SEPARADOS)
+SELECT crear_producto_simple('Lonches', 'Lonches con crema, mayonesa, lechuga, jitomate, cebolla y chile jalapeño', 'Desayunos', 35.00);
+SELECT crear_producto_simple('Sincronizadas', 'Sincronizadas con crema, mayonesa, lechuga, jitomate, cebolla y chile jalapeño', 'Desayunos', 35.00);
 
--- Lonches individuales
-SELECT crear_producto_simple('Lonche de Pierna o Combinado', 'Lonche de pierna o combinado', 'Desayunos', 65.00);
+-- Lonches individuales (SEPARADOS)
+SELECT crear_producto_simple('Lonche de Pierna', 'Lonche de pierna', 'Desayunos', 65.00);
+SELECT crear_producto_simple('Lonche Combinado', 'Lonche combinado', 'Desayunos', 65.00);
 SELECT crear_producto_simple('Lonche de Jamón', 'Lonche de jamón', 'Desayunos', 45.00);
 SELECT crear_producto_simple('Lonche de Panela', 'Lonche de panela', 'Desayunos', 55.00);
 SELECT crear_producto_simple('Lonche de Jamón y Panela', 'Lonche de jamón y panela', 'Desayunos', 55.00);
 SELECT crear_producto_simple('Lonche de Chilaquiles', 'Lonche de chilaquiles', 'Desayunos', 45.00);
 
--- Sandwiches individuales
-SELECT crear_producto_simple('Sandwich de Pierna o Combinado', 'Sandwich de pierna o combinado', 'Desayunos', 55.00);
+-- Sandwiches individuales (SEPARADOS)
+SELECT crear_producto_simple('Sandwich de Pierna', 'Sandwich de pierna', 'Desayunos', 55.00);
+SELECT crear_producto_simple('Sandwich Combinado', 'Sandwich combinado', 'Desayunos', 55.00);
 SELECT crear_producto_simple('Sandwich de Jamón', 'Sandwich de jamón', 'Desayunos', 35.00);
 SELECT crear_producto_simple('Sandwich de Panela', 'Sandwich de panela', 'Desayunos', 45.00);
 SELECT crear_producto_simple('Sandwich de Jamón y Panela', 'Sandwich de jamón y panela', 'Desayunos', 45.00);
