@@ -41,6 +41,10 @@ public class Venta {
     // Aún no modelamos la entidad Caja; por compatibilidad mínima mapeamos el ID plano.
     @Column(name = "caja_id")
     private Long cajaId;
+
+    // Id de turno asociado a la venta (compatibilidad con esquema actual)
+    @Column(name = "turno_id")
+    private Long turnoId;
     
     @NotNull(message = "La fecha de la venta es obligatoria")
     @Column(nullable = false)

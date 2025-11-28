@@ -91,6 +91,19 @@ public class VentaService {
             cajaId = 1L; // TODO: Resolver con 'Caja' activa por usuario/turno
         }
         venta.setCajaId(cajaId);
+
+        // Asignar turno (NOT NULL en Railway). Si no viene, usar 1L hasta implementar gestión de turnos.
+        Long turnoId = null;
+        try {
+            turnoId = request.turnoId();
+        } catch (Exception ignored) {
+        }
+        if (turnoId == null) {
+            org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                .warn("crearVenta(): turnoId no proporcionado; usando valor por defecto 1L para compatibilidad.");
+            turnoId = 1L; // TODO: Resolver con Turno activo por usuario/sucursal/caja
+        }
+        venta.setTurnoId(turnoId);
         
         // 2. Asignar sucursal si se proporciona
         if (request.sucursalId() != null) {
