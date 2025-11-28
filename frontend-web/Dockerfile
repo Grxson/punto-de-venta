@@ -1,5 +1,5 @@
-# Use Node.js 20 Alpine for smaller image
-FROM node:20-alpine AS builder
+# Use Node.js 22 Alpine (Vite requires 20.19+ or 22.12+)
+FROM node:22-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -16,20 +16,29 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Production stage
-FROM node:20-alpine
+# Production stage - use nginx for better static file serving
+FROM nginx:alpine
 
-WORKDIR /app
+# Copy built files to nginx
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Install serve for production static file serving
-RUN npm install -g serve
+# Create nginx config template that uses PORT env variable
+RUN echo 'server { \
+    listen ${PORT}; \
+    root /usr/share/nginx/html; \
+    index index.html; \
+    location / { \
+        try_files $uri $uri/ /index.html; \
+    } \
+    location /health { \
+        return 200 "OK"; \
+        add_header Content-Type text/plain; \
+    } \
+}' > /etc/nginx/templates/default.conf.template
 
-# Copy built files only (no node_modules needed)
-COPY --from=builder /app/dist ./dist
-
-# Railway uses PORT env variable
+# Default port
 ENV PORT=8080
 EXPOSE 8080
 
-# Use serve for production (more reliable than vite preview)
-CMD ["sh", "-c", "serve -s dist -l $PORT"]
+# Start nginx (envsubst will replace ${PORT} automatically)
+CMD ["nginx", "-g", "daemon off;"]

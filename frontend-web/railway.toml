@@ -1,10 +1,9 @@
 [build]
 builder = "dockerfile"
 dockerfilePath = "./Dockerfile"
-watchPatterns = ["frontend-web/**"]
 
 [deploy]
-healthcheckPath = "/"
+healthcheckPath = "/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
