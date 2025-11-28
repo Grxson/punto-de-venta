@@ -5,6 +5,8 @@ import com.puntodeventa.backend.exception.ResourceNotFoundException;
 import com.puntodeventa.backend.model.*;
 import com.puntodeventa.backend.repository.*;
 import lombok.RequiredArgsConstructor;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,9 @@ public class VentaService {
     private final IngredienteRepository ingredienteRepository;
     private final UsuarioRepository usuarioRepository;
     private final WebSocketNotificationService notificationService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
     
     public List<VentaDTO> obtenerTodas() {
         return ventaRepository.findAll().stream()
@@ -80,28 +85,21 @@ public class VentaService {
         // Asignar caja por compatibilidad con esquema actual (Railway exige caja_id NOT NULL)
         // Si no viene en la request, usar un valor por defecto (1L) temporalmente.
         Long cajaId = null;
-        try {
-            cajaId = request.cajaId();
-        } catch (Exception ignored) {
-            // En caso de que versiones antiguas de request no incluyan cajaId
-        }
+        try { cajaId = request.cajaId(); } catch (Exception ignored) {}
         if (cajaId == null) {
+            cajaId = seleccionarCajaActiva(request.sucursalId());
             org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .warn("crearVenta(): cajaId no proporcionado; usando valor por defecto 1L para compatibilidad.");
-            cajaId = 1L; // TODO: Resolver con 'Caja' activa por usuario/turno
+                .warn("crearVenta(): cajaId no proporcionado; resolviendo caja activa -> {}", cajaId);
         }
         venta.setCajaId(cajaId);
 
         // Asignar turno (NOT NULL en Railway). Si no viene, usar 1L hasta implementar gestión de turnos.
         Long turnoId = null;
-        try {
-            turnoId = request.turnoId();
-        } catch (Exception ignored) {
-        }
+        try { turnoId = request.turnoId(); } catch (Exception ignored) {}
         if (turnoId == null) {
+            turnoId = seleccionarTurnoActivo(request.sucursalId(), cajaId);
             org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .warn("crearVenta(): turnoId no proporcionado; usando valor por defecto 1L para compatibilidad.");
-            turnoId = 1L; // TODO: Resolver con Turno activo por usuario/sucursal/caja
+                .warn("crearVenta(): turnoId no proporcionado; resolviendo turno activo -> {}", turnoId);
         }
         venta.setTurnoId(turnoId);
         
@@ -228,6 +226,72 @@ public class VentaService {
         );
         
         return ventaDTO;
+    }
+
+    /**
+     * Selecciona una caja activa preferentemente por sucursal. Si no hay activa, toma cualquiera.
+     * Lanza IllegalStateException si no existe ninguna caja.
+     */
+    private Long seleccionarCajaActiva(Long sucursalId) {
+        // Intentar por sucursal y activa
+        try {
+            var query = new StringBuilder("select id from cajas where activa = true");
+            if (sucursalId != null) {
+                query.append(" and sucursal_id = :suc");
+            }
+            query.append(" order by id limit 1");
+            var q = entityManager.createNativeQuery(query.toString());
+            if (sucursalId != null) q.setParameter("suc", sucursalId);
+            var res = q.getResultList();
+            if (!res.isEmpty()) {
+                return ((Number) res.getFirst()).longValue();
+            }
+        } catch (Exception ignored) {}
+
+        // Cualquiera activa
+        try {
+            var res = entityManager.createNativeQuery("select id from cajas where activa = true order by id limit 1")
+                .getResultList();
+            if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
+        } catch (Exception ignored) {}
+
+        // Cualquiera existente
+        var res = entityManager.createNativeQuery("select id from cajas order by id limit 1").getResultList();
+        if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
+
+        throw new IllegalStateException("No existe ninguna Caja en el sistema. Configura al menos una caja.");
+    }
+
+    /**
+     * Selecciona un turno activo preferentemente por caja/sucursal. Si no hay activo, toma el más reciente.
+     * Lanza IllegalStateException si no existe ningún turno.
+     */
+    private Long seleccionarTurnoActivo(Long sucursalId, Long cajaId) {
+        // Intentar activo por caja
+        try {
+            var sb = new StringBuilder("select id from turnos where activo = true");
+            if (cajaId != null) sb.append(" and caja_id = :caja");
+            if (sucursalId != null) sb.append(" and sucursal_id = :suc");
+            sb.append(" order by fecha_apertura desc limit 1");
+            var q = entityManager.createNativeQuery(sb.toString());
+            if (cajaId != null) q.setParameter("caja", cajaId);
+            if (sucursalId != null) q.setParameter("suc", sucursalId);
+            var res = q.getResultList();
+            if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
+        } catch (Exception ignored) {}
+
+        // Activo cualquiera
+        try {
+            var res = entityManager.createNativeQuery("select id from turnos where activo = true order by fecha_apertura desc limit 1")
+                .getResultList();
+            if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
+        } catch (Exception ignored) {}
+
+        // El más reciente
+        var res = entityManager.createNativeQuery("select id from turnos order by fecha_apertura desc nulls last, id desc limit 1").getResultList();
+        if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
+
+        throw new IllegalStateException("No existe ningún Turno en el sistema. Abre un turno antes de vender.");
     }
     
     /**
