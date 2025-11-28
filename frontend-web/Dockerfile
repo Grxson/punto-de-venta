@@ -15,7 +15,8 @@ COPY . .
 
 # Asegurar que .env.production existe con las variables correctas
 # Vite leerá .env.production automáticamente durante npm run build
-RUN echo "VITE_API_URL_PROD=https://punto-de-venta-production-d424.up.railway.app/api" > .env.production && \
+RUN echo "VITE_API_URL=https://punto-de-venta-production-d424.up.railway.app" > .env.production && \
+    echo "VITE_API_URL_PROD=https://punto-de-venta-production-d424.up.railway.app/api" >> .env.production && \
     echo "VITE_API_URL_STAGING=https://punto-de-venta-staging.up.railway.app/api" >> .env.production && \
     echo "VITE_API_TIMEOUT=30000" >> .env.production && \
     echo "VITE_API_RETRIES=3" >> .env.production && \
