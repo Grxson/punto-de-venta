@@ -12,6 +12,9 @@ dist
 dist-electron
 *.local
 
+# Nixpacks generated files (Railway)
+.nixpacks
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

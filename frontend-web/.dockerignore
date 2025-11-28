@@ -1,0 +1,43 @@
+# Ignore node_modules - will be installed fresh
+node_modules
+
+# Ignore build outputs - will be rebuilt
+dist
+dist-electron
+
+# Ignore Nixpacks generated files
+.nixpacks
+
+# Ignore git
+.git
+.gitignore
+
+# Ignore IDE files
+.vscode
+.idea
+*.sw?
+
+# Ignore logs
+*.log
+logs
+
+# Ignore local env files
+.env
+.env.local
+.env.production
+
+# Ignore Electron files (not needed for web)
+electron
+release
+*.exe
+*.dmg
+*.AppImage
+
+# Ignore test files
+__tests__
+*.test.*
+*.spec.*
+
+# Ignore documentation
+*.md
+!README.md
