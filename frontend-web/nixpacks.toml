@@ -2,7 +2,7 @@
 # This file configures Railway to build and deploy the Vite frontend
 
 [phases.setup]
-nixPkgs = ["nodejs-20.x"]
+nixPkgs = ["nodejs_20"]
 
 [phases.install]
 cmds = ["npm ci"]
