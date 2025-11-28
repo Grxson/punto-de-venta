@@ -7,6 +7,8 @@ import com.puntodeventa.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,14 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class VentaService {
+    
+    private static final Logger log = LoggerFactory.getLogger(VentaService.class);
+    
+    /** ID por defecto para caja cuando la tabla no existe (modo desarrollo H2) */
+    private static final Long DEFAULT_CAJA_ID = 1L;
+    
+    /** ID por defecto para turno cuando la tabla no existe (modo desarrollo H2) */
+    private static final Long DEFAULT_TURNO_ID = 1L;
     
     private final VentaRepository ventaRepository;
     private final ProductoRepository productoRepository;
@@ -88,8 +98,7 @@ public class VentaService {
         try { cajaId = request.cajaId(); } catch (Exception ignored) {}
         if (cajaId == null) {
             cajaId = seleccionarCajaActiva(request.sucursalId());
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .warn("crearVenta(): cajaId no proporcionado; resolviendo caja activa -> {}", cajaId);
+            log.warn("crearVenta(): cajaId no proporcionado; resolviendo caja activa -> {}", cajaId);
         }
         venta.setCajaId(cajaId);
 
@@ -98,8 +107,7 @@ public class VentaService {
         try { turnoId = request.turnoId(); } catch (Exception ignored) {}
         if (turnoId == null) {
             turnoId = seleccionarTurnoActivo(request.sucursalId(), cajaId);
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .warn("crearVenta(): turnoId no proporcionado; resolviendo turno activo -> {}", turnoId);
+            log.warn("crearVenta(): turnoId no proporcionado; resolviendo turno activo -> {}", turnoId);
         }
         venta.setTurnoId(turnoId);
         
@@ -209,16 +217,14 @@ public class VentaService {
                 @Override
                 public void afterCommit() {
                     long tiempoCommit = System.currentTimeMillis() - inicioNotificacion;
-                    org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                        .info("Venta {} confirmada en BD. Tiempo transacción: {}ms. Enviando notificación WebSocket...", 
+                    log.info("Venta {} confirmada en BD. Tiempo transacción: {}ms. Enviando notificación WebSocket...", 
                             ventaGuardada.getId(), tiempoCommit);
                     
                     long inicioNotif = System.currentTimeMillis();
                     if (notificationService != null) {
                         notificationService.notificarVentaCreada(ventaGuardada.getId(), ventaDTO);
                         long tiempoNotif = System.currentTimeMillis() - inicioNotif;
-                        org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                            .info("Notificación WebSocket enviada para venta {}. Tiempo notificación: {}ms", 
+                        log.info("Notificación WebSocket enviada para venta {}. Tiempo notificación: {}ms", 
                                 ventaGuardada.getId(), tiempoNotif);
                     }
                 }
@@ -245,8 +251,7 @@ public class VentaService {
                 if (rs.next()) return true;
             }
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .debug("Error verificando existencia de tabla '{}': {}", nombreTabla, e.getMessage());
+            log.debug("Error verificando existencia de tabla '{}': {}", nombreTabla, e.getMessage());
         }
         return false;
     }
@@ -258,9 +263,8 @@ public class VentaService {
     private Long seleccionarCajaActiva(Long sucursalId) {
         // Verificar si la tabla cajas existe antes de ejecutar queries
         if (!existeTabla("cajas")) {
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .warn("Tabla 'cajas' no existe. Usando cajaId por defecto = 1 (modo desarrollo H2)");
-            return 1L;
+            log.warn("Tabla 'cajas' no existe. Usando cajaId por defecto = {} (modo desarrollo H2)", DEFAULT_CAJA_ID);
+            return DEFAULT_CAJA_ID;
         }
 
         // Intentar por sucursal y activa
@@ -277,8 +281,7 @@ public class VentaService {
                 return ((Number) res.getFirst()).longValue();
             }
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .debug("Error buscando caja activa por sucursal: {}", e.getMessage());
+            log.debug("Error buscando caja activa por sucursal: {}", e.getMessage());
         }
 
         // Cualquiera activa
@@ -287,8 +290,7 @@ public class VentaService {
                 .getResultList();
             if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .debug("Error buscando cualquier caja activa: {}", e.getMessage());
+            log.debug("Error buscando cualquier caja activa: {}", e.getMessage());
         }
 
         // Cualquiera existente
@@ -296,14 +298,12 @@ public class VentaService {
             var res = entityManager.createNativeQuery("select id from cajas order by id limit 1").getResultList();
             if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .debug("Error buscando cualquier caja: {}", e.getMessage());
+            log.debug("Error buscando cualquier caja: {}", e.getMessage());
         }
 
         // Fallback: retornar ID por defecto
-        org.slf4j.LoggerFactory.getLogger(VentaService.class)
-            .warn("No se encontró ninguna caja. Usando cajaId por defecto = 1");
-        return 1L;
+        log.warn("No se encontró ninguna caja. Usando cajaId por defecto = {}", DEFAULT_CAJA_ID);
+        return DEFAULT_CAJA_ID;
     }
 
     /**
@@ -313,9 +313,8 @@ public class VentaService {
     private Long seleccionarTurnoActivo(Long sucursalId, Long cajaId) {
         // Verificar si la tabla turnos existe antes de ejecutar queries
         if (!existeTabla("turnos")) {
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .warn("Tabla 'turnos' no existe. Usando turnoId por defecto = 1 (modo desarrollo H2)");
-            return 1L;
+            log.warn("Tabla 'turnos' no existe. Usando turnoId por defecto = {} (modo desarrollo H2)", DEFAULT_TURNO_ID);
+            return DEFAULT_TURNO_ID;
         }
 
         // Intentar activo por caja
@@ -330,8 +329,7 @@ public class VentaService {
             var res = q.getResultList();
             if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .debug("Error buscando turno activo por caja/sucursal: {}", e.getMessage());
+            log.debug("Error buscando turno activo por caja/sucursal: {}", e.getMessage());
         }
 
         // Activo cualquiera
@@ -340,8 +338,7 @@ public class VentaService {
                 .getResultList();
             if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .debug("Error buscando cualquier turno activo: {}", e.getMessage());
+            log.debug("Error buscando cualquier turno activo: {}", e.getMessage());
         }
 
         // El más reciente
@@ -349,14 +346,12 @@ public class VentaService {
             var res = entityManager.createNativeQuery("select id from turnos order by fecha_apertura desc nulls last, id desc limit 1").getResultList();
             if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .debug("Error buscando turno más reciente: {}", e.getMessage());
+            log.debug("Error buscando turno más reciente: {}", e.getMessage());
         }
 
         // Fallback: retornar ID por defecto
-        org.slf4j.LoggerFactory.getLogger(VentaService.class)
-            .warn("No se encontró ningún turno. Usando turnoId por defecto = 1");
-        return 1L;
+        log.warn("No se encontró ningún turno. Usando turnoId por defecto = {}", DEFAULT_TURNO_ID);
+        return DEFAULT_TURNO_ID;
     }
     
     /**
