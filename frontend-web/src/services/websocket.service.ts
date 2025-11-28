@@ -41,9 +41,9 @@ class WebSocketService {
 
   private initializeClient() {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-    // Convertir URL HTTP/HTTPS a WS/WSS para WebSocket
-    const wsUrl = apiUrl.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:');
-    const wsEndpoint = `${wsUrl}/ws`;
+    // SockJS detecta automáticamente HTTPS y usa WSS
+    // NO convertir a wss:// - SockJS maneja eso internamente
+    const wsEndpoint = `${apiUrl}/ws`;
 
     this.client = new Client({
       webSocketFactory: () => new SockJS(wsEndpoint) as any,
