@@ -11,16 +11,19 @@ import com.puntodeventa.backend.repository.RolRepository;
 import com.puntodeventa.backend.repository.UsuarioRepository;
 import com.puntodeventa.backend.security.JwtUtil;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @Service
 public class UsuarioServicio {
 
@@ -80,12 +83,19 @@ public class UsuarioServicio {
      */
     public LoginResponse login(LoginRequest request) {
         try {
+            log.info("Intentando login para usuario: {}", request.username());
+            
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
             );
+            
+            log.info("Autenticación exitosa para: {}", request.username());
 
             Usuario usuario = usuarioRepository.findByUsername(request.username())
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+            log.info("Usuario encontrado: {} - Activo: {} - Rol: {}", 
+                usuario.getUsername(), usuario.getActivo(), usuario.getRol().getNombre());
 
             // Actualizar último acceso
             usuario.setUltimoAcceso(LocalDateTime.now());
@@ -97,8 +107,12 @@ public class UsuarioServicio {
             UsuarioDTO usuarioDTO = mapearADTO(usuario);
             return new LoginResponse(token, usuarioDTO, "Login exitoso");
 
-        } catch (Exception e) {
+        } catch (AuthenticationException e) {
+            log.error("Error de autenticación para usuario: {} - {}", request.username(), e.getMessage());
             throw new IllegalArgumentException("Username o contraseña inválidos");
+        } catch (Exception e) {
+            log.error("Error inesperado durante login para usuario: {} - {}", request.username(), e.getMessage(), e);
+            throw new RuntimeException("Error en el proceso de login: " + e.getMessage(), e);
         }
     }
 
