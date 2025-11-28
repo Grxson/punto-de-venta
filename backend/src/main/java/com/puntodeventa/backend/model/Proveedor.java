@@ -1,4 +1,5 @@
 package com.puntodeventa.backend.model;
+import com.puntodeventa.backend.config.BooleanToIntegerConverter;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;

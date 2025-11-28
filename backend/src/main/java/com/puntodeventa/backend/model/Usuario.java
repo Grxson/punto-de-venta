@@ -1,4 +1,5 @@
 package com.puntodeventa.backend.model;
+import com.puntodeventa.backend.config.BooleanToIntegerConverter;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -25,6 +26,7 @@ public class Usuario {
     private String password;
 
     @Column(nullable = false, columnDefinition = "INTEGER")
+    @Convert(converter = BooleanToIntegerConverter.class)
     private Boolean activo = true;
 
     @ManyToOne(fetch = FetchType.EAGER)
