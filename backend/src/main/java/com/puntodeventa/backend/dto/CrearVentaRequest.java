@@ -12,6 +12,7 @@ import java.util.List;
 public record CrearVentaRequest(
     Long sucursalId,
     Long cajaId,
+    Long turnoId,
     
     @NotEmpty(message = "La venta debe tener al menos un item")
     @Valid
