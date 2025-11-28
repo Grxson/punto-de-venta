@@ -76,6 +76,21 @@ public class VentaService {
             .impuestos(BigDecimal.ZERO) // TODO: Implementar IVA
             .descuento(BigDecimal.ZERO) // TODO: Implementar descuentos
             .build();
+
+        // Asignar caja por compatibilidad con esquema actual (Railway exige caja_id NOT NULL)
+        // Si no viene en la request, usar un valor por defecto (1L) temporalmente.
+        Long cajaId = null;
+        try {
+            cajaId = request.cajaId();
+        } catch (Exception ignored) {
+            // En caso de que versiones antiguas de request no incluyan cajaId
+        }
+        if (cajaId == null) {
+            org.slf4j.LoggerFactory.getLogger(VentaService.class)
+                .warn("crearVenta(): cajaId no proporcionado; usando valor por defecto 1L para compatibilidad.");
+            cajaId = 1L; // TODO: Resolver con 'Caja' activa por usuario/turno
+        }
+        venta.setCajaId(cajaId);
         
         // 2. Asignar sucursal si se proporciona
         if (request.sucursalId() != null) {

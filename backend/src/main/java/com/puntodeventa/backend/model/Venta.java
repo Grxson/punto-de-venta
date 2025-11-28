@@ -36,6 +36,11 @@ public class Venta {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sucursal_id")
     private Sucursal sucursal;
+
+    // Nota: La base de datos en Railway tiene la columna caja_id con NOT NULL.
+    // Aún no modelamos la entidad Caja; por compatibilidad mínima mapeamos el ID plano.
+    @Column(name = "caja_id")
+    private Long cajaId;
     
     @NotNull(message = "La fecha de la venta es obligatoria")
     @Column(nullable = false)
