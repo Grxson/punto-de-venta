@@ -18,7 +18,7 @@ public class Rol {
     @Column(length = 255)
     private String descripcion;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "INTEGER DEFAULT 1")
     private Boolean activo = true;
 
     @ManyToMany(fetch = FetchType.EAGER)

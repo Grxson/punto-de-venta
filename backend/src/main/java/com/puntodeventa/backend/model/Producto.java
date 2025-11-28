@@ -48,11 +48,11 @@ public class Producto {
     @Column(length = 50)
     private String sku;
     
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "INTEGER DEFAULT 1")
     @Builder.Default
     private Boolean activo = true;
     
-    @Column(name = "disponible_en_menu", nullable = false)
+    @Column(name = "disponible_en_menu", nullable = false, columnDefinition = "INTEGER DEFAULT 1")
     @Builder.Default
     private Boolean disponibleEnMenu = true;
 
