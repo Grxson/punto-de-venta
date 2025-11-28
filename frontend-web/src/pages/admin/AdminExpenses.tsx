@@ -232,10 +232,13 @@ export default function AdminExpenses() {
 
       const fechaISO = fecha!.toISOString().split('.')[0]; // yyyy-MM-ddTHH:mm:ss
 
+      // Usar sucursalId (campo que viene del backend) o idSucursal (compatibilidad)
+      const sucursalId = usuario?.sucursalId || usuario?.idSucursal || null;
+
       const request = {
         categoriaGastoId: categoriaId,
         proveedorId: proveedorId || null,
-        sucursalId: usuario?.idSucursal || null,
+        sucursalId: sucursalId,
         monto: parseFloat(monto),
         fecha: fechaISO,
         metodoPagoId: metodoPagoId || null,
