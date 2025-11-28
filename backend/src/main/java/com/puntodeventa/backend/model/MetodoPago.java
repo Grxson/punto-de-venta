@@ -26,10 +26,10 @@ public class MetodoPago {
     @Column(nullable = false, length = 100, unique = true)
     private String nombre;
     
-    @Column(name = "requiere_referencia", nullable = false)
+    @Column(name = "requiere_referencia", nullable = false, columnDefinition = "INTEGER DEFAULT 0")
     private Boolean requiereReferencia = false;
     
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "INTEGER DEFAULT 1")
     private Boolean activo = true;
     
     @Column(columnDefinition = "TEXT")
