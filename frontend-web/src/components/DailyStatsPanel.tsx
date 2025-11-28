@@ -90,7 +90,7 @@ export default function DailyStatsPanel() {
       const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
       
       const desgloseResponse = await apiService.get(
-        `${API_ENDPOINTS.VENTAS}/resumen/metodos-pago?desde=${inicioDia.toISOString()}&hasta=${finDia.toISOString()}`
+        `${API_ENDPOINTS.SALES}/resumen/metodos-pago?desde=${inicioDia.toISOString()}&hasta=${finDia.toISOString()}`
       );
       
       if (desgloseResponse.success && desgloseResponse.data) {
