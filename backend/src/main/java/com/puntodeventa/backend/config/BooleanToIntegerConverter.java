@@ -3,7 +3,7 @@ package com.puntodeventa.backend.config;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
-/**
+/**         
  * Convertidor JPA para mapear Boolean (Java) a Integer (PostgreSQL).
  * 
  * Este converter es necesario porque PostgreSQL no soporta conversión automática

@@ -3,6 +3,13 @@
 .github/copilot-instructions.md
 .github/copilot-instructions-java21.md
 
+# Variables de entorno locales (credenciales sensibles)
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
 # Archivos del sistema
 .DS_Store
 Thumbs.db

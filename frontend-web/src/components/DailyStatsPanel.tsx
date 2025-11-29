@@ -25,8 +25,14 @@ interface DailyStats {
   margenPorcentaje: number;
 }
 
+interface DesglosePago {
+  metodoPago: string;
+  total: number;
+}
+
 export default function DailyStatsPanel() {
   const [stats, setStats] = useState<DailyStats | null>(null);
+  const [desglosePagos, setDesglosePagos] = useState<DesglosePago[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,6 +66,8 @@ export default function DailyStatsPanel() {
   const loadStats = async () => {
     try {
       setError(null);
+      
+      // Cargar estadísticas del día
       const response = await apiService.get(API_ENDPOINTS.STATS_DAILY);
       if (response.success && response.data) {
         const data = response.data;
@@ -74,7 +82,25 @@ export default function DailyStatsPanel() {
           ticketPromedio: parseFloat(data.ticketPromedio) || 0,
           margenPorcentaje: parseFloat(data.margenPorcentaje) || 0,
         });
-      } else {
+      }
+      
+      // Cargar desglose de pagos por método
+      const hoy = new Date();
+      const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
+      const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
+      
+      const desgloseResponse = await apiService.get(
+        `${API_ENDPOINTS.SALES}/resumen/metodos-pago?desde=${inicioDia.toISOString()}&hasta=${finDia.toISOString()}`
+      );
+      
+      if (desgloseResponse.success && desgloseResponse.data) {
+        setDesglosePagos(desgloseResponse.data.map((item: any) => ({
+          metodoPago: item.metodoPago,
+          total: parseFloat(item.total) || 0,
+        })));
+      }
+      
+      if (!response.success) {
         setError('Error al cargar estadísticas');
       }
     } catch (err: any) {
@@ -84,7 +110,19 @@ export default function DailyStatsPanel() {
     }
   };
 
-  const utilidad = stats ? stats.totalVentas - stats.totalCostos : 0;
+  // Neto = Efectivo - Gastos
+  const efectivoTotal = desglosePagos.find((p) => p.metodoPago?.toLowerCase() === 'efectivo')?.total ?? 0;
+  const neto = efectivoTotal - (stats ? (stats.totalGastos || 0) : 0);
+
+  // Ordenar métodos de pago: Transferencia, Tarjeta, Efectivo (y luego cualquiera extra)
+  const ordenMetodos = ['Transferencia', 'Tarjeta', 'Efectivo'];
+  const desgloseOrdenado = [...desglosePagos].sort((a, b) => {
+    const ai = ordenMetodos.indexOf(a.metodoPago);
+    const bi = ordenMetodos.indexOf(b.metodoPago);
+    const av = ai === -1 ? Number.MAX_SAFE_INTEGER : ai;
+    const bv = bi === -1 ? Number.MAX_SAFE_INTEGER : bi;
+    return av === bv ? a.metodoPago.localeCompare(b.metodoPago) : av - bv;
+  });
 
   return (
     <Box
@@ -161,6 +199,40 @@ export default function DailyStatsPanel() {
                       ${stats.totalVentas.toFixed(2)}
                     </Typography>
                   </Box>
+                  
+                  {/* Desglose de métodos de pago */}
+                  {desgloseOrdenado.length > 0 && (
+                    <Box
+                      sx={{
+                        ml: 2,
+                        mb: 1,
+                        p: 1,
+                        backgroundColor: 'action.hover',
+                        borderRadius: 1,
+                      }}
+                    >
+                      {desgloseOrdenado.map((desglose) => (
+                        <Box
+                          key={desglose.metodoPago}
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '0.8rem',
+                            mb: 0.5,
+                            '&:last-child': { mb: 0 },
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary">
+                            {desglose.metodoPago}
+                          </Typography>
+                          <Typography variant="caption" color="text.primary" fontWeight="medium">
+                            ${desglose.total.toFixed(2)}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
 
                   <Box
                     sx={{
@@ -189,21 +261,21 @@ export default function DailyStatsPanel() {
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {utilidad >= 0 ? (
+                      {neto >= 0 ? (
                         <TrendingUp sx={{ color: 'success.main', fontSize: 18 }} />
                       ) : (
                         <TrendingDown sx={{ color: 'error.main', fontSize: 18 }} />
                       )}
                       <Typography variant="body2" fontWeight="bold" color="text.secondary">
-                        Utilidad
+                        Neto
                       </Typography>
                     </Box>
                     <Typography
                       variant="h6"
-                      color={utilidad >= 0 ? 'success.main' : 'error.main'}
+                      color={neto >= 0 ? 'success.main' : 'error.main'}
                       fontWeight="bold"
                     >
-                      ${utilidad.toFixed(2)}
+                      ${neto.toFixed(2)}
                     </Typography>
                   </Box>
                 </Box>

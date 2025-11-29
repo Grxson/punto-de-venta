@@ -279,4 +279,30 @@ app.ventas.validar-stock=true
 3. Flag de origen adicional (IMPORTACION, AJUSTE_MANUAL)
 4. Integrar en estadísticas para mostrar tendencia de margen.
 
-**Última actualización:** 24 de noviembre de 2025
+
+
+
+**Pasos de la semana del 29 de noviembre**
+
+- Ver la forma de modificar el precio de un producto en dado caso yo como empleado o dueño tome un producto para consumo propio
+- ✅ juntar minihot cakes en un modal por los tamaños 
+- ✅ molletes igual juntarlos en un modal con sus variantes
+- hacer posible que podamos modificar precios
+- agregar variantes de jugo de betabel 
+- el botón para cerrar el carrito tiene que ser estático para que no tenga que dar scroll para arriba para cerrarlo
+- cambiar a color rosa
+- en vez de molletes cambiarlo a Dulces (meter molletes, mini jokeis, wafles)
+- quitar referencia de el método de pago de transferencia y tarjeta ✅
+- Agregar apartado en caso de que vendamos cosas fueras de menú (extraordinarios)
+- en la ventana de pagar hacer función para editar precio en caso de, solo dar clic al número
+- cuando se seleccione el método de pago ya se debe de pagar automáticamente, para no dar clic en el botón de pagar
+- insumo en gastos como predeterminado, y efectivo por default
+- en vez de nota - concepto o descripción 
+- quitar referencia del form de gasto
+-  agregar en resumen del día cuanto de monto es de cada modo de pago, pero con el tamaño de letra de la palabra "venta" ✅
+- Sección de "Corte de caja"✅
+- ✅ ADMIN: Botón para eliminar ventas permanentemente (no solo cancelar)
+
+
+**Última actualización:** 29 de noviembre de 2025
+
