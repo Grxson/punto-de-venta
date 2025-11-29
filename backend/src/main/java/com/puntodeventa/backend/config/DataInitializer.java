@@ -17,12 +17,15 @@ import static com.puntodeventa.backend.config.DataInitializerMenuHelper.crearPro
  * Inicializador de datos para desarrollo.
  * Carga datos de prueba en la base de datos H2 al iniciar la aplicación.
  * 
+ * ⚠️ DESHABILITADO cuando se conecta a Railway PostgreSQL (ya tiene datos reales).
+ * Solo se activa con H2 en memoria.
+ * 
  * @author Grxson
  * @version 1.0.0
  * @since Java 21
  */
 @Configuration
-@Profile("dev")
+@Profile("dev-h2") // Cambiado de "dev" a "dev-h2" para evitar ejecutar con Railway
 public class DataInitializer {
 
     @Autowired

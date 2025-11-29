@@ -14,6 +14,8 @@ import {
   CircularProgress,
   Alert,
   Chip,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   BarChart,
@@ -57,6 +59,23 @@ interface ProductoRendimiento {
   margenBrutoTotal: number;
 }
 
+interface VentaDetalle {
+  id: number;
+  folio: string;
+  fecha: string;
+  total: number;
+  items: {
+    productoNombre: string;
+    cantidad: number;
+    precioUnitario: number;
+    subtotal: number;
+  }[];
+  pagos: {
+    metodoPagoNombre: string;
+    monto: number;
+  }[];
+}
+
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export default function AdminReports() {
@@ -66,8 +85,14 @@ export default function AdminReports() {
   });
   const [resumen, setResumen] = useState<ResumenVentas | null>(null);
   const [productosTop, setProductosTop] = useState<ProductoRendimiento[]>([]);
+  const [ventas, setVentas] = useState<VentaDetalle[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentTab, setCurrentTab] = useState(0);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setCurrentTab(newValue);
+  };
 
   useEffect(() => {
     loadData();
@@ -134,6 +159,15 @@ export default function AdminReports() {
           margenBrutoTotal: parseFloat(p.margenBrutoTotal) || 0,
         }));
         setProductosTop(productos);
+      }
+
+      // Cargar ventas detalladas para corte de caja
+      const ventasResponse = await apiService.get(
+        `${API_ENDPOINTS.SALES}/rango?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
+      );
+
+      if (ventasResponse.success && ventasResponse.data) {
+        setVentas(ventasResponse.data);
       }
     } catch (err: any) {
       setError(err.message || 'Error al cargar reportes');
@@ -221,13 +255,24 @@ export default function AdminReports() {
           </Card>
         )}
 
+        {/* Sistema de Tabs */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Tabs value={currentTab} onChange={handleTabChange} aria-label="reportes tabs">
+            <Tab label="📊 Dashboard General" />
+            <Tab label="📋 Corte de Caja" />
+          </Tabs>
+        </Box>
+
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
             <CircularProgress />
           </Box>
         ) : resumen ? (
           <>
-            {/* Métricas principales */}
+            {/* Tab 0: Dashboard General */}
+            {currentTab === 0 && (
+              <Box>
+                {/* Métricas principales */}
             <Box
               sx={{
                 display: 'grid',
@@ -565,6 +610,141 @@ export default function AdminReports() {
                 </Card>
               </Box>
             </Box>
+              </Box>
+            )}
+
+            {/* Tab 1: Corte de Caja */}
+            {currentTab === 1 && (
+              <Box>
+                <Card sx={{ maxWidth: '900px', mx: 'auto' }}>
+                  <CardContent sx={{ p: 3 }}>
+                    {ventas.length === 0 ? (
+                      <Alert severity="info">
+                        No hay ventas registradas en este período
+                      </Alert>
+                    ) : (
+                      <>
+                        {/* Header */}
+                        <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
+                          <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
+                            📋 Corte de Caja
+                          </Typography>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography variant="body2" color="text.secondary">
+                              {new Date(dateRange.desde).toLocaleDateString('es-ES')} - {new Date(dateRange.hasta).toLocaleDateString('es-ES')}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {ventas.length} ventas
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        {/* Tabla de métodos de pago */}
+                        <Box sx={{ mb: 3 }}>
+                          {(() => {
+                            const metodosPago = ventas.reduce((acc, venta) => {
+                              venta.pagos.forEach((pago) => {
+                                const metodo = pago.metodoPagoNombre;
+                                acc[metodo] = (acc[metodo] || 0) + pago.monto;
+                              });
+                              return acc;
+                            }, {} as Record<string, number>);
+
+                            return Object.entries(metodosPago).map(([metodo, monto]) => (
+                              <Box
+                                key={metodo}
+                                sx={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  py: 0.75,
+                                  px: 1.5,
+                                  borderBottom: 1,
+                                  borderColor: 'grey.200',
+                                }}
+                              >
+                                <Typography variant="body2">{metodo}</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                  ${monto.toFixed(2)}
+                                </Typography>
+                              </Box>
+                            ));
+                          })()}
+                        </Box>
+
+                        {/* Tabla de productos */}
+                        <TableContainer component={Paper} variant="outlined" sx={{ mb: 3 }}>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow sx={{ bgcolor: 'grey.100' }}>
+                                <TableCell sx={{ fontWeight: 600, py: 1 }}>Producto</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600, py: 1 }}>Cant.</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 600, py: 1 }}>Precio Unit.</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 600, py: 1 }}>Total</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {(() => {
+                                const productosAgrupados = ventas.reduce((acc, venta) => {
+                                  venta.items.forEach((item) => {
+                                    const key = item.productoNombre;
+                                    if (!acc[key]) {
+                                      acc[key] = {
+                                        nombre: item.productoNombre,
+                                        cantidad: 0,
+                                        total: 0,
+                                        precioUnitario: item.precioUnitario,
+                                      };
+                                    }
+                                    acc[key].cantidad += item.cantidad;
+                                    acc[key].total += item.subtotal;
+                                  });
+                                  return acc;
+                                }, {} as Record<string, { nombre: string; cantidad: number; total: number; precioUnitario: number }>);
+
+                                return Object.values(productosAgrupados)
+                                  .sort((a, b) => b.total - a.total)
+                                  .map((producto, idx) => (
+                                    <TableRow key={idx} hover>
+                                      <TableCell sx={{ py: 1 }}>{producto.nombre}</TableCell>
+                                      <TableCell align="center" sx={{ py: 1 }}>{producto.cantidad}</TableCell>
+                                      <TableCell align="right" sx={{ py: 1 }}>
+                                        ${producto.precioUnitario.toFixed(2)}
+                                      </TableCell>
+                                      <TableCell align="right" sx={{ py: 1, fontWeight: 600 }}>
+                                        ${producto.total.toFixed(2)}
+                                      </TableCell>
+                                    </TableRow>
+                                  ));
+                              })()}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+
+                        {/* Total final */}
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            py: 1.5,
+                            px: 2,
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            borderRadius: 1,
+                          }}
+                        >
+                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            TOTAL
+                          </Typography>
+                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            ${ventas.reduce((sum, v) => sum + v.total, 0).toFixed(2)}
+                          </Typography>
+                        </Box>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+              </Box>
+            )}
           </>
         ) : (
           <Alert severity="info">No hay datos disponibles para el período seleccionado</Alert>

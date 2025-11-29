@@ -101,6 +101,11 @@ export default function AdminSales() {
   const [motivoCancelacion, setMotivoCancelacion] = useState('');
   const [errorMotivo, setErrorMotivo] = useState<string | null>(null);
   
+  // Estado para el diálogo de eliminación permanente
+  const [dialogoEliminacion, setDialogoEliminacion] = useState(false);
+  const [ventaAEliminar, setVentaAEliminar] = useState<Venta | null>(null);
+  const [eliminando, setEliminando] = useState(false);
+  
   // Estado para el diálogo de edición
   const [dialogoEdicion, setDialogoEdicion] = useState(false);
   const [itemsEditados, setItemsEditados] = useState<VentaItem[]>([]);
@@ -256,6 +261,53 @@ export default function AdminSales() {
       setErrorMotivo(err.message || 'Error de conexión al cancelar la venta');
     } finally {
       setCancelando(null);
+    }
+  };
+
+  const handleAbrirDialogoEliminacion = (venta: Venta) => {
+    setVentaAEliminar(venta);
+    setDialogoEliminacion(true);
+  };
+
+  const handleCerrarDialogoEliminacion = () => {
+    if (!eliminando) {
+      setDialogoEliminacion(false);
+      setVentaAEliminar(null);
+    }
+  };
+
+  const handleEliminarVenta = async () => {
+    if (!ventaAEliminar) return;
+
+    try {
+      setEliminando(true);
+
+      const url = `${API_ENDPOINTS.SALES}/${ventaAEliminar.id}`;
+      const response = await apiService.delete(url);
+
+      if (response.success) {
+        setSnackbar({
+          open: true,
+          message: `✓ Venta #${ventaAEliminar.id} eliminada permanentemente`,
+          tipo: 'success',
+        });
+        handleCerrarDialogoEliminacion();
+        await loadVentas(); // Recargar lista
+      } else {
+        setSnackbar({
+          open: true,
+          message: `✗ Error al eliminar: ${response.error || 'Error desconocido'}`,
+          tipo: 'warning',
+        });
+      }
+    } catch (err: any) {
+      setSnackbar({
+        open: true,
+        message: `✗ Error de conexión al eliminar la venta: ${err.message}`,
+        tipo: 'warning',
+      });
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -887,6 +939,23 @@ export default function AdminSales() {
                           <Cancel />
                         </IconButton>
                       )}
+                      {usuario?.rol === 'ADMIN' && venta.estado !== 'CANCELADA' && (
+                        <IconButton
+                          color="error"
+                          onClick={() => handleAbrirDialogoEliminacion(venta)}
+                          size="small"
+                          title="Eliminar venta permanentemente (ADMIN)"
+                          sx={{
+                            backgroundColor: 'error.main',
+                            color: 'white',
+                            '&:hover': {
+                              backgroundColor: 'error.dark',
+                            }
+                          }}
+                        >
+                          <Delete />
+                        </IconButton>
+                      )}
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -1445,6 +1514,76 @@ export default function AdminSales() {
             sx={{ minHeight: '48px' }}
           >
             Cancelar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Diálogo de eliminación permanente (ADMIN) */}
+      <Dialog
+        open={dialogoEliminacion}
+        onClose={handleCerrarDialogoEliminacion}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: 'error.main', fontWeight: 'bold' }}>
+          ⚠️ ELIMINAR VENTA PERMANENTEMENTE
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 1 }}>
+              ⚠️ ESTA ACCIÓN ES IRREVERSIBLE ⚠️
+            </Typography>
+            <Typography variant="body2">
+              Esta operación eliminará PERMANENTEMENTE la venta y todos sus datos asociados:
+            </Typography>
+            <ul style={{ marginTop: '8px', marginBottom: '8px' }}>
+              <li>Registro de la venta</li>
+              <li>Todos los items vendidos</li>
+              <li>Todos los pagos registrados</li>
+              <li>Movimientos de inventario</li>
+            </ul>
+            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+              Esta acción NO se puede deshacer. Los datos se perderán para siempre.
+            </Typography>
+          </Alert>
+
+          {ventaAEliminar && (
+            <Box sx={{ p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+              <Typography variant="h6" sx={{ mb: 1, color: 'error.main' }}>
+                Venta #{ventaAEliminar.id}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Fecha:</strong> {format(new Date(ventaAEliminar.fecha), "dd/MM/yyyy HH:mm", { locale: es })}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Total:</strong> ${ventaAEliminar.total.toFixed(2)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Items:</strong> {ventaAEliminar.items.length} producto(s)
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                <strong>Estado:</strong> {ventaAEliminar.estado}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={handleCerrarDialogoEliminacion}
+            disabled={eliminando}
+            variant="outlined"
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleEliminarVenta}
+            variant="contained"
+            color="error"
+            disabled={eliminando}
+            startIcon={eliminando ? <CircularProgress size={20} /> : <Delete />}
+            sx={{ fontWeight: 'bold' }}
+          >
+            {eliminando ? 'Eliminando...' : 'Confirmar Eliminación Permanente'}
           </Button>
         </DialogActions>
       </Dialog>

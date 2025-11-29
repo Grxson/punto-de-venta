@@ -110,7 +110,19 @@ export default function DailyStatsPanel() {
     }
   };
 
-  const utilidad = stats ? stats.totalVentas - stats.totalCostos : 0;
+  // Neto = Efectivo - Gastos
+  const efectivoTotal = desglosePagos.find((p) => p.metodoPago?.toLowerCase() === 'efectivo')?.total ?? 0;
+  const neto = efectivoTotal - (stats ? (stats.totalGastos || 0) : 0);
+
+  // Ordenar métodos de pago: Transferencia, Tarjeta, Efectivo (y luego cualquiera extra)
+  const ordenMetodos = ['Transferencia', 'Tarjeta', 'Efectivo'];
+  const desgloseOrdenado = [...desglosePagos].sort((a, b) => {
+    const ai = ordenMetodos.indexOf(a.metodoPago);
+    const bi = ordenMetodos.indexOf(b.metodoPago);
+    const av = ai === -1 ? Number.MAX_SAFE_INTEGER : ai;
+    const bv = bi === -1 ? Number.MAX_SAFE_INTEGER : bi;
+    return av === bv ? a.metodoPago.localeCompare(b.metodoPago) : av - bv;
+  });
 
   return (
     <Box
@@ -189,7 +201,7 @@ export default function DailyStatsPanel() {
                   </Box>
                   
                   {/* Desglose de métodos de pago */}
-                  {desglosePagos.length > 0 && (
+                  {desgloseOrdenado.length > 0 && (
                     <Box
                       sx={{
                         ml: 2,
@@ -199,7 +211,7 @@ export default function DailyStatsPanel() {
                         borderRadius: 1,
                       }}
                     >
-                      {desglosePagos.map((desglose) => (
+                      {desgloseOrdenado.map((desglose) => (
                         <Box
                           key={desglose.metodoPago}
                           sx={{
@@ -249,21 +261,21 @@ export default function DailyStatsPanel() {
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      {utilidad >= 0 ? (
+                      {neto >= 0 ? (
                         <TrendingUp sx={{ color: 'success.main', fontSize: 18 }} />
                       ) : (
                         <TrendingDown sx={{ color: 'error.main', fontSize: 18 }} />
                       )}
                       <Typography variant="body2" fontWeight="bold" color="text.secondary">
-                        Utilidad
+                        Neto
                       </Typography>
                     </Box>
                     <Typography
                       variant="h6"
-                      color={utilidad >= 0 ? 'success.main' : 'error.main'}
+                      color={neto >= 0 ? 'success.main' : 'error.main'}
                       fontWeight="bold"
                     >
-                      ${utilidad.toFixed(2)}
+                      ${neto.toFixed(2)}
                     </Typography>
                   </Box>
                 </Box>

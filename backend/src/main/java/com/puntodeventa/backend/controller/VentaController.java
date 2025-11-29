@@ -103,6 +103,17 @@ public class VentaController {
         return ResponseEntity.ok(ventaCancelada);
     }
     
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Eliminar venta definitivamente", 
+               description = "Elimina permanentemente una venta de la base de datos. " +
+                            "SOLO ADMIN puede realizar esta acción. " +
+                            "Esta operación es IRREVERSIBLE y eliminará la venta, sus items y pagos asociados.")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> eliminarVenta(@PathVariable Long id) {
+        ventaService.eliminarVenta(id);
+        return ResponseEntity.noContent().build();
+    }
+    
     @GetMapping("/resumen/metodos-pago")
     @Operation(summary = "Obtener desglose de ventas por método de pago", 
                description = "Devuelve el total recaudado por cada método de pago (Efectivo, Tarjeta, etc.) " +

@@ -49,14 +49,35 @@ backend/
 
 ## Configuración
 
-### Base de datos H2 (desarrollo)
-Por defecto, el proyecto usa H2 en memoria. La consola H2 está disponible en:
-- URL: `http://localhost:8080/h2-console`
-- JDBC URL: `jdbc:h2:mem:testdb`
-- Usuario: `sa`
-- Contraseña: (vacío)
+### 🚀 Desarrollo con Railway PostgreSQL (Recomendado)
 
-### Base de datos MySQL (producción)
+**El perfil `dev` está configurado para conectarse directamente a Railway PostgreSQL**, permitiéndote trabajar con datos reales sin mantener una BD local.
+
+#### Configuración rápida:
+
+1. **Obtén la URL de conexión** desde [Railway Dashboard](https://railway.app) → PostgreSQL → Connect
+2. **Configura la variable de entorno:**
+
+   ```bash
+   # Linux/macOS
+   export DATABASE_URL="postgresql://usuario:password@host.railway.app:5432/railway"
+   
+   # O crea backend/.env
+   echo 'DATABASE_URL=postgresql://...' > .env
+   ```
+
+3. **Ejecuta el script de inicio:**
+   ```bash
+   ./start-dev.sh
+   ```
+
+📖 **Guía completa**: [RAILWAY-LOCAL-CONNECTION.md](./RAILWAY-LOCAL-CONNECTION.md)
+
+### Base de datos H2 (alternativa local)
+
+Si prefieres trabajar con H2 en memoria, puedes crear un perfil `dev-local` o modificar temporalmente `application-dev.properties`.
+
+### Base de datos MySQL (producción legacy)
 Configura en `application-prod.properties`:
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/punto_venta
@@ -67,9 +88,16 @@ spring.jpa.hibernate.ddl-auto=update
 
 ## Ejecutar el proyecto
 
-### Desarrollo
+### Desarrollo (conectado a Railway)
 ```bash
-./mvnw spring-boot:run
+# Opción 1: Script con validación automática (recomendado)
+./start-dev.sh
+
+# Opción 2: Maven directamente (requiere DATABASE_URL configurado)
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+
+# Opción 3: Con variable inline
+DATABASE_URL="postgresql://..." ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 ### Producción

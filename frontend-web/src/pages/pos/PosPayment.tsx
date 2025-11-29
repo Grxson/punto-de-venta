@@ -5,7 +5,6 @@ import {
   Card,
   CardContent,
   Button,
-  TextField,
   Alert,
   CircularProgress,
   Divider,
@@ -29,7 +28,6 @@ export default function PosPayment() {
   const { cart, total, clearCart } = useCart();
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
   const [metodoSeleccionado, setMetodoSeleccionado] = useState<MetodoPago | null>(null);
-  const [referencia, setReferencia] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingMetodos, setLoadingMetodos] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,11 +81,6 @@ export default function PosPayment() {
       return;
     }
 
-    if (metodoSeleccionado.requiereReferencia && !referencia.trim()) {
-      setError('Este método de pago requiere una referencia');
-      return;
-    }
-
     if (cart.length === 0) {
       setError('El carrito está vacío');
       return;
@@ -110,7 +103,7 @@ export default function PosPayment() {
         {
           metodoPagoId: metodoSeleccionado.id,
           monto: total,
-          referencia: metodoSeleccionado.requiereReferencia ? referencia : null,
+          referencia: null, // Siempre null, no se usa
         },
       ];
 
@@ -263,7 +256,6 @@ export default function PosPayment() {
                   fullWidth
                   onClick={() => {
                     setMetodoSeleccionado(metodo);
-                    setReferencia('');
                     setError(null);
                   }}
                   sx={{ minHeight: '80px', fontSize: '16px' }}
@@ -271,20 +263,6 @@ export default function PosPayment() {
                   {metodo.nombre}
                 </Button>
               ))}
-            </Box>
-          )}
-
-          {metodoSeleccionado?.requiereReferencia && (
-            <Box sx={{ mt: 3 }}>
-              <TextField
-                fullWidth
-                label="Referencia"
-                placeholder="Número de referencia, transacción, etc."
-                value={referencia}
-                onChange={(e) => setReferencia(e.target.value)}
-                required
-                sx={{ minHeight: '48px' }}
-              />
             </Box>
           )}
         </CardContent>
