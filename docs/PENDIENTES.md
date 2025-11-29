@@ -288,7 +288,8 @@ app.ventas.validar-stock=true
 - ✅ juntar minihot cakes en un modal por los tamaños 
 - ✅ molletes igual juntarlos en un modal con sus variantes
 - hacer posible que podamos modificar precios
-- agregar variantes de jugo de betabel 
+- ✅ agregar variantes de jugo de betabel (Betabel/Naranja, Betabel/Zanahoria)
+- ✅ agregar productos de jugos mixtos (Naranja/Toronja, Naranja/Zanahoria, Zanahoria/Toronja)
 - el botón para cerrar el carrito tiene que ser estático para que no tenga que dar scroll para arriba para cerrarlo
 - cambiar a color rosa
 - en vez de molletes cambiarlo a Dulces (meter molletes, mini jokeis, wafles)
