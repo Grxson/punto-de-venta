@@ -8,6 +8,12 @@
 
 set -euo pipefail
 
+# Cargar variables de entorno desde .env si existe
+if [[ -f .env ]]; then
+  echo "Cargando variables de entorno desde .env..."
+  export $(grep -v '^#' .env | xargs)
+fi
+
 APP_JAR_PATTERN="target/backend-*.jar"
 PORT="${PORT:-8080}"
 
@@ -46,8 +52,28 @@ if [[ -z "$JAR_FILE" ]]; then
   exit 1
 fi
 
-echo "[start.sh] Lanzando: java -Dserver.port=$PORT -Dspring.profiles.active=$PROFILE -jar $JAR_FILE"
-exec java ${JAVA_OPTS:-"-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"} \
-  -Dserver.port="$PORT" \
-  -Dspring.profiles.active="$PROFILE" \
-  -jar "$JAR_FILE"
+# Sanitizar opciones JVM potencialmente problemáticas en JAVA_OPTS / JAVA_TOOL_OPTIONS
+# Algunos entornos inyectan tokens inválidos como "UseContainerSupport" sin prefijo -XX: que rompen el arranque.
+sanitize_opts() {
+  local opts="$1"
+  # Eliminar flags no válidos o redundantes (variantes de UseContainerSupport)
+  opts="${opts//-XX:+UseContainerSupport/}"
+  opts="${opts//-XX:UseContainerSupport/}"
+  opts="${opts//UseContainerSupport/}"
+  # Normalizar espacios
+  echo "$opts" | sed -E 's/[[:space:]]+/ /g' | xargs
+}
+
+SAFE_JAVA_OPTS="$(sanitize_opts "${JAVA_OPTS:-"-Xmx512m"}")"
+
+# Si JAVA_TOOL_OPTIONS existe, sanitizarlo también para evitar que la JVM falle antes de leer JAVA_OPTS
+if [[ -n "${JAVA_TOOL_OPTIONS:-}" ]]; then
+  export JAVA_TOOL_OPTIONS="$(sanitize_opts "$JAVA_TOOL_OPTIONS")"
+  echo "[start.sh] JAVA_TOOL_OPTIONS sanitizado: $JAVA_TOOL_OPTIONS"
+fi
+
+echo "[start.sh] Lanzando: java $SAFE_JAVA_OPTS -Dserver.port=$PORT -Dspring.profiles.active=$PROFILE -jar $JAR_FILE"
+exec java $SAFE_JAVA_OPTS \
+     -Dserver.port="$PORT" \
+     -Dspring.profiles.active="$PROFILE" \
+     -jar "$JAR_FILE"
