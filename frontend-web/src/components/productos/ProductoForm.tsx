@@ -332,11 +332,14 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
               ? parseFloat(variante.precio)
               : parseFloat(precio) || 0;
 
+            // Enviar los campos actualizables incluyendo el nombre completo
+            const nombreVarianteFinal = `${nombreFinal} - ${variante.nombre.trim()}`;
             await productosService.actualizar(variante.id, {
+              nombre: nombreVarianteFinal,
               nombreVariante: variante.nombre.trim(),
               precio: precioVariante,
               ordenVariante: variante.orden,
-            });
+            } as Partial<Omit<Producto, 'id'>>);
           }
         }
 
@@ -351,9 +354,13 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
               : precioBase;
 
             await productosService.crearVariante(producto.id, {
+              nombre: `${nombre.trim()} - ${variante.nombre.trim()}`,
               nombreVariante: variante.nombre.trim(),
               precio: precioVariante,
               ordenVariante: variante.orden,
+              categoriaId: categoriaId ? Number(categoriaId) : null,
+              productoBaseId: producto.id,
+              descripcion: descripcion.trim() || null,
             } as Omit<Producto, 'id' | 'variantes'>);
           }
         }
@@ -373,9 +380,13 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
                 : precioBase; // Si no tiene precio, usar el precio base
 
               await productosService.crearVariante(productoId, {
+                nombre: `${nombreFinal} - ${variante.nombre.trim()}`,
                 nombreVariante: variante.nombre.trim(),
                 precio: precioVariante,
                 ordenVariante: variante.orden,
+                categoriaId: categoriaId ? Number(categoriaId) : null,
+                productoBaseId: productoId,
+                descripcion: descripcion.trim() || null,
               } as Omit<Producto, 'id' | 'variantes'>);
             }
           }

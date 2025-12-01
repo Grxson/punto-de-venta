@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Card,
@@ -20,9 +20,10 @@ import {
   IconButton,
   Collapse,
   Badge,
+  Snackbar,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Payment, ShoppingCart, ExpandMore, Add, Remove, Restaurant, LunchDining, Fastfood, BreakfastDining } from '@mui/icons-material';
+import { Payment, ShoppingCart, ExpandMore, Add, Remove, Restaurant, LunchDining, Fastfood, BreakfastDining, CheckCircle, Refresh } from '@mui/icons-material';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useCart } from '../../contexts/CartContext';
@@ -58,11 +59,15 @@ export default function PosHome() {
     return userPreferencesService.getPosDesayunosSubcategory();
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
   const [ventaExitosa, setVentaExitosa] = useState(false);
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [carritoExpandido, setCarritoExpandido] = useState(true);
+  const mostrarMensajeRef = useRef(false);
+  const timerCompletadoRef = useRef(false);
 
   // Obtiene el nombre base sin el sufijo de variante (Chico/Mediano/Grande)
   const obtenerNombreBase = (p: Producto): string => {
@@ -80,15 +85,47 @@ export default function PosHome() {
   };
 
   useEffect(() => {
-    // Verificar si hay mensaje de venta exitosa
-    if (location.state?.ventaExitosa) {
-      setVentaExitosa(true);
-      // Limpiar el estado después de 5 segundos
-      setTimeout(() => setVentaExitosa(false), 5000);
-      // Limpiar el estado de navegación
-      window.history.replaceState({}, document.title);
+    // Detectar venta exitosa desde location.state o localStorage
+    // SOLO ejecutar una vez al montar el componente
+    if (mostrarMensajeRef.current) {
+      return;
     }
-  }, [location]);
+
+    const ventaExitosaState = location.state?.ventaExitosa || localStorage.getItem('ventaExitosa') === 'true';
+    
+    if (ventaExitosaState) {
+      mostrarMensajeRef.current = true;
+      
+      // Limpiar INMEDIATAMENTE
+      localStorage.removeItem('ventaExitosa');
+      if (location.state?.ventaExitosa) {
+        window.history.replaceState({}, document.title);
+      }
+      
+      // Mostrar el mensaje
+      setVentaExitosa(true);
+    }
+  }, []);
+
+  // Segundo useEffect para manejar el temporizador de ocultamiento
+  useEffect(() => {
+    if (!ventaExitosa) {
+      timerCompletadoRef.current = false;
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      timerCompletadoRef.current = true;
+      setVentaExitosa(false);
+    }, 8000);
+
+    return () => {
+      // Solo limpiar si el timer NO se completó
+      if (!timerCompletadoRef.current) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [ventaExitosa]);
 
   useEffect(() => {
     // Cargar datos y restaurar preferencias
@@ -207,13 +244,65 @@ export default function PosHome() {
     }
   };
 
+  // Función para actualizar/refrescar el menú sin recarga de página
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      setRefreshSuccess(false);
+      
+      // Cargar productos activos y disponibles en menú
+      const productosResponse = await apiService.get(`${API_ENDPOINTS.PRODUCTS}?activo=true&enMenu=true`);
+      if (productosResponse.success && productosResponse.data) {
+        // Asegurar que el precio sea un número y filtrar solo activos y disponibles en menú
+        const productosActivos = productosResponse.data
+          .filter((p: any) => p.activo && p.disponibleEnMenu)
+          .map((p: any) => ({
+            ...p,
+            precio: typeof p.precio === 'number' ? p.precio : parseFloat(p.precio) || 0,
+          }));
+        setProductos(productosActivos);
+        setRefreshSuccess(true);
+        
+        // Mostrar mensaje de éxito durante 3 segundos
+        setTimeout(() => setRefreshSuccess(false), 3000);
+      } else {
+        setError(productosResponse.error || 'Error al actualizar productos');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error al actualizar el menú');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Función para determinar la subcategoría de un producto de desayunos
   const obtenerSubcategoriaDesayuno = (nombreProducto: string): string => {
     const nombreLower = nombreProducto.toLowerCase();
-    if (nombreLower.includes('mollete')) return 'molletes';
+    
+    // Primero, intentar extraer subcategoría del prefijo [SUBCATEGORIA]
+    const prefixMatch = nombreProducto.match(/^\[([^\]]+)\]/);
+    if (prefixMatch) {
+      const subcatDelPrefijo = prefixMatch[1].toLowerCase();
+      // Normalizar a los valores válidos
+      if (['dulces', 'lonches', 'sandwiches', 'otros'].includes(subcatDelPrefijo)) {
+        return subcatDelPrefijo;
+      }
+    }
+    
+    // Si no hay prefijo, usar detección por palabras clave
+    // Dulces: molletes, waffles, mini hot cakes
+    if (nombreLower.includes('mollete') || nombreLower.includes('waffle') || nombreLower.includes('hot cake')) {
+      return 'dulces';
+    }
     if (nombreLower.includes('lonche') && !nombreLower.includes('sandwich')) return 'lonches';
     if (nombreLower.includes('sandwich')) return 'sandwiches';
     return 'otros';
+  };
+
+  // Función para obtener el nombre limpio del producto (sin prefijo de subcategoría)
+  const obtenerNombreLimpio = (nombreProducto: string): string => {
+    // Remover el prefijo [SUBCATEGORIA] si existe
+    return nombreProducto.replace(/^\[[^\]]+\]\s*/, '').trim();
   };
 
   // Función para obtener el tipo específico de producto en "Licuados y Chocomiles"
@@ -259,7 +348,7 @@ export default function PosHome() {
   // Subcategorías de Desayunos
   const subcategoriasDesayunos = [
     { id: 'todos', label: 'TODOS', icon: <Restaurant /> },
-    { id: 'molletes', label: 'MOLLETES', icon: <BreakfastDining /> },
+    { id: 'dulces', label: 'DULCES', icon: <BreakfastDining /> },
     { id: 'lonches', label: 'LONCHES', icon: <LunchDining /> },
     { id: 'sandwiches', label: 'SANDWICHES', icon: <Fastfood /> },
     { id: 'otros', label: 'PLATOS PRINCIPALES', icon: <Restaurant /> },
@@ -295,6 +384,10 @@ export default function PosHome() {
       navigate('/pos/payment');
   };
 
+  const handleCerrarVentaExitosa = () => {
+    setVentaExitosa(false);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -305,13 +398,78 @@ export default function PosHome() {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Seleccionar Productos
-      </Typography>
+      {/* Encabezado con título */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
+        <Typography variant="h4" gutterBottom sx={{ m: 0 }}>
+          Seleccionar Productos
+        </Typography>
+      </Box>
 
+      {/* Notificación de actualización exitosa */}
+      {refreshSuccess && (
+        <Alert
+          severity="success"
+          onClose={() => setRefreshSuccess(false)}
+          sx={{
+            mb: 2,
+            animation: 'slideDown 0.3s ease-out',
+            '@keyframes slideDown': {
+              '0%': {
+                transform: 'translateY(-100%)',
+                opacity: 0,
+              },
+              '100%': {
+                transform: 'translateY(0)',
+                opacity: 1,
+              },
+            },
+          }}
+        >
+          ✅ Menú actualizado correctamente
+        </Alert>
+      )}
+
+      {/* Notificación de venta exitosa - Fija y muy visible */}
       {ventaExitosa && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setVentaExitosa(false)}>
-          ¡Venta procesada exitosamente!
+        <Alert
+          severity="success"
+          onClose={handleCerrarVentaExitosa}
+          icon={<CheckCircle sx={{ fontSize: 32 }} />}
+          sx={{
+            mb: 3,
+            fontSize: '18px',
+            fontWeight: 'bold',
+            backgroundColor: '#4caf50',
+            color: 'white',
+            boxShadow: '0 4px 20px rgba(76, 175, 80, 0.4)',
+            borderRadius: 2,
+            padding: '16px 24px',
+            animation: 'slideDown 0.5s ease-out',
+            '@keyframes slideDown': {
+              '0%': {
+                transform: 'translateY(-100%)',
+                opacity: 0,
+              },
+              '100%': {
+                transform: 'translateY(0)',
+                opacity: 1,
+              },
+            },
+            '& .MuiAlert-icon': {
+              fontSize: '32px',
+              color: 'white',
+            },
+            '& .MuiAlert-message': {
+              fontSize: '20px',
+              fontWeight: 700,
+              color: 'white',
+            },
+            '& .MuiAlert-action': {
+              color: 'white',
+            },
+          }}
+        >
+          ✅ ¡PAGO PROCESADO EXITOSAMENTE! 🎉
         </Alert>
       )}
 
@@ -414,7 +572,7 @@ export default function PosHome() {
                 WebkitLineClamp: 3,
                 WebkitBoxOrient: 'vertical',
               }}>
-                {producto.nombre}
+                {obtenerNombreLimpio(producto.nombre)}
               </Typography>
               {!(producto.variantes && producto.variantes.length > 0) && (
                 <Typography variant="h5" color="primary" sx={{ fontWeight: 'bold', mt: 2 }}>
@@ -424,6 +582,25 @@ export default function PosHome() {
             </CardContent>
           </Card>
         ))}
+      </Box>
+
+      {/* Botón flotante de actualizar en la esquina inferior izquierda */}
+      <Box sx={{ position: 'fixed', bottom: 20, left: 20, zIndex: 900 }}>
+        <Button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          variant="contained"
+          color="primary"
+          size="small"
+          startIcon={<Refresh sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} />}
+          sx={{
+            textTransform: 'none',
+            whiteSpace: 'nowrap',
+            boxShadow: 3,
+          }}
+        >
+          {refreshing ? 'Actualizando...' : 'Actualizar'}
+        </Button>
       </Box>
 
       {/* Resumen del carrito flotante */}
@@ -526,8 +703,8 @@ export default function PosHome() {
                     >
                       <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
                         {item.producto.nombreVariante
-                          ? `${obtenerNombreBase(item.producto)} - ${item.producto.nombreVariante}`
-                          : item.producto.nombre}
+                          ? `${obtenerNombreLimpio(obtenerNombreBase(item.producto))} - ${item.producto.nombreVariante}`
+                          : obtenerNombreLimpio(item.producto.nombre)}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

@@ -8,6 +8,7 @@ export interface Producto {
   descripcion?: string | null;
   categoriaId?: number | null;
   categoriaNombre?: string | null;
+  subcategoria?: string | null;
   precio: number;
   costoEstimado?: number | null;
   sku?: string | null;
