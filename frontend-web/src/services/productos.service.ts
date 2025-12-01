@@ -80,5 +80,14 @@ export const productosService = {
   eliminarDefinitivamente: async (id: number) => {
     return apiService.delete(`${API_ENDPOINTS.PRODUCTS}/${id}/permanente`);
   },
+
+  /**
+   * Crear una variante de un producto base
+   * Una variante es un producto con producto_base_id apuntando al producto base
+   */
+  crearVariante: async (productoBaseId: number, variante: Omit<Producto, 'id' | 'variantes'>) => {
+    // La variante se crea como un producto normal pero con referencias al producto base
+    return apiService.post<Producto>(API_ENDPOINTS.PRODUCTS, variante);
+  },
 };
 
