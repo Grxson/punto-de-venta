@@ -222,12 +222,17 @@ export default function PosExpenses() {
       setReferencia(gasto.referencia || '');
       setNota(gasto.nota || '');
     } else {
+      // Nuevo gasto: establecer valores por defecto
       setEditingGasto(null);
-      setCategoriaGastoId('');
+      // Buscar categoría "Insumo" por defecto
+      const insumoCategory = categoriasGasto.find(cat => cat.nombre.toLowerCase() === 'insumo');
+      setCategoriaGastoId(insumoCategory?.id || '');
       setProveedorId('');
       setMonto('');
       setFecha(new Date());
-      setMetodoPagoId('');
+      // Buscar método de pago "Efectivo" por defecto
+      const efectivoMethod = metodosPago.find(met => met.nombre.toLowerCase() === 'efectivo');
+      setMetodoPagoId(efectivoMethod?.id || '');
       setReferencia('');
       setNota('');
     }
@@ -544,21 +549,31 @@ export default function PosExpenses() {
                     </Select>
                   </FormControl>
 
-                  <TextField
-                    fullWidth
-                    label="Referencia"
-                    value={referencia}
-                    onChange={(e) => setReferencia(e.target.value)}
-                  />
+                  <FormControl fullWidth>
+                    <InputLabel>Proveedor</InputLabel>
+                    <Select
+                      value={proveedorId}
+                      onChange={(e) => setProveedorId(e.target.value ? Number(e.target.value) : '')}
+                      label="Proveedor"
+                    >
+                      <MenuItem value="">Ninguno</MenuItem>
+                      {proveedores.map((prov) => (
+                        <MenuItem key={prov.id} value={prov.id}>
+                          {prov.nombre}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 </Box>
 
                 <TextField
                   fullWidth
-                  label="Nota"
+                  label="Concepto o Descripción"
                   multiline
                   rows={3}
                   value={nota}
                   onChange={(e) => setNota(e.target.value)}
+                  placeholder="Describe el concepto del gasto"
                 />
               </Stack>
             </DialogContent>

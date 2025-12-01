@@ -198,8 +198,19 @@ export default function AdminExpenses() {
       setReferencia(gasto.referencia || '');
       setNota(gasto.nota || '');
     } else {
+      // Nuevo gasto: establecer valores por defecto
       setEditingGasto(null);
-      resetForm();
+      // Buscar categoría "Insumo" por defecto
+      const insumoCategory = categorias.find(cat => cat.nombre.toLowerCase() === 'insumo');
+      setCategoriaId(insumoCategory?.id || '');
+      setProveedorId('');
+      setMonto('');
+      setFecha(new Date());
+      // Buscar método de pago "Efectivo" por defecto
+      const efectivoMethod = metodosPago.find(met => met.nombre.toLowerCase() === 'efectivo');
+      setMetodoPagoId(efectivoMethod?.id || '');
+      setReferencia('');
+      setNota('');
     }
     setOpenDialog(true);
   };
@@ -408,11 +419,11 @@ export default function AdminExpenses() {
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
               <FormControl fullWidth required>
-                <InputLabel>Categoría</InputLabel>
+                <InputLabel>Categoría de Gasto</InputLabel>
                 <Select
                   value={categoriaId}
                   onChange={(e) => setCategoriaId(e.target.value as number)}
-                  label="Categoría"
+                  label="Categoría de Gasto"
                 >
                   {categorias.map((cat) => (
                     <MenuItem key={cat.id} value={cat.id}>
@@ -422,12 +433,45 @@ export default function AdminExpenses() {
                 </Select>
               </FormControl>
 
+              <TextField
+                fullWidth
+                label="Monto *"
+                type="number"
+                required
+                value={monto}
+                onChange={(e) => setMonto(e.target.value)}
+                inputProps={{ step: '0.01', min: '0.01' }}
+              />
+
+              <DatePicker
+                label="Fecha"
+                value={fecha}
+                onChange={(newValue) => setFecha(newValue)}
+                slotProps={{ textField: { fullWidth: true, required: true } }}
+              />
+
               <FormControl fullWidth>
-                <InputLabel>Proveedor (Opcional)</InputLabel>
+                <InputLabel>Método de Pago</InputLabel>
+                <Select
+                  value={metodoPagoId}
+                  onChange={(e) => setMetodoPagoId(e.target.value as number | '')}
+                  label="Método de Pago"
+                >
+                  <MenuItem value="">Ninguno</MenuItem>
+                  {metodosPago.map((metodo) => (
+                    <MenuItem key={metodo.id} value={metodo.id}>
+                      {metodo.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth>
+                <InputLabel>Proveedor</InputLabel>
                 <Select
                   value={proveedorId}
                   onChange={(e) => setProveedorId(e.target.value as number | '')}
-                  label="Proveedor (Opcional)"
+                  label="Proveedor"
                 >
                   <MenuItem value="">Ninguno</MenuItem>
                   {proveedores.map((prov) => (
@@ -440,55 +484,12 @@ export default function AdminExpenses() {
 
               <TextField
                 fullWidth
-                label="Monto"
-                type="number"
-                required
-                value={monto}
-                onChange={(e) => setMonto(e.target.value)}
-                InputProps={{
-                  startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>,
-                }}
-              />
-
-              <DatePicker
-                label="Fecha"
-                value={fecha}
-                onChange={(newValue) => setFecha(newValue)}
-                slotProps={{ textField: { fullWidth: true, required: true } }}
-              />
-
-              <FormControl fullWidth>
-                <InputLabel>Método de Pago (Opcional)</InputLabel>
-                <Select
-                  value={metodoPagoId}
-                  onChange={(e) => setMetodoPagoId(e.target.value as number | '')}
-                  label="Método de Pago (Opcional)"
-                >
-                  <MenuItem value="">Ninguno</MenuItem>
-                  {metodosPago.map((metodo) => (
-                    <MenuItem key={metodo.id} value={metodo.id}>
-                      {metodo.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <TextField
-                fullWidth
-                label="Referencia (Opcional)"
-                value={referencia}
-                onChange={(e) => setReferencia(e.target.value)}
-                placeholder="Número de factura, autorización, etc."
-              />
-
-              <TextField
-                fullWidth
-                label="Descripción / Nota"
+                label="Concepto o Descripción"
                 multiline
                 rows={3}
                 value={nota}
                 onChange={(e) => setNota(e.target.value)}
-                placeholder="Ej: Compra de 2 kilos de huevo, Pago de internet del mes, etc."
+                placeholder="Describe el concepto del gasto"
               />
             </Box>
           </DialogContent>

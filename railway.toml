@@ -1,0 +1,13 @@
+# Configuración para Railway - Frontend Web
+# Este archivo está en la raíz y apunta al Dockerfile del frontend
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "frontend-web/Dockerfile"
+buildContext = "frontend-web"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
