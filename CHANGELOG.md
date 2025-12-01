@@ -5,6 +5,42 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [1.1.0] - 2025-12-01
+
+### ✨ Nuevas Características
+
+#### Frontend - PosHome
+- **Botón de Actualizar Menú**: Nuevo botón flotante en esquina inferior izquierda para sincronizar productos sin recarga de página
+  - Muestra estado "Actualizando..." durante el proceso
+  - Animación de rotación en el icono durante la actualización
+  - Notificación de éxito al completar
+  - Preserva el carrito y selecciones del usuario
+
+#### Frontend - Gestión de Variantes
+- **Fixes en Creación de Variantes**: Corrección completa del flujo de creación y actualización de variantes
+  - Ahora incluye todos los campos requeridos: `nombre`, `nombreVariante`, `precio`, `ordenVariante`, `categoriaId`, `productoBaseId`
+  - Eliminado endpoint no existente `/api/inventario/productos/{id}/variantes`
+  - Implementado método `crearVariante()` en servicio de productos
+
+#### Backend - Gestión de Productos
+- **Método crearVariante()**: Nuevo método en ProductoService para crear variantes
+  - Utiliza endpoint existente POST `/api/productos`
+  - Validación completa de datos requeridos
+  - Manejo de errores mejorado
+
+### 🐛 Correcciones
+
+- **HTTP 409 Conflictos**: Resueltos conflictos de integridad de datos en actualizaciones de productos
+- **HTTP 500 Errores**: Eliminadas llamadas a endpoints inexistentes en variantes
+- **Validación de Datos**: Ahora se envían todos los campos requeridos en variantes (antes faltaban `nombre` y `categoriaId`)
+
+### 📝 Documentación
+
+- **FIXES-BACKEND-API-INTEGRATION.md**: Documentación detallada de correcciones en integración backend-frontend
+- **DIAGNOSTICO-409-CONFLICT-ERRORS.md**: Guía de diagnóstico para errores 409
+
+---
+
 ## [1.0.0] - 2025-11-21
 
 ### 🎉 Primera Versión Estable
