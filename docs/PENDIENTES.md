@@ -297,13 +297,13 @@ app.ventas.validar-stock=true
 - Agregar apartado en caso de que vendamos cosas fueras de menú (extraordinarios)
 - en la ventana de pagar hacer función para editar precio en caso de, solo dar clic al número 
 - cuando se seleccione el método de pago ya se debe de pagar automáticamente, para no dar clic en el botón de pagar ✅![alt text](image.png)
-- insumo en gastos como predeterminado, y efectivo por default
-- en vez de nota - concepto o descripción 
-- quitar referencia del form de gasto
+- ✅ insumo en gastos como predeterminado, y efectivo por default
+- ✅ en vez de nota - concepto o descripción 
+- ✅ quitar referencia del form de gasto
 -  agregar en resumen del día cuanto de monto es de cada modo de pago, pero con el tamaño de letra de la palabra "venta" ✅
 - Sección de "Corte de caja"✅
 - ✅ ADMIN: Botón para eliminar ventas permanentemente (no solo cancelar)
 
 
-**Última actualización:** 29 de noviembre de 2025
+**Última actualización:** 1 de diciembre de 2025
 
