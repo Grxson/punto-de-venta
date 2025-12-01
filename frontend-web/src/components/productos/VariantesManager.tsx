@@ -48,9 +48,11 @@ export default function VariantesManager({ productoId, productoNombre, onUpdate 
   const loadVariantes = async () => {
     try {
       setLoading(true);
-      const response = await productosService.obtenerVariantes(productoId);
+      // Fetch product details which includes variantes in the ProductoDTO
+      const response = await productosService.obtener(productoId);
       if (response.success && response.data) {
-        setVariantes(response.data);
+        // Extract variantes from the product DTO
+        setVariantes((response.data as any).variantes || []);
       }
     } catch (err) {
       setError('Error al cargar variantes');

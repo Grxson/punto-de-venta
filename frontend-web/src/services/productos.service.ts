@@ -80,12 +80,5 @@ export const productosService = {
   eliminarDefinitivamente: async (id: number) => {
     return apiService.delete(`${API_ENDPOINTS.PRODUCTS}/${id}/permanente`);
   },
-
-  /**
-   * Obtener variantes de un producto base
-   */
-  obtenerVariantes: async (id: number) => {
-    return apiService.get<Producto[]>(`${API_ENDPOINTS.PRODUCTS}/${id}/variantes`);
-  },
 };
 
