@@ -52,19 +52,19 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
   const [precio, setPrecio] = useState<string>('');
   const [sku, setSku] = useState('');
   const [skuGenerado, setSkuGenerado] = useState(false);
-  const [activo, setActivo] = useState(true);
-  const [disponibleEnMenu, setDisponibleEnMenu] = useState(true);
-  
+
   // Variantes
-  const [variantes, setVariantes] = useState<Array<{ nombre: string; precio: string; orden: number }>>([]);
+  const [variantes, setVariantes] = useState<Array<{ id?: number; nombre: string; precio: string; orden: number }>>([]);
+  const [variantesEliminadas, setVariantesEliminadas] = useState<number[]>([]);
   const [plantillaVariantes, setPlantillaVariantes] = useState<string>('');
+  const [accordionExpanded, setAccordionExpanded] = useState(false);
 
   // Cargar categorías al abrir el diálogo
   useEffect(() => {
     if (open) {
       loadCategorias();
       if (producto) {
-        // Modo edición - las variantes se gestionan en otro componente
+        // Modo edición
         const nombreLimpio = obtenerNombreLimpio(producto.nombre);
         const subcatExtraida = extraerSubcategoriaDelNombre(producto.nombre);
         
@@ -75,9 +75,21 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
         setPrecio(producto.precio?.toString() || '');
         setSku(producto.sku || '');
         setSkuGenerado(false); // En edición, no generar automáticamente
-        setActivo(producto.activo ?? true);
-        setDisponibleEnMenu(producto.disponibleEnMenu ?? true);
-        setVariantes([]); // En edición, no mostrar variantes aquí
+
+        // Cargar variantes existentes en modo edición
+        if (producto.variantes && producto.variantes.length > 0) {
+          const variantesExistentes = producto.variantes.map((v, index) => ({
+            id: v.id,
+            nombre: v.nombreVariante || '',
+            precio: v.precio?.toString() || '',
+            orden: v.ordenVariante || index + 1
+          }));
+          setVariantes(variantesExistentes);
+          setAccordionExpanded(true); // Expandir si hay variantes
+        } else {
+          setVariantes([]);
+          setAccordionExpanded(false);
+        }
       } else {
         // Modo creación
         resetForm();
@@ -107,31 +119,12 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
     setPrecio('');
     setSku('');
     setSkuGenerado(false);
-    setActivo(true);
-    setDisponibleEnMenu(true);
     setVariantes([]);
+    setVariantesEliminadas([]);
     setPlantillaVariantes('');
+    setAccordionExpanded(false);
     setError(null);
   };
-
-  // Obtener subcategorías disponibles según la categoría seleccionada
-  const getSubcategoriasDisponibles = (): Array<{ id: string; label: string }> => {
-    // Buscar la categoría seleccionada por su ID
-    const categoriaSeleccionada = categorias.find(cat => cat.id === categoriaId);
-    
-    if (categoriaSeleccionada?.nombre === 'Desayunos') {
-      return [
-        { id: 'dulces', label: 'DULCES' },
-        { id: 'lonches', label: 'LONCHES' },
-        { id: 'sandwiches', label: 'SANDWICHES' },
-        { id: 'otros', label: 'OTROS' },
-      ];
-    }
-    
-    return [];
-  };
-
-  const subcategoriasDisponibles = getSubcategoriasDisponibles();
 
   // Función para obtener el nombre limpio del producto (sin prefijo de subcategoría)
   const obtenerNombreLimpio = (nombreProducto: string): string => {
@@ -149,6 +142,24 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
     }
     return '';
   };
+
+  // Obtener subcategorías disponibles según la categoría seleccionada
+  const getSubcategoriasDisponibles = (): Array<{ id: string; label: string }> => {
+    const categoriaSeleccionada = categorias.find(cat => cat.id === categoriaId);
+    
+    if (categoriaSeleccionada?.nombre === 'Desayunos') {
+      return [
+        { id: 'dulces', label: 'DULCES' },
+        { id: 'lonches', label: 'LONCHES' },
+        { id: 'sandwiches', label: 'SANDWICHES' },
+        { id: 'otros', label: 'OTROS' },
+      ];
+    }
+    
+    return [];
+  };
+
+  const subcategoriasDisponibles = getSubcategoriasDisponibles();
 
   // Plantillas de variantes comunes
   const plantillasVariantes = {
@@ -189,6 +200,12 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
   };
 
   const handleEliminarVariante = (index: number) => {
+    const varianteAEliminar = variantes[index];
+    // Si tiene ID, es una variante existente que debe eliminarse del backend
+    if (varianteAEliminar.id) {
+      setVariantesEliminadas([...variantesEliminadas, varianteAEliminar.id]);
+    }
+
     const nuevasVariantes = variantes.filter((_, i) => i !== index);
     // Reordenar
     nuevasVariantes.forEach((v, i) => {
@@ -206,14 +223,14 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
   // Generar SKU automáticamente cuando cambia el nombre (solo en creación)
   const generarSkuDesdeNombre = (nombreProducto: string) => {
     if (!nombreProducto.trim() || producto) return; // Solo generar en modo creación
-    
+
     const palabras = nombreProducto.trim().toUpperCase()
       .replace(/[^A-Z0-9\s]/g, '') // Eliminar caracteres especiales
       .split(/\s+/)
       .filter(p => p.length > 0);
-    
+
     if (palabras.length === 0) return;
-    
+
     let iniciales = '';
     const maxPalabras = Math.min(palabras.length, 4);
     for (let i = 0; i < maxPalabras; i++) {
@@ -221,14 +238,14 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
       const letrasATomar = Math.min(palabra.length, 4);
       iniciales += palabra.substring(0, letrasATomar);
     }
-    
+
     if (iniciales.length === 0) {
       iniciales = 'PROD';
     }
-    
+
     // Limitar a 8 caracteres
     const prefijo = iniciales.length > 8 ? iniciales.substring(0, 8) : iniciales;
-    
+
     // Generar SKU con formato PREFIJO-001
     // El número será generado por el backend para asegurar unicidad
     setSku(prefijo + '-001');
@@ -238,7 +255,7 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
   const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nuevoNombre = e.target.value;
     setNombre(nuevoNombre);
-    
+
     // Generar SKU automáticamente solo si no se ha editado manualmente
     if (!producto && (!sku || skuGenerado)) {
       generarSkuDesdeNombre(nuevoNombre);
@@ -285,44 +302,80 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
         nombreFinal = `[${subcategoria.toUpperCase()}] ${nombreFinal}`;
       }
 
-      const productoData: Partial<Producto> = {
+      const productoData = {
         nombre: nombreFinal,
         descripcion: descripcion.trim() || null,
         categoriaId: categoriaId ? Number(categoriaId) : null,
         precio: parseFloat(precio),
         // Si no hay SKU o está vacío, el backend lo generará automáticamente
         sku: sku.trim() || null,
-        activo,
-        disponibleEnMenu,
       };
 
       if (producto?.id) {
-        // Actualizar
+        // Actualizar producto base
         await productosService.actualizar(producto.id, productoData);
+
+        // Eliminar variantes marcadas para eliminación
+        for (const varianteId of variantesEliminadas) {
+          try {
+            await productosService.eliminar(varianteId);
+          } catch (err) {
+            console.error(`Error al eliminar variante ${varianteId}:`, err);
+          }
+        }
+
+        // Actualizar variantes existentes modificadas
+        const variantesExistentes = variantes.filter(v => v.id);
+        for (const variante of variantesExistentes) {
+          if (variante.nombre.trim()) {
+            const precioVariante = variante.precio
+              ? parseFloat(variante.precio)
+              : parseFloat(precio) || 0;
+
+            await productosService.actualizar(variante.id, {
+              nombreVariante: variante.nombre.trim(),
+              precio: precioVariante,
+              ordenVariante: variante.orden,
+            });
+          }
+        }
+
+        // Crear nuevas variantes (las que no tienen ID)
+        const variantesNuevas = variantes.filter(v => !v.id && v.nombre.trim());
+        if (variantesNuevas.length > 0) {
+          const precioBase = parseFloat(precio) || 0;
+
+          for (const variante of variantesNuevas) {
+            const precioVariante = variante.precio
+              ? parseFloat(variante.precio)
+              : precioBase;
+
+            await productosService.crearVariante(producto.id, {
+              nombreVariante: variante.nombre.trim(),
+              precio: precioVariante,
+              ordenVariante: variante.orden,
+            } as Omit<Producto, 'id' | 'variantes'>);
+          }
+        }
       } else {
         // Crear producto
         const productoCreado = await productosService.crear(productoData as Omit<Producto, 'id' | 'variantes'>);
-        
+
         // Crear variantes si hay alguna
         if (variantes.length > 0 && productoCreado.success && productoCreado.data?.id) {
           const productoId = productoCreado.data.id;
           const precioBase = parseFloat(precio) || 0;
-          
+
           for (const variante of variantes) {
             if (variante.nombre.trim()) {
-              const precioVariante = variante.precio 
-                ? parseFloat(variante.precio) 
+              const precioVariante = variante.precio
+                ? parseFloat(variante.precio)
                 : precioBase; // Si no tiene precio, usar el precio base
-              
-              await productosService.crear({
-                nombre: `${nombreFinal} - ${variante.nombre.trim()}`,
+
+              await productosService.crearVariante(productoId, {
                 nombreVariante: variante.nombre.trim(),
                 precio: precioVariante,
-                productoBaseId: productoId,
                 ordenVariante: variante.orden,
-                activo: true,
-                disponibleEnMenu: disponibleEnMenu,
-                categoriaId: categoriaId ? Number(categoriaId) : null,
               } as Omit<Producto, 'id' | 'variantes'>);
             }
           }
@@ -440,51 +493,34 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
             fullWidth
             disabled={loading}
             helperText={
-              skuGenerado 
+              skuGenerado
                 ? "SKU generado automáticamente. Puedes editarlo si lo deseas."
-                : producto 
+                : producto
                   ? "Código único del producto"
                   : "Se generará automáticamente basándose en el nombre"
             }
           />
 
-          <FormControlLabel
-            control={
-              <Switch
-                checked={activo}
-                onChange={(e) => setActivo(e.target.checked)}
-                disabled={loading}
-              />
-            }
-            label="Activo"
-          />
-
-          <FormControlLabel
-            control={
-              <Switch
-                checked={disponibleEnMenu}
-                onChange={(e) => setDisponibleEnMenu(e.target.checked)}
-                disabled={loading}
-              />
-            }
-            label="Disponible en menú"
-          />
-
-          {/* Sección de Variantes - Solo en modo creación */}
-          {!producto && (
-            <Accordion defaultExpanded={false}>
-              <AccordionSummary expandIcon={<ExpandMore />}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
-                  Variantes {variantes.length > 0 && `(${variantes.length})`}
+          {/* Sección de Tamaños/Variantes */}
+          <Accordion
+            expanded={accordionExpanded}
+            onChange={(e, isExpanded) => setAccordionExpanded(isExpanded)}
+          >
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+                Tamaños/Variantes {variantes.length > 0 && `(${variantes.length})`}
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {producto
+                    ? 'Gestiona las variantes de tamaño o presentación de este producto. Puedes agregar, editar o eliminar variantes.'
+                    : 'Agrega variantes de tamaño o presentación para este producto (opcional). Ejemplo: Chico, Mediano, Grande o 250ml, 500ml, 1L'
+                  }
                 </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Agrega variantes de tamaño o presentación para este producto (opcional).
-                    Ejemplo: Chico, Mediano, Grande o 250ml, 500ml, 1L
-                  </Typography>
 
+                {!producto && (
                   <FormControl fullWidth size="small">
                     <InputLabel>Plantilla de variantes</InputLabel>
                     <Select
@@ -498,78 +534,78 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
                       <MenuItem value="tamanos-cafe">Café (Chico, Mediano, Grande, Extra Grande)</MenuItem>
                     </Select>
                   </FormControl>
+                )}
 
-                  {variantes.length > 0 && (
-                    <Box>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 'medium' }}>
-                        Variantes configuradas:
-                      </Typography>
-                      <List dense>
-                        {variantes.map((variante, index) => (
-                          <ListItem
-                            key={index}
-                            sx={{
-                              border: '1px solid',
-                              borderColor: 'divider',
-                              borderRadius: 1,
-                              mb: 1,
-                            }}
-                          >
-                            <ListItemText
-                              primary={
-                                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                                  <TextField
-                                    size="small"
-                                    placeholder="Nombre variante"
-                                    value={variante.nombre}
-                                    onChange={(e) => handleVarianteChange(index, 'nombre', e.target.value)}
-                                    sx={{ flex: 1 }}
-                                    disabled={loading}
-                                  />
-                                  <TextField
-                                    size="small"
-                                    type="number"
-                                    placeholder="Precio"
-                                    value={variante.precio}
-                                    onChange={(e) => handleVarianteChange(index, 'precio', e.target.value)}
-                                    inputProps={{ min: 0, step: 0.01 }}
-                                    sx={{ width: 120 }}
-                                    disabled={loading}
-                                    helperText={variante.precio ? '' : 'Usa precio base'}
-                                  />
-                                </Box>
-                              }
-                              secondary={`Orden: ${variante.orden}`}
-                            />
-                            <ListItemSecondaryAction>
-                              <IconButton
-                                edge="end"
-                                onClick={() => handleEliminarVariante(index)}
-                                disabled={loading}
-                                size="small"
-                              >
-                                <Delete fontSize="small" />
-                              </IconButton>
-                            </ListItemSecondaryAction>
-                          </ListItem>
-                        ))}
-                      </List>
-                    </Box>
-                  )}
+                {variantes.length > 0 && (
+                  <Box>
+                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 'medium' }}>
+                      {producto ? 'Variantes actuales:' : 'Variantes configuradas:'}
+                    </Typography>
+                    <List dense>
+                      {variantes.map((variante, index) => (
+                        <ListItem
+                          key={variante.id || index}
+                          sx={{
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 1,
+                            mb: 1,
+                          }}
+                        >
+                          <ListItemText
+                            primary={
+                              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                                <TextField
+                                  size="small"
+                                  placeholder="Nombre variante"
+                                  value={variante.nombre}
+                                  onChange={(e) => handleVarianteChange(index, 'nombre', e.target.value)}
+                                  sx={{ flex: 1 }}
+                                  disabled={loading}
+                                />
+                                <TextField
+                                  size="small"
+                                  type="number"
+                                  placeholder="Precio"
+                                  value={variante.precio}
+                                  onChange={(e) => handleVarianteChange(index, 'precio', e.target.value)}
+                                  inputProps={{ min: 0, step: 0.01 }}
+                                  sx={{ width: 120 }}
+                                  disabled={loading}
+                                />
+                              </Box>
+                            }
+                            secondary={`Orden: ${variante.orden}${variante.id ? ' (existente)' : ' (nueva)'}`}
+                          />
+                          <ListItemSecondaryAction>
+                            <IconButton
+                              edge="end"
+                              onClick={() => handleEliminarVariante(index)}
+                              disabled={loading}
+                              size="small"
+                              color="error"
+                            >
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </ListItemSecondaryAction>
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Box>
+                )}
 
-                  <Button
-                    variant="outlined"
-                    startIcon={<Add />}
-                    onClick={handleAgregarVariante}
-                    disabled={loading}
-                    size="small"
-                  >
-                    Agregar Variante Personalizada
-                  </Button>
-                </Box>
-              </AccordionDetails>
-            </Accordion>
-          )}
+                <Button
+                  variant="outlined"
+                  startIcon={<Add />}
+                  onClick={handleAgregarVariante}
+                  disabled={loading}
+                  size="small"
+                >
+                  Agregar Nueva Variante
+                </Button>
+              </Box>
+            </AccordionDetails>
+          </Accordion>
         </Box>
       </DialogContent>
       <DialogActions>
