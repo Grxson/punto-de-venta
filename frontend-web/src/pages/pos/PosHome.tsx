@@ -399,24 +399,26 @@ export default function PosHome() {
   return (
     <Box>
       {/* Encabezado con título y botón de actualizar */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
         <Typography variant="h4" gutterBottom sx={{ m: 0 }}>
           Seleccionar Productos
         </Typography>
-        <IconButton
-          onClick={handleRefresh}
-          disabled={refreshing}
-          color="primary"
-          sx={{
-            padding: 1,
-            '&:hover': {
-              backgroundColor: 'rgba(25, 118, 210, 0.1)',
-            },
-          }}
-          title="Actualizar menú"
-        >
-          <Refresh sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} />
-        </IconButton>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            variant="outlined"
+            color="primary"
+            size="small"
+            startIcon={<Refresh sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} />}
+            sx={{
+              textTransform: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {refreshing ? 'Actualizando...' : 'Actualizar Menú'}
+          </Button>
+        </Box>
       </Box>
 
       {/* Notificación de actualización exitosa */}
