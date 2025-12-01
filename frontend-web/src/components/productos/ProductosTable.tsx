@@ -37,6 +37,11 @@ export default function ProductosTable({
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'ADMIN' || usuario?.rolNombre === 'ADMIN';
 
+  // Función para obtener el nombre limpio del producto (sin prefijo de subcategoría)
+  const obtenerNombreLimpio = (nombreProducto: string): string => {
+    return nombreProducto.replace(/^\[[^\]]+\]\s*/, '').trim();
+  };
+
   if (loading && productos.length === 0) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
@@ -72,7 +77,7 @@ export default function ProductosTable({
               <TableCell>
                 <Box>
                   <Typography variant="body1" fontWeight="600" sx={{ mb: 0.5 }}>
-                    {producto.nombre}
+                    {obtenerNombreLimpio(producto.nombre)}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                     {producto.categoriaNombre && (

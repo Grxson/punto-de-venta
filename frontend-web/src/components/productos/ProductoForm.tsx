@@ -48,6 +48,7 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [categoriaId, setCategoriaId] = useState<number | ''>('');
+  const [subcategoria, setSubcategoria] = useState('');
   const [precio, setPrecio] = useState<string>('');
   const [sku, setSku] = useState('');
   const [skuGenerado, setSkuGenerado] = useState(false);
@@ -64,9 +65,13 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
       loadCategorias();
       if (producto) {
         // Modo edición
-        setNombre(producto.nombre || '');
+        const nombreLimpio = obtenerNombreLimpio(producto.nombre);
+        const subcatExtraida = extraerSubcategoriaDelNombre(producto.nombre);
+        
+        setNombre(nombreLimpio);
         setDescripcion(producto.descripcion || '');
         setCategoriaId(producto.categoriaId || '');
+        setSubcategoria(subcatExtraida);
         setPrecio(producto.precio?.toString() || '');
         setSku(producto.sku || '');
         setSkuGenerado(false); // En edición, no generar automáticamente
@@ -110,6 +115,7 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
     setNombre('');
     setDescripcion('');
     setCategoriaId('');
+    setSubcategoria('');
     setPrecio('');
     setSku('');
     setSkuGenerado(false);
@@ -119,6 +125,41 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
     setAccordionExpanded(false);
     setError(null);
   };
+
+  // Función para obtener el nombre limpio del producto (sin prefijo de subcategoría)
+  const obtenerNombreLimpio = (nombreProducto: string): string => {
+    return nombreProducto.replace(/^\[[^\]]+\]\s*/, '').trim();
+  };
+
+  // Función para extraer subcategoría del prefijo del nombre
+  const extraerSubcategoriaDelNombre = (nombreProducto: string): string => {
+    const prefixMatch = nombreProducto.match(/^\[([^\]]+)\]/);
+    if (prefixMatch) {
+      const subcatDelPrefijo = prefixMatch[1].toLowerCase();
+      if (['dulces', 'lonches', 'sandwiches', 'otros'].includes(subcatDelPrefijo)) {
+        return subcatDelPrefijo;
+      }
+    }
+    return '';
+  };
+
+  // Obtener subcategorías disponibles según la categoría seleccionada
+  const getSubcategoriasDisponibles = (): Array<{ id: string; label: string }> => {
+    const categoriaSeleccionada = categorias.find(cat => cat.id === categoriaId);
+    
+    if (categoriaSeleccionada?.nombre === 'Desayunos') {
+      return [
+        { id: 'dulces', label: 'DULCES' },
+        { id: 'lonches', label: 'LONCHES' },
+        { id: 'sandwiches', label: 'SANDWICHES' },
+        { id: 'otros', label: 'OTROS' },
+      ];
+    }
+    
+    return [];
+  };
+
+  const subcategoriasDisponibles = getSubcategoriasDisponibles();
 
   // Plantillas de variantes comunes
   const plantillasVariantes = {
@@ -219,6 +260,19 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
     if (!producto && (!sku || skuGenerado)) {
       generarSkuDesdeNombre(nuevoNombre);
     }
+    
+    // Auto-detectar subcategoría si la categoría es "Desayunos"
+    const categoriaSeleccionada = categorias.find(cat => cat.id === categoriaId);
+    if (categoriaSeleccionada?.nombre === 'Desayunos') {
+      const nombreLower = nuevoNombre.toLowerCase();
+      if (nombreLower.includes('mollete') || nombreLower.includes('waffle') || nombreLower.includes('hot cake')) {
+        setSubcategoria('dulces');
+      } else if (nombreLower.includes('lonche') && !nombreLower.includes('sandwich')) {
+        setSubcategoria('lonches');
+      } else if (nombreLower.includes('sandwich')) {
+        setSubcategoria('sandwiches');
+      }
+    }
   };
 
   const handleClose = () => {
@@ -241,8 +295,15 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
       setLoading(true);
       setError(null);
 
+      // Preparar el nombre: incluir subcategoría como prefijo si está seleccionada
+      let nombreFinal = nombre.trim();
+      if (subcategoria) {
+        // Codificar subcategoría en el nombre con un prefijo especial: [subcategoria]
+        nombreFinal = `[${subcategoria.toUpperCase()}] ${nombreFinal}`;
+      }
+
       const productoData = {
-        nombre: nombre.trim(),
+        nombre: nombreFinal,
         descripcion: descripcion.trim() || null,
         categoriaId: categoriaId ? Number(categoriaId) : null,
         precio: parseFloat(precio),
@@ -342,6 +403,18 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
           </Alert>
         )}
 
+        <Alert severity="info" sx={{ mb: 2 }}>
+          <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 1 }}>
+            💡 Tip: Subcategorías automáticas para Desayunos
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Las subcategorías se asignan automáticamente según el nombre del producto:
+            <br />• <strong>Dulces:</strong> Contiene "mollete", "waffle" o "hot cake"
+            <br />• <strong>Lonches:</strong> Contiene "lonche"
+            <br />• <strong>Sandwiches:</strong> Contiene "sandwich"
+          </Typography>
+        </Alert>
+
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
           <TextField
             label="Nombre *"
@@ -367,7 +440,10 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
             <Select
               value={categoriaId}
               label="Categoría"
-              onChange={(e) => setCategoriaId(e.target.value as number | '')}
+              onChange={(e) => {
+                setCategoriaId(e.target.value as number | '');
+                setSubcategoria(''); // Reset subcategory when category changes
+              }}
             >
               <MenuItem value="">Sin categoría</MenuItem>
               {categorias.map((cat) => (
@@ -377,6 +453,24 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
               ))}
             </Select>
           </FormControl>
+
+          {subcategoriasDisponibles.length > 0 && (
+            <FormControl fullWidth disabled={loading}>
+              <InputLabel>Subcategoría (opcional)</InputLabel>
+              <Select
+                value={subcategoria}
+                label="Subcategoría (opcional)"
+                onChange={(e) => setSubcategoria(e.target.value)}
+              >
+                <MenuItem value="">Sin especificar</MenuItem>
+                {subcategoriasDisponibles.map((subcat) => (
+                  <MenuItem key={subcat.id} value={subcat.id}>
+                    {subcat.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
 
           <TextField
             label="Precio *"
