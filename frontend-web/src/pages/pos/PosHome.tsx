@@ -23,7 +23,7 @@ import {
   Snackbar,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Payment, ShoppingCart, ExpandMore, Add, Remove, Restaurant, LunchDining, Fastfood, BreakfastDining, CheckCircle } from '@mui/icons-material';
+import { Payment, ShoppingCart, ExpandMore, Add, Remove, Restaurant, LunchDining, Fastfood, BreakfastDining, CheckCircle, Refresh } from '@mui/icons-material';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useCart } from '../../contexts/CartContext';
@@ -59,7 +59,9 @@ export default function PosHome() {
     return userPreferencesService.getPosDesayunosSubcategory();
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
   const [ventaExitosa, setVentaExitosa] = useState(false);
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
@@ -242,6 +244,37 @@ export default function PosHome() {
     }
   };
 
+  // Función para actualizar/refrescar el menú sin recarga de página
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+      setRefreshSuccess(false);
+      
+      // Cargar productos activos y disponibles en menú
+      const productosResponse = await apiService.get(`${API_ENDPOINTS.PRODUCTS}?activo=true&enMenu=true`);
+      if (productosResponse.success && productosResponse.data) {
+        // Asegurar que el precio sea un número y filtrar solo activos y disponibles en menú
+        const productosActivos = productosResponse.data
+          .filter((p: any) => p.activo && p.disponibleEnMenu)
+          .map((p: any) => ({
+            ...p,
+            precio: typeof p.precio === 'number' ? p.precio : parseFloat(p.precio) || 0,
+          }));
+        setProductos(productosActivos);
+        setRefreshSuccess(true);
+        
+        // Mostrar mensaje de éxito durante 3 segundos
+        setTimeout(() => setRefreshSuccess(false), 3000);
+      } else {
+        setError(productosResponse.error || 'Error al actualizar productos');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error al actualizar el menú');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   // Función para determinar la subcategoría de un producto de desayunos
   const obtenerSubcategoriaDesayuno = (nombreProducto: string): string => {
     const nombreLower = nombreProducto.toLowerCase();
@@ -365,9 +398,50 @@ export default function PosHome() {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Seleccionar Productos
-      </Typography>
+      {/* Encabezado con título y botón de actualizar */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4" gutterBottom sx={{ m: 0 }}>
+          Seleccionar Productos
+        </Typography>
+        <IconButton
+          onClick={handleRefresh}
+          disabled={refreshing}
+          color="primary"
+          sx={{
+            padding: 1,
+            '&:hover': {
+              backgroundColor: 'rgba(25, 118, 210, 0.1)',
+            },
+          }}
+          title="Actualizar menú"
+        >
+          <Refresh sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} />
+        </IconButton>
+      </Box>
+
+      {/* Notificación de actualización exitosa */}
+      {refreshSuccess && (
+        <Alert
+          severity="success"
+          onClose={() => setRefreshSuccess(false)}
+          sx={{
+            mb: 2,
+            animation: 'slideDown 0.3s ease-out',
+            '@keyframes slideDown': {
+              '0%': {
+                transform: 'translateY(-100%)',
+                opacity: 0,
+              },
+              '100%': {
+                transform: 'translateY(0)',
+                opacity: 1,
+              },
+            },
+          }}
+        >
+          ✅ Menú actualizado correctamente
+        </Alert>
+      )}
 
       {/* Notificación de venta exitosa - Fija y muy visible */}
       {ventaExitosa && (
