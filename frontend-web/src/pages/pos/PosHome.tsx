@@ -398,27 +398,30 @@ export default function PosHome() {
 
   return (
     <Box>
-      {/* Encabezado con título y botón de actualizar */}
+      {/* Botón flotante de actualizar en la esquina superior derecha */}
+      <Box sx={{ position: 'fixed', top: 100, right: 20, zIndex: 1000 }}>
+        <Button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          variant="contained"
+          color="primary"
+          size="small"
+          startIcon={<Refresh sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} />}
+          sx={{
+            textTransform: 'none',
+            whiteSpace: 'nowrap',
+            boxShadow: 3,
+          }}
+        >
+          {refreshing ? 'Actualizando...' : 'Actualizar Menú'}
+        </Button>
+      </Box>
+
+      {/* Encabezado con título */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
         <Typography variant="h4" gutterBottom sx={{ m: 0 }}>
           Seleccionar Productos
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            variant="outlined"
-            color="primary"
-            size="small"
-            startIcon={<Refresh sx={{ animation: refreshing ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} />}
-            sx={{
-              textTransform: 'none',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {refreshing ? 'Actualizando...' : 'Actualizar Menú'}
-          </Button>
-        </Box>
       </Box>
 
       {/* Notificación de actualización exitosa */}
