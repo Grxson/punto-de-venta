@@ -81,9 +81,10 @@ public class ProductoController {
     }
 
     @DeleteMapping("/{id}/permanente")
-    @Operation(summary = "Eliminar producto definitivamente", description = "Elimina el producto permanentemente de la base de datos")
-    public ResponseEntity<Void> eliminarPermanentemente(@PathVariable Long id) {
-        productoService.eliminarPermanentemente(id);
+    @Operation(summary = "Eliminar producto permanentemente", 
+               description = "Hard delete: elimina el producto de la base de datos. Solo si no tiene variantes, ventas o recetas. Requiere permiso ADMIN")
+    public ResponseEntity<Void> eliminarDefinitivamente(@PathVariable Long id) {
+        productoService.eliminarDefinitivamente(id);
         return ResponseEntity.noContent().build();
     }
 

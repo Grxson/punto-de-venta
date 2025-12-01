@@ -113,6 +113,23 @@ export default function AdminExpenses() {
     loadData();
   }, []);
 
+  // Cuando el diálogo se abre, establecer valores por defecto si es un nuevo gasto
+  useEffect(() => {
+    if (openDialog && !editingGasto && categorias.length > 0 && metodosPago.length > 0) {
+      // Buscar categoría "Insumo" por defecto
+      const insumoCategory = categorias.find(cat => cat.nombre.toLowerCase() === 'insumo');
+      if (insumoCategory && !categoriaId) {
+        setCategoriaId(insumoCategory.id);
+      }
+      
+      // Buscar método de pago "Efectivo" por defecto
+      const efectivoMethod = metodosPago.find(met => met.nombre.toLowerCase() === 'efectivo');
+      if (efectivoMethod && !metodoPagoId) {
+        setMetodoPagoId(efectivoMethod.id);
+      }
+    }
+  }, [openDialog, editingGasto, categorias, metodosPago, categoriaId, metodoPagoId]);
+
   const loadData = async () => {
     try {
       setLoadingData(true);
@@ -198,6 +215,8 @@ export default function AdminExpenses() {
       setReferencia(gasto.referencia || '');
       setNota(gasto.nota || '');
     } else {
+      // Nuevo gasto: limpiar el formulario
+      // Los valores por defecto se establecerán en el useEffect
       setEditingGasto(null);
       resetForm();
     }
@@ -408,11 +427,12 @@ export default function AdminExpenses() {
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
               <FormControl fullWidth required>
-                <InputLabel>Categoría</InputLabel>
+                <InputLabel id="categoria-label">Categoría de Gasto</InputLabel>
                 <Select
+                  labelId="categoria-label"
                   value={categoriaId}
                   onChange={(e) => setCategoriaId(e.target.value as number)}
-                  label="Categoría"
+                  label="Categoría de Gasto"
                 >
                   {categorias.map((cat) => (
                     <MenuItem key={cat.id} value={cat.id}>
@@ -422,12 +442,46 @@ export default function AdminExpenses() {
                 </Select>
               </FormControl>
 
+              <TextField
+                fullWidth
+                label="Monto *"
+                type="number"
+                required
+                value={monto}
+                onChange={(e) => setMonto(e.target.value)}
+                inputProps={{ step: '0.01', min: '0.01' }}
+              />
+
+              <DatePicker
+                label="Fecha"
+                value={fecha}
+                onChange={(newValue) => setFecha(newValue)}
+                slotProps={{ textField: { fullWidth: true, required: true } }}
+              />
+
               <FormControl fullWidth>
-                <InputLabel>Proveedor (Opcional)</InputLabel>
+                <InputLabel id="metodo-label">Método de Pago</InputLabel>
+                <Select
+                  labelId="metodo-label"
+                  value={metodoPagoId}
+                  onChange={(e) => setMetodoPagoId(e.target.value as number | '')}
+                  label="Método de Pago"
+                >
+                  <MenuItem value="">Ninguno</MenuItem>
+                  {metodosPago.map((metodo) => (
+                    <MenuItem key={metodo.id} value={metodo.id}>
+                      {metodo.nombre}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth>
+                <InputLabel>Proveedor</InputLabel>
                 <Select
                   value={proveedorId}
                   onChange={(e) => setProveedorId(e.target.value as number | '')}
-                  label="Proveedor (Opcional)"
+                  label="Proveedor"
                 >
                   <MenuItem value="">Ninguno</MenuItem>
                   {proveedores.map((prov) => (
@@ -440,55 +494,12 @@ export default function AdminExpenses() {
 
               <TextField
                 fullWidth
-                label="Monto"
-                type="number"
-                required
-                value={monto}
-                onChange={(e) => setMonto(e.target.value)}
-                InputProps={{
-                  startAdornment: <Typography sx={{ mr: 1 }}>$</Typography>,
-                }}
-              />
-
-              <DatePicker
-                label="Fecha"
-                value={fecha}
-                onChange={(newValue) => setFecha(newValue)}
-                slotProps={{ textField: { fullWidth: true, required: true } }}
-              />
-
-              <FormControl fullWidth>
-                <InputLabel>Método de Pago (Opcional)</InputLabel>
-                <Select
-                  value={metodoPagoId}
-                  onChange={(e) => setMetodoPagoId(e.target.value as number | '')}
-                  label="Método de Pago (Opcional)"
-                >
-                  <MenuItem value="">Ninguno</MenuItem>
-                  {metodosPago.map((metodo) => (
-                    <MenuItem key={metodo.id} value={metodo.id}>
-                      {metodo.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-
-              <TextField
-                fullWidth
-                label="Referencia (Opcional)"
-                value={referencia}
-                onChange={(e) => setReferencia(e.target.value)}
-                placeholder="Número de factura, autorización, etc."
-              />
-
-              <TextField
-                fullWidth
-                label="Descripción / Nota"
+                label="Concepto o Descripción"
                 multiline
                 rows={3}
                 value={nota}
                 onChange={(e) => setNota(e.target.value)}
-                placeholder="Ej: Compra de 2 kilos de huevo, Pago de internet del mes, etc."
+                placeholder="Describe el concepto del gasto"
               />
             </Box>
           </DialogContent>

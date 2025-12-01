@@ -114,10 +114,25 @@ export default function AdminInventory() {
     setOpenForm(true);
   };
 
-  const handleVerVariantes = (producto: Producto) => {
-    setProductoSeleccionado(producto);
-    setTabValue(1);
-    setOpenVariantes(true);
+  const handleVerVariantes = async (producto: Producto) => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Cargar el producto completo con variantes desde el backend
+      const response = await productosService.obtener(producto.id!);
+      if (response.success && response.data) {
+        setProductoSeleccionado(response.data);
+      } else {
+        setError(response.error || 'Error al cargar el producto');
+        return;
+      }
+      setTabValue(1);
+      setOpenVariantes(true);
+    } catch (err: any) {
+      setError(err.message || 'Error al cargar variantes');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEliminarProducto = (producto: Producto) => {
@@ -422,21 +437,21 @@ export default function AdminInventory() {
             <Alert severity="error" sx={{ mb: 2 }}>
               <strong>ADVERTENCIA:</strong> Esta acción eliminará el producto permanentemente de la base de datos.
             </Alert>
-            <Box>
-              <Typography gutterBottom>
+            <Box sx={{ mb: 2 }}>
+              <Typography>
                 ¿Está seguro de eliminar definitivamente el producto "{productoSeleccionado?.nombre}"?
               </Typography>
-              <Typography gutterBottom>
-                <strong>Esta acción no se puede deshacer.</strong>
+              <Typography sx={{ mt: 1, fontWeight: 'bold', color: 'error.main' }}>
+                Esta acción no se puede deshacer.
               </Typography>
-              <Typography gutterBottom sx={{ mt: 2 }}>
+              <Typography sx={{ mt: 2, mb: 1 }}>
                 El producto solo se puede eliminar si:
               </Typography>
-              <Box component="ul" sx={{ mt: 1, pl: 3 }}>
+              <ul style={{ marginLeft: 20 }}>
                 <li>No tiene ventas asociadas</li>
                 <li>No tiene recetas asociadas</li>
                 <li>No tiene variantes (si es producto base)</li>
-              </Box>
+              </ul>
             </Box>
           </DialogContent>
           <DialogActions>

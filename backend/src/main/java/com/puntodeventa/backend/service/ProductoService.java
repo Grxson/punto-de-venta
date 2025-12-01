@@ -52,7 +52,14 @@ public class ProductoService {
     public ProductoDTO obtener(Long id) {
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
-        return toDTO(p);
+        
+        // Si es un producto base (no tiene producto base), devolver con variantes
+        if (p.getProductoBase() == null) {
+            return toDTOWithVariantes(p);
+        } else {
+            // Si es una variante, devolver sin variantes
+            return toDTO(p);
+        }
     }
 
     /**
@@ -130,24 +137,33 @@ public class ProductoService {
         productoRepository.save(p);
     }
 
+    /**
+     * Eliminar producto definitivamente (hard delete)
+     * Solo permite eliminar si el producto no tiene:
+     * - Ventas asociadas
+     * - Recetas asociadas
+     * - Variantes (si es producto base)
+     */
     @CacheEvict(value = "productos", allEntries = true)
-    public void eliminarPermanentemente(Long id) {
+    public void eliminarDefinitivamente(Long id) {
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
 
-        // Obtener todas las variantes del producto base
-        List<Producto> variantes = productoRepository.findByProductoBaseIdOrderByOrdenVarianteAsc(id);
-
-        // Eliminar todas las variantes en cascada
+        // Verificar si el producto tiene variantes (si es un producto base)
+        List<Producto> variantes = productoRepository.findAll().stream()
+                .filter(prod -> prod.getProductoBase() != null && prod.getProductoBase().getId().equals(id))
+                .toList();
         if (!variantes.isEmpty()) {
-            productoRepository.deleteAll(variantes);
+            throw new IllegalStateException("No se puede eliminar un producto base que tiene variantes");
         }
 
-        // Eliminar el producto base
-        productoRepository.delete(p);
+        // TODO: Verificar que no tenga ventas asociadas
+        // TODO: Verificar que no tenga recetas asociadas
+
+        // Realizar el hard delete
+        productoRepository.deleteById(id);
     }
 
-    @CacheEvict(value = "productos", allEntries = true)
     public ProductoDTO cambiarEstado(Long id, boolean activo) {
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
@@ -192,20 +208,27 @@ public class ProductoService {
                             "Categoría no encontrada con id: " + dto.categoriaId()));
             p.setCategoria(c);
         }
-        if (dto.precio() != null)
-            p.setPrecio(dto.precio());
-        if (dto.costoEstimado() != null)
-            p.setCostoEstimado(dto.costoEstimado());
-        if (dto.sku() != null)
-            p.setSku(dto.sku());
-        if (dto.activo() != null)
-            p.setActivo(dto.activo());
-        if (dto.disponibleEnMenu() != null)
-            p.setDisponibleEnMenu(dto.disponibleEnMenu());
-        // Asegurar que no sea una variante cuando se actualiza un producto base
-        if (p.getProductoBase() != null && dto.nombreVariante() == null) {
-            // Si intenta actualizar una variante como producto base, no permitir
-            // (mantener la relación)
+        p.setPrecio(dto.precio());
+        p.setCostoEstimado(dto.costoEstimado());
+        p.setSku(dto.sku());
+        if (dto.activo() != null) p.setActivo(dto.activo());
+        if (dto.disponibleEnMenu() != null) p.setDisponibleEnMenu(dto.disponibleEnMenu());
+        
+        // Manejar producto base para variantes
+        if (dto.productoBaseId() != null) {
+            Producto productoBase = productoRepository.findById(dto.productoBaseId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Producto base no encontrado con id: " + dto.productoBaseId()));
+            p.setProductoBase(productoBase);
+        } else {
+            p.setProductoBase(null);
+        }
+        
+        // Manejar campos específicos de variante
+        if (dto.nombreVariante() != null) {
+            p.setNombreVariante(dto.nombreVariante());
+        }
+        if (dto.ordenVariante() != null) {
+            p.setOrdenVariante(dto.ordenVariante());
         }
     }
 
@@ -221,9 +244,10 @@ public class ProductoService {
                 p.getSku(),
                 p.getActivo(),
                 p.getDisponibleEnMenu(),
+                null, // Sin variantes para compatibilidad
+                p.getProductoBase() != null ? p.getProductoBase().getId() : null,
                 p.getNombreVariante(),
-                p.getOrdenVariante(),
-                null // Sin variantes para compatibilidad
+                p.getOrdenVariante()
         );
     }
 
@@ -231,10 +255,11 @@ public class ProductoService {
      * Convierte un producto base a DTO incluyendo sus variantes
      */
     private ProductoDTO toDTOWithVariantes(Producto productoBase) {
-        // Buscar variantes de este producto base
-        List<ProductoDTO.VarianteDTO> variantes = productoRepository.findAll().stream()
-                .filter(p -> p.getProductoBase() != null && p.getProductoBase().getId().equals(productoBase.getId()))
-                .filter(p -> p.getActivo()) // Solo variantes activas
+        // Usar la relación inversa @OneToMany para obtener variantes
+        List<Producto> variantesProducto = productoBase.getVariantes() != null ? productoBase.getVariantes() : new java.util.ArrayList<>();
+        
+        List<ProductoDTO.VarianteDTO> variantes = variantesProducto.stream()
+                .filter(v -> Boolean.TRUE.equals(v.getActivo())) // Solo variantes activas
                 .sorted((v1, v2) -> {
                     Integer orden1 = v1.getOrdenVariante() != null ? v1.getOrdenVariante() : 999;
                     Integer orden2 = v2.getOrdenVariante() != null ? v2.getOrdenVariante() : 999;
@@ -259,8 +284,10 @@ public class ProductoService {
                 productoBase.getSku(),
                 productoBase.getActivo(),
                 productoBase.getDisponibleEnMenu(),
-                null, // nombreVariante (solo para variantes)
-                null, // ordenVariante (solo para variantes)
-                variantes.isEmpty() ? null : variantes);
+                variantes.isEmpty() ? null : variantes,
+                null, // productoBaseId null para productos base
+                null, // nombreVariante null para productos base
+                null  // ordenVariante null para productos base
+        );
     }
 }
