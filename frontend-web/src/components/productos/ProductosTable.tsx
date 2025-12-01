@@ -36,6 +36,12 @@ export default function ProductosTable({
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'ADMIN' || usuario?.rolNombre === 'ADMIN';
 
+  // Función para obtener el nombre limpio del producto (sin prefijo de subcategoría)
+  const obtenerNombreLimpio = (nombreProducto: string): string => {
+    // Remover el prefijo [SUBCATEGORIA] si existe
+    return nombreProducto.replace(/^\[[^\]]+\]\s*/, '').trim();
+  };
+
   if (loading && productos.length === 0) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
@@ -74,7 +80,7 @@ export default function ProductosTable({
               <TableCell>
                 <Box>
                   <Typography variant="body2" fontWeight="medium">
-                    {producto.nombre}
+                    {obtenerNombreLimpio(producto.nombre)}
                   </Typography>
                   {producto.descripcion && (
                     <Typography variant="caption" color="text.secondary">

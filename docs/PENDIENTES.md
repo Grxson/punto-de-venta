@@ -290,13 +290,13 @@ app.ventas.validar-stock=true
 - hacer posible que podamos modificar precios
 - ✅ agregar variantes de jugo de betabel (Betabel/Naranja, Betabel/Zanahoria)
 - ✅ agregar productos de jugos mixtos (Naranja/Toronja, Naranja/Zanahoria, Zanahoria/Toronja)
-- el botón para cerrar el carrito tiene que ser estático para que no tenga que dar scroll para arriba para cerrarlo
+- el botón para cerrar el carrito tiene que ser estático para que no tenga que dar scroll para arriba para cerrarlo ✅
 - cambiar a color rosa
-- en vez de molletes cambiarlo a Dulces (meter molletes, mini jokeis, wafles)
+- ✅ en vez de molletes cambiarlo a Dulces (meter molletes, mini jokeis, wafles)
 - quitar referencia de el método de pago de transferencia y tarjeta ✅
 - Agregar apartado en caso de que vendamos cosas fueras de menú (extraordinarios)
-- en la ventana de pagar hacer función para editar precio en caso de, solo dar clic al número
-- cuando se seleccione el método de pago ya se debe de pagar automáticamente, para no dar clic en el botón de pagar
+- en la ventana de pagar hacer función para editar precio en caso de, solo dar clic al número 
+- cuando se seleccione el método de pago ya se debe de pagar automáticamente, para no dar clic en el botón de pagar ✅
 - insumo en gastos como predeterminado, y efectivo por default
 - en vez de nota - concepto o descripción 
 - quitar referencia del form de gasto

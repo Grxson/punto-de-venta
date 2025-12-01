@@ -31,6 +31,7 @@ export default function PosPayment() {
   const [loading, setLoading] = useState(false);
   const [loadingMetodos, setLoadingMetodos] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [clickTimers, setClickTimers] = useState<Record<number, ReturnType<typeof setTimeout> | null>>({});
 
   // Obtiene el nombre base sin el sufijo de variante (Chico/Mediano/Grande)
   const obtenerNombreBase = (p: any): string => {
@@ -120,6 +121,8 @@ export default function PosPayment() {
       if (response.success) {
         // Limpiar carrito
         clearCart();
+        // Guardar indicador de venta exitosa en localStorage como respaldo
+        localStorage.setItem('ventaExitosa', 'true');
         // Redirigir a home con mensaje de éxito
         navigate('/pos', { state: { ventaExitosa: true } });
       } else {
@@ -130,6 +133,30 @@ export default function PosPayment() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleMetodoClick = (metodo: MetodoPago) => {
+    // Cancelar timer anterior si existe
+    if (clickTimers[metodo.id]) {
+      clearTimeout(clickTimers[metodo.id]!);
+    }
+
+    // Si ya está seleccionado, es el segundo clic -> procesar pago
+    if (metodoSeleccionado?.id === metodo.id) {
+      handleProcesarPago();
+      return;
+    }
+
+    // Primer clic: seleccionar el método
+    setMetodoSeleccionado(metodo);
+    setError(null);
+
+    // Establecer timer para resetear después de 3 segundos
+    const timer = setTimeout(() => {
+      setClickTimers(prev => ({ ...prev, [metodo.id]: null }));
+    }, 3000);
+
+    setClickTimers(prev => ({ ...prev, [metodo.id]: timer }));
   };
 
   if (loadingMetodos) {
@@ -230,6 +257,12 @@ export default function PosPayment() {
           <Typography variant="h6" gutterBottom>
             Selecciona el método de pago
           </Typography>
+          
+          <Alert severity="info" sx={{ mb: 2 }}>
+            {metodoSeleccionado 
+              ? '¡Haz doble clic en el método seleccionado para confirmar el pago!' 
+              : 'Haz clic para seleccionar un método de pago'}
+          </Alert>
 
           {metodosPago.length === 0 ? (
             <Box sx={{ mt: 2, textAlign: 'center', py: 4 }}>
@@ -254,33 +287,53 @@ export default function PosPayment() {
                   key={metodo.id}
                   variant={metodoSeleccionado?.id === metodo.id ? 'contained' : 'outlined'}
                   fullWidth
-                  onClick={() => {
-                    setMetodoSeleccionado(metodo);
-                    setError(null);
+                  onClick={() => handleMetodoClick(metodo)}
+                  disabled={loading}
+                  sx={{ 
+                    minHeight: '80px', 
+                    fontSize: '16px',
+                    position: 'relative',
+                    ...(metodoSeleccionado?.id === metodo.id && {
+                      animation: 'pulse 1s ease-in-out infinite',
+                      '@keyframes pulse': {
+                        '0%, 100%': {
+                          transform: 'scale(1)',
+                        },
+                        '50%': {
+                          transform: 'scale(1.05)',
+                        },
+                      },
+                    }),
                   }}
-                  sx={{ minHeight: '80px', fontSize: '16px' }}
                 >
-                  {metodo.nombre}
+                  {loading && metodoSeleccionado?.id === metodo.id ? (
+                    <CircularProgress size={24} color="inherit" />
+                  ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                      <span>{metodo.nombre}</span>
+                      {metodoSeleccionado?.id === metodo.id && (
+                        <Box
+                          component="span"
+                          sx={{
+                            display: 'block',
+                            fontSize: '12px',
+                            mt: 1,
+                            fontWeight: 'normal',
+                            textAlign: 'center',
+                            width: '100%',
+                          }}
+                        >
+                          (Clic otra vez para pagar)
+                        </Box>
+                      )}
+                    </Box>
+                  )}
                 </Button>
               ))}
             </Box>
           )}
         </CardContent>
       </Card>
-
-      {/* Botón de procesar pago */}
-      <Button
-        variant="contained"
-        color="primary"
-        fullWidth
-        size="large"
-        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Payment />}
-        onClick={handleProcesarPago}
-        disabled={loading || !metodoSeleccionado || cart.length === 0}
-        sx={{ minHeight: '60px', fontSize: '18px', fontWeight: 'bold' }}
-      >
-        {loading ? 'Procesando...' : `Pagar $${total.toFixed(2)}`}
-      </Button>
     </Box>
   );
 }
