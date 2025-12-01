@@ -87,5 +87,12 @@ export const productosService = {
   obtenerVariantes: async (id: number) => {
     return apiService.get<Producto[]>(`${API_ENDPOINTS.PRODUCTS}/${id}/variantes`);
   },
+
+  /**
+   * Crear variante de un producto base
+   */
+  crearVariante: async (productoBaseId: number, variante: Omit<Producto, 'id' | 'variantes'>) => {
+    return apiService.post<Producto>(`${API_ENDPOINTS.PRODUCTS}/${productoBaseId}/variantes`, variante);
+  },
 };
 

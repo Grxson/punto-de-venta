@@ -25,6 +25,8 @@ import { categoriasService } from '../../services/categorias.service';
 import { useAuth } from '../../contexts/AuthContext';
 import { websocketService } from '../../services/websocket.service';
 import { userPreferencesService } from '../../services/userPreferences.service';
+import { useProductos, useActualizarProducto, useEliminarProductoPermanente } from '../../hooks/useProductos';
+import { useCategorias } from '../../hooks/useCategorias';
 import ProductosTable from '../../components/productos/ProductosTable';
 import ProductoForm from '../../components/productos/ProductoForm';
 import VariantesManager from '../../components/productos/VariantesManager';
@@ -33,17 +35,28 @@ export default function AdminInventory() {
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'ADMIN' || usuario?.rolNombre === 'ADMIN';
 
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [categorias, setCategorias] = useState<CategoriaProducto[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-
   // Filtros
   const [filtroActivo, setFiltroActivo] = useState<string>('todos');
   const [filtroCategoria, setFiltroCategoria] = useState<number | ''>('');
   const [busqueda, setBusqueda] = useState('');
-  
+
+  // React Query hooks con filtros
+  const filtros = {
+    activo: filtroActivo === 'todos' ? undefined : filtroActivo === 'activos',
+    categoriaId: filtroCategoria || undefined,
+    busqueda: busqueda || undefined,
+  };
+
+  const { data: productosResponse, isLoading: loading, error: queryError, refetch } = useProductos(filtros);
+  const productos = productosResponse?.data ?? [];
+  const { data: categoriasResponse } = useCategorias();
+  const categorias = categoriasResponse?.data ?? [];
+  const actualizarProducto = useActualizarProducto();
+  const eliminarProductoPermanente = useEliminarProductoPermanente();
+
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
   // Paginación
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -69,87 +82,27 @@ export default function AdminInventory() {
   }, [tabValue]);
 
   const loadData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Cargar categorías
-      const categoriasResponse = await categoriasService.listar({ activa: true });
-      if (categoriasResponse.success && categoriasResponse.data) {
-        setCategorias(categoriasResponse.data);
-      }
-
-      // Cargar productos
-      await loadProductos();
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar datos');
-    } finally {
-      setLoading(false);
-    }
+    refetch(); // Solo refetch con React Query
   };
 
-  const loadProductos = async () => {
-    try {
-      const filtros: any = {};
-      if (filtroActivo !== 'todos') {
-        filtros.activo = filtroActivo;
-      }
-      if (filtroCategoria) {
-        filtros.categoriaId = Number(filtroCategoria);
-      }
-      if (busqueda.trim()) {
-        filtros.q = busqueda.trim();
-      }
-
-      const response = await productosService.listar(filtros);
-      if (response.success && response.data) {
-        setProductos(response.data);
-      } else {
-        setError(response.error || 'Error al cargar productos');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar productos');
-    }
-  };
-
-  // Separar efectos: uno para cargar datos (con dependencias) y otro para WebSocket (sin dependencias)
+  // WebSocket para actualizaciones en tiempo real
   useEffect(() => {
-    // Cargar categorías solo una vez
-    const loadCategorias = async () => {
-      try {
-        const categoriasResponse = await categoriasService.listar({ activa: true });
-        if (categoriasResponse.success && categoriasResponse.data) {
-          setCategorias(categoriasResponse.data);
-        }
-      } catch (err: any) {
-        console.error('Error al cargar categorías:', err);
-      }
-    };
-    
-    loadCategorias();
-    loadProductos();
-  }, [filtroActivo, filtroCategoria, busqueda]);
-
-  // Efecto separado para WebSocket que solo se ejecuta una vez
-  useEffect(() => {
-    // Conectar WebSocket para actualizaciones en tiempo real
     websocketService.connect();
 
-    // Escuchar eventos de productos
-    const unsubscribe = websocketService.on('productos', (message) => {
-      if (message.tipo === 'PRODUCTO_CREADO' || message.tipo === 'PRODUCTO_ACTUALIZADO') {
-        // Recargar productos cuando hay cambios
-        loadProductos();
-      } else if (message.tipo === 'PRODUCTO_ELIMINADO') {
-        // Remover producto de la lista
-        setProductos((prev) => prev.filter((p) => p.id !== message.entidadId));
-      }
-    });
+    const handleProductoUpdate = () => {
+      refetch();
+    };
+
+    websocketService.on('producto:created', handleProductoUpdate);
+    websocketService.on('producto:updated', handleProductoUpdate);
+    websocketService.on('producto:deleted', handleProductoUpdate);
 
     return () => {
-      unsubscribe();
+      websocketService.off('producto:created', handleProductoUpdate);
+      websocketService.off('producto:updated', handleProductoUpdate);
+      websocketService.off('producto:deleted', handleProductoUpdate);
     };
-  }, []); // Sin dependencias - solo se ejecuta una vez
+  }, [refetch]);
 
   const handleNuevoProducto = () => {
     setProductoSeleccionado(null);
@@ -182,24 +135,25 @@ export default function AdminInventory() {
     if (!productoSeleccionado?.id) return;
 
     try {
-      setLoading(true);
       setError(null);
-      // Si está activo, desactivarlo; si está inactivo, activarlo
       const nuevoEstado = !productoSeleccionado.activo;
-      await productosService.cambiarEstado(productoSeleccionado.id, nuevoEstado);
+
+      // Usar mutation de React Query (invalida caché automáticamente)
+      await actualizarProducto.mutateAsync({
+        id: productoSeleccionado.id,
+        producto: { activo: nuevoEstado },
+      });
+
       setSuccess(
-        nuevoEstado 
-          ? 'Producto activado correctamente' 
+        nuevoEstado
+          ? 'Producto activado correctamente'
           : 'Producto desactivado correctamente'
       );
       setOpenDeleteConfirm(false);
       setProductoSeleccionado(null);
-      await loadProductos();
       setTimeout(() => setSuccess(null), 5000);
     } catch (err: any) {
       setError(err.message || 'Error al cambiar el estado del producto');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -207,30 +161,30 @@ export default function AdminInventory() {
     if (!productoSeleccionado?.id) return;
 
     try {
-      setLoading(true);
       setError(null);
-      await productosService.eliminarDefinitivamente(productoSeleccionado.id);
+
+      // Eliminar permanentemente con mutation de React Query
+      await eliminarProductoPermanente.mutateAsync(productoSeleccionado.id);
+
       setSuccess('Producto eliminado definitivamente');
       setOpenDeletePermanenteConfirm(false);
       setProductoSeleccionado(null);
-      await loadProductos();
       setTimeout(() => setSuccess(null), 5000);
     } catch (err: any) {
-      setError(err.message || 'Error al eliminar el producto');
-    } finally {
-      setLoading(false);
+      // El mensaje ya viene en err.message desde el hook
+      setError(err?.message || 'Error al eliminar el producto');
     }
   };
 
   const handleFormSuccess = () => {
     setOpenForm(false);
     setProductoSeleccionado(null);
-    loadProductos();
+    refetch(); // Refetch con React Query
     setSuccess('Producto guardado correctamente');
     setTimeout(() => setSuccess(null), 5000);
   };
 
-  const productosFiltrados = productos.filter((p) => {
+  const productosFiltrados = (productos || []).filter((p) => {
     if (filtroActivo !== 'todos' && p.activo !== (filtroActivo === 'true')) return false;
     if (filtroCategoria && p.categoriaId !== Number(filtroCategoria)) return false;
     if (busqueda.trim() && !p.nombre.toLowerCase().includes(busqueda.toLowerCase())) {
@@ -351,7 +305,7 @@ export default function AdminInventory() {
               onChange={(e) => setFiltroCategoria(e.target.value as number | '')}
             >
               <MenuItem value="">Todas</MenuItem>
-              {categorias.map((cat) => (
+              {(categorias || []).map((cat) => (
                 <MenuItem key={cat.id} value={cat.id}>
                   {cat.nombre}
                 </MenuItem>
@@ -362,7 +316,7 @@ export default function AdminInventory() {
           <Button
             variant="outlined"
             startIcon={<Refresh />}
-            onClick={loadProductos}
+            onClick={() => refetch()}
             disabled={loading}
           >
             Actualizar
@@ -443,7 +397,7 @@ export default function AdminInventory() {
                 Esta acción hará que el producto aparezca nuevamente en el menú y esté disponible para ventas.
               </>
             )}
-      </Typography>
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDeleteConfirm(false)} disabled={loading}>
@@ -468,20 +422,22 @@ export default function AdminInventory() {
             <Alert severity="error" sx={{ mb: 2 }}>
               <strong>ADVERTENCIA:</strong> Esta acción eliminará el producto permanentemente de la base de datos.
             </Alert>
-            <Typography>
-              ¿Está seguro de eliminar definitivamente el producto "{productoSeleccionado?.nombre}"?
-              <br />
-              <br />
-              <strong>Esta acción no se puede deshacer.</strong>
-              <br />
-              <br />
-              El producto solo se puede eliminar si:
-              <ul>
+            <Box>
+              <Typography gutterBottom>
+                ¿Está seguro de eliminar definitivamente el producto "{productoSeleccionado?.nombre}"?
+              </Typography>
+              <Typography gutterBottom>
+                <strong>Esta acción no se puede deshacer.</strong>
+              </Typography>
+              <Typography gutterBottom sx={{ mt: 2 }}>
+                El producto solo se puede eliminar si:
+              </Typography>
+              <Box component="ul" sx={{ mt: 1, pl: 3 }}>
                 <li>No tiene ventas asociadas</li>
                 <li>No tiene recetas asociadas</li>
                 <li>No tiene variantes (si es producto base)</li>
-              </ul>
-      </Typography>
+              </Box>
+            </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setOpenDeletePermanenteConfirm(false)} disabled={loading}>
@@ -517,7 +473,7 @@ export default function AdminInventory() {
             <VariantesManager
               productoId={productoSeleccionado.id}
               productoNombre={productoSeleccionado.nombre}
-              onUpdate={loadProductos}
+              onUpdate={() => refetch()}
             />
           </DialogContent>
           <DialogActions>

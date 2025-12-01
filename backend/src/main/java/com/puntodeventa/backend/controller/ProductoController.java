@@ -9,7 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -29,8 +31,7 @@ public class ProductoController {
             @RequestParam Optional<Boolean> activo,
             @RequestParam(name = "enMenu") Optional<Boolean> enMenu,
             @RequestParam Optional<Long> categoriaId,
-            @RequestParam(name = "q") Optional<String> query
-    ) {
+            @RequestParam(name = "q") Optional<String> query) {
         return ResponseEntity.ok(productoService.listar(activo, enMenu, categoriaId, query));
     }
 
@@ -38,6 +39,19 @@ public class ProductoController {
     @Operation(summary = "Obtener producto por ID")
     public ResponseEntity<ProductoDTO> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(productoService.obtener(id));
+    }
+
+    @GetMapping("/{id}/variantes")
+    @Operation(summary = "Obtener variantes de un producto")
+    public ResponseEntity<List<ProductoDTO>> obtenerVariantes(@PathVariable Long id) {
+        return ResponseEntity.ok(productoService.obtenerVariantes(id));
+    }
+
+    @PostMapping("/{id}/variantes")
+    @Operation(summary = "Agregar variante a un producto base")
+    public ResponseEntity<ProductoDTO> crearVariante(@PathVariable Long id, @Validated @RequestBody ProductoDTO dto) {
+        ProductoDTO variante = productoService.crearVariante(id, dto);
+        return new ResponseEntity<>(variante, HttpStatus.CREATED);
     }
 
     @PostMapping
@@ -64,5 +78,20 @@ public class ProductoController {
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         productoService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/permanente")
+    @Operation(summary = "Eliminar producto definitivamente", description = "Elimina el producto permanentemente de la base de datos")
+    public ResponseEntity<Void> eliminarPermanentemente(@PathVariable Long id) {
+        productoService.eliminarPermanentemente(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> handleIllegalStateException(IllegalStateException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", ex.getMessage());
+        // Retornar BAD_REQUEST (400) para errores de validación de negocio
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 }

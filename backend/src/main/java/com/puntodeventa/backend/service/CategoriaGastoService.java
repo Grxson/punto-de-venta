@@ -5,6 +5,8 @@ import com.puntodeventa.backend.exception.ResourceNotFoundException;
 import com.puntodeventa.backend.model.CategoriaGasto;
 import com.puntodeventa.backend.repository.CategoriaGastoRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,27 +20,31 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class CategoriaGastoService {
-    
+
     private final CategoriaGastoRepository categoriaGastoRepository;
-    
+
+    @Cacheable(value = "categorias-gastos", unless = "#result.isEmpty()")
     public List<CategoriaGastoDTO> obtenerTodas() {
         return categoriaGastoRepository.findAll().stream()
-            .map(this::toDTO)
-            .toList();
+                .map(this::toDTO)
+                .toList();
     }
-    
+
+    @Cacheable(value = "categorias-gastos", key = "'activas'")
     public List<CategoriaGastoDTO> obtenerActivas() {
         return categoriaGastoRepository.findByActivoTrue().stream()
-            .map(this::toDTO)
-            .toList();
+                .map(this::toDTO)
+                .toList();
     }
-    
+
+    @Cacheable(value = "categorias-gastos", key = "#id")
     public CategoriaGastoDTO obtenerPorId(Long id) {
         CategoriaGasto categoria = categoriaGastoRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Categoría de gasto no encontrada con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría de gasto no encontrada con id: " + id));
         return toDTO(categoria);
     }
-    
+
+    @CacheEvict(value = "categorias-gastos", allEntries = true)
     @Transactional
     public CategoriaGastoDTO crear(CategoriaGastoDTO dto) {
         CategoriaGasto categoria = new CategoriaGasto();
@@ -47,43 +53,43 @@ public class CategoriaGastoService {
         categoria.setPresupuestoMensual(dto.presupuestoMensual());
         categoria.setActivo(dto.activo() != null ? dto.activo() : true);
         categoria.setCreatedAt(LocalDateTime.now());
-        
+
         categoria = categoriaGastoRepository.save(categoria);
         return toDTO(categoria);
     }
-    
+
+    @CacheEvict(value = "categorias-gastos", allEntries = true)
     @Transactional
     public CategoriaGastoDTO actualizar(Long id, CategoriaGastoDTO dto) {
         CategoriaGasto categoria = categoriaGastoRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Categoría de gasto no encontrada con id: " + id));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría de gasto no encontrada con id: " + id));
+
         categoria.setNombre(dto.nombre());
         categoria.setDescripcion(dto.descripcion());
         categoria.setPresupuestoMensual(dto.presupuestoMensual());
         categoria.setActivo(dto.activo() != null ? dto.activo() : true);
         categoria.setUpdatedAt(LocalDateTime.now());
-        
+
         categoria = categoriaGastoRepository.save(categoria);
         return toDTO(categoria);
     }
-    
+
+    @CacheEvict(value = "categorias-gastos", allEntries = true)
     @Transactional
     public void eliminar(Long id) {
         CategoriaGasto categoria = categoriaGastoRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Categoría de gasto no encontrada con id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría de gasto no encontrada con id: " + id));
         categoria.setActivo(false);
         categoria.setUpdatedAt(LocalDateTime.now());
         categoriaGastoRepository.save(categoria);
     }
-    
+
     private CategoriaGastoDTO toDTO(CategoriaGasto categoria) {
         return new CategoriaGastoDTO(
-            categoria.getId(),
-            categoria.getNombre(),
-            categoria.getDescripcion(),
-            categoria.getPresupuestoMensual(),
-            categoria.getActivo()
-        );
+                categoria.getId(),
+                categoria.getNombre(),
+                categoria.getDescripcion(),
+                categoria.getPresupuestoMensual(),
+                categoria.getActivo());
     }
 }
-

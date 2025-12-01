@@ -101,23 +101,32 @@ export default function VariantesManager({ productoId, productoNombre, onUpdate 
         nombre: `${productoNombre} - ${nombreVariante.trim()}`,
         nombreVariante: nombreVariante.trim(),
         precio: parseFloat(precio),
-        productoBaseId: productoId,
         ordenVariante: ordenVariante ? parseInt(ordenVariante) : variantes.length + 1,
-        activo: true,
-        disponibleEnMenu: true,
       };
 
       if (editingVariante?.id) {
+        // Actualizar variante existente
         await productosService.actualizar(editingVariante.id, varianteData);
       } else {
-        await productosService.crear(varianteData as Omit<Producto, 'id' | 'variantes'>);
+        // Crear nueva variante usando el endpoint específico
+        await productosService.crearVariante(productoId, varianteData as Omit<Producto, 'id' | 'variantes'>);
       }
 
       handleCloseDialog();
       loadVariantes();
       onUpdate();
     } catch (err: any) {
-      setError(err.message || 'Error al guardar la variante');
+      console.error('Error guardando variante:', err);
+      let mensajeError = 'Error al guardar la variante';
+
+      // Si es un error de conflicto (409), probablemente es nombre duplicado
+      if (err.statusCode === 409) {
+        mensajeError = 'El nombre de esta variante ya existe. Usa un nombre diferente.';
+      } else if (err.message) {
+        mensajeError = err.message;
+      }
+
+      setError(mensajeError);
     } finally {
       setLoading(false);
     }

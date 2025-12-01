@@ -60,14 +60,14 @@ class WebSocketService {
         this.connected = false;
       },
       onStompError: (frame) => {
-        console.error('Error STOMP:', frame);
+        console.debug('Error STOMP (puede ignorarse en desarrollo):', frame?.body);
         this.reconnectAttempts++;
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-          console.error('Máximo de intentos de reconexión alcanzado');
+          console.warn('WebSocket: máximo de intentos de reconexión alcanzado. El sistema funcionará sin sincronización en tiempo real.');
         }
       },
       onWebSocketError: (event) => {
-        console.error('Error WebSocket:', event);
+        console.debug('Error WebSocket (intento de reconexión automático):', event);
       },
     });
   }
