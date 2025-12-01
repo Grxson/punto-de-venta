@@ -296,7 +296,7 @@ app.ventas.validar-stock=true
 - quitar referencia de el método de pago de transferencia y tarjeta ✅
 - Agregar apartado en caso de que vendamos cosas fueras de menú (extraordinarios)
 - en la ventana de pagar hacer función para editar precio en caso de, solo dar clic al número 
-- cuando se seleccione el método de pago ya se debe de pagar automáticamente, para no dar clic en el botón de pagar ✅
+- cuando se seleccione el método de pago ya se debe de pagar automáticamente, para no dar clic en el botón de pagar ✅![alt text](image.png)
 - insumo en gastos como predeterminado, y efectivo por default
 - en vez de nota - concepto o descripción 
 - quitar referencia del form de gasto
