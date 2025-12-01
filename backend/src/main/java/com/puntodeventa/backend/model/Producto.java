@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * Entidad que representa un producto del menú.
@@ -61,9 +62,16 @@ public class Producto {
      * Si este producto es una variante de otro producto, este campo apunta al producto base.
      * Si es null, este producto es un producto base o un producto sin variantes.
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "producto_base_id")
     private Producto productoBase;
+
+    /**
+     * Lista de variantes de este producto (si es un producto base).
+     * Solo se llena si este producto NO tiene productoBase.
+     */
+    @OneToMany(mappedBy = "productoBase", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Producto> variantes;
 
     /**
      * Nombre de la variante (ej: "1 Litro", "500ml", "Bolsa 250ml", "Grande", "Mediano", "Chico").

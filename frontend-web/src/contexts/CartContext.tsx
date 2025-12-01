@@ -54,13 +54,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setCart((prevCart) => {
       const itemExistente = prevCart.find((item) => item.producto.id === producto.id);
       if (itemExistente) {
-        return prevCart.map((item) =>
-          item.producto.id === producto.id
-            ? { ...item, cantidad: item.cantidad + 1 }
-            : item
-        );
+        // Si el producto ya existe, muévelo al principio e incrementa cantidad
+        const updatedCart = prevCart
+          .filter((item) => item.producto.id !== producto.id)
+          .map((item) =>
+            item.producto.id === producto.id
+              ? { ...item, cantidad: item.cantidad + 1 }
+              : item
+          );
+        // Crear el item actualizado y ponerlo al principio
+        const updatedItem = {
+          producto,
+          cantidad: itemExistente.cantidad + 1,
+        };
+        return [updatedItem, ...updatedCart.filter((item) => item.producto.id !== producto.id)];
       } else {
-        return [...prevCart, { producto, cantidad: 1 }];
+        // Nuevo producto: agregarlo al principio
+        return [{ producto, cantidad: 1 }, ...prevCart];
       }
     });
   };

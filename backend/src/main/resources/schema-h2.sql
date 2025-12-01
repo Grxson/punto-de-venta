@@ -54,10 +54,18 @@ CREATE TABLE IF NOT EXISTS categorias_productos (
 CREATE TABLE IF NOT EXISTS productos (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(255) NOT NULL,
-  categoria_id BIGINT NOT NULL,
+  descripcion CLOB,
+  categoria_id BIGINT,
   precio DECIMAL(12,2) NOT NULL,
+  costo_estimado DECIMAL(12,4),
+  sku VARCHAR(50),
   activo BOOLEAN DEFAULT TRUE,
-  FOREIGN KEY (categoria_id) REFERENCES categorias_productos(id)
+  disponible_en_menu BOOLEAN DEFAULT TRUE,
+  producto_base_id BIGINT,
+  nombre_variante VARCHAR(255),
+  orden_variante INTEGER,
+  FOREIGN KEY (categoria_id) REFERENCES categorias_productos(id),
+  FOREIGN KEY (producto_base_id) REFERENCES productos(id)
 );
 
 -- metodos_pago: Railway uses integer flags; use BOOLEAN for H2 but allow 0/1 inserts

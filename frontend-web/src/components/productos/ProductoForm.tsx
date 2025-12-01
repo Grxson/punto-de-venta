@@ -531,21 +531,19 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
                   }
                 </Typography>
 
-                {!producto && (
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Plantilla de variantes</InputLabel>
-                    <Select
-                      value={plantillaVariantes}
-                      label="Plantilla de variantes"
-                      onChange={(e) => handlePlantillaChange(e.target.value)}
-                    >
-                      <MenuItem value="">Sin variantes</MenuItem>
-                      <MenuItem value="tamanos">Tamaños (Chico, Mediano, Grande)</MenuItem>
-                      <MenuItem value="tamanos-bebidas">Bebidas (250ml, 500ml, 1L)</MenuItem>
-                      <MenuItem value="tamanos-cafe">Café (Chico, Mediano, Grande, Extra Grande)</MenuItem>
-                    </Select>
-                  </FormControl>
-                )}
+                <FormControl fullWidth size="small">
+                  <InputLabel>Plantilla de variantes</InputLabel>
+                  <Select
+                    value={plantillaVariantes}
+                    label="Plantilla de variantes"
+                    onChange={(e) => handlePlantillaChange(e.target.value)}
+                  >
+                    <MenuItem value="">Sin variantes</MenuItem>
+                    <MenuItem value="tamanos">Tamaños (Chico, Mediano, Grande)</MenuItem>
+                    <MenuItem value="tamanos-bebidas">Bebidas (250ml, 500ml, 1L)</MenuItem>
+                    <MenuItem value="tamanos-cafe">Café (Chico, Mediano, Grande, Extra Grande)</MenuItem>
+                  </Select>
+                </FormControl>
 
                 {variantes.length > 0 && (
                   <Box>

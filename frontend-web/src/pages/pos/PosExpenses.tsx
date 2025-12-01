@@ -140,6 +140,22 @@ export default function PosExpenses() {
     loadInitialData();
   }, []);
 
+  // Cuando el diálogo se abre, establecer valores por defecto si es un nuevo gasto
+  useEffect(() => {
+    if (openDialog && !editingGasto && categoriasGasto.length > 0 && metodosPago.length > 0) {
+      // Buscar categoría "Insumos" por defecto
+      const insumoCategory = categoriasGasto.find(cat => cat.nombre.toLowerCase() === 'insumos');
+      if (insumoCategory) {
+        setCategoriaGastoId(insumoCategory.id);
+      }
+      // Buscar método de pago "Efectivo" por defecto
+      const efectivoMethod = metodosPago.find(met => met.nombre.toLowerCase() === 'efectivo');
+      if (efectivoMethod) {
+        setMetodoPagoId(efectivoMethod.id);
+      }
+    }
+  }, [openDialog, editingGasto, categoriasGasto, metodosPago]);
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -222,17 +238,14 @@ export default function PosExpenses() {
       setReferencia(gasto.referencia || '');
       setNota(gasto.nota || '');
     } else {
-      // Nuevo gasto: establecer valores por defecto
+      // Nuevo gasto: limpiar el formulario
+      // Los valores por defecto se establecerán en el useEffect
       setEditingGasto(null);
-      // Buscar categoría "Insumo" por defecto
-      const insumoCategory = categoriasGasto.find(cat => cat.nombre.toLowerCase() === 'insumo');
-      setCategoriaGastoId(insumoCategory?.id || '');
+      setCategoriaGastoId('');
       setProveedorId('');
       setMonto('');
       setFecha(new Date());
-      // Buscar método de pago "Efectivo" por defecto
-      const efectivoMethod = metodosPago.find(met => met.nombre.toLowerCase() === 'efectivo');
-      setMetodoPagoId(efectivoMethod?.id || '');
+      setMetodoPagoId('');
       setReferencia('');
       setNota('');
     }
@@ -482,9 +495,13 @@ export default function PosExpenses() {
               <Stack spacing={3} sx={{ mt: 1 }}>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3 }}>
                   <FormControl fullWidth required>
-                    <InputLabel>Categoría de Gasto</InputLabel>
+                    <InputLabel id="categoria-label">Categoría de Gasto</InputLabel>
                     <Select
-                      value={categoriaGastoId}
+                      labelId="categoria-label"
+                      value={categoriaGastoId || (() => {
+                        const insumoCategory = categoriasGasto.find(cat => cat.nombre.toLowerCase() === 'insumos');
+                        return insumoCategory ? insumoCategory.id : '';
+                      })()}
                       onChange={(e) => setCategoriaGastoId(Number(e.target.value))}
                       label="Categoría de Gasto"
                     >
@@ -534,8 +551,9 @@ export default function PosExpenses() {
 
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3 }}>
                   <FormControl fullWidth>
-                    <InputLabel>Método de Pago</InputLabel>
+                    <InputLabel id="metodo-label">Método de Pago</InputLabel>
                     <Select
+                      labelId="metodo-label"
                       value={metodoPagoId}
                       onChange={(e) => setMetodoPagoId(e.target.value ? Number(e.target.value) : '')}
                       label="Método de Pago"
@@ -544,22 +562,6 @@ export default function PosExpenses() {
                       {metodosPago.map((metodo) => (
                         <MenuItem key={metodo.id} value={metodo.id}>
                           {metodo.nombre}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <FormControl fullWidth>
-                    <InputLabel>Proveedor</InputLabel>
-                    <Select
-                      value={proveedorId}
-                      onChange={(e) => setProveedorId(e.target.value ? Number(e.target.value) : '')}
-                      label="Proveedor"
-                    >
-                      <MenuItem value="">Ninguno</MenuItem>
-                      {proveedores.map((prov) => (
-                        <MenuItem key={prov.id} value={prov.id}>
-                          {prov.nombre}
                         </MenuItem>
                       ))}
                     </Select>

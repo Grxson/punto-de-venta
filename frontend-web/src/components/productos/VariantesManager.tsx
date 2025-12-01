@@ -48,14 +48,19 @@ export default function VariantesManager({ productoId, productoNombre, onUpdate 
   const loadVariantes = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
       // Fetch product details which includes variantes in the ProductoDTO
       const response = await productosService.obtener(productoId);
       if (response.success && response.data) {
         // Extract variantes from the product DTO
-        setVariantes((response.data as any).variantes || []);
+        const productData = response.data as any;
+        const variantesFromResponse = productData.variantes || [];
+        
+        setVariantes(variantesFromResponse);
       }
-    } catch (err) {
-      setError('Error al cargar variantes');
+    } catch (err: any) {
+      setError('Error al cargar variantes: ' + (err.message || 'Error desconocido'));
     } finally {
       setLoading(false);
     }

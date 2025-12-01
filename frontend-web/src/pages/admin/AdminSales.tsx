@@ -1530,21 +1530,23 @@ export default function AdminSales() {
         </DialogTitle>
         <DialogContent>
           <Alert severity="error" sx={{ mb: 2 }}>
-            <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 1 }}>
-              ⚠️ ESTA ACCIÓN ES IRREVERSIBLE ⚠️
-            </Typography>
-            <Typography variant="body2">
-              Esta operación eliminará PERMANENTEMENTE la venta y todos sus datos asociados:
-            </Typography>
-            <ul style={{ marginTop: '8px', marginBottom: '8px' }}>
-              <li>Registro de la venta</li>
-              <li>Todos los items vendidos</li>
-              <li>Todos los pagos registrados</li>
-              <li>Movimientos de inventario</li>
-            </ul>
-            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-              Esta acción NO se puede deshacer. Los datos se perderán para siempre.
-            </Typography>
+            <Box>
+              <Typography variant="body1" sx={{ fontWeight: 'bold', mb: 1 }}>
+                ⚠️ ESTA ACCIÓN ES IRREVERSIBLE ⚠️
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 1 }}>
+                Esta operación eliminará PERMANENTEMENTE la venta y todos sus datos asociados:
+              </Typography>
+              <ul style={{ marginTop: '8px', marginBottom: '8px', marginLeft: '20px' }}>
+                <li>Registro de la venta</li>
+                <li>Todos los items vendidos</li>
+                <li>Todos los pagos registrados</li>
+                <li>Movimientos de inventario</li>
+              </ul>
+              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                Esta acción NO se puede deshacer. Los datos se perderán para siempre.
+              </Typography>
+            </Box>
           </Alert>
 
           {ventaAEliminar && (

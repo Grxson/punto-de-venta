@@ -14,7 +14,10 @@ public record ProductoDTO(
         String sku,
         Boolean activo,
         Boolean disponibleEnMenu,
-        List<VarianteDTO> variantes
+        List<VarianteDTO> variantes,
+        Long productoBaseId,
+        String nombreVariante,
+        Integer ordenVariante
 ) {
     /**
      * DTO para variantes de producto

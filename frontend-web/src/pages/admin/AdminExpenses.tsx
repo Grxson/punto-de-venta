@@ -113,6 +113,23 @@ export default function AdminExpenses() {
     loadData();
   }, []);
 
+  // Cuando el diálogo se abre, establecer valores por defecto si es un nuevo gasto
+  useEffect(() => {
+    if (openDialog && !editingGasto && categorias.length > 0 && metodosPago.length > 0) {
+      // Buscar categoría "Insumo" por defecto
+      const insumoCategory = categorias.find(cat => cat.nombre.toLowerCase() === 'insumo');
+      if (insumoCategory && !categoriaId) {
+        setCategoriaId(insumoCategory.id);
+      }
+      
+      // Buscar método de pago "Efectivo" por defecto
+      const efectivoMethod = metodosPago.find(met => met.nombre.toLowerCase() === 'efectivo');
+      if (efectivoMethod && !metodoPagoId) {
+        setMetodoPagoId(efectivoMethod.id);
+      }
+    }
+  }, [openDialog, editingGasto, categorias, metodosPago, categoriaId, metodoPagoId]);
+
   const loadData = async () => {
     try {
       setLoadingData(true);
@@ -198,19 +215,10 @@ export default function AdminExpenses() {
       setReferencia(gasto.referencia || '');
       setNota(gasto.nota || '');
     } else {
-      // Nuevo gasto: establecer valores por defecto
+      // Nuevo gasto: limpiar el formulario
+      // Los valores por defecto se establecerán en el useEffect
       setEditingGasto(null);
-      // Buscar categoría "Insumo" por defecto
-      const insumoCategory = categorias.find(cat => cat.nombre.toLowerCase() === 'insumo');
-      setCategoriaId(insumoCategory?.id || '');
-      setProveedorId('');
-      setMonto('');
-      setFecha(new Date());
-      // Buscar método de pago "Efectivo" por defecto
-      const efectivoMethod = metodosPago.find(met => met.nombre.toLowerCase() === 'efectivo');
-      setMetodoPagoId(efectivoMethod?.id || '');
-      setReferencia('');
-      setNota('');
+      resetForm();
     }
     setOpenDialog(true);
   };
@@ -419,8 +427,9 @@ export default function AdminExpenses() {
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
               <FormControl fullWidth required>
-                <InputLabel>Categoría de Gasto</InputLabel>
+                <InputLabel id="categoria-label">Categoría de Gasto</InputLabel>
                 <Select
+                  labelId="categoria-label"
                   value={categoriaId}
                   onChange={(e) => setCategoriaId(e.target.value as number)}
                   label="Categoría de Gasto"
@@ -451,8 +460,9 @@ export default function AdminExpenses() {
               />
 
               <FormControl fullWidth>
-                <InputLabel>Método de Pago</InputLabel>
+                <InputLabel id="metodo-label">Método de Pago</InputLabel>
                 <Select
+                  labelId="metodo-label"
                   value={metodoPagoId}
                   onChange={(e) => setMetodoPagoId(e.target.value as number | '')}
                   label="Método de Pago"
