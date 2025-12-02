@@ -756,7 +756,7 @@ export default function PosHome() {
                             <Add sx={{ fontSize: 18 }} />
                           </IconButton>
                         </Box>
-                        {/* Precio unitario editable (afecta solo esta venta) */}
+                        {/* Precio total editable (afecta solo esta venta) */}
                         {editingPriceId === item.producto.id ? (
                           <TextField
                             size="small"
@@ -765,47 +765,58 @@ export default function PosHome() {
                             value={editingPriceValue}
                             onChange={(e) => setEditingPriceValue(e.target.value)}
                             onBlur={() => {
-                              const v = parseFloat(editingPriceValue);
-                              if (!isNaN(v) && v > 0) {
-                                updateItemPrice(item.producto.id, v);
+                              const totalVal = parseFloat(editingPriceValue);
+                              // Dividir el total entre la cantidad para obtener el precio unitario
+                              const unitPrice = item.cantidad > 0 ? totalVal / item.cantidad : totalVal;
+                              if (!isNaN(unitPrice) && unitPrice >= 0) {
+                                updateItemPrice(item.producto.id, unitPrice);
                               }
                               setEditingPriceId(null);
                             }}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
-                                const v = parseFloat(editingPriceValue);
-                                if (!isNaN(v) && v > 0) {
-                                  updateItemPrice(item.producto.id, v);
+                                const totalVal = parseFloat(editingPriceValue);
+                                const unitPrice = item.cantidad > 0 ? totalVal / item.cantidad : totalVal;
+                                if (!isNaN(unitPrice) && unitPrice >= 0) {
+                                  updateItemPrice(item.producto.id, unitPrice);
                                 }
                                 setEditingPriceId(null);
                               } else if (e.key === 'Escape') {
                                 setEditingPriceId(null);
                               }
                             }}
-                            inputProps={{ step: '0.01', min: '0' }}
+                            inputProps={{min: '0' }}
                             sx={{ width: 100, '& input': { textAlign: 'right' } }}
                           />
                         ) : (
-                          <Chip
-                            label={`$${(item.overridePrice ?? item.producto.precio).toFixed(2)}`}
-                            onClick={() => {
-                              setEditingPriceId(item.producto.id);
-                              setEditingPriceValue(String(item.overridePrice ?? item.producto.precio));
-                            }}
-                            sx={{
-                              fontWeight: 700,
-                              backgroundColor: 'rgba(255, 255, 255, 0)',
-                              color: '#ffffffff',
-                              cursor: 'pointer',
-                              fontSize: '18px',
-                              padding: '6px 10px',
-                              height: 'auto',
-                              '& .MuiChip-label': {
-                                paddingLeft: 0,
-                                paddingRight: 0,
-                              },
-                            }}
-                          />
+                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <Chip
+                              label={`$${((item.overridePrice ?? item.producto.precio) * item.cantidad).toFixed(2)}`}
+                              onClick={() => {
+                                setEditingPriceId(item.producto.id);
+                                // Guardar el precio total (cantidad × unitario) para editar, sin decimales innecesarios
+                                const totalPrice = (item.overridePrice ?? item.producto.precio) * item.cantidad;
+                                setEditingPriceValue(String(totalPrice));
+                              }}
+                              sx={{
+                                fontWeight: 700,
+                                backgroundColor: 'rgba(255, 255, 255, 0)',
+                                color: 'white',
+                                cursor: 'pointer',
+                                fontSize: '20px',
+                                padding: '6px 10px',
+                                height: 'auto',
+                                mb: 0.5,
+                                '& .MuiChip-label': {
+                                  paddingLeft: 0,
+                                  paddingRight: 0,
+                                },
+                              }}
+                            />
+                            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '11px' }}>
+                              ${(item.overridePrice ?? item.producto.precio).toFixed(2)} c/u
+                            </Typography>
+                          </Box>
                         )}
                       </Box>
                     </ListItem>
