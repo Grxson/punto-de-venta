@@ -56,6 +56,7 @@ export default function AdminInventory() {
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [loadingVariantes, setLoadingVariantes] = useState(false);
 
   // Paginación
   const [page, setPage] = useState(0);
@@ -116,7 +117,7 @@ export default function AdminInventory() {
 
   const handleVerVariantes = async (producto: Producto) => {
     try {
-      setLoading(true);
+      setLoadingVariantes(true);
       setError(null);
       // Cargar el producto completo con variantes desde el backend
       const response = await productosService.obtener(producto.id!);
@@ -129,9 +130,10 @@ export default function AdminInventory() {
       setTabValue(1);
       setOpenVariantes(true);
     } catch (err: any) {
-      setError(err.message || 'Error al cargar variantes');
+      const errorMessage = err?.message || err?.toString() || 'Error al cargar variantes';
+      setError(errorMessage);
     } finally {
-      setLoading(false);
+      setLoadingVariantes(false);
     }
   };
 
@@ -363,6 +365,7 @@ export default function AdminInventory() {
             onDelete={handleEliminarProducto}
             onDeletePermanente={isAdmin ? handleEliminarPermanente : undefined}
             onView={handleVerVariantes}
+            loadingView={loadingVariantes}
           />
           <TablePagination
             component="div"

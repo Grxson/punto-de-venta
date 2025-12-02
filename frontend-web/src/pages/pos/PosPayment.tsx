@@ -91,13 +91,16 @@ export default function PosPayment() {
       setLoading(true);
       setError(null);
 
-      // Preparar items de venta
-      const items = cart.map((item) => ({
-        productoId: item.producto.id,
-        cantidad: item.cantidad,
-        precioUnitario: item.producto.precio,
-        subtotal: item.producto.precio * item.cantidad,
-      }));
+      // Preparar items de venta (usar overridePrice si fue editado)
+      const items = cart.map((item) => {
+        const unitPrice = item.overridePrice ?? item.producto.precio;
+        return {
+          productoId: item.producto.id,
+          cantidad: item.cantidad,
+          precioUnitario: unitPrice,
+          subtotal: unitPrice * item.cantidad,
+        };
+      });
 
       // Preparar pago
       const pagos = [
@@ -214,25 +217,28 @@ export default function PosPayment() {
               },
             },
           }}>
-            {cart.map((item) => (
-              <Box key={item.producto.id} sx={{ mb: 1, pb: 1, borderBottom: '1px solid #eee' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="body1" fontWeight="medium">
-                      {item.producto.nombreVariante
-                        ? `${obtenerNombreBase(item.producto)} - ${item.producto.nombreVariante}`
-                        : item.producto.nombre}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {item.cantidad} x ${item.producto.precio.toFixed(2)}
+            {cart.map((item) => {
+              const unitPrice = item.overridePrice ?? item.producto.precio;
+              return (
+                <Box key={item.producto.id} sx={{ mb: 1, pb: 1, borderBottom: '1px solid #eee' }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body1" fontWeight="medium">
+                        {item.producto.nombreVariante
+                          ? `${obtenerNombreBase(item.producto)} - ${item.producto.nombreVariante}`
+                          : item.producto.nombre}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.cantidad} x ${unitPrice.toFixed(2)}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body1" fontWeight="bold">
+                      ${(unitPrice * item.cantidad).toFixed(2)}
                     </Typography>
                   </Box>
-                  <Typography variant="body1" fontWeight="bold">
-                    ${(item.producto.precio * item.cantidad).toFixed(2)}
-                  </Typography>
                 </Box>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
           
           <Divider sx={{ my: 1 }} />

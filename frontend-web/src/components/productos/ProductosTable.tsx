@@ -12,6 +12,7 @@ import {
   Typography,
   Tooltip,
   Button,
+  CircularProgress,
 } from '@mui/material';
 import { Edit, DeleteForever, Visibility, CheckCircle, Cancel, VisibilityOff, Settings } from '@mui/icons-material';
 import type { Producto } from '../../types/productos.types';
@@ -24,6 +25,7 @@ interface ProductosTableProps {
   onDelete: (producto: Producto) => void;
   onDeletePermanente?: (producto: Producto) => void;
   onView?: (producto: Producto) => void;
+  loadingView?: boolean;
 }
 
 export default function ProductosTable({
@@ -33,6 +35,7 @@ export default function ProductosTable({
   onDelete,
   onDeletePermanente,
   onView,
+  loadingView = false,
 }: ProductosTableProps) {
   const { usuario } = useAuth();
   const isAdmin = usuario?.rol === 'ADMIN' || usuario?.rolNombre === 'ADMIN';
@@ -138,13 +141,18 @@ export default function ProductosTable({
                           size="medium"
                           color="success"
                           onClick={() => onView(producto)}
+                          disabled={loadingView}
                           sx={{
                             bgcolor: 'success.light',
                             '&:hover': { bgcolor: 'success.main', color: 'white' },
                             p: 1.5
                           }}
                         >
-                          <Settings fontSize="small" />
+                          {loadingView ? (
+                            <CircularProgress size={20} color="inherit" />
+                          ) : (
+                            <Settings fontSize="small" />
+                          )}
                         </IconButton>
                       </Tooltip>
                     )}
