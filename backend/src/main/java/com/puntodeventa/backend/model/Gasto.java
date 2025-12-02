@@ -66,6 +66,10 @@ public class Gasto {
     @Column(length = 500)
     private String comprobanteUrl; // URL del comprobante (factura, ticket, etc.)
 
+    @Column(length = 50, nullable = false)
+    @Builder.Default
+    private String tipoGasto = "Operacional"; // Tipo: Operacional (en resumen) o Administrativo (no incluir)
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id")
     private Usuario usuario; // Usuario que registró el gasto

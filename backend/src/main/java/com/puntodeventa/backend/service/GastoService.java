@@ -73,6 +73,7 @@ public class GastoService {
             .fecha(request.fecha() != null ? request.fecha() : LocalDateTime.now())
             .referencia(request.referencia())
             .nota(request.nota())
+            .tipoGasto(request.tipoGasto() != null ? request.tipoGasto() : "Operacional")
             .comprobanteUrl(request.comprobanteUrl())
             .createdAt(LocalDateTime.now())
             .build();
@@ -143,6 +144,78 @@ public class GastoService {
         gastoRepository.delete(gasto);
     }
     
+    @Transactional
+    public GastoDTO actualizar(Long id, CrearGastoRequest request) {
+        Gasto gasto = gastoRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Gasto no encontrado con id: " + id));
+        
+        // Actualizar categoría
+        if (request.categoriaGastoId() != null) {
+            CategoriaGasto categoria = categoriaGastoRepository.findById(request.categoriaGastoId())
+                .orElseThrow(() -> new ResourceNotFoundException("Categoría de gasto no encontrada con id: " + request.categoriaGastoId()));
+            gasto.setCategoriaGasto(categoria);
+        }
+        
+        // Actualizar monto
+        if (request.monto() != null) {
+            gasto.setMonto(request.monto());
+        }
+        
+        // Actualizar fecha
+        if (request.fecha() != null) {
+            gasto.setFecha(request.fecha());
+        }
+        
+        // Actualizar nota
+        if (request.nota() != null) {
+            gasto.setNota(request.nota());
+        }
+        
+        // Actualizar referencia
+        if (request.referencia() != null) {
+            gasto.setReferencia(request.referencia());
+        }
+        
+        // Actualizar tipo de gasto
+        if (request.tipoGasto() != null) {
+            gasto.setTipoGasto(request.tipoGasto());
+        }
+        
+        // Actualizar comprobante URL
+        if (request.comprobanteUrl() != null) {
+            gasto.setComprobanteUrl(request.comprobanteUrl());
+        }
+        
+        // Actualizar proveedor
+        if (request.proveedorId() != null) {
+            Proveedor proveedor = proveedorRepository.findById(request.proveedorId())
+                .orElseThrow(() -> new ResourceNotFoundException("Proveedor no encontrado con id: " + request.proveedorId()));
+            gasto.setProveedor(proveedor);
+        } else {
+            gasto.setProveedor(null);
+        }
+        
+        // Actualizar sucursal
+        if (request.sucursalId() != null) {
+            Sucursal sucursal = sucursalRepository.findById(request.sucursalId())
+                .orElseThrow(() -> new ResourceNotFoundException("Sucursal no encontrada con id: " + request.sucursalId()));
+            gasto.setSucursal(sucursal);
+        }
+        
+        // Actualizar método de pago
+        if (request.metodoPagoId() != null) {
+            MetodoPago metodoPago = metodoPagoRepository.findById(request.metodoPagoId())
+                .orElseThrow(() -> new ResourceNotFoundException("Método de pago no encontrado con id: " + request.metodoPagoId()));
+            gasto.setMetodoPago(metodoPago);
+        }
+        
+        // Actualizar timestamp de edición
+        gasto.setUpdatedAt(LocalDateTime.now());
+        
+        Gasto actualizado = gastoRepository.save(gasto);
+        return toDTO(actualizado);
+    }
+    
     private GastoDTO toDTO(Gasto gasto) {
         return new GastoDTO(
             gasto.getId(),
@@ -159,6 +232,7 @@ public class GastoService {
             gasto.getReferencia(),
             gasto.getNota(),
             gasto.getComprobanteUrl(),
+            gasto.getTipoGasto(),
             gasto.getUsuario() != null ? gasto.getUsuario().getId() : null,
             gasto.getUsuario() != null ? gasto.getUsuario().getNombre() : null,
             gasto.getCreatedAt()

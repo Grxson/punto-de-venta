@@ -45,8 +45,8 @@ public class EstadisticasService {
         BigDecimal totalVentas = agg.totalVentas();
         BigDecimal totalCostosProductos = agg.totalCostos();
         
-        // Sumar gastos operativos del período
-        BigDecimal totalGastos = gastoRepository.sumMontoByFechaBetween(desde, hasta);
+        // Sumar SOLO gastos OPERACIONALES del período (NO administrativos)
+        BigDecimal totalGastos = gastoRepository.sumMontoByTipoGastoAndFechaBetween("Operacional", desde, hasta);
         if (totalGastos == null) {
             totalGastos = BigDecimal.ZERO;
         }
