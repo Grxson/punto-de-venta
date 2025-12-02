@@ -59,10 +59,12 @@ export default function PosCart() {
                             size="small"
                             type="number"
                             inputProps={{ step: '0.01', min: '0' }}
-                            value={(item.overridePrice ?? item.producto?.precio ?? 0).toFixed(2)}
+                            value={((item.overridePrice ?? item.producto?.precio ?? 0) * item.cantidad)}
                             onChange={(e) => {
-                              const val = parseFloat(e.target.value);
-                              updateItemPrice(item.producto.id, isNaN(val) ? 0 : val);
+                              const totalVal = parseFloat(e.target.value);
+                              // Dividir el total entre la cantidad para obtener el precio unitario
+                              const unitPrice = item.cantidad > 0 ? totalVal / item.cantidad : totalVal;
+                              updateItemPrice(item.producto.id, isNaN(unitPrice) ? 0 : unitPrice);
                             }}
                             onBlur={() => setEditingPriceId(null)}
                             onKeyDown={(e) => {
@@ -76,17 +78,19 @@ export default function PosCart() {
                             sx={{ maxWidth: 120 }}
                           />
                         ) : (
-                          <Typography
-                            variant="body2"
-                            sx={{ mt: 0.25, px: 1, py: 0.25, borderRadius: 1, bgcolor: 'warning.main', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
-                            onClick={() => setEditingPriceId(item.producto.id)}
-                          >
-                            ${(item.overridePrice ?? item.producto?.precio ?? 0).toFixed(2)}
-                          </Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <Typography
+                              variant="h6"
+                              sx={{ fontWeight: 'bold', color: 'success.main', cursor: 'pointer', px: 1, py: 0.25, borderRadius: 1, bgcolor: 'action.hover' }}
+                              onClick={() => setEditingPriceId(item.producto.id)}
+                            >
+                              ${((item.overridePrice ?? item.producto?.precio ?? 0) * item.cantidad).toFixed(2)}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ px: 1 }}>
+                              ${(item.overridePrice ?? item.producto?.precio ?? 0).toFixed(2)} c/u
+                            </Typography>
+                          </Box>
                         )}
-                        <Typography variant="body2" color="text.secondary">
-                          c/u
-                        </Typography>
                       </Box>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
