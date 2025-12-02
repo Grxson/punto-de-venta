@@ -20,6 +20,7 @@ public record ActualizarVentaRequest(
     List<PagoDTO> pagos,
     
     String nota,
+    String fecha,
     String canal
 ) {
     // Constructor compacto para valores por defecto
