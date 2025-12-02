@@ -652,6 +652,18 @@ public class VentaService {
         if (request.canal() != null) {
             venta.setCanal(request.canal());
         }
+
+        // Actualizar fecha si se proporciona
+        if (request.fecha() != null && !request.fecha().isBlank()) {
+            try {
+                // Parsear la fecha del formato ISO (yyyy-MM-dd'T'HH:mm:ss)
+                LocalDateTime nuevaFecha = LocalDateTime.parse(request.fecha(), java.time.format.DateTimeFormatter.ISO_DATE_TIME);
+                venta.setFecha(nuevaFecha);
+            } catch (Exception e) {
+                log.warn("Error al parsear la fecha: {}", request.fecha(), e);
+                // Si hay error, mantener la fecha original
+            }
+        }
         
         // 7. Guardar la venta actualizada
         Venta ventaActualizada = ventaRepository.save(venta);

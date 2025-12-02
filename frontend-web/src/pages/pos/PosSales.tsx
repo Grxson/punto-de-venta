@@ -37,6 +37,9 @@ import {
 import { Cancel, Refresh, ArrowBack, Edit, Add, Delete, Remove } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
@@ -100,6 +103,8 @@ export default function PosSales() {
   const [itemsEditados, setItemsEditados] = useState<VentaItem[]>([]);
   const [pagosEditados, setPagosEditados] = useState<Pago[]>([]);
   const [notaEditada, setNotaEditada] = useState('');
+  const [fechaEditada, setFechaEditada] = useState<string>('');
+  const [editandoFecha, setEditandoFecha] = useState(false);
   const [productos, setProductos] = useState<any[]>([]);
   const [metodosPago, setMetodosPago] = useState<any[]>([]);
   const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
@@ -225,6 +230,8 @@ export default function PosSales() {
     setItemsEditados([...venta.items]);
     setPagosEditados([...venta.pagos]);
     setNotaEditada(venta.nota || '');
+    setFechaEditada(venta.fecha);
+    setEditandoFecha(false);
     setErrorEdicion(null);
     
     // Cargar productos y métodos de pago
@@ -288,6 +295,8 @@ export default function PosSales() {
     setItemsEditados([]);
     setPagosEditados([]);
     setNotaEditada('');
+    setFechaEditada('');
+    setEditandoFecha(false);
     setErrorEdicion(null);
   };
 
@@ -597,6 +606,7 @@ export default function PosSales() {
           referencia: pago.referencia || null,
         })),
         nota: notaEditada,
+        fecha: fechaEditada,
         canal: ventaSeleccionada.canal,
       };
 
@@ -936,9 +946,40 @@ export default function PosSales() {
           <Typography component="div" variant="h5" fontWeight="bold">
             Editar Venta #{ventaSeleccionada?.id}
           </Typography>
-          <Typography component="div" variant="body2" color="text.secondary">
-            {ventaSeleccionada && format(new Date(ventaSeleccionada.fecha), "dd/MM/yyyy HH:mm", { locale: es })}
-          </Typography>
+          {editandoFecha ? (
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1 }}>
+                <DatePicker
+                  value={new Date(fechaEditada)}
+                  onChange={(date) => {
+                    if (date) {
+                      setFechaEditada(date.toISOString());
+                    }
+                  }}
+                  slotProps={{ textField: { size: 'small' } }}
+                />
+                <Button size="small" variant="contained" onClick={() => setEditandoFecha(false)}>
+                  Listo
+                </Button>
+                <Button size="small" onClick={() => {
+                  setFechaEditada(ventaSeleccionada?.fecha || '');
+                  setEditandoFecha(false);
+                }}>
+                  Cancelar
+                </Button>
+              </Box>
+            </LocalizationProvider>
+          ) : (
+            <Typography
+              component="div"
+              variant="body2"
+              color="primary"
+              sx={{ cursor: 'pointer', fontWeight: 500, '&:hover': { textDecoration: 'underline' } }}
+              onClick={() => setEditandoFecha(true)}
+            >
+              📅 {fechaEditada && format(new Date(fechaEditada), "dd/MM/yyyy HH:mm", { locale: es })}
+            </Typography>
+          )}
         </DialogTitle>
         
         <DialogContent sx={{ flex: 1, overflow: 'auto', px: 2 }}>
