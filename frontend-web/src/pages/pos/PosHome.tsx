@@ -800,10 +800,10 @@ export default function PosHome() {
                               }}
                               sx={{
                                 fontWeight: 700,
-                                backgroundColor: 'success.main',
+                                backgroundColor: 'rgba(255, 255, 255, 0)',
                                 color: 'white',
                                 cursor: 'pointer',
-                                fontSize: '16px',
+                                fontSize: '20px',
                                 padding: '6px 10px',
                                 height: 'auto',
                                 mb: 0.5,
