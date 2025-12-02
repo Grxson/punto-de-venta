@@ -67,6 +67,13 @@ public class GastoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(gastoService.crear(request));
     }
     
+    @PutMapping("/{id}")
+    @Operation(summary = "Actualizar gasto existente")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
+    public ResponseEntity<GastoDTO> actualizar(@PathVariable Long id, @RequestBody CrearGastoRequest request) {
+        return ResponseEntity.ok(gastoService.actualizar(id, request));
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar gasto")
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")

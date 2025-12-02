@@ -21,6 +21,7 @@ public record GastoDTO(
         String referencia,
         String nota,
         String comprobanteUrl,
+        String tipoGasto,
         Long usuarioId,
         String usuarioNombre,
         LocalDateTime createdAt

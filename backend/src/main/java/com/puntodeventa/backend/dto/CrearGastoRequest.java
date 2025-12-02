@@ -15,6 +15,7 @@ public record CrearGastoRequest(
         Long metodoPagoId,
         String referencia,
         String nota,
+        String tipoGasto,
         String comprobanteUrl
 ) {}
 

@@ -25,8 +25,10 @@ import {
   DialogActions,
   IconButton,
   Chip,
+  Stack,
+  Autocomplete,
 } from '@mui/material';
-import { Add, Delete, AttachMoney } from '@mui/icons-material';
+import { Add, Delete, AttachMoney, Edit } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -76,10 +78,20 @@ interface Gasto {
   metodoPagoNombre?: string;
   referencia?: string;
   nota?: string;
+  tipoGasto?: string;
   comprobanteUrl?: string;
   usuarioId?: number;
   usuarioNombre?: string;
   createdAt: string;
+}
+
+interface GastoPendiente {
+  tempId: string;
+  categoriaGastoId: number;
+  proveedorId?: number;
+  monto: number;
+  nota?: string;
+  tipoGasto: string;
 }
 
 export default function AdminExpenses() {
@@ -93,6 +105,8 @@ export default function AdminExpenses() {
   const [error, setError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingGasto, setEditingGasto] = useState<Gasto | null>(null);
+  const [openNewProveedorDialog, setOpenNewProveedorDialog] = useState(false);
+  const [newProveedorName, setNewProveedorName] = useState<string>('');
   
   // Estado para el filtro de fechas
   const [dateRange, setDateRange] = useState<DateRangeValue>({
@@ -100,35 +114,63 @@ export default function AdminExpenses() {
     hasta: new Date().toISOString().split('T')[0],
   });
 
-  // Form state
-  const [categoriaId, setCategoriaId] = useState<number | ''>('');
-  const [proveedorId, setProveedorId] = useState<number | ''>('');
-  const [monto, setMonto] = useState<string>('');
+  // Campos comunes para todos los gastos
   const [fecha, setFecha] = useState<Date | null>(new Date());
   const [metodoPagoId, setMetodoPagoId] = useState<number | ''>('');
-  const [referencia, setReferencia] = useState<string>('');
+  const [tipoGasto, setTipoGasto] = useState<string>('Operacional'); // Nuevo: tipo de gasto
+
+  // Campos por-gasto (input temporal)
+  const [categoriaId, setCategoriaId] = useState<number | ''>('');
+  const [proveedorId, setProveedorId] = useState<number | ''>('');
+  const [proveedorSearchText, setProveedorSearchText] = useState<string>(''); // Búsqueda editable
+  const [monto, setMonto] = useState<string>('');
   const [nota, setNota] = useState<string>('');
+  const [referencia, setReferencia] = useState<string>('');
+
+  // Gastos pendientes para registrar
+  const [gastosPendientes, setGastosPendientes] = useState<GastoPendiente[]>([]);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  // Cuando el diálogo se abre, establecer valores por defecto si es un nuevo gasto
+  // Monitor de cambios en estado de gastos
   useEffect(() => {
-    if (openDialog && !editingGasto && categorias.length > 0 && metodosPago.length > 0) {
-      // Buscar categoría "Insumo" por defecto
-      const insumoCategory = categorias.find(cat => cat.nombre.toLowerCase() === 'insumo');
-      if (insumoCategory && !categoriaId) {
-        setCategoriaId(insumoCategory.id);
-      }
-      
-      // Buscar método de pago "Efectivo" por defecto
-      const efectivoMethod = metodosPago.find(met => met.nombre.toLowerCase() === 'efectivo');
-      if (efectivoMethod && !metodoPagoId) {
-        setMetodoPagoId(efectivoMethod.id);
+    console.log('👀 [useEffect] Estado de gastos cambió:', {
+      totalGastos: gastos.length,
+      gastos: gastos.map(g => ({ id: g.id, monto: g.monto, fecha: g.fecha, tipo: g.tipoGasto }))
+    });
+  }, [gastos]);
+
+  // Cuando el diálogo se abre, establecer valores por defecto
+  useEffect(() => {
+    if (openDialog && categorias.length > 0 && metodosPago.length > 0) {
+      if (!editingGasto) {
+        // Nuevo gasto: establecer defaults
+        const efectivoMethod = metodosPago.find(met => met.nombre.toLowerCase() === 'efectivo');
+        if (efectivoMethod) {
+          setMetodoPagoId(efectivoMethod.id);
+        }
+        setFecha(new Date());
+        // Defaults para campos por-gasto
+        const insumosCategory = categorias.find(cat => cat.nombre.toLowerCase() === 'insumos');
+        if (insumosCategory) {
+          setCategoriaId(insumosCategory.id);
+        }
+        setProveedorId('');
+        setMonto('');
+        setNota('');
+      } else {
+        // Edición de gasto existente
+        setCategoriaId(editingGasto.categoriaGastoId);
+        setProveedorId(editingGasto.proveedorId || '');
+        setMonto(editingGasto.monto.toString());
+        setFecha(new Date(editingGasto.fecha));
+        setMetodoPagoId(editingGasto.metodoPagoId || '');
+        setNota(editingGasto.nota || '');
       }
     }
-  }, [openDialog, editingGasto, categorias, metodosPago, categoriaId, metodoPagoId]);
+  }, [openDialog, editingGasto, categorias, metodosPago]);
 
   const loadData = async () => {
     try {
@@ -136,9 +178,30 @@ export default function AdminExpenses() {
       setError(null);
 
       // Cargar gastos
+      console.log('� [loadData] Iniciando carga de gastos...');
+      console.log('📍 Endpoint:', API_ENDPOINTS.GASTOS);
       const gastosResponse = await apiService.get(API_ENDPOINTS.GASTOS);
+      
+      console.log('� [loadData] Respuesta completa del API:', gastosResponse);
+      
       if (gastosResponse.success && gastosResponse.data) {
+        console.log('✅ [loadData] Gastos cargados correctamente. Total:', gastosResponse.data.length);
+        console.log('📋 [loadData] Gastos recibidos:', gastosResponse.data.map((g: any) => ({ 
+          id: g.id, 
+          monto: g.monto, 
+          fecha: g.fecha,
+          tipoGasto: g.tipoGasto,
+          categoriaGasto: g.categoriaGasto?.nombre,
+          updatedAt: g.updatedAt
+        })));
+        
+        // Log antes de actualizar estado
+        console.log('💾 [loadData] Actualizando estado de gastos...');
         setGastos(gastosResponse.data);
+        console.log('✅ [loadData] Estado de gastos actualizado');
+      } else {
+        console.error('❌ [loadData] Error al cargar gastos:', gastosResponse.error);
+        setError(`Error al cargar gastos: ${gastosResponse.error}`);
       }
 
       // Cargar categorías
@@ -159,44 +222,54 @@ export default function AdminExpenses() {
         setMetodosPago(metodosResponse.data);
       }
     } catch (err: any) {
+      console.error('🔴 [loadData] Error crítico:', err);
       setError(err.message || 'Error al cargar datos');
     } finally {
+      console.log('🏁 [loadData] Carga completada');
       setLoadingData(false);
     }
   };
 
   // Filtrar gastos por rango de fechas
   const gastosFiltrados = useMemo(() => {
-    if (!dateRange.desde || !dateRange.hasta) return gastos;
+    console.log('🔍 [useMemo gastosFiltrados] Iniciando filtrado');
+    console.log('📊 Total de gastos en estado:', gastos.length);
+    console.log('🗓️ Rango de fechas:', { desde: dateRange.desde, hasta: dateRange.hasta });
+    
+    if (!dateRange.desde || !dateRange.hasta) {
+      console.log('⚠️ Rango de fechas incompleto, retornando todos los gastos');
+      return gastos;
+    }
     
     // Crear fechas en zona horaria local
     const desde = new Date(dateRange.desde + 'T00:00:00');
     const hasta = new Date(dateRange.hasta + 'T23:59:59');
     
-    console.log('Filtro de gastos:', {
-      desde: desde.toISOString(),
-      hasta: hasta.toISOString(),
+    console.log('🔍 Filtro aplicado:', {
+      desdeISO: desde.toISOString(),
+      hastaISO: hasta.toISOString(),
+      desdeLocal: desde.toLocaleString(),
+      hastaLocal: hasta.toLocaleString(),
       totalGastos: gastos.length,
-      gastosEjemplo: gastos.slice(0, 3).map(g => ({ id: g.id, fecha: g.fecha }))
+    });
+    
+    // Log detallado de todos los gastos
+    console.log('📋 Gastos antes de filtro:');
+    gastos.forEach((g, idx) => {
+      const fechaGasto = new Date(g.fecha);
+      const cumpleFiltro = fechaGasto >= desde && fechaGasto <= hasta;
+      console.log(`  [${idx}] ID: ${g.id}, Monto: $${g.monto}, Fecha: ${g.fecha} (${fechaGasto.toLocaleString()}), Tipo: ${g.tipoGasto}, ✓Cumple: ${cumpleFiltro}`);
     });
     
     const filtrados = gastos.filter(gasto => {
       const fechaGasto = new Date(gasto.fecha);
       const cumpleFiltro = fechaGasto >= desde && fechaGasto <= hasta;
-      
-      if (gastos.length <= 5) { // Solo log si hay pocos gastos para no saturar
-        console.log('Gasto', gasto.id, {
-          fechaGasto: fechaGasto.toISOString(),
-          desde: desde.toISOString(),
-          hasta: hasta.toISOString(),
-          cumpleFiltro
-        });
-      }
-      
       return cumpleFiltro;
     });
     
-    console.log('Gastos filtrados:', filtrados.length);
+    console.log(`✅ Gastos filtrados: ${filtrados.length} de ${gastos.length}`);
+    console.log('📋 Gastos después de filtro:', filtrados.map(g => ({ id: g.id, monto: g.monto, fecha: g.fecha, tipo: g.tipoGasto })));
+    
     return filtrados;
   }, [gastos, dateRange]);
 
@@ -206,6 +279,7 @@ export default function AdminExpenses() {
 
   const handleOpenDialog = (gasto?: Gasto) => {
     if (gasto) {
+      // Modo edición: un gasto existente
       setEditingGasto(gasto);
       setCategoriaId(gasto.categoriaGastoId);
       setProveedorId(gasto.proveedorId || '');
@@ -215,10 +289,10 @@ export default function AdminExpenses() {
       setReferencia(gasto.referencia || '');
       setNota(gasto.nota || '');
     } else {
-      // Nuevo gasto: limpiar el formulario
-      // Los valores por defecto se establecerán en el useEffect
+      // Modo nuevo: múltiples gastos
       setEditingGasto(null);
-      resetForm();
+      setGastosPendientes([]); // Limpiar lista
+      // Valores por defecto se establecen en useEffect
     }
     setOpenDialog(true);
   };
@@ -226,56 +300,194 @@ export default function AdminExpenses() {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingGasto(null);
-    resetForm();
-  };
-
-  const resetForm = () => {
+    setError(null);
+    // Limpiar campos del formulario
+    setFecha(new Date());
+    setMetodoPagoId('');
     setCategoriaId('');
     setProveedorId('');
     setMonto('');
-    setFecha(new Date());
-    setMetodoPagoId('');
-    setReferencia('');
     setNota('');
+    setTipoGasto('Operacional');
+    setProveedorSearchText('');
+    setGastosPendientes([]);
   };
 
-  const handleSubmit = async () => {
-    if (!categoriaId || !monto || !fecha) {
-      setError('Completa los campos obligatorios: Categoría, Monto y Fecha');
+  const handleAgregarGasto = () => {
+    // Validar que monto sea mayor a 0
+    if (!monto || parseFloat(monto) <= 0) {
+      setError('El monto es obligatorio y debe ser mayor a 0.');
       return;
     }
 
+    // categoriaId siempre debe tener un valor (viene preseleccionada como "Insumos")
+    const finalCategoriaId = categoriaId || (categorias.find(c => c.nombre === 'Insumos')?.id) || categorias[0]?.id;
+
+    const nuevoGasto: GastoPendiente = {
+      tempId: `gasto-${Date.now()}-${Math.random()}`,
+      categoriaGastoId: finalCategoriaId as number,
+      proveedorId: proveedorId ? (proveedorId as number) : undefined,
+      monto: parseFloat(monto),
+      nota: nota || undefined,
+      tipoGasto: tipoGasto || 'Operacional',
+    };
+
+    setGastosPendientes([...gastosPendientes, nuevoGasto]);
+    // Limpiar campos por-gasto para el siguiente, PERO MANTENER categoría en "Insumos" y tipo en "Operacional"
+    const insumosCategory = categorias.find(c => c.nombre === 'Insumos');
+    setCategoriaId(insumosCategory?.id || categorias[0]?.id || '');
+    setProveedorId('');
+    setMonto('');
+    setNota('');
+    setTipoGasto('Operacional');
+    setError(null); // Limpiar errores previos
+  };
+
+  const handleRemoverGasto = (tempId: string) => {
+    setGastosPendientes(gastosPendientes.filter(g => g.tempId !== tempId));
+  };
+
+  const handleSubmit = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const fechaISO = fecha!.toISOString().split('.')[0]; // yyyy-MM-ddTHH:mm:ss
-
       // Usar sucursalId (campo que viene del backend) o idSucursal (compatibilidad)
       const sucursalId = usuario?.sucursalId || usuario?.idSucursal || null;
 
-      const request = {
-        categoriaGastoId: categoriaId,
-        proveedorId: proveedorId || null,
-        sucursalId: sucursalId,
-        monto: parseFloat(monto),
-        fecha: fechaISO,
-        metodoPagoId: metodoPagoId || null,
-        referencia: referencia || null,
-        nota: nota || null,
-        comprobanteUrl: null,
-      };
-
       if (editingGasto) {
-        // TODO: Implementar actualización si es necesario
-        setError('La actualización de gastos aún no está implementada');
+        // Editar gasto existente (flujo antiguo)
+        if (!editingGasto.id) {
+          setError('Error: No se pudo identificar el gasto a editar.');
+          setLoading(false);
+          return;
+        }
+
+        if (!monto || parseFloat(monto) <= 0) {
+          setError('El monto es obligatorio y debe ser mayor a 0.');
+          setLoading(false);
+          return;
+        }
+
+        // Usar defaults si no están seleccionados
+        const finalCategoriaId = categoriaId || (categorias.find(c => c.nombre === 'Insumos')?.id) || categorias[0]?.id;
+        const finalMetodoPagoId = metodoPagoId || (metodosPago.find(m => m.nombre === 'Efectivo')?.id) || metodosPago[0]?.id;
+
+        // IMPORTANTE: En edición, NO cambiar la fecha si no se modificó
+        // Esto previene que al editar solo el monto, se actualice también la fecha
+        const fechaOriginal = editingGasto ? new Date(editingGasto.fecha) : null;
+        const fechaCambio = fecha && fechaOriginal && 
+          fecha.toDateString() !== fechaOriginal.toDateString() 
+          ? fecha.toISOString() 
+          : undefined;
+
+        const request = {
+          categoriaGastoId: finalCategoriaId,
+          proveedorId: proveedorId || null,
+          sucursalId: sucursalId,
+          monto: parseFloat(monto),
+          fecha: fechaCambio, // Solo enviar la fecha si cambió
+          metodoPagoId: finalMetodoPagoId,
+          referencia: referencia || null,
+          nota: nota || null,
+          tipoGasto: tipoGasto || 'Operacional',
+          comprobanteUrl: null,
+        };
+
+        try {
+          console.log('🔄 [PUT] Enviando solicitud de actualización');
+          console.log('🎯 [PUT] Gasto ID:', editingGasto.id);
+          console.log('📤 [PUT] Request body:', request);
+          
+          const response = await apiService.put(`${API_ENDPOINTS.GASTOS}/${editingGasto.id}`, request);
+          
+          console.log('📥 [PUT] Respuesta completa:', response);
+          console.log('📥 [PUT] Success:', response.success);
+          console.log('📥 [PUT] Response.data:', response.data);
+          console.log('📥 [PUT] Response.error:', response.error);
+          
+          if (response.success) {
+            console.log('✅ [PUT] Actualización exitosa!');
+            console.log('🎉 [PUT] Gasto actualizado en BD:', response.data);
+            
+            handleCloseDialog();
+            
+            console.log('⏳ [PUT] Llamando a loadData()...');
+            await loadData();
+            console.log('✅ [PUT] loadData() completado');
+          } else {
+            console.error('❌ [PUT] Actualización falló:', response.error);
+            setError(response.error || 'Error al procesar el gasto.');
+          }
+        } catch (updateErr: any) {
+          console.error('🔴 [PUT] Error crítico:', updateErr);
+          setError(updateErr.message || 'Error al actualizar el gasto.');
+        }
       } else {
-        const response = await apiService.post(API_ENDPOINTS.GASTOS, request);
-        if (response.success) {
+        // Crear múltiples gastos nuevos (o 1 si está en el formulario)
+        
+        // Si no hay gastos pendientes pero hay datos en el formulario, registrar ese 1 gasto
+        if (gastosPendientes.length === 0 && monto && parseFloat(monto) > 0) {
+          const finalCategoriaId = categoriaId || (categorias.find(c => c.nombre === 'Insumos')?.id) || categorias[0]?.id;
+          const finalMetodoPagoId = metodoPagoId || (metodosPago.find(m => m.nombre === 'Efectivo')?.id) || metodosPago[0]?.id;
+
+          const request = {
+            categoriaGastoId: finalCategoriaId,
+            proveedorId: proveedorId || null,
+            sucursalId: sucursalId,
+            monto: parseFloat(monto),
+            fecha: fecha ? fecha.toISOString() : undefined,
+            metodoPagoId: finalMetodoPagoId,
+            referencia: referencia || null,
+            nota: nota || null,
+            tipoGasto: tipoGasto || 'Operacional',
+            comprobanteUrl: null,
+          };
+
+          const response = await apiService.post(API_ENDPOINTS.GASTOS, request);
+          if (response.success) {
+            handleCloseDialog();
+            loadData();
+          } else {
+            setError(response.error || 'Error al procesar el gasto.');
+          }
+          return;
+        }
+
+        // Si no hay gastos pendientes y tampoco datos en formulario, mostrar error
+        if (gastosPendientes.length === 0) {
+          setError('Debe agregar al menos un gasto.');
+          setLoading(false);
+          return;
+        }
+
+        // Crear todos los gastos pendientes en paralelo
+        const requestsPromises = gastosPendientes.map((gasto) => {
+          const request = {
+            categoriaGastoId: gasto.categoriaGastoId,
+            proveedorId: gasto.proveedorId || null,
+            sucursalId: sucursalId,
+            monto: gasto.monto,
+            fecha: fecha ? fecha.toISOString() : undefined,
+            metodoPagoId: metodoPagoId || null,
+            nota: gasto.nota || null,
+            tipoGasto: gasto.tipoGasto || 'Operacional',
+            comprobanteUrl: null,
+          };
+          return apiService.post(API_ENDPOINTS.GASTOS, request);
+        });
+
+        const responses = await Promise.all(requestsPromises);
+
+        // Verificar si todos fueron exitosos
+        const allSuccess = responses.every(r => r.success);
+        const failedCount = responses.filter(r => !r.success).length;
+
+        if (allSuccess) {
           handleCloseDialog();
           loadData();
         } else {
-          setError(response.error || 'Error al registrar el gasto');
+          setError(`${failedCount} de ${gastosPendientes.length} gasto(s) fallaron. Revisa los datos.`);
         }
       }
     } catch (err: any) {
@@ -305,8 +517,55 @@ export default function AdminExpenses() {
     }
   };
 
-  // Calcular total de gastos (filtrados)
-  const totalGastosFiltrados = gastosFiltrados.reduce((sum, gasto) => sum + gasto.monto, 0);
+  const handleAgregarNuevoProveedor = async () => {
+    if (!newProveedorName.trim()) {
+      setError('El nombre del proveedor no puede estar vacío.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const newProveedor = {
+        nombre: newProveedorName.trim(),
+        contacto: '',
+        telefono: '',
+        email: '',
+        activo: true,
+      };
+
+      const response = await apiService.post(API_ENDPOINTS.PROVEEDORES, newProveedor);
+      
+      if (response.success && response.data) {
+        // Agregar el nuevo proveedor a la lista
+        setProveedores([...proveedores, response.data]);
+        // Seleccionar el nuevo proveedor
+        setProveedorId(response.data.id);
+        setProveedorSearchText(response.data.nombre);
+        // Cerrar dialog
+        setOpenNewProveedorDialog(false);
+        setNewProveedorName('');
+        setError(null);
+      } else {
+        setError(response.error || 'Error al crear el proveedor.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error al crear el proveedor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calcular total de gastos OPERACIONALES (filtrados)
+  const totalGastosOperacionalesFiltrados = gastosFiltrados
+    .filter(gasto => !gasto.tipoGasto || gasto.tipoGasto === 'Operacional')
+    .reduce((sum, gasto) => sum + gasto.monto, 0);
+
+  // Calcular total de gastos ADMINISTRATIVOS (filtrados)
+  const totalGastosAdministrativosFiltrados = gastosFiltrados
+    .filter(gasto => gasto.tipoGasto === 'Administrativo')
+    .reduce((sum, gasto) => sum + gasto.monto, 0);
 
   if (loadingData) {
     return (
@@ -345,24 +604,47 @@ export default function AdminExpenses() {
         )}
 
         {/* Resumen */}
-        <Card sx={{ mb: 3 }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <AttachMoney sx={{ fontSize: 40, color: 'error.main' }} />
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Total de Gastos (rango seleccionado)
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                  ${totalGastosFiltrados.toFixed(2)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {gastosFiltrados.length} de {gastos.length} {gastos.length === 1 ? 'gasto' : 'gastos'}
-                </Typography>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2, mb: 3 }}>
+          {/* Resumen de Gastos Operacionales (Se refleja en Resumen del Día) */}
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <AttachMoney sx={{ fontSize: 40, color: 'error.main' }} />
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Gastos Operacionales (Resumen del Día)
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                    ${totalGastosOperacionalesFiltrados.toFixed(2)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {gastosFiltrados.filter(g => !g.tipoGasto || g.tipoGasto === 'Operacional').length} operacionales
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Resumen de Gastos Administrativos (NO se refleja en Resumen del Día) */}
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <AttachMoney sx={{ fontSize: 40, color: 'warning.main' }} />
+                <Box>
+                  <Typography variant="body2" color="text.secondary">
+                    Gastos Administrativos (NO se incluyen)
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
+                    ${totalGastosAdministrativosFiltrados.toFixed(2)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {gastosFiltrados.filter(g => g.tipoGasto === 'Administrativo').length} administrativos
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
 
         {/* Tabla de gastos */}
         <Card>
@@ -372,6 +654,7 @@ export default function AdminExpenses() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Fecha</TableCell>
+                    <TableCell>Tipo</TableCell>
                     <TableCell>Categoría</TableCell>
                     <TableCell>Descripción</TableCell>
                     <TableCell>Proveedor</TableCell>
@@ -388,6 +671,14 @@ export default function AdminExpenses() {
                           {format(new Date(gasto.fecha), 'dd/MM/yyyy HH:mm', { locale: es })}
                         </TableCell>
                         <TableCell>
+                          <Chip
+                            label={gasto.tipoGasto === 'Administrativo' ? 'Administrativo' : 'Operacional'}
+                            size="small"
+                            color={gasto.tipoGasto === 'Administrativo' ? 'warning' : 'success'}
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell>
                           <Chip label={gasto.categoriaGastoNombre} size="small" color="primary" />
                         </TableCell>
                         <TableCell>{gasto.nota || '-'}</TableCell>
@@ -399,18 +690,38 @@ export default function AdminExpenses() {
                         <TableCell align="center">
                           <IconButton
                             size="small"
+                            color="primary"
+                            onClick={() => {
+                              setEditingGasto(gasto);
+                              setFecha(new Date(gasto.fecha));
+                              setMetodoPagoId(gasto.metodoPagoId || '');
+                              setCategoriaId(gasto.categoriaGastoId || '');
+                              setProveedorId(gasto.proveedorId || '');
+                              setMonto(gasto.monto.toString());
+                              setNota(gasto.nota || '');
+                              setTipoGasto(gasto.tipoGasto || 'Operacional');
+                              setOpenDialog(true);
+                            }}
+                            disabled={loading}
+                            title="Editar"
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
                             color="error"
                             onClick={() => handleDelete(gasto.id)}
                             disabled={loading}
+                            title="Eliminar"
                           >
-                            <Delete />
+                            <Delete fontSize="small" />
                           </IconButton>
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} align="center">
+                      <TableCell colSpan={8} align="center">
                         No hay gastos en el rango de fechas seleccionado
                       </TableCell>
                     </TableRow>
@@ -422,93 +733,320 @@ export default function AdminExpenses() {
         </Card>
 
         {/* Dialog para registrar/editar gasto */}
-        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-          <DialogTitle>{editingGasto ? 'Editar Gasto' : 'Registrar Nuevo Gasto'}</DialogTitle>
+        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+          <DialogTitle>
+            {editingGasto ? 'Editar Gasto' : 'Registrar Nuevo Gasto'}
+          </DialogTitle>
           <DialogContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-              <FormControl fullWidth required>
-                <InputLabel id="categoria-label">Categoría de Gasto</InputLabel>
-                <Select
-                  labelId="categoria-label"
-                  value={categoriaId}
-                  onChange={(e) => setCategoriaId(e.target.value as number)}
-                  label="Categoría de Gasto"
-                >
-                  {categorias.map((cat) => (
-                    <MenuItem key={cat.id} value={cat.id}>
-                      {cat.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+            <Stack spacing={3} sx={{ mt: 1 }}>
+              {/* Campos comunes: Fecha y Método de Pago */}
+              {!editingGasto && (
+                <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2 }}>
+                    Datos comunes para todos los gastos
+                  </Typography>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+                    <DatePicker
+                      label="Fecha"
+                      value={fecha}
+                      onChange={setFecha}
+                      slotProps={{ textField: { fullWidth: true } }}
+                    />
 
-              <TextField
-                fullWidth
-                label="Monto *"
-                type="number"
-                required
-                value={monto}
-                onChange={(e) => setMonto(e.target.value)}
-                inputProps={{ step: '0.01', min: '0.01' }}
-              />
+                    <FormControl fullWidth>
+                      <InputLabel id="metodo-label">Método de Pago</InputLabel>
+                      <Select
+                        labelId="metodo-label"
+                        value={metodoPagoId}
+                        onChange={(e) => setMetodoPagoId(e.target.value ? Number(e.target.value) : '')}
+                        label="Método de Pago"
+                      >
+                        <MenuItem value="">Ninguno</MenuItem>
+                        {metodosPago.map((metodo) => (
+                          <MenuItem key={metodo.id} value={metodo.id}>
+                            {metodo.nombre}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
+                </Box>
+              )}
 
-              <DatePicker
-                label="Fecha"
-                value={fecha}
-                onChange={(newValue) => setFecha(newValue)}
-                slotProps={{ textField: { fullWidth: true, required: true } }}
-              />
+              {/* Campos por gasto (o campos completos si está en modo edición) */}
+              {editingGasto && (
+                <>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+                    <DatePicker
+                      label="Fecha"
+                      value={fecha}
+                      onChange={setFecha}
+                      slotProps={{ textField: { fullWidth: true } }}
+                    />
 
-              <FormControl fullWidth>
-                <InputLabel id="metodo-label">Método de Pago</InputLabel>
-                <Select
-                  labelId="metodo-label"
-                  value={metodoPagoId}
-                  onChange={(e) => setMetodoPagoId(e.target.value as number | '')}
-                  label="Método de Pago"
-                >
-                  <MenuItem value="">Ninguno</MenuItem>
-                  {metodosPago.map((metodo) => (
-                    <MenuItem key={metodo.id} value={metodo.id}>
-                      {metodo.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                    <FormControl fullWidth>
+                      <InputLabel id="metodo-label">Método de Pago</InputLabel>
+                      <Select
+                        labelId="metodo-label"
+                        value={metodoPagoId}
+                        onChange={(e) => setMetodoPagoId(e.target.value ? Number(e.target.value) : '')}
+                        label="Método de Pago"
+                      >
+                        <MenuItem value="">Ninguno</MenuItem>
+                        {metodosPago.map((metodo) => (
+                          <MenuItem key={metodo.id} value={metodo.id}>
+                            {metodo.nombre}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
+                </>
+              )}
 
-              <FormControl fullWidth>
-                <InputLabel>Proveedor</InputLabel>
-                <Select
-                  value={proveedorId}
-                  onChange={(e) => setProveedorId(e.target.value as number | '')}
-                  label="Proveedor"
-                >
-                  <MenuItem value="">Ninguno</MenuItem>
-                  {proveedores.map((prov) => (
-                    <MenuItem key={prov.id} value={prov.id}>
-                      {prov.nombre}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              {/* Formulario para agregar gastos individuales */}
+              <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 2 }}>
+                  {editingGasto ? 'Datos del Gasto' : 'Agregar Gasto'}
+                </Typography>
 
-              <TextField
-                fullWidth
-                label="Concepto o Descripción"
-                multiline
-                rows={3}
-                value={nota}
-                onChange={(e) => setNota(e.target.value)}
-                placeholder="Describe el concepto del gasto"
-              />
-            </Box>
+                <Stack spacing={2} sx={{ mb: 2 }}>
+                  {/* Fila 1: Tipo de Gasto y Categoría */}
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 1.5 }}>
+                    <FormControl fullWidth>
+                      <InputLabel size="small">Tipo de Gasto</InputLabel>
+                      <Select
+                        value={tipoGasto}
+                        onChange={(e) => setTipoGasto(e.target.value)}
+                        label="Tipo de Gasto"
+                        size="small"
+                      >
+                        <MenuItem value="Operacional">Operacional</MenuItem>
+                        <MenuItem value="Administrativo">Administrativo</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    <FormControl fullWidth required>
+                      <InputLabel id="categoria-label" size="small">Categoría</InputLabel>
+                      <Select
+                        labelId="categoria-label"
+                        value={categoriaId}
+                        onChange={(e) => setCategoriaId(Number(e.target.value))}
+                        label="Categoría"
+                        size="small"
+                      >
+                        {categorias.map((cat) => (
+                          <MenuItem key={cat.id} value={cat.id}>
+                            {cat.nombre}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
+
+                  {/* Fila 2: Monto y Proveedor (Autocomplete) */}
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 1.5 }}>
+                    <TextField
+                      fullWidth
+                      label="Monto *"
+                      type="number"
+                      value={monto}
+                      onChange={(e) => setMonto(e.target.value)}
+                      onKeyDown={(e) => {
+                        // Si presionas Enter en Monto:
+                        // - Si hay gastos pendientes: submit del form (registrar todos)
+                        // - Si no hay gastos: agregar el gasto actual
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (gastosPendientes.length > 0) {
+                            // Hay gastos pendientes, registrar todos
+                            handleSubmit();
+                          } else {
+                            // No hay gastos, agregar el gasto actual
+                            handleAgregarGasto();
+                          }
+                        }
+                      }}
+                      inputProps={{ step: '0.01', min: '0.01' }}
+                      size="small"
+                    />
+
+                    <Autocomplete
+                      size="small"
+                      options={proveedores}
+                      getOptionLabel={(option) => option.nombre}
+                      value={proveedores.find(p => p.id === proveedorId) || null}
+                      inputValue={proveedorSearchText}
+                      onInputChange={(event, newInputValue) => {
+                        setProveedorSearchText(newInputValue);
+                      }}
+                      onChange={(event, newValue) => {
+                        setProveedorId(newValue?.id || '');
+                        setProveedorSearchText(newValue?.nombre || '');
+                      }}
+                      freeSolo={false}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Proveedor"
+                          placeholder="Buscar o crear proveedor"
+                        />
+                      )}
+                      noOptionsText={
+                        <Box sx={{ p: 1 }}>
+                          <Typography variant="body2" sx={{ mb: 1 }}>
+                            No hay proveedores que coincidan
+                          </Typography>
+                          <Button
+                            fullWidth
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Add />}
+                            onClick={() => {
+                              if (proveedorSearchText.trim()) {
+                                setNewProveedorName(proveedorSearchText);
+                                setOpenNewProveedorDialog(true);
+                              }
+                            }}
+                            disabled={!proveedorSearchText.trim()}
+                          >
+                            Crear Nuevo
+                          </Button>
+                        </Box>
+                      }
+                    />
+                  </Box>
+
+                  {/* Fila 3: Concepto o Descripción */}
+                  <TextField
+                    fullWidth
+                    label="Concepto o Descripción"
+                    multiline
+                    rows={1}
+                    value={nota}
+                    onChange={(e) => setNota(e.target.value)}
+                    placeholder="Describe el concepto del gasto"
+                    size="small"
+                  />
+
+                  {/* Fila 4: Botón Agregar */}
+                  {!editingGasto && (
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      startIcon={<Add />}
+                      onClick={handleAgregarGasto}
+                      sx={{ minHeight: '40px' }}
+                    >
+                      + Agregar
+                    </Button>
+                  )}
+                </Stack>
+              </Box>
+
+              {/* Tabla de gastos pendientes (solo en modo nuevo) */}
+              {!editingGasto && gastosPendientes.length > 0 && (
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                    Gastos a Registrar ({gastosPendientes.length})
+                  </Typography>
+                  <TableContainer component={Paper} variant="outlined">
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: 'action.hover' }}>
+                          <TableCell>Categoría</TableCell>
+                          <TableCell align="right">Monto</TableCell>
+                          <TableCell>Proveedor</TableCell>
+                          <TableCell>Concepto</TableCell>
+                          <TableCell align="center">Acción</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {gastosPendientes.map((gasto) => {
+                          const categoria = categorias.find(c => c.id === gasto.categoriaGastoId);
+                          const proveedor = gasto.proveedorId ? proveedores.find(p => p.id === gasto.proveedorId) : null;
+                          return (
+                            <TableRow key={gasto.tempId}>
+                              <TableCell>{categoria?.nombre || '-'}</TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                                ${gasto.monto.toFixed(2)}
+                              </TableCell>
+                              <TableCell>{proveedor?.nombre || '-'}</TableCell>
+                              <TableCell>{gasto.nota || '-'}</TableCell>
+                              <TableCell align="center">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => handleRemoverGasto(gasto.tempId)}
+                                >
+                                  <Delete fontSize="small" />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              )}
+            </Stack>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleCloseDialog} disabled={loading}>
               Cancelar
             </Button>
-            <Button onClick={handleSubmit} variant="contained" disabled={loading}>
-              {loading ? <CircularProgress size={20} /> : editingGasto ? 'Actualizar' : 'Registrar'}
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              startIcon={<AttachMoney />}
+              disabled={loading}
+            >
+              {loading ? 'Procesando...' : (editingGasto ? 'Actualizar' : `Registrar ${gastosPendientes.length > 0 ? `(${gastosPendientes.length})` : ''}`)}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Dialog para crear nuevo proveedor */}
+        <Dialog
+          open={openNewProveedorDialog}
+          onClose={() => {
+            setOpenNewProveedorDialog(false);
+            setNewProveedorName('');
+          }}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Crear Nuevo Proveedor</DialogTitle>
+          <DialogContent sx={{ pt: 2 }}>
+            <TextField
+              autoFocus
+              fullWidth
+              label="Nombre del Proveedor"
+              value={newProveedorName}
+              onChange={(e) => setNewProveedorName(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleAgregarNuevoProveedor();
+                }
+              }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setOpenNewProveedorDialog(false);
+                setNewProveedorName('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleAgregarNuevoProveedor}
+              variant="contained"
+              disabled={!newProveedorName.trim()}
+            >
+              Crear
             </Button>
           </DialogActions>
         </Dialog>

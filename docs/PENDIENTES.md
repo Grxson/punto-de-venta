@@ -290,20 +290,72 @@ app.ventas.validar-stock=true
 - ✅ hacer posible que podamos modificar precios
 - ✅ agregar variantes de jugo de betabel (Betabel/Naranja, Betabel/Zanahoria)
 - ✅ agregar productos de jugos mixtos (Naranja/Toronja, Naranja/Zanahoria, Zanahoria/Toronja)
-- el botón para cerrar el carrito tiene que ser estático para que no tenga que dar scroll para arriba para cerrarlo ✅
+- ✅ el botón para cerrar el carrito tiene que ser estático para que no tenga que dar scroll para arriba para cerrarlo
 - cambiar a color rosa
 - ✅ en vez de molletes cambiarlo a Dulces (meter molletes, mini jokeis, wafles)
-- quitar referencia de el método de pago de transferencia y tarjeta ✅
+- ✅ quitar referencia de el método de pago de transferencia y tarjeta 
 - Agregar apartado en caso de que vendamos cosas fueras de menú (extraordinarios)
-- en la ventana de pagar hacer función para editar precio en caso de, solo dar clic al número 
-- cuando se seleccione el método de pago ya se debe de pagar automáticamente, para no dar clic en el botón de pagar ✅![alt text](image.png)
+- ✅ en la ventana de pagar hacer función para editar precio en caso de, solo dar clic al número 
+- ✅ cuando se seleccione el método de pago ya se debe de pagar automáticamente, para no dar clic en el botón de pagar ![alt text](image.png)
 - ✅ insumo en gastos como predeterminado, y efectivo por default
 - ✅ en vez de nota - concepto o descripción 
 - ✅ quitar referencia del form de gasto
--  agregar en resumen del día cuanto de monto es de cada modo de pago, pero con el tamaño de letra de la palabra "venta" ✅
-- Sección de "Corte de caja"✅
+- ✅ a gregar en resumen del día cuanto de monto es de cada modo de pago, pero con el tamaño de letra de la palabra "venta"
+- ✅ Sección de "Corte de caja"✅
 - ✅ ADMIN: Botón para eliminar ventas permanentemente (no solo cancelar)
 
 
-**Última actualización:** 1 de diciembre de 2025
 
+---
+
+### 12. **Registro Múltiple de Gastos en una Sesión**
+**Estado:** ✅ IMPLEMENTADO  
+**Prioridad:** MEDIA  
+**Descripción:**
+- Implementado sistema para registrar múltiples gastos en una sola sesión.
+- El diálogo ahora permite:
+  - Establecer fecha y método de pago **comunes** para todos los gastos
+  - Agregar líneas individuales (categoría, monto, proveedor, concepto)
+  - Botón "+" en formato horizontal (4 columnas) para agregar cada línea
+  - Tabla que muestra gastos agregados con opción de eliminar
+  - Envío por lotes (Promise.all en paralelo)
+  - **Categoría "Insumos" auto-seleccionada por defecto**
+- Modo edición: mantiene compatibilidad con flujo antiguo (editar 1 gasto existente)
+- Auditoría: cada gasto se registra como independiente con auditoría individual
+- **✅ Implementado en AMBAS áreas:** POS (PosExpenses.tsx) y Admin (AdminExpenses.tsx)
+
+**Archivos implementados:**
+- `frontend-web/src/pages/pos/PosExpenses.tsx` (✅ COMPLETO)
+- `frontend-web/src/pages/admin/AdminExpenses.tsx` (✅ COMPLETO)
+  - Interfaz `GastoPendiente` para gastos temporales
+  - Estado `gastosPendientes` array
+  - Métodos `handleAgregarGasto()` y `handleRemoverGasto()`
+  - `handleSubmit()` actualizado para batch submit
+  - UI: layout horizontal (4 columnas) + tabla de gastos pendientes
+
+**Cambios clave en lógica:**
+```typescript
+// Auto-selecciona "Insumos" (categoriaId) e "Efectivo" (metodoPagoId) en useEffect
+// handleAgregarGasto valida y agrega a gastosPendientes[]
+// handleSubmit mapea gastosPendientes[] a requests y ejecuta Promise.all()
+// Cada gasto se crea independiente en BD con shared fecha/metodoPagoId
+```
+
+**Layout UI (Horizontal - 4 columnas):**
+- Columna 1: Select Categoría (size=small, default="Insumos")
+- Columna 2: TextField Monto (type=number, step=0.01)
+- Columna 3: Select Proveedor (size=small, opcional)
+- Columna 4: Button "+ Agregar"
+- Fila siguiente: TextField Concepto (multiline, rows=1)
+
+**Flujo UX:**
+1. Usuario toca "Registrar Gasto"
+2. Selecciona fecha y método de pago (comunes)
+3. Completa línea: categoría (preseleccionada "Insumos"), monto, proveedor (opcional), concepto
+4. Toca "+" para agregar → se muestra en tabla abajo
+5. Limpia campos y repite para agregar más
+6. Toca "REGISTRAR (N)" para enviar todos juntos
+
+**Últimas actualizaciones:** 
+- 2 de diciembre de 2025 - Implementación inicial en POS
+- 3 de diciembre de 2025 - Extensión a Admin + layout horizontal + defaults

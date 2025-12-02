@@ -176,7 +176,11 @@ Este documento describe la estructura de datos para el sistema de punto de venta
   - fecha TIMESTAMPTZ NOT NULL
   - metodo_pago_id FK -> metodos_pago.id NOT NULL
   - nota TEXT NULL
+  - tipo_gasto VARCHAR(50) DEFAULT 'Operacional' NOT NULL -- 'Operacional' o 'Administrativo'
   - comprobante_url TEXT NULL
+  - usuario_id FK -> usuarios.id NULL
+  - created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+  - updated_at TIMESTAMPTZ NULL
 - cierres_caja
   - id PK
   - sucursal_id FK -> sucursales.id
