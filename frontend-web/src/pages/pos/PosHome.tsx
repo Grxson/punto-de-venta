@@ -22,6 +22,7 @@ import {
   Badge,
   Snackbar,
 } from '@mui/material';
+import { TextField } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Payment, ShoppingCart, ExpandMore, Add, Remove, Restaurant, LunchDining, Fastfood, BreakfastDining, CheckCircle, Refresh } from '@mui/icons-material';
 import apiService from '../../services/api.service';
@@ -46,7 +47,7 @@ interface Producto {
 export default function PosHome() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cart, addToCart, removeFromCart, updateQuantity, itemCount, total } = useCart();
+  const { cart, addToCart, removeFromCart, updateQuantity, updateItemPrice, itemCount, total } = useCart();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<{ id: number; nombre: string }[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(() => {
@@ -66,6 +67,9 @@ export default function PosHome() {
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [carritoExpandido, setCarritoExpandido] = useState(true);
+  // Estado local para edición inline de precio por item del carrito
+  const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
+  const [editingPriceValue, setEditingPriceValue] = useState<string>('');
   const mostrarMensajeRef = useRef(false);
   const timerCompletadoRef = useRef(false);
 
@@ -752,15 +756,63 @@ export default function PosHome() {
                             <Add sx={{ fontSize: 18 }} />
                           </IconButton>
                         </Box>
-                        <Typography variant="body2" component="span" sx={{ fontWeight: 600, fontSize: '1rem' }}>
-                          ${(item.producto.precio * item.cantidad).toFixed(2)}
-                        </Typography>
+                        {/* Precio unitario editable (afecta solo esta venta) */}
+                        {editingPriceId === item.producto.id ? (
+                          <TextField
+                            size="small"
+                            type="number"
+                            autoFocus
+                            value={editingPriceValue}
+                            onChange={(e) => setEditingPriceValue(e.target.value)}
+                            onBlur={() => {
+                              const v = parseFloat(editingPriceValue);
+                              if (!isNaN(v) && v > 0) {
+                                updateItemPrice(item.producto.id, v);
+                              }
+                              setEditingPriceId(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                const v = parseFloat(editingPriceValue);
+                                if (!isNaN(v) && v > 0) {
+                                  updateItemPrice(item.producto.id, v);
+                                }
+                                setEditingPriceId(null);
+                              } else if (e.key === 'Escape') {
+                                setEditingPriceId(null);
+                              }
+                            }}
+                            inputProps={{ step: '0.01', min: '0' }}
+                            sx={{ width: 100, '& input': { textAlign: 'right' } }}
+                          />
+                        ) : (
+                          <Chip
+                            label={`$${(item.overridePrice ?? item.producto.precio).toFixed(2)}`}
+                            onClick={() => {
+                              setEditingPriceId(item.producto.id);
+                              setEditingPriceValue(String(item.overridePrice ?? item.producto.precio));
+                            }}
+                            sx={{
+                              fontWeight: 700,
+                              backgroundColor: 'rgba(255, 255, 255, 0)',
+                              color: '#ffffffff',
+                              cursor: 'pointer',
+                              fontSize: '18px',
+                              padding: '6px 10px',
+                              height: 'auto',
+                              '& .MuiChip-label': {
+                                paddingLeft: 0,
+                                paddingRight: 0,
+                              },
+                            }}
+                          />
+                        )}
                       </Box>
                     </ListItem>
                   ))}
                 </List>
                 
-                <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.3)', my: 2 }} />
+                <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0)', my: 2 }} />
                 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" sx={{ fontWeight: 'bold' }}>

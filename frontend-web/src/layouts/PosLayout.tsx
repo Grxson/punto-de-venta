@@ -47,7 +47,7 @@ export default function PosLayout() {
           </Typography>
           {usuario && (
             <Typography variant="body2" sx={{ mr: 2 }}>
-              {usuario.nombre} ({usuario.rol || usuario.rolNombre || 'Usuario'})
+              - {usuario.nombre} -
             </Typography>
           )}
           <Button

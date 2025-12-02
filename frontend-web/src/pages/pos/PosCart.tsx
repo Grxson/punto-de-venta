@@ -1,11 +1,13 @@
-import { Box, Typography, Card, CardContent, Button, IconButton, Divider, Stack } from '@mui/material';
+import { Box, Typography, Card, CardContent, Button, IconButton, Divider, Stack, TextField } from '@mui/material';
+import { useState } from 'react';
 import { Add, Remove, Delete, ArrowBack, Payment } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 
 export default function PosCart() {
   const navigate = useNavigate();
-  const { cart, updateQuantity, removeFromCart, total } = useCart();
+  const { cart, updateQuantity, removeFromCart, total, updateItemPrice } = useCart();
+  const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
 
   return (
     <Box>
@@ -50,9 +52,42 @@ export default function PosCart() {
                           Tamaño: {item.producto.nombreVariante}
                         </Typography>
                       )}
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                        ${item.producto?.precio?.toFixed(2) || '0.00'} c/u
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                        {editingPriceId === item.producto.id ? (
+                          <TextField
+                            autoFocus
+                            size="small"
+                            type="number"
+                            inputProps={{ step: '0.01', min: '0' }}
+                            value={(item.overridePrice ?? item.producto?.precio ?? 0).toFixed(2)}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value);
+                              updateItemPrice(item.producto.id, isNaN(val) ? 0 : val);
+                            }}
+                            onBlur={() => setEditingPriceId(null)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') setEditingPriceId(null);
+                              if (e.key === 'Escape') {
+                                // Reset a precio original al cancelar
+                                updateItemPrice(item.producto.id, item.producto?.precio ?? 0);
+                                setEditingPriceId(null);
+                              }
+                            }}
+                            sx={{ maxWidth: 120 }}
+                          />
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            sx={{ mt: 0.25, px: 1, py: 0.25, borderRadius: 1, bgcolor: 'warning.main', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+                            onClick={() => setEditingPriceId(item.producto.id)}
+                          >
+                            ${(item.overridePrice ?? item.producto?.precio ?? 0).toFixed(2)}
+                          </Typography>
+                        )}
+                        <Typography variant="body2" color="text.secondary">
+                          c/u
+                        </Typography>
+                      </Box>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <IconButton

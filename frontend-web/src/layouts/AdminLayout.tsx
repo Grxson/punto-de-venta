@@ -44,7 +44,7 @@ export default function AdminLayout() {
           </Typography>
           {usuario && (
             <Typography variant="body2" sx={{ mr: 2 }}>
-              {usuario.nombre} ({usuario.rol || usuario.rolNombre || 'Usuario'})
+              - {usuario.nombre} -
             </Typography>
           )}
           <Button
@@ -52,7 +52,7 @@ export default function AdminLayout() {
             onClick={() => navigate('/pos')}
             sx={{ minHeight: '48px', mr: 1 }}
           >
-            Ir a POS
+            IR AL MENÚ
           </Button>
           <Button
             color="inherit"

@@ -287,7 +287,7 @@ app.ventas.validar-stock=true
 - Ver la forma de modificar el precio de un producto en dado caso yo como empleado o dueño tome un producto para consumo propio
 - ✅ juntar minihot cakes en un modal por los tamaños 
 - ✅ molletes igual juntarlos en un modal con sus variantes
-- hacer posible que podamos modificar precios
+- ✅ hacer posible que podamos modificar precios
 - ✅ agregar variantes de jugo de betabel (Betabel/Naranja, Betabel/Zanahoria)
 - ✅ agregar productos de jugos mixtos (Naranja/Toronja, Naranja/Zanahoria, Zanahoria/Toronja)
 - el botón para cerrar el carrito tiene que ser estático para que no tenga que dar scroll para arriba para cerrarlo ✅

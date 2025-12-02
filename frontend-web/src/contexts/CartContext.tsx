@@ -16,6 +16,8 @@ interface Producto {
 interface CartItem {
   producto: Producto;
   cantidad: number;
+  // Precio editado solo para esta venta (no persiste en BD)
+  overridePrice?: number;
 }
 
 interface CartContextType {
@@ -23,6 +25,7 @@ interface CartContextType {
   addToCart: (producto: Producto) => void;
   removeFromCart: (productoId: number) => void;
   updateQuantity: (productoId: number, cantidad: number) => void;
+  updateItemPrice: (productoId: number, precio: number) => void;
   clearCart: () => void;
   total: number;
   itemCount: number;
@@ -66,6 +69,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const updatedItem = {
           producto,
           cantidad: itemExistente.cantidad + 1,
+          overridePrice: itemExistente.overridePrice,
         };
         return [updatedItem, ...updatedCart.filter((item) => item.producto.id !== producto.id)];
       } else {
@@ -91,13 +95,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  // Actualiza el precio del ítem solo para esta venta
+  const updateItemPrice = (productoId: number, precio: number) => {
+    const normalized = Number.isFinite(precio) && precio >= 0 ? Number(precio) : undefined;
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.producto.id === productoId
+          ? { ...item, overridePrice: normalized }
+          : item
+      )
+    );
+  };
+
   const clearCart = () => {
     setCart([]);
     localStorage.removeItem('cart');
   };
 
   const total = cart.reduce(
-    (sum, item) => sum + item.producto.precio * item.cantidad,
+    (sum, item) => {
+      const unitPrice = item.overridePrice ?? item.producto.precio;
+      return sum + unitPrice * item.cantidad;
+    },
     0
   );
 
@@ -110,6 +129,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addToCart,
         removeFromCart,
         updateQuantity,
+        updateItemPrice,
         clearCart,
         total,
         itemCount,
