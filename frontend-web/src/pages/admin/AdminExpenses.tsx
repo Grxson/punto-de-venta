@@ -114,6 +114,9 @@ export default function AdminExpenses() {
     hasta: new Date().toISOString().split('T')[0],
   });
 
+  // Estado para filtro de tipo de gasto
+  const [filtroTipoGasto, setFiltroTipoGasto] = useState<'todos' | 'operacional' | 'administrativo'>('todos');
+
   // Campos comunes para todos los gastos
   const [fecha, setFecha] = useState<Date | null>(new Date());
   const [metodoPagoId, setMetodoPagoId] = useState<number | ''>('');
@@ -230,11 +233,12 @@ export default function AdminExpenses() {
     }
   };
 
-  // Filtrar gastos por rango de fechas
+  // Filtrar gastos por rango de fechas y tipo
   const gastosFiltrados = useMemo(() => {
     console.log('🔍 [useMemo gastosFiltrados] Iniciando filtrado');
     console.log('📊 Total de gastos en estado:', gastos.length);
     console.log('🗓️ Rango de fechas:', { desde: dateRange.desde, hasta: dateRange.hasta });
+    console.log('💰 Filtro tipo gasto:', filtroTipoGasto);
     
     if (!dateRange.desde || !dateRange.hasta) {
       console.log('⚠️ Rango de fechas incompleto, retornando todos los gastos');
@@ -263,15 +267,25 @@ export default function AdminExpenses() {
     
     const filtrados = gastos.filter(gasto => {
       const fechaGasto = new Date(gasto.fecha);
-      const cumpleFiltro = fechaGasto >= desde && fechaGasto <= hasta;
-      return cumpleFiltro;
+      const cumpleFechas = fechaGasto >= desde && fechaGasto <= hasta;
+      
+      // Filtro por tipo de gasto
+      let cumpleTipo = true;
+      if (filtroTipoGasto === 'operacional') {
+        cumpleTipo = !gasto.tipoGasto || gasto.tipoGasto === 'Operacional';
+      } else if (filtroTipoGasto === 'administrativo') {
+        cumpleTipo = gasto.tipoGasto === 'Administrativo';
+      }
+      // Si filtroTipoGasto === 'todos', cumpleTipo siempre es true
+      
+      return cumpleFechas && cumpleTipo;
     });
     
     console.log(`✅ Gastos filtrados: ${filtrados.length} de ${gastos.length}`);
     console.log('📋 Gastos después de filtro:', filtrados.map(g => ({ id: g.id, monto: g.monto, fecha: g.fecha, tipo: g.tipoGasto })));
     
     return filtrados;
-  }, [gastos, dateRange]);
+  }, [gastos, dateRange, filtroTipoGasto]);
 
   const handleDateRangeChange = (range: DateRangeValue) => {
     setDateRange(range);
@@ -596,6 +610,23 @@ export default function AdminExpenses() {
           initialRange={dateRange}
           label="Filtrar gastos por fecha"
         />
+
+        {/* Filtro de tipo de gasto */}
+        <Box sx={{ mb: 2, display: 'flex', gap: 1, alignItems: 'center' }}>
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel id="filtro-tipo-gasto-label">Tipo de Gasto</InputLabel>
+            <Select
+              labelId="filtro-tipo-gasto-label"
+              value={filtroTipoGasto}
+              onChange={(e) => setFiltroTipoGasto(e.target.value as 'todos' | 'operacional' | 'administrativo')}
+              label="Tipo de Gasto"
+            >
+              <MenuItem value="todos">Todos los gastos</MenuItem>
+              <MenuItem value="operacional">Operacionales</MenuItem>
+              <MenuItem value="administrativo">Administrativos</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
