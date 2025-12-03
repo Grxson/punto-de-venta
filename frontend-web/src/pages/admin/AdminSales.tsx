@@ -34,7 +34,7 @@ import {
   ListItemButton,
   ListItemText,
 } from '@mui/material';
-import { Cancel, Refresh, Edit, Add, Delete, Remove } from '@mui/icons-material';
+import { Cancel, Refresh, Edit, Add, Delete, Remove, ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -97,6 +97,9 @@ export default function AdminSales() {
     desde: new Date().toISOString().split('T')[0],
     hasta: new Date().toISOString().split('T')[0],
   });
+  
+  // Estado para el paginador de días
+  const [diaSeleccionado, setDiaSeleccionado] = useState<number>(0); // 0 = hoy, -1 = ayer, -2 = hace 2 días, etc.
   
   // Estado para el diálogo de cancelación
   const [dialogoCancelacion, setDialogoCancelacion] = useState(false);
@@ -218,6 +221,23 @@ export default function AdminSales() {
 
   const handleDateRangeChange = (range: DateRangeValue) => {
     setDateRange(range);
+  };
+
+  const handleCambiarDia = (dias: number) => {
+    // Calcular la nueva fecha
+    const hoy = new Date();
+    const nuevaFecha = new Date(hoy);
+    nuevaFecha.setDate(nuevaFecha.getDate() + dias);
+    
+    // Convertir a formato YYYY-MM-DD
+    const fechaFormato = nuevaFecha.toISOString().split('T')[0];
+    
+    // Actualizar el estado y el rango de fechas
+    setDiaSeleccionado(dias);
+    setDateRange({
+      desde: fechaFormato,
+      hasta: fechaFormato,
+    });
   };
 
   const handleAbrirDialogoCancelacion = (venta: Venta) => {
@@ -793,12 +813,41 @@ export default function AdminSales() {
         </Button>
       </Box>
 
-      {/* Filtro de fechas */}
+      {/* Filtro de fechas + Paginador de Días */}
+      {/* Filtro de fechas y paginador de días dentro del mismo recuadro */}
       <DateRangeFilter 
         onChange={handleDateRangeChange} 
         initialRange={dateRange}
         label="Filtrar ventas por fecha"
-      />
+      >
+        {/* Paginador de Días */}
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', justifyContent: 'flex-end', mt: { xs: 2, md: 0 } }}>
+          <Button 
+            size="small" 
+            variant="outlined"
+            onClick={() => handleCambiarDia(diaSeleccionado - 1)}
+            startIcon={<ChevronLeft />}
+          >
+            Atrás
+          </Button>
+          <Typography variant="body2" sx={{ minWidth: '120px', textAlign: 'center', fontWeight: 500 }}>
+            {diaSeleccionado === 0 ? (
+              'Hoy'
+            ) : (
+              `Hace ${Math.abs(diaSeleccionado)} día${Math.abs(diaSeleccionado) > 1 ? 's' : ''}`
+            )}
+          </Typography>
+          <Button 
+            size="small" 
+            variant="outlined"
+            onClick={() => handleCambiarDia(diaSeleccionado + 1)}
+            disabled={diaSeleccionado >= 0}
+            endIcon={<ChevronRight />}
+          >
+            Adelante
+          </Button>
+        </Box>
+      </DateRangeFilter>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>

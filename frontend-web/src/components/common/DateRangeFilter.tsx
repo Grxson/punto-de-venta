@@ -16,6 +16,8 @@ import {
 } from '@mui/icons-material';
 import type { DateRangeValue } from '../../types/dateRange.types';
 
+import type { ReactNode } from 'react';
+
 // Re-exportar el tipo para compatibilidad
 export type { DateRangeValue };
 
@@ -24,6 +26,7 @@ interface DateRangeFilterProps {
   initialRange?: DateRangeValue;
   showLabel?: boolean;
   label?: string;
+  children?: ReactNode;
 }
 
 // Función para obtener el inicio de la semana (lunes)
@@ -89,7 +92,8 @@ export default function DateRangeFilter({
   onChange, 
   initialRange,
   showLabel = true,
-  label = 'Filtrar por fecha'
+  label = 'Filtrar por fecha',
+  children
 }: DateRangeFilterProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -154,68 +158,78 @@ export default function DateRangeFilter({
           {label}
         </Typography>
       )}
-      
-      {/* Botones de presets */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexWrap: 'wrap', 
-        gap: 1, 
-        mb: 2,
-        justifyContent: isMobile ? 'center' : 'flex-start'
-      }}>
-        {presetButtons.map((preset) => (
-          <Chip
-            key={preset.key}
-            icon={preset.icon}
-            label={preset.label}
-            onClick={() => handlePresetClick(preset.key)}
-            color={selectedPreset === preset.key ? 'primary' : 'default'}
-            variant={selectedPreset === preset.key ? 'filled' : 'outlined'}
-            sx={{ 
-              fontWeight: selectedPreset === preset.key ? 'bold' : 'normal',
-              '&:hover': { 
-                backgroundColor: selectedPreset === preset.key 
-                  ? theme.palette.primary.dark 
-                  : theme.palette.action.hover 
-              }
-            }}
-          />
-        ))}
-      </Box>
 
-      {/* Campos de fecha personalizados */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: isMobile ? 'column' : 'row',
-        gap: 2, 
-        alignItems: isMobile ? 'stretch' : 'center' 
-      }}>
-        <TextField
-          label="Desde"
-          type="date"
-          size="small"
-          value={customRange.desde}
-          onChange={(e) => handleCustomDateChange('desde', e.target.value)}
-          InputLabelProps={{ shrink: true }}
-          sx={{ minWidth: isMobile ? '100%' : 160 }}
-        />
-        <TextField
-          label="Hasta"
-          type="date"
-          size="small"
-          value={customRange.hasta}
-          onChange={(e) => handleCustomDateChange('hasta', e.target.value)}
-          InputLabelProps={{ shrink: true }}
-          inputProps={{ min: customRange.desde }}
-          sx={{ minWidth: isMobile ? '100%' : 160 }}
-        />
-        {selectedPreset === 'personalizado' && (
-          <Chip 
-            label="Rango personalizado" 
-            color="secondary" 
-            size="small"
-            sx={{ alignSelf: 'center' }}
-          />
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { md: 'center' }, justifyContent: 'space-between', gap: 2 }}>
+        <Box sx={{ flex: 1 }}>
+          {/* Botones de presets */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            gap: 1, 
+            mb: 2,
+            justifyContent: isMobile ? 'center' : 'flex-start'
+          }}>
+            {presetButtons.map((preset) => (
+              <Chip
+                key={preset.key}
+                icon={preset.icon}
+                label={preset.label}
+                onClick={() => handlePresetClick(preset.key)}
+                color={selectedPreset === preset.key ? 'primary' : 'default'}
+                variant={selectedPreset === preset.key ? 'filled' : 'outlined'}
+                sx={{ 
+                  fontWeight: selectedPreset === preset.key ? 'bold' : 'normal',
+                  '&:hover': { 
+                    backgroundColor: selectedPreset === preset.key 
+                      ? theme.palette.primary.dark 
+                      : theme.palette.action.hover 
+                  }
+                }}
+              />
+            ))}
+          </Box>
+
+          {/* Campos de fecha personalizados */}
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: 2, 
+            alignItems: isMobile ? 'stretch' : 'center' 
+          }}>
+            <TextField
+              label="Desde"
+              type="date"
+              size="small"
+              value={customRange.desde}
+              onChange={(e) => handleCustomDateChange('desde', e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{ minWidth: isMobile ? '100%' : 160 }}
+            />
+            <TextField
+              label="Hasta"
+              type="date"
+              size="small"
+              value={customRange.hasta}
+              onChange={(e) => handleCustomDateChange('hasta', e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{ min: customRange.desde }}
+              sx={{ minWidth: isMobile ? '100%' : 160 }}
+            />
+            {selectedPreset === 'personalizado' && (
+              <Chip 
+                label="Rango personalizado" 
+                color="secondary" 
+                size="small"
+                sx={{ alignSelf: 'center' }}
+              />
+            )}
+          </Box>
+        </Box>
+        {/* Children: paginador de días u otros controles */}
+        {children && (
+          <Box sx={{ minWidth: 220, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mt: { xs: 2, md: 0 } }}>
+            {children}
+          </Box>
         )}
       </Box>
     </Paper>
