@@ -37,6 +37,9 @@ import {
 import { Cancel, Refresh, Edit, Add, Delete, Remove } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
@@ -111,6 +114,8 @@ export default function AdminSales() {
   const [itemsEditados, setItemsEditados] = useState<VentaItem[]>([]);
   const [pagosEditados, setPagosEditados] = useState<Pago[]>([]);
   const [notaEditada, setNotaEditada] = useState('');
+  const [fechaEditada, setFechaEditada] = useState<string>('');
+  const [editandoFecha, setEditandoFecha] = useState(false);
   const [productos, setProductos] = useState<any[]>([]);
   const [metodosPago, setMetodosPago] = useState<any[]>([]);
   const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
@@ -340,6 +345,7 @@ export default function AdminSales() {
     setItemsEditados([...venta.items]);
     setPagosEditados([...venta.pagos]);
     setNotaEditada(venta.nota || '');
+    setFechaEditada(venta.fecha);
     setErrorEdicion(null);
     
     // Cargar productos y métodos de pago
@@ -404,6 +410,8 @@ export default function AdminSales() {
     setItemsEditados([]);
     setPagosEditados([]);
     setNotaEditada('');
+    setFechaEditada('');
+    setEditandoFecha(false);
     setErrorEdicion(null);
   };
 
@@ -717,11 +725,33 @@ export default function AdminSales() {
       const response = await apiService.put(`${API_ENDPOINTS.SALES}/${ventaSeleccionada.id}`, request);
 
       if (response.success) {
-        setSnackbar({
-          open: true,
-          message: `✓ Venta #${ventaSeleccionada.id} actualizada exitosamente`,
-          tipo: 'success',
-        });
+        // Si la fecha cambió, actualizar solo la fecha
+        if (fechaEditada !== ventaSeleccionada.fecha) {
+          const fechaISO = new Date(fechaEditada).toISOString();
+          const fechaResponse = await apiService.put(
+            `${API_ENDPOINTS.SALES}/${ventaSeleccionada.id}/fecha?fecha=${encodeURIComponent(fechaISO)}`
+          );
+          
+          if (!fechaResponse.success) {
+            setSnackbar({
+              open: true,
+              message: `✓ Venta actualizada, pero hubo error al cambiar la fecha: ${fechaResponse.error || 'Error desconocido'}`,
+              tipo: 'warning',
+            });
+          } else {
+            setSnackbar({
+              open: true,
+              message: `✓ Venta #${ventaSeleccionada.id} actualizada exitosamente (incluyendo fecha)`,
+              tipo: 'success',
+            });
+          }
+        } else {
+          setSnackbar({
+            open: true,
+            message: `✓ Venta #${ventaSeleccionada.id} actualizada exitosamente`,
+            tipo: 'success',
+          });
+        }
         handleCerrarDialogoEdicion();
         await loadVentas();
       } else {
@@ -1045,9 +1075,40 @@ export default function AdminSales() {
           <Typography component="div" variant="h5" fontWeight="bold">
             Editar Venta #{ventaSeleccionada?.id}
           </Typography>
-          <Typography component="div" variant="body2" color="text.secondary">
-            {ventaSeleccionada && format(new Date(ventaSeleccionada.fecha), "dd/MM/yyyy HH:mm", { locale: es })}
-          </Typography>
+          {editandoFecha ? (
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1 }}>
+                <DatePicker
+                  value={new Date(fechaEditada)}
+                  onChange={(date) => {
+                    if (date) {
+                      setFechaEditada(date.toISOString());
+                    }
+                  }}
+                  slotProps={{ textField: { size: 'small' } }}
+                />
+                <Button size="small" variant="contained" onClick={() => setEditandoFecha(false)}>
+                  Listo
+                </Button>
+                <Button size="small" onClick={() => {
+                  setFechaEditada(ventaSeleccionada?.fecha || '');
+                  setEditandoFecha(false);
+                }}>
+                  Cancelar
+                </Button>
+              </Box>
+            </LocalizationProvider>
+          ) : (
+            <Typography
+              component="div"
+              variant="body2"
+              color="primary"
+              sx={{ cursor: 'pointer', fontWeight: 500, '&:hover': { textDecoration: 'underline' } }}
+              onClick={() => setEditandoFecha(true)}
+            >
+              📅 {fechaEditada && format(new Date(fechaEditada), "dd/MM/yyyy HH:mm", { locale: es })}
+            </Typography>
+          )}
         </DialogTitle>
         
         <DialogContent sx={{ flex: 1, overflow: 'auto', px: 2 }}>
@@ -1201,6 +1262,30 @@ export default function AdminSales() {
               Agregar Producto
             </Button>
           </Stack>
+
+          <Divider sx={{ my: 2 }} />
+
+          {/* Fecha - Campo editable */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+              Fecha
+            </Typography>
+            <TextField
+              type="datetime-local"
+              value={fechaEditada.slice(0, 16)}
+              onChange={(e) => setFechaEditada(e.target.value + ':00')}
+              fullWidth
+              sx={{
+                '& .MuiInputBase-root': {
+                  minHeight: '56px',
+                  fontSize: '16px',
+                },
+              }}
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              Nota: Solo se pueden editar fechas de ventas de las últimas 24 horas
+            </Typography>
+          </Box>
 
           <Divider sx={{ my: 2 }} />
 

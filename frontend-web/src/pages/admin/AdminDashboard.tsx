@@ -24,6 +24,8 @@ import {
   AttachMoney,
 } from '@mui/icons-material';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useDashboard } from '../../contexts/DashboardContext';
@@ -233,9 +235,14 @@ export default function AdminDashboard() {
       {stats && (
         <Card sx={{ mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
           <CardContent sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
-              Resumen del Día
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                Resumen del Día
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                {format(new Date(stats.fecha), "EEEE dd 'de' MMMM", { locale: es })}
+              </Typography>
+            </Box>
             <Grid container spacing={3}>
               <Grid size={{ xs: 6, sm: 3 }}>
                 <Typography variant="body2" sx={{ opacity: 0.9, mb: 0.5 }}>Venta Total</Typography>

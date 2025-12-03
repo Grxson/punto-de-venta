@@ -30,6 +30,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
@@ -242,12 +244,12 @@ export default function AdminReports() {
         {resumen && (
           <Card sx={{ mb: 3 }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Resumen del Período Seleccionado
-              </Typography>
-              <Typography variant="body1">
-                Período: {new Date(dateRange.desde).toLocaleDateString('es-ES')} - {new Date(dateRange.hasta).toLocaleDateString('es-ES')}
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="h6">Resumen del Período Seleccionado</Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  {format(new Date(dateRange.desde), "EEEE dd 'de' MMMM", { locale: es })} - {format(new Date(dateRange.hasta), "EEEE dd 'de' MMMM", { locale: es })}
+                </Typography>
+              </Box>
               <Typography variant="body1">
                 Total de ventas: {resumen.cantidadVentas} | Ingresos: ${resumen.totalVentas.toFixed(2)} | Items vendidos: {resumen.itemsVendidos}
               </Typography>
