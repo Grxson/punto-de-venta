@@ -337,7 +337,7 @@ export default function AdminSales() {
   };
 
   const puedeCancelar = (venta: Venta) => {
-    // Cualquier empleado autenticado puede cancelar
+    // Debe estar autenticado
     if (!usuario) {
       return false;
     }
@@ -347,7 +347,12 @@ export default function AdminSales() {
       return false;
     }
 
-    // Validar restricción temporal (últimas 24 horas)
+    // Los administradores pueden cancelar cualquier venta sin restricción de tiempo
+    if (usuario.rol === 'ADMIN') {
+      return true;
+    }
+
+    // Para otros roles, validar restricción temporal (últimas 24 horas)
     const fechaVenta = new Date(venta.fecha);
     const ahora = new Date();
     const horasDiferencia = (ahora.getTime() - fechaVenta.getTime()) / (1000 * 60 * 60);
@@ -702,80 +707,88 @@ export default function AdminSales() {
   const handleGuardarEdicion = async () => {
     if (!ventaSeleccionada) return;
 
-    if (itemsEditados.length === 0) {
-      setErrorEdicion('La venta debe tener al menos un item');
-      return;
-    }
-
-    if (pagosEditados.length === 0) {
-      setErrorEdicion('La venta debe tener al menos un pago');
-      return;
-    }
-
-    const totalVenta = calcularTotal();
-    const totalPagos = pagosEditados.reduce((sum, pago) => sum + pago.monto, 0);
-
-    if (totalPagos < totalVenta) {
-      setErrorEdicion(`El total de pagos ($${totalPagos.toFixed(2)}) no cubre el total de la venta ($${totalVenta.toFixed(2)})`);
-      return;
-    }
-
     try {
       setEditando(ventaSeleccionada.id);
       setErrorEdicion(null);
 
-      const request = {
-        sucursalId: ventaSeleccionada.sucursalId,
-        items: itemsEditados.map(item => ({
-          productoId: item.productoId,
-          productoNombre: item.productoNombre, // Incluir nombre completo con variante
-          cantidad: item.cantidad,
-          precioUnitario: item.precioUnitario,
-          nota: item.nota,
-        })),
-        pagos: pagosEditados.map(pago => ({
-          metodoPagoId: pago.metodoPagoId,
-          monto: pago.monto,
-          referencia: pago.referencia || null,
-        })),
-        nota: notaEditada,
-        canal: ventaSeleccionada.canal,
-      };
+      // Verificar si solo cambió la fecha (sin editar items/pagos/nota)
+      const soloFechaCambio = 
+        JSON.stringify(itemsEditados) === JSON.stringify(ventaSeleccionada.items) &&
+        JSON.stringify(pagosEditados) === JSON.stringify(ventaSeleccionada.pagos) &&
+        notaEditada === (ventaSeleccionada.nota || '');
 
-      const response = await apiService.put(`${API_ENDPOINTS.SALES}/${ventaSeleccionada.id}`, request);
-
-      if (response.success) {
-        // Si la fecha cambió, actualizar solo la fecha
-        if (fechaEditada !== ventaSeleccionada.fecha) {
-          const fechaISO = new Date(fechaEditada).toISOString();
-          const fechaResponse = await apiService.put(
-            `${API_ENDPOINTS.SALES}/${ventaSeleccionada.id}/fecha?fecha=${encodeURIComponent(fechaISO)}`
-          );
-          
-          if (!fechaResponse.success) {
-            setSnackbar({
-              open: true,
-              message: `✓ Venta actualizada, pero hubo error al cambiar la fecha: ${fechaResponse.error || 'Error desconocido'}`,
-              tipo: 'warning',
-            });
-          } else {
-            setSnackbar({
-              open: true,
-              message: `✓ Venta #${ventaSeleccionada.id} actualizada exitosamente (incluyendo fecha)`,
-              tipo: 'success',
-            });
-          }
+      if (soloFechaCambio && fechaEditada !== ventaSeleccionada.fecha) {
+        // Solo actualizar la fecha usando el endpoint específico
+        // Convertir la fecha al formato YYYY-MM-DDTHH:mm:ss (sin la Z)
+        const fecha = new Date(fechaEditada);
+        const fechaLocal = fecha.toISOString().replace('Z', '').slice(0, 19);
+        const fechaResponse = await apiService.put(
+          `${API_ENDPOINTS.SALES}/${ventaSeleccionada.id}/fecha?fecha=${encodeURIComponent(fechaLocal)}`
+        );
+        
+        if (fechaResponse.success) {
+          setSnackbar({
+            open: true,
+            message: `✓ Fecha de venta #${ventaSeleccionada.id} actualizada exitosamente`,
+            tipo: 'success',
+          });
+          handleCerrarDialogoEdicion();
+          await loadVentas();
         } else {
+          setErrorEdicion(fechaResponse.error || 'Error al actualizar la fecha');
+        }
+      } else {
+        // Se editaron items, pagos o nota: requiere validación completa
+        if (itemsEditados.length === 0) {
+          setErrorEdicion('La venta debe tener al menos un item');
+          return;
+        }
+
+        if (pagosEditados.length === 0) {
+          setErrorEdicion('La venta debe tener al menos un pago');
+          return;
+        }
+
+        const totalVenta = calcularTotal();
+        const totalPagos = pagosEditados.reduce((sum, pago) => sum + pago.monto, 0);
+
+        if (totalPagos < totalVenta) {
+          setErrorEdicion(`El total de pagos ($${totalPagos.toFixed(2)}) no cubre el total de la venta ($${totalVenta.toFixed(2)})`);
+          return;
+        }
+
+        const request = {
+          sucursalId: ventaSeleccionada.sucursalId,
+          items: itemsEditados.map(item => ({
+            productoId: item.productoId,
+            productoNombre: item.productoNombre,
+            cantidad: item.cantidad,
+            precioUnitario: item.precioUnitario,
+            nota: item.nota,
+          })),
+          pagos: pagosEditados.map(pago => ({
+            metodoPagoId: pago.metodoPagoId,
+            monto: pago.monto,
+            referencia: pago.referencia || null,
+          })),
+          nota: notaEditada,
+          canal: ventaSeleccionada.canal,
+          fecha: fechaEditada !== ventaSeleccionada.fecha ? new Date(fechaEditada).toISOString() : null,
+        };
+
+        const response = await apiService.put(`${API_ENDPOINTS.SALES}/${ventaSeleccionada.id}`, request);
+
+        if (response.success) {
           setSnackbar({
             open: true,
             message: `✓ Venta #${ventaSeleccionada.id} actualizada exitosamente`,
             tipo: 'success',
           });
+          handleCerrarDialogoEdicion();
+          await loadVentas();
+        } else {
+          setErrorEdicion(response.error || 'Error al actualizar la venta');
         }
-        handleCerrarDialogoEdicion();
-        await loadVentas();
-      } else {
-        setErrorEdicion(response.error || 'Error al actualizar la venta');
       }
     } catch (err: any) {
       setErrorEdicion(err.message || 'Error de conexión al actualizar la venta');
@@ -1311,30 +1324,6 @@ export default function AdminSales() {
               Agregar Producto
             </Button>
           </Stack>
-
-          <Divider sx={{ my: 2 }} />
-
-          {/* Fecha - Campo editable */}
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-              Fecha
-            </Typography>
-            <TextField
-              type="datetime-local"
-              value={fechaEditada.slice(0, 16)}
-              onChange={(e) => setFechaEditada(e.target.value + ':00')}
-              fullWidth
-              sx={{
-                '& .MuiInputBase-root': {
-                  minHeight: '56px',
-                  fontSize: '16px',
-                },
-              }}
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Nota: Solo se pueden editar fechas de ventas de las últimas 24 horas
-            </Typography>
-          </Box>
 
           <Divider sx={{ my: 2 }} />
 

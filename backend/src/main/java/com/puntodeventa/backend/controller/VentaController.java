@@ -106,9 +106,11 @@ public class VentaController {
     @PutMapping("/{id}/fecha")
     @Operation(summary = "Actualizar fecha de venta", 
                description = "Actualiza únicamente la fecha de una venta existente. " +
-                            "Solo permite editar ventas de las últimas 24 horas y que no estén canceladas. " +
+                            "La venta no debe estar cancelada. " +
+                            "Restricción temporal: Los empleados regulares solo pueden editar ventas de las últimas 24 horas. " +
+                            "Los usuarios ADMIN pueden editar ventas de cualquier fecha. " +
                             "Formato de fecha: yyyy-MM-dd'T'HH:mm:ss (ejemplo: 2025-01-01T14:30:00). " +
-                            "Cualquier empleado autenticado puede actualizar la fecha.")
+                            "Cualquier usuario autenticado puede ejecutar esta operación.")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<VentaDTO> actualizarFechaVenta(
             @PathVariable Long id,

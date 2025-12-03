@@ -16,6 +16,7 @@ import {
   Chip,
   Tabs,
   Tab,
+  Button,
 } from '@mui/material';
 import {
   BarChart,
@@ -30,7 +31,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 import { es } from 'date-fns/locale';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
@@ -85,9 +86,11 @@ export default function AdminReports() {
     desde: new Date().toISOString().split('T')[0],
     hasta: new Date().toISOString().split('T')[0],
   });
+  const [diaSeleccionado, setDiaSeleccionado] = useState(0); // Offset de días desde hoy
   const [resumen, setResumen] = useState<ResumenVentas | null>(null);
   const [productosTop, setProductosTop] = useState<ProductoRendimiento[]>([]);
   const [ventas, setVentas] = useState<VentaDetalle[]>([]);
+  const [gastosDia, setGastosDia] = useState<number>(0); // Gastos del día seleccionado
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState(0);
@@ -96,9 +99,27 @@ export default function AdminReports() {
     setCurrentTab(newValue);
   };
 
+  const handleCambiarDia = (direccion: 'anterior' | 'siguiente') => {
+    const nuevoDia = direccion === 'anterior' ? diaSeleccionado - 1 : diaSeleccionado + 1;
+    // Calcular la fecha base (hoy) y aplicar el offset
+    const hoy = new Date();
+    const fechaSeleccionada = new Date(hoy);
+    fechaSeleccionada.setDate(hoy.getDate() + nuevoDia);
+    // Formatear como YYYY-MM-DD en local
+    const year = fechaSeleccionada.getFullYear();
+    const month = String(fechaSeleccionada.getMonth() + 1).padStart(2, '0');
+    const day = String(fechaSeleccionada.getDate()).padStart(2, '0');
+    const fechaFormato = `${year}-${month}-${day}`;
+    setDiaSeleccionado(nuevoDia);
+    setDateRange({
+      desde: fechaFormato,
+      hasta: fechaFormato,
+    });
+  };
+
   useEffect(() => {
     loadData();
-  }, [dateRange]);
+  }, [dateRange, diaSeleccionado]);
 
   const loadData = async () => {
     try {
@@ -130,6 +151,7 @@ export default function AdminReports() {
 
       if (resumenResponse.success && resumenResponse.data) {
         const data = resumenResponse.data;
+        console.log('📊 Respuesta de resumen ventas:', data);
         setResumen({
           fecha: data.fecha || dateRange.desde,
           totalVentas: parseFloat(data.totalVentas) || 0,
@@ -169,7 +191,29 @@ export default function AdminReports() {
       );
 
       if (ventasResponse.success && ventasResponse.data) {
+        console.log('📦 Respuesta de ventas detalladas:', ventasResponse.data);
+        console.log('📊 Total items calculado:', ventasResponse.data.reduce((sum: number, v: any) => sum + (v.items?.length || 0), 0));
+        console.log('📊 Total unidades calculado:', ventasResponse.data.reduce((sum: number, v: any) => sum + (v.items?.reduce((s: number, i: any) => s + (i.cantidad || 0), 0) || 0), 0));
         setVentas(ventasResponse.data);
+      }
+
+      // Cargar gastos del rango de fechas usando los mismos filtros
+      try {
+        const gastosResponse = await apiService.get(
+          `${API_ENDPOINTS.GASTOS}?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
+        );
+        if (gastosResponse.success && Array.isArray(gastosResponse.data)) {
+          // Filtrar gastos por el rango exacto seleccionado
+          const gastosFiltrados = gastosResponse.data.filter((g: any) => {
+            const fechaGasto = g.fecha ? new Date(g.fecha) : null;
+            return fechaGasto && fechaGasto >= desde && fechaGasto <= hasta;
+          });
+          const totalGastos = gastosFiltrados.reduce((sum: number, gasto: any) => sum + (parseFloat(gasto.monto) || 0), 0);
+          setGastosDia(totalGastos);
+        }
+      } catch (err) {
+        // Si el endpoint de gastos falla, simplemente no mostrar gastos
+        setGastosDia(0);
       }
     } catch (err: any) {
       setError(err.message || 'Error al cargar reportes');
@@ -180,6 +224,7 @@ export default function AdminReports() {
 
   const handleDateRangeChange = (range: DateRangeValue) => {
     setDateRange(range);
+    setDiaSeleccionado(0); // Resetear el día cuando cambia manualmente el rango
   };
 
   // Datos para gráficas
@@ -225,6 +270,13 @@ export default function AdminReports() {
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4">Reportes y Estadísticas</Typography>
+          <Button 
+            variant="contained" 
+            size="small"
+            onClick={() => loadData()}
+          >
+            🔄 Refrescar
+          </Button>
         </Box>
 
         {error && (
@@ -238,7 +290,30 @@ export default function AdminReports() {
           onChange={handleDateRangeChange} 
           initialRange={dateRange}
           label="Período de análisis"
-        />
+        >
+          {/* Paginador de días */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Button 
+              variant="outlined" 
+              size="small"
+              onClick={() => handleCambiarDia('anterior')}
+            >
+              ← Atrás
+            </Button>
+            <Typography variant="body2" sx={{ minWidth: '100px', textAlign: 'center' }}>
+              {diaSeleccionado === 0 ? 'Hoy' : `Hace ${Math.abs(diaSeleccionado)} día${Math.abs(diaSeleccionado) > 1 ? 's' : ''}`}
+            </Typography>
+            <Button 
+              variant="outlined" 
+              size="small"
+              disabled={diaSeleccionado === 0}
+              onClick={() => handleCambiarDia('siguiente')}
+              title={diaSeleccionado === 0 ? "No puedes ir adelante de hoy" : "Ir al día siguiente"}
+            >
+              Adelante →
+            </Button>
+          </Box>
+        </DateRangeFilter>
 
         {/* Resumen del período */}
         {resumen && (
@@ -247,7 +322,7 @@ export default function AdminReports() {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6">Resumen del Período Seleccionado</Typography>
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  {format(new Date(dateRange.desde), "EEEE dd 'de' MMMM", { locale: es })} - {format(new Date(dateRange.hasta), "EEEE dd 'de' MMMM", { locale: es })}
+                  {format(parse(dateRange.desde, 'yyyy-MM-dd', new Date()), "EEEE dd 'de' MMMM", { locale: es })} - {format(parse(dateRange.hasta, 'yyyy-MM-dd', new Date()), "EEEE dd 'de' MMMM", { locale: es })}
                 </Typography>
               </Box>
               <Typography variant="body1">
@@ -640,7 +715,25 @@ export default function AdminReports() {
                             </Typography>
                           </Box>
                         </Box>
-
+                          {/* Fila de Total de Ventas */}
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              py: 0.75,
+                              px: 1.5,
+                              borderBottom: 1,
+                              borderColor: 'grey.200',
+                              backgroundColor: '#e8f5e9',
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#2e7d32' }}>
+                              Venta Total
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#2e7d32' }}>
+                              ${ventas.reduce((sum, v) => sum + v.total, 0).toFixed(2)}
+                            </Typography>
+                          </Box>
                         {/* Tabla de métodos de pago */}
                         <Box sx={{ mb: 3 }}>
                           {(() => {
@@ -671,6 +764,57 @@ export default function AdminReports() {
                               </Box>
                             ));
                           })()}
+
+                          {/* Fila de Gastos */}
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              py: 0.75,
+                              px: 1.5,
+                              borderBottom: 1,
+                              borderColor: 'grey.200',
+                              backgroundColor: '#fff3cd',
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#856404' }}>
+                              Gastos
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#ff6b6b' }}>
+                              -${gastosDia.toFixed(2)}
+                            </Typography>
+                          </Box>
+                          {/* Fila de Resultado Neto */}
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              py: 0.75,
+                              px: 1.5,
+                              borderBottom: 1,
+                              borderColor: 'grey.200',
+                              backgroundColor: '#f3e5f5',
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#6a1b9a' }}>
+                              Neto
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#6a1b9a' }}>
+                              {(() => {
+                                // Extraer efectivo de los métodos de pago
+                                const metodosPago = ventas.reduce((acc, venta) => {
+                                  venta.pagos.forEach((pago) => {
+                                    const metodo = pago.metodoPagoNombre;
+                                    acc[metodo] = (acc[metodo] || 0) + pago.monto;
+                                  });
+                                  return acc;
+                                }, {} as Record<string, number>);
+                                const efectivo = metodosPago['Efectivo'] || 0;
+                                const neto = efectivo - gastosDia;
+                                return `$${neto.toFixed(2)}`;
+                              })()}
+                            </Typography>
+                          </Box>
                         </Box>
 
                         {/* Tabla de productos */}
@@ -735,10 +879,10 @@ export default function AdminReports() {
                           }}
                         >
                           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                            TOTAL
+                            RESULTADO DEL CORTE
                           </Typography>
                           <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                            ${ventas.reduce((sum, v) => sum + v.total, 0).toFixed(2)}
+                            ${(ventas.reduce((sum, v) => sum + v.total, 0) - gastosDia).toFixed(2)}
                           </Typography>
                         </Box>
                       </>
