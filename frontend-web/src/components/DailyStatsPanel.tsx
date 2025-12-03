@@ -8,7 +8,9 @@ import {
   Collapse,
   CircularProgress,
 } from '@mui/material';
-import { TrendingUp, TrendingDown, ExpandMore } from '@mui/icons-material';
+import { TrendingUp, TrendingDown, ExpandMore, NorthWest } from '@mui/icons-material';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import apiService from '../services/api.service';
 import { API_ENDPOINTS } from '../config/api.config';
 import { websocketService } from '../services/websocket.service';
@@ -152,9 +154,16 @@ export default function DailyStatsPanel() {
             borderColor: 'divider',
           }}
         >
-          <Typography variant="subtitle2" fontWeight="bold" sx={{ ml: 1 }}>
-            Resumen del Día
-          </Typography>
+          <Box>
+            <Typography variant="subtitle2" fontWeight="bold" sx={{ ml: 1 }}>
+              Resumen del Día
+            </Typography>
+            {stats && (
+              <Typography variant="caption" sx={{ ml: 1, opacity: 0.8 }}>
+                {format(new Date(), "EEEE dd 'de' MMMM", { locale: es })}
+              </Typography>
+            )}
+          </Box>
           <Box>
             <IconButton
               size="small"

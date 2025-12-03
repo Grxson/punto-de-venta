@@ -34,9 +34,12 @@ import {
   ListItemButton,
   ListItemText,
 } from '@mui/material';
-import { Cancel, Refresh, Edit, Add, Delete, Remove } from '@mui/icons-material';
+import { Cancel, Refresh, Edit, Add, Delete, Remove, ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
@@ -95,6 +98,9 @@ export default function AdminSales() {
     hasta: new Date().toISOString().split('T')[0],
   });
   
+  // Estado para el paginador de días
+  const [diaSeleccionado, setDiaSeleccionado] = useState<number>(0); // 0 = hoy, -1 = ayer, -2 = hace 2 días, etc.
+  
   // Estado para el diálogo de cancelación
   const [dialogoCancelacion, setDialogoCancelacion] = useState(false);
   const [ventaSeleccionada, setVentaSeleccionada] = useState<Venta | null>(null);
@@ -111,6 +117,8 @@ export default function AdminSales() {
   const [itemsEditados, setItemsEditados] = useState<VentaItem[]>([]);
   const [pagosEditados, setPagosEditados] = useState<Pago[]>([]);
   const [notaEditada, setNotaEditada] = useState('');
+  const [fechaEditada, setFechaEditada] = useState<string>('');
+  const [editandoFecha, setEditandoFecha] = useState(false);
   const [productos, setProductos] = useState<any[]>([]);
   const [metodosPago, setMetodosPago] = useState<any[]>([]);
   const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
@@ -215,6 +223,23 @@ export default function AdminSales() {
     setDateRange(range);
   };
 
+  const handleCambiarDia = (dias: number) => {
+    // Calcular la nueva fecha
+    const hoy = new Date();
+    const nuevaFecha = new Date(hoy);
+    nuevaFecha.setDate(nuevaFecha.getDate() + dias);
+    
+    // Convertir a formato YYYY-MM-DD
+    const fechaFormato = nuevaFecha.toISOString().split('T')[0];
+    
+    // Actualizar el estado y el rango de fechas
+    setDiaSeleccionado(dias);
+    setDateRange({
+      desde: fechaFormato,
+      hasta: fechaFormato,
+    });
+  };
+
   const handleAbrirDialogoCancelacion = (venta: Venta) => {
     setVentaSeleccionada(venta);
     setMotivoCancelacion('');
@@ -312,7 +337,7 @@ export default function AdminSales() {
   };
 
   const puedeCancelar = (venta: Venta) => {
-    // Cualquier empleado autenticado puede cancelar
+    // Debe estar autenticado
     if (!usuario) {
       return false;
     }
@@ -322,7 +347,12 @@ export default function AdminSales() {
       return false;
     }
 
-    // Validar restricción temporal (últimas 24 horas)
+    // Los administradores pueden cancelar cualquier venta sin restricción de tiempo
+    if (usuario.rol === 'ADMIN') {
+      return true;
+    }
+
+    // Para otros roles, validar restricción temporal (últimas 24 horas)
     const fechaVenta = new Date(venta.fecha);
     const ahora = new Date();
     const horasDiferencia = (ahora.getTime() - fechaVenta.getTime()) / (1000 * 60 * 60);
@@ -340,6 +370,7 @@ export default function AdminSales() {
     setItemsEditados([...venta.items]);
     setPagosEditados([...venta.pagos]);
     setNotaEditada(venta.nota || '');
+    setFechaEditada(venta.fecha);
     setErrorEdicion(null);
     
     // Cargar productos y métodos de pago
@@ -404,6 +435,8 @@ export default function AdminSales() {
     setItemsEditados([]);
     setPagosEditados([]);
     setNotaEditada('');
+    setFechaEditada('');
+    setEditandoFecha(false);
     setErrorEdicion(null);
   };
 
@@ -674,58 +707,88 @@ export default function AdminSales() {
   const handleGuardarEdicion = async () => {
     if (!ventaSeleccionada) return;
 
-    if (itemsEditados.length === 0) {
-      setErrorEdicion('La venta debe tener al menos un item');
-      return;
-    }
-
-    if (pagosEditados.length === 0) {
-      setErrorEdicion('La venta debe tener al menos un pago');
-      return;
-    }
-
-    const totalVenta = calcularTotal();
-    const totalPagos = pagosEditados.reduce((sum, pago) => sum + pago.monto, 0);
-
-    if (totalPagos < totalVenta) {
-      setErrorEdicion(`El total de pagos ($${totalPagos.toFixed(2)}) no cubre el total de la venta ($${totalVenta.toFixed(2)})`);
-      return;
-    }
-
     try {
       setEditando(ventaSeleccionada.id);
       setErrorEdicion(null);
 
-      const request = {
-        sucursalId: ventaSeleccionada.sucursalId,
-        items: itemsEditados.map(item => ({
-          productoId: item.productoId,
-          productoNombre: item.productoNombre, // Incluir nombre completo con variante
-          cantidad: item.cantidad,
-          precioUnitario: item.precioUnitario,
-          nota: item.nota,
-        })),
-        pagos: pagosEditados.map(pago => ({
-          metodoPagoId: pago.metodoPagoId,
-          monto: pago.monto,
-          referencia: pago.referencia || null,
-        })),
-        nota: notaEditada,
-        canal: ventaSeleccionada.canal,
-      };
+      // Verificar si solo cambió la fecha (sin editar items/pagos/nota)
+      const soloFechaCambio = 
+        JSON.stringify(itemsEditados) === JSON.stringify(ventaSeleccionada.items) &&
+        JSON.stringify(pagosEditados) === JSON.stringify(ventaSeleccionada.pagos) &&
+        notaEditada === (ventaSeleccionada.nota || '');
 
-      const response = await apiService.put(`${API_ENDPOINTS.SALES}/${ventaSeleccionada.id}`, request);
-
-      if (response.success) {
-        setSnackbar({
-          open: true,
-          message: `✓ Venta #${ventaSeleccionada.id} actualizada exitosamente`,
-          tipo: 'success',
-        });
-        handleCerrarDialogoEdicion();
-        await loadVentas();
+      if (soloFechaCambio && fechaEditada !== ventaSeleccionada.fecha) {
+        // Solo actualizar la fecha usando el endpoint específico
+        // Convertir la fecha al formato YYYY-MM-DDTHH:mm:ss (sin la Z)
+        const fecha = new Date(fechaEditada);
+        const fechaLocal = fecha.toISOString().replace('Z', '').slice(0, 19);
+        const fechaResponse = await apiService.put(
+          `${API_ENDPOINTS.SALES}/${ventaSeleccionada.id}/fecha?fecha=${encodeURIComponent(fechaLocal)}`
+        );
+        
+        if (fechaResponse.success) {
+          setSnackbar({
+            open: true,
+            message: `✓ Fecha de venta #${ventaSeleccionada.id} actualizada exitosamente`,
+            tipo: 'success',
+          });
+          handleCerrarDialogoEdicion();
+          await loadVentas();
+        } else {
+          setErrorEdicion(fechaResponse.error || 'Error al actualizar la fecha');
+        }
       } else {
-        setErrorEdicion(response.error || 'Error al actualizar la venta');
+        // Se editaron items, pagos o nota: requiere validación completa
+        if (itemsEditados.length === 0) {
+          setErrorEdicion('La venta debe tener al menos un item');
+          return;
+        }
+
+        if (pagosEditados.length === 0) {
+          setErrorEdicion('La venta debe tener al menos un pago');
+          return;
+        }
+
+        const totalVenta = calcularTotal();
+        const totalPagos = pagosEditados.reduce((sum, pago) => sum + pago.monto, 0);
+
+        if (totalPagos < totalVenta) {
+          setErrorEdicion(`El total de pagos ($${totalPagos.toFixed(2)}) no cubre el total de la venta ($${totalVenta.toFixed(2)})`);
+          return;
+        }
+
+        const request = {
+          sucursalId: ventaSeleccionada.sucursalId,
+          items: itemsEditados.map(item => ({
+            productoId: item.productoId,
+            productoNombre: item.productoNombre,
+            cantidad: item.cantidad,
+            precioUnitario: item.precioUnitario,
+            nota: item.nota,
+          })),
+          pagos: pagosEditados.map(pago => ({
+            metodoPagoId: pago.metodoPagoId,
+            monto: pago.monto,
+            referencia: pago.referencia || null,
+          })),
+          nota: notaEditada,
+          canal: ventaSeleccionada.canal,
+          fecha: fechaEditada !== ventaSeleccionada.fecha ? new Date(fechaEditada).toISOString() : null,
+        };
+
+        const response = await apiService.put(`${API_ENDPOINTS.SALES}/${ventaSeleccionada.id}`, request);
+
+        if (response.success) {
+          setSnackbar({
+            open: true,
+            message: `✓ Venta #${ventaSeleccionada.id} actualizada exitosamente`,
+            tipo: 'success',
+          });
+          handleCerrarDialogoEdicion();
+          await loadVentas();
+        } else {
+          setErrorEdicion(response.error || 'Error al actualizar la venta');
+        }
       }
     } catch (err: any) {
       setErrorEdicion(err.message || 'Error de conexión al actualizar la venta');
@@ -763,12 +826,41 @@ export default function AdminSales() {
         </Button>
       </Box>
 
-      {/* Filtro de fechas */}
+      {/* Filtro de fechas + Paginador de Días */}
+      {/* Filtro de fechas y paginador de días dentro del mismo recuadro */}
       <DateRangeFilter 
         onChange={handleDateRangeChange} 
         initialRange={dateRange}
         label="Filtrar ventas por fecha"
-      />
+      >
+        {/* Paginador de Días */}
+        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', justifyContent: 'flex-end', mt: { xs: 2, md: 0 } }}>
+          <Button 
+            size="small" 
+            variant="outlined"
+            onClick={() => handleCambiarDia(diaSeleccionado - 1)}
+            startIcon={<ChevronLeft />}
+          >
+            Atrás
+          </Button>
+          <Typography variant="body2" sx={{ minWidth: '120px', textAlign: 'center', fontWeight: 500 }}>
+            {diaSeleccionado === 0 ? (
+              'Hoy'
+            ) : (
+              `Hace ${Math.abs(diaSeleccionado)} día${Math.abs(diaSeleccionado) > 1 ? 's' : ''}`
+            )}
+          </Typography>
+          <Button 
+            size="small" 
+            variant="outlined"
+            onClick={() => handleCambiarDia(diaSeleccionado + 1)}
+            disabled={diaSeleccionado >= 0}
+            endIcon={<ChevronRight />}
+          >
+            Adelante
+          </Button>
+        </Box>
+      </DateRangeFilter>
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -1045,9 +1137,40 @@ export default function AdminSales() {
           <Typography component="div" variant="h5" fontWeight="bold">
             Editar Venta #{ventaSeleccionada?.id}
           </Typography>
-          <Typography component="div" variant="body2" color="text.secondary">
-            {ventaSeleccionada && format(new Date(ventaSeleccionada.fecha), "dd/MM/yyyy HH:mm", { locale: es })}
-          </Typography>
+          {editandoFecha ? (
+            <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mt: 1 }}>
+                <DatePicker
+                  value={new Date(fechaEditada)}
+                  onChange={(date) => {
+                    if (date) {
+                      setFechaEditada(date.toISOString());
+                    }
+                  }}
+                  slotProps={{ textField: { size: 'small' } }}
+                />
+                <Button size="small" variant="contained" onClick={() => setEditandoFecha(false)}>
+                  Listo
+                </Button>
+                <Button size="small" onClick={() => {
+                  setFechaEditada(ventaSeleccionada?.fecha || '');
+                  setEditandoFecha(false);
+                }}>
+                  Cancelar
+                </Button>
+              </Box>
+            </LocalizationProvider>
+          ) : (
+            <Typography
+              component="div"
+              variant="body2"
+              color="primary"
+              sx={{ cursor: 'pointer', fontWeight: 500, '&:hover': { textDecoration: 'underline' } }}
+              onClick={() => setEditandoFecha(true)}
+            >
+              📅 {fechaEditada && format(new Date(fechaEditada), "dd/MM/yyyy HH:mm", { locale: es })}
+            </Typography>
+          )}
         </DialogTitle>
         
         <DialogContent sx={{ flex: 1, overflow: 'auto', px: 2 }}>

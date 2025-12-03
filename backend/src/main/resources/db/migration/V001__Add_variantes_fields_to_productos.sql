@@ -1,19 +1,56 @@
 -- Migración: Agregar campos de variantes a la tabla productos
 -- Fecha: 2025-12-01
 -- Descripción: Agrega soporte para variantes de productos (tamaños, presentaciones, etc.)
+-- Optimizada para PostgreSQL
 
--- Agregar columnas si no existen (compatible con PostgreSQL)
-ALTER TABLE productos
-ADD COLUMN IF NOT EXISTS descripcion TEXT,
-ADD COLUMN IF NOT EXISTS costo_estimado DECIMAL(12,4),
-ADD COLUMN IF NOT EXISTS sku VARCHAR(50),
-ADD COLUMN IF NOT EXISTS disponible_en_menu BOOLEAN DEFAULT TRUE,
-ADD COLUMN IF NOT EXISTS producto_base_id BIGINT,
-ADD COLUMN IF NOT EXISTS nombre_variante VARCHAR(255),
-ADD COLUMN IF NOT EXISTS orden_variante INTEGER;
+-- Agregar columnas si no existen
+DO $$
+BEGIN
+    -- descripcion
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'productos' AND column_name = 'descripcion') THEN
+        ALTER TABLE productos ADD COLUMN descripcion TEXT;
+    END IF;
+    
+    -- costo_estimado
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'productos' AND column_name = 'costo_estimado') THEN
+        ALTER TABLE productos ADD COLUMN costo_estimado DECIMAL(12,4);
+    END IF;
+    
+    -- sku
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'productos' AND column_name = 'sku') THEN
+        ALTER TABLE productos ADD COLUMN sku VARCHAR(50);
+    END IF;
+    
+    -- disponible_en_menu
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'productos' AND column_name = 'disponible_en_menu') THEN
+        ALTER TABLE productos ADD COLUMN disponible_en_menu BOOLEAN DEFAULT TRUE;
+    END IF;
+    
+    -- producto_base_id
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'productos' AND column_name = 'producto_base_id') THEN
+        ALTER TABLE productos ADD COLUMN producto_base_id BIGINT;
+    END IF;
+    
+    -- nombre_variante
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'productos' AND column_name = 'nombre_variante') THEN
+        ALTER TABLE productos ADD COLUMN nombre_variante VARCHAR(255);
+    END IF;
+    
+    -- orden_variante
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'productos' AND column_name = 'orden_variante') THEN
+        ALTER TABLE productos ADD COLUMN orden_variante INTEGER;
+    END IF;
+END
+$$;
 
 -- Agregar foreign key si no existe
--- Primero verificar que no exista la constrainta
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints 
@@ -37,10 +74,4 @@ CREATE INDEX IF NOT EXISTS idx_productos_orden_variante ON productos(orden_varia
 
 -- Actualizar la tabla si tiene datos existentes pero falta disponible_en_menu
 -- Establecer TRUE para productos existentes que no sean variantes
-UPDATE productos
-SET disponible_en_menu = TRUE
-WHERE disponible_en_menu IS NULL;
-
--- Hacer la columna NOT NULL después de actualizar
-ALTER TABLE productos
-ALTER COLUMN disponible_en_menu SET NOT NULL;
+UPDATE productos SET disponible_en_menu = TRUE WHERE disponible_en_menu IS NULL;

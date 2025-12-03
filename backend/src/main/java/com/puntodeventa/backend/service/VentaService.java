@@ -65,9 +65,16 @@ public class VentaService {
     }
     
     public List<VentaDTO> obtenerPorRangoFechas(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
-        return ventaRepository.findByFechaBetween(fechaInicio, fechaFin).stream()
+        List<Venta> ventas = ventaRepository.findByFechaBetween(fechaInicio, fechaFin);
+        System.out.println("🔍 [VentaService] obtenerPorRangoFechas: encontradas " + ventas.size() + " ventas");
+        ventas.forEach(v -> System.out.println("  - Venta ID: " + v.getId() + ", Items: " + (v.getItems() != null ? v.getItems().size() : 0)));
+        
+        List<VentaDTO> resultado = ventas.stream()
             .map(this::toDTO)
             .toList();
+        
+        System.out.println("🔍 [VentaService] Retornando " + resultado.size() + " VentaDTO");
+        return resultado;
     }
     
     @Transactional // Permite escritura (sobrescribe readOnly=true de la clase)
@@ -708,6 +715,83 @@ public class VentaService {
             .toList();
     }
     
+    /**
+     * Actualiza la fecha de una venta existente.
+     * Solo permite actualizar ventas de las últimas 24 horas y que no estén canceladas.
+     * 
+     * @param ventaId ID de la venta a actualizar
+     * @param nuevaFecha Nueva fecha para la venta (LocalDateTime)
+     * @return VentaDTO actualizada
+     * @throws ResourceNotFoundException si la venta no existe
+     * @throws IllegalArgumentException si la venta está cancelada o es muy antigua
+     */
+    @Transactional
+    public VentaDTO actualizarFechaVenta(Long ventaId, LocalDateTime nuevaFecha) {
+        // Buscar la venta
+        Venta venta = ventaRepository.findById(ventaId)
+            .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con ID: " + ventaId));
+        
+        // Validar que no esté cancelada
+        if ("cancelada".equals(venta.getEstado())) {
+            throw new IllegalArgumentException("No se puede editar una venta cancelada");
+        }
+        
+        // Obtener usuario actual para verificar permisos
+        Usuario usuarioActual = obtenerUsuarioActual();
+        boolean esAdmin = usuarioActual != null && "ADMIN".equals(usuarioActual.getRol().getNombre());
+        
+        // Obtener la hora actual para auditoría
+        LocalDateTime ahora = LocalDateTime.now();
+        
+        // Validar restricción temporal: solo editar ventas del día actual o recientes (últimas 24 horas)
+        // Los ADMIN NO tienen esta restricción
+        if (!esAdmin) {
+            LocalDateTime limiteEdicion = ahora.minusHours(24);
+            if (venta.getFecha().isBefore(limiteEdicion)) {
+                throw new IllegalArgumentException(
+                    "No se pueden editar ventas con más de 24 horas de antigüedad. " +
+                    "Fecha de la venta: " + venta.getFecha() + ". Contacte al administrador."
+                );
+            }
+            
+            // Validar que la nueva fecha no sea demasiado antigua
+            if (nuevaFecha.isBefore(limiteEdicion)) {
+                throw new IllegalArgumentException(
+                    "No se puede cambiar la fecha a una anterior a " + limiteEdicion + 
+                    " (más de 24 horas atrás)"
+                );
+            }
+        }
+        
+        // Obtener usuario actual para auditoría (ya obtenido anteriormente, se reutiliza)
+        Usuario usuarioEdicion = usuarioActual;
+        
+        // Actualizar la fecha
+        LocalDateTime fechaAnterior = venta.getFecha();
+        venta.setFecha(nuevaFecha);
+        
+        // Agregar nota de auditoría
+        String notaEdicion = String.format(
+            "[FECHA ACTUALIZADA] Anterior: %s | Nueva: %s | Usuario: %s | Fecha de cambio: %s",
+            fechaAnterior,
+            nuevaFecha,
+            usuarioEdicion != null ? usuarioEdicion.getNombre() : "Sistema",
+            ahora
+        );
+        
+        String notaAnterior = venta.getNota() != null && !venta.getNota().isEmpty() 
+            ? venta.getNota() 
+            : "Sin nota";
+        
+        venta.setNota(notaAnterior + "\n" + notaEdicion);
+        
+        // Guardar y retornar
+        venta = ventaRepository.save(venta);
+        log.info("actualizarFechaVenta(): Venta {} actualizada de {} a {}", ventaId, fechaAnterior, nuevaFecha);
+        
+        return toDTO(venta);
+    }
+
     /**
      * Elimina definitivamente una venta y todos sus registros asociados.
      * SOLO ADMIN puede ejecutar esta operación.

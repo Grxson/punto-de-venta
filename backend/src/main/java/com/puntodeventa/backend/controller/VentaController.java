@@ -103,6 +103,22 @@ public class VentaController {
         return ResponseEntity.ok(ventaCancelada);
     }
     
+    @PutMapping("/{id}/fecha")
+    @Operation(summary = "Actualizar fecha de venta", 
+               description = "Actualiza únicamente la fecha de una venta existente. " +
+                            "La venta no debe estar cancelada. " +
+                            "Restricción temporal: Los empleados regulares solo pueden editar ventas de las últimas 24 horas. " +
+                            "Los usuarios ADMIN pueden editar ventas de cualquier fecha. " +
+                            "Formato de fecha: yyyy-MM-dd'T'HH:mm:ss (ejemplo: 2025-01-01T14:30:00). " +
+                            "Cualquier usuario autenticado puede ejecutar esta operación.")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<VentaDTO> actualizarFechaVenta(
+            @PathVariable Long id,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fecha) {
+        VentaDTO ventaActualizada = ventaService.actualizarFechaVenta(id, fecha);
+        return ResponseEntity.ok(ventaActualizada);
+    }
+    
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar venta definitivamente", 
                description = "Elimina permanentemente una venta de la base de datos. " +
