@@ -39,6 +39,7 @@ import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
 import type { DateRangeValue } from '../../types/dateRange.types';
+import { getTodayLocalDate, getDateWithOffset } from '../../utils/dateHelper';
 
 interface CategoriaGasto {
   id: number;
@@ -109,10 +110,12 @@ export default function AdminExpenses() {
   const [newProveedorName, setNewProveedorName] = useState<string>('');
   
   // Estado para el filtro de fechas
+  const todayLocal = getTodayLocalDate();
   const [dateRange, setDateRange] = useState<DateRangeValue>({
-    desde: new Date().toISOString().split('T')[0],
-    hasta: new Date().toISOString().split('T')[0],
+    desde: todayLocal,
+    hasta: todayLocal,
   });
+  const [diaSeleccionado, setDiaSeleccionado] = useState(0); // Offset de días desde hoy
 
   // Estado para filtro de tipo de gasto
   const [filtroTipoGasto, setFiltroTipoGasto] = useState<'todos' | 'operacional' | 'administrativo'>('todos');
@@ -289,6 +292,17 @@ export default function AdminExpenses() {
 
   const handleDateRangeChange = (range: DateRangeValue) => {
     setDateRange(range);
+    setDiaSeleccionado(0);
+  };
+
+  const handleCambiarDia = (direccion: 'anterior' | 'siguiente') => {
+    const nuevoDia = direccion === 'anterior' ? diaSeleccionado - 1 : diaSeleccionado + 1;
+    const fechaFormato = getDateWithOffset(nuevoDia);
+    setDiaSeleccionado(nuevoDia);
+    setDateRange({
+      desde: fechaFormato,
+      hasta: fechaFormato,
+    });
   };
 
   const handleOpenDialog = (gasto?: Gasto) => {
@@ -609,7 +623,30 @@ export default function AdminExpenses() {
           onChange={handleDateRangeChange} 
           initialRange={dateRange}
           label="Filtrar gastos por fecha"
-        />
+        >
+          {/* Paginador de días */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Button 
+              variant="outlined" 
+              size="small"
+              onClick={() => handleCambiarDia('anterior')}
+            >
+              ← Atrás
+            </Button>
+            <Typography variant="body2" sx={{ minWidth: '100px', textAlign: 'center' }}>
+              {diaSeleccionado === 0 ? 'Hoy' : `Hace ${Math.abs(diaSeleccionado)} día${Math.abs(diaSeleccionado) > 1 ? 's' : ''}`}
+            </Typography>
+            <Button 
+              variant="outlined" 
+              size="small"
+              disabled={diaSeleccionado === 0}
+              onClick={() => handleCambiarDia('siguiente')}
+              title={diaSeleccionado === 0 ? "No puedes ir adelante de hoy" : "Ir al día siguiente"}
+            >
+              Adelante →
+            </Button>
+          </Box>
+        </DateRangeFilter>
 
         {/* Filtro de tipo de gasto */}
         <Box sx={{ mb: 2, display: 'flex', gap: 1, alignItems: 'center' }}>
@@ -663,7 +700,7 @@ export default function AdminExpenses() {
                 <AttachMoney sx={{ fontSize: 40, color: 'warning.main' }} />
                 <Box>
                   <Typography variant="body2" color="text.secondary">
-                    Gastos Administrativos (NO se incluyen)
+                    Gastos Administrativos
                   </Typography>
                   <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
                     ${totalGastosAdministrativosFiltrados.toFixed(2)}

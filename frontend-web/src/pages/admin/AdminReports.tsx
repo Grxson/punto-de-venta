@@ -37,6 +37,7 @@ import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
 import type { DateRangeValue } from '../../types/dateRange.types';
+import { getTodayLocalDate, getDateWithOffset } from '../../utils/dateHelper';
 
 interface ResumenVentas {
   fecha: string;
@@ -82,9 +83,10 @@ interface VentaDetalle {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export default function AdminReports() {
+  const todayLocal = getTodayLocalDate();
   const [dateRange, setDateRange] = useState<DateRangeValue>({
-    desde: new Date().toISOString().split('T')[0],
-    hasta: new Date().toISOString().split('T')[0],
+    desde: todayLocal,
+    hasta: todayLocal,
   });
   const [diaSeleccionado, setDiaSeleccionado] = useState(0); // Offset de días desde hoy
   const [resumen, setResumen] = useState<ResumenVentas | null>(null);
@@ -101,15 +103,7 @@ export default function AdminReports() {
 
   const handleCambiarDia = (direccion: 'anterior' | 'siguiente') => {
     const nuevoDia = direccion === 'anterior' ? diaSeleccionado - 1 : diaSeleccionado + 1;
-    // Calcular la fecha base (hoy) y aplicar el offset
-    const hoy = new Date();
-    const fechaSeleccionada = new Date(hoy);
-    fechaSeleccionada.setDate(hoy.getDate() + nuevoDia);
-    // Formatear como YYYY-MM-DD en local
-    const year = fechaSeleccionada.getFullYear();
-    const month = String(fechaSeleccionada.getMonth() + 1).padStart(2, '0');
-    const day = String(fechaSeleccionada.getDate()).padStart(2, '0');
-    const fechaFormato = `${year}-${month}-${day}`;
+    const fechaFormato = getDateWithOffset(nuevoDia);
     setDiaSeleccionado(nuevoDia);
     setDateRange({
       desde: fechaFormato,
@@ -139,11 +133,6 @@ export default function AdminReports() {
       const desdeISO = desde.toISOString().split('.')[0]; // yyyy-MM-ddTHH:mm:ss
       const hastaISO = hasta.toISOString().split('.')[0]; // yyyy-MM-ddTHH:mm:ss
 
-      console.log('Cargando reportes para rango:', {
-        desde: desdeISO,
-        hasta: hastaISO
-      });
-
       // Cargar resumen de ventas
       const resumenResponse = await apiService.get(
         `${API_ENDPOINTS.STATS_SALES_RANGE}?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
@@ -151,7 +140,6 @@ export default function AdminReports() {
 
       if (resumenResponse.success && resumenResponse.data) {
         const data = resumenResponse.data;
-        console.log('📊 Respuesta de resumen ventas:', data);
         setResumen({
           fecha: data.fecha || dateRange.desde,
           totalVentas: parseFloat(data.totalVentas) || 0,
@@ -191,9 +179,6 @@ export default function AdminReports() {
       );
 
       if (ventasResponse.success && ventasResponse.data) {
-        console.log('📦 Respuesta de ventas detalladas:', ventasResponse.data);
-        console.log('📊 Total items calculado:', ventasResponse.data.reduce((sum: number, v: any) => sum + (v.items?.length || 0), 0));
-        console.log('📊 Total unidades calculado:', ventasResponse.data.reduce((sum: number, v: any) => sum + (v.items?.reduce((s: number, i: any) => s + (i.cantidad || 0), 0) || 0), 0));
         setVentas(ventasResponse.data);
       }
 
@@ -336,7 +321,8 @@ export default function AdminReports() {
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
           <Tabs value={currentTab} onChange={handleTabChange} aria-label="reportes tabs">
             <Tab label="📊 Dashboard General" />
-            <Tab label="📋 Corte de Caja" />
+            <Tab label="📋 Corte Por Producto" />
+            <Tab label="📅 Corte General" />
           </Tabs>
         </Box>
 
@@ -704,11 +690,11 @@ export default function AdminReports() {
                         {/* Header */}
                         <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
                           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
-                            📋 Corte de Caja
+                            📋 Corte Por Producto
                           </Typography>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                             <Typography variant="body2" color="text.secondary">
-                              {new Date(dateRange.desde).toLocaleDateString('es-ES')} - {new Date(dateRange.hasta).toLocaleDateString('es-ES')}
+                              {format(parse(dateRange.desde, 'yyyy-MM-dd', new Date()), "'del' dd 'de' MMMM ", { locale: es })} - {format(parse(dateRange.hasta, 'yyyy-MM-dd', new Date()), "'al' dd 'de' MMMM ", { locale: es })}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                               {ventas.length} ventas
@@ -865,26 +851,6 @@ export default function AdminReports() {
                             </TableBody>
                           </Table>
                         </TableContainer>
-
-                        {/* Total final */}
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            py: 1.5,
-                            px: 2,
-                            bgcolor: 'primary.main',
-                            color: 'white',
-                            borderRadius: 1,
-                          }}
-                        >
-                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                            RESULTADO DEL CORTE
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                            ${(ventas.reduce((sum, v) => sum + v.total, 0) - gastosDia).toFixed(2)}
-                          </Typography>
-                        </Box>
                       </>
                     )}
                   </CardContent>
