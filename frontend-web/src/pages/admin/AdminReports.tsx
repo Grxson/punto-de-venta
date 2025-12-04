@@ -38,47 +38,8 @@ import { API_ENDPOINTS } from '../../config/api.config';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
 import type { DateRangeValue } from '../../types/dateRange.types';
 import { getTodayLocalDate, getDateWithOffset } from '../../utils/dateHelper';
-
-interface ResumenVentas {
-  fecha: string;
-  totalVentas: number;
-  totalCostos: number;
-  margenBruto: number;
-  cantidadVentas: number;
-  itemsVendidos: number;
-  ticketPromedio: number;
-  margenPorcentaje: number;
-}
-
-interface ProductoRendimiento {
-  productoId: number;
-  nombre: string;
-  precio: number;
-  costoEstimado: number;
-  margenUnitario: number;
-  margenPorcentaje: number;
-  unidadesVendidas: number;
-  ingresoTotal: number;
-  costoTotal: number;
-  margenBrutoTotal: number;
-}
-
-interface VentaDetalle {
-  id: number;
-  folio: string;
-  fecha: string;
-  total: number;
-  items: {
-    productoNombre: string;
-    cantidad: number;
-    precioUnitario: number;
-    subtotal: number;
-  }[];
-  pagos: {
-    metodoPagoNombre: string;
-    monto: number;
-  }[];
-}
+import type { ResumenVentas, ProductoRendimiento, VentaDetalle, GastoDetallado } from './types/reportTypes';
+import { GeneralCutTab } from './components';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -93,6 +54,7 @@ export default function AdminReports() {
   const [productosTop, setProductosTop] = useState<ProductoRendimiento[]>([]);
   const [ventas, setVentas] = useState<VentaDetalle[]>([]);
   const [gastosDia, setGastosDia] = useState<number>(0); // Gastos del día seleccionado
+  const [gastosDetallados, setGastosDetallados] = useState<GastoDetallado[]>([]); // ✨ Nuevo: gastos por categoría
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState(0);
@@ -193,12 +155,25 @@ export default function AdminReports() {
             const fechaGasto = g.fecha ? new Date(g.fecha) : null;
             return fechaGasto && fechaGasto >= desde && fechaGasto <= hasta;
           });
-          const totalGastos = gastosFiltrados.reduce((sum: number, gasto: any) => sum + (parseFloat(gasto.monto) || 0), 0);
+          
+          // ✨ MAPEAR Y GUARDAR GASTOS DETALLADOS
+          const gastosDetallados = gastosFiltrados.map((g: any) => ({
+            id: g.id,
+            monto: parseFloat(g.monto) || 0,
+            categoriaGastoNombre: g.categoriaGastoNombre || 'Sin categoría',
+            proveedorNombre: g.proveedorNombre || 'Sin proveedor',
+            nota: g.nota || '',
+            fecha: g.fecha || '',
+          }));
+          
+          setGastosDetallados(gastosDetallados);
+          const totalGastos = gastosDetallados.reduce((sum: number, gasto) => sum + gasto.monto, 0);
           setGastosDia(totalGastos);
         }
       } catch (err) {
         // Si el endpoint de gastos falla, simplemente no mostrar gastos
         setGastosDia(0);
+        setGastosDetallados([]);
       }
     } catch (err: any) {
       setError(err.message || 'Error al cargar reportes');
@@ -856,6 +831,16 @@ export default function AdminReports() {
                   </CardContent>
                 </Card>
               </Box>
+            )}
+
+            {/* Tab 2: Corte General */}
+            {currentTab === 2 && (
+              <GeneralCutTab 
+                ventas={ventas} 
+                gastosDia={gastosDia}
+                gastosDetallados={gastosDetallados}
+                dateRange={dateRange} 
+              />
             )}
           </>
         ) : (
