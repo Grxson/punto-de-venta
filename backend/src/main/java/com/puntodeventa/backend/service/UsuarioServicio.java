@@ -191,18 +191,30 @@ public class UsuarioServicio {
      * Mapear Usuario a UsuarioDTO
      */
     private UsuarioDTO mapearADTO(Usuario usuario) {
-        return new UsuarioDTO(
-            usuario.getId(),
-            usuario.getNombre(),
-            usuario.getApellido(),
-            usuario.getEmail(),
-            usuario.getUsername(),
-            usuario.getActivo(),
-            usuario.getRol().getNombre(),
-            usuario.getSucursal().getId(),
-            usuario.getUltimoAcceso(),
-            usuario.getCreatedAt(),
-            usuario.getUpdatedAt()
-        );
+        UsuarioDTO dto = new UsuarioDTO();
+        dto.setId(usuario.getId());
+        dto.setNombre(usuario.getNombre());
+        dto.setApellido(usuario.getApellido());
+        dto.setEmail(usuario.getEmail());
+        dto.setUsername(usuario.getUsername());
+        dto.setActivo(usuario.getActivo());
+        dto.setSucursalId(usuario.getSucursal().getId());
+        dto.setUltimoAcceso(usuario.getUltimoAcceso());
+        dto.setCreatedAt(usuario.getCreatedAt());
+        dto.setUpdatedAt(usuario.getUpdatedAt());
+        
+        // Mapear rol si existe
+        if (usuario.getRol() != null) {
+            UsuarioDTO.RolDTO rolDTO = UsuarioDTO.RolDTO.builder()
+                .id(usuario.getRol().getId())
+                .nombre(usuario.getRol().getNombre())
+                .descripcion(usuario.getRol().getDescripcion())
+                .activo(usuario.getRol().getActivo())
+                .build();
+            dto.setRol(rolDTO);
+            dto.setRolNombre(usuario.getRol().getNombre());
+        }
+        
+        return dto;
     }
 }

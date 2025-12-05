@@ -30,7 +30,7 @@ import type { Usuario } from '../../types/usuario.types';
 import type { Rol } from '../../types/rol.types';
 
 interface UsuariosTableProps {
-  usuarios: Usuario[];
+  usuarios?: Usuario[];
   roles?: Rol[];
   isLoading?: boolean;
   onEdit: (usuario: Usuario) => void;
@@ -118,7 +118,7 @@ export const UsuariosTable = ({
             label="Rol"
           >
             <MenuItem value="">Todos los roles</MenuItem>
-            {roles.map((rol) => (
+            {Array.isArray(roles) && roles.map((rol) => (
               <MenuItem key={rol.id} value={String(rol.id)}>
                 {rol.nombre}
               </MenuItem>

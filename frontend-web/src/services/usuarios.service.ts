@@ -5,28 +5,46 @@
 import apiService from './api.service';
 import type { Usuario, CrearUsuarioRequest, EditarUsuarioRequest, CambiarRolRequest } from '../types/usuario.types';
 
-const API_BASE = '/api/auth/usuarios';
+const API_BASE = '/auth/usuarios';
 
 export const usuariosService = {
   /**
    * Obtener todos los usuarios de una sucursal
    */
   obtenerPorSucursal: async (sucursalId: number, activo?: boolean) => {
-    const params = new URLSearchParams();
-    if (activo !== undefined) {
-      params.append('activo', String(activo));
+    try {
+      const params = new URLSearchParams();
+      if (activo !== undefined) {
+        params.append('activo', String(activo));
+      }
+      const query = params.toString() ? `?${params.toString()}` : '';
+      const response = await apiService.get<Usuario[]>(`${API_BASE}/sucursal/${sucursalId}${query}`);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      console.warn('Error al obtener usuarios:', response.error || 'Unknown error');
+      return [];
+    } catch (error) {
+      console.error('Exception al obtener usuarios:', error);
+      return [];
     }
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const response = await apiService.get<Usuario[]>(`${API_BASE}/sucursal/${sucursalId}${query}`);
-    return response.data || [];
   },
 
   /**
    * Obtener un usuario por ID
    */
   obtenerPorId: async (id: number) => {
-    const response = await apiService.get<Usuario>(`${API_BASE}/${id}`);
-    return response.data;
+    try {
+      const response = await apiService.get<Usuario>(`${API_BASE}/${id}`);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      console.warn('Error al obtener usuario:', response.error || 'Unknown error');
+      return null;
+    } catch (error) {
+      console.error('Exception al obtener usuario:', error);
+      return null;
+    }
   },
 
   /**

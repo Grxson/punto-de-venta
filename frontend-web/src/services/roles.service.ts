@@ -5,23 +5,41 @@
 import apiService from './api.service';
 import type { Rol, CrearRolRequest, EditarRolRequest } from '../types/rol.types';
 
-const API_BASE = '/api/roles';
+const API_BASE = '/roles';
 
 export const rolesService = {
   /**
    * Obtener todos los roles activos
    */
   obtenerTodos: async () => {
-    const response = await apiService.get<Rol[]>(API_BASE);
-    return response.data || [];
+    try {
+      const response = await apiService.get<Rol[]>(API_BASE);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      console.warn('Error al obtener roles:', response.error || 'Unknown error');
+      return [];
+    } catch (error) {
+      console.error('Exception al obtener roles:', error);
+      return [];
+    }
   },
 
   /**
    * Obtener todos los roles (incluyendo inactivos)
    */
   obtenerTodosConInactivos: async () => {
-    const response = await apiService.get<Rol[]>(`${API_BASE}?incluirInactivos=true`);
-    return response.data || [];
+    try {
+      const response = await apiService.get<Rol[]>(`${API_BASE}?incluirInactivos=true`);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      console.warn('Error al obtener roles con inactivos:', response.error || 'Unknown error');
+      return [];
+    } catch (error) {
+      console.error('Exception al obtener roles con inactivos:', error);
+      return [];
+    }
   },
 
   /**

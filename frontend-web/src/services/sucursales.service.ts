@@ -5,23 +5,41 @@
 import { apiService } from './api.service';
 import type { Sucursal, CrearSucursalRequest, EditarSucursalRequest } from '../types/sucursal.types';
 
-const BASE_URL = '/api/sucursales';
+const BASE_URL = '/sucursales';
 
 export const sucursalesService = {
   /**
    * Obtener todas las sucursales activas
    */
   obtenerTodas: async () => {
-    const response = await apiService.get<Sucursal[]>(`${BASE_URL}?activo=true`);
-    return response.data;
+    try {
+      const response = await apiService.get<Sucursal[]>(`${BASE_URL}?activo=true`);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      console.warn('Error al obtener sucursales:', response.error || 'Unknown error');
+      return [];
+    } catch (error) {
+      console.error('Exception al obtener sucursales:', error);
+      return [];
+    }
   },
 
   /**
    * Obtener todas las sucursales incluyendo inactivas
    */
   obtenerTodosConInactivos: async () => {
-    const response = await apiService.get<Sucursal[]>(BASE_URL);
-    return response.data;
+    try {
+      const response = await apiService.get<Sucursal[]>(BASE_URL);
+      if (response.success && response.data) {
+        return response.data;
+      }
+      console.warn('Error al obtener sucursales con inactivos:', response.error || 'Unknown error');
+      return [];
+    } catch (error) {
+      console.error('Exception al obtener sucursales con inactivos:', error);
+      return [];
+    }
   },
 
   /**
