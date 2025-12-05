@@ -44,11 +44,11 @@ public class CategoriaSubcategoria {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
     
-    @Column(nullable = false, columnDefinition = "INTEGER")
+    @Column(nullable = false)
     @Builder.Default
     private Integer orden = 0;
     
-    @Column(nullable = false, columnDefinition = "INTEGER")
+    @Column(nullable = false)
     @Builder.Default
     private Boolean activa = true;
     
