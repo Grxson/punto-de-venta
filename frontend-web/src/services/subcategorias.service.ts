@@ -22,7 +22,7 @@ export const subcategoriasService = {
    */
   obtenerPorCategoria: async (categoriaId: number) => {
     return apiService.get<CategoriaSubcategoria[]>(
-      `${API_ENDPOINTS.CATEGORIES}/${categoriaId}/subcategorias`
+      `${API_ENDPOINTS.SUBCATEGORIES}/${categoriaId}/subcategorias`
     );
   },
 
@@ -31,7 +31,7 @@ export const subcategoriasService = {
    */
   obtener: async (categoriaId: number, subcategoriaId: number) => {
     return apiService.get<CategoriaSubcategoria>(
-      `${API_ENDPOINTS.CATEGORIES}/${categoriaId}/subcategorias/${subcategoriaId}`
+      `${API_ENDPOINTS.SUBCATEGORIES}/${categoriaId}/subcategorias/${subcategoriaId}`
     );
   },
 
@@ -40,7 +40,7 @@ export const subcategoriasService = {
    */
   crear: async (categoriaId: number, data: CreateSubcategoriaRequest) => {
     return apiService.post<CategoriaSubcategoria>(
-      `${API_ENDPOINTS.CATEGORIES}/${categoriaId}/subcategorias`,
+      `${API_ENDPOINTS.SUBCATEGORIES}/${categoriaId}/subcategorias`,
       data
     );
   },
@@ -50,7 +50,7 @@ export const subcategoriasService = {
    */
   actualizar: async (categoriaId: number, subcategoriaId: number, data: Partial<CreateSubcategoriaRequest>) => {
     return apiService.put<CategoriaSubcategoria>(
-      `${API_ENDPOINTS.CATEGORIES}/${categoriaId}/subcategorias/${subcategoriaId}`,
+      `${API_ENDPOINTS.SUBCATEGORIES}/${categoriaId}/subcategorias/${subcategoriaId}`,
       data
     );
   },
@@ -60,7 +60,7 @@ export const subcategoriasService = {
    */
   eliminar: async (categoriaId: number, subcategoriaId: number) => {
     return apiService.delete(
-      `${API_ENDPOINTS.CATEGORIES}/${categoriaId}/subcategorias/${subcategoriaId}`
+      `${API_ENDPOINTS.SUBCATEGORIES}/${categoriaId}/subcategorias/${subcategoriaId}`
     );
   },
 };

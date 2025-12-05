@@ -30,6 +30,8 @@ import { API_ENDPOINTS } from '../../config/api.config';
 import { useCart } from '../../contexts/CartContext';
 import { websocketService } from '../../services/websocket.service';
 import { userPreferencesService } from '../../services/userPreferences.service';
+import { useSubcategorias } from '../../hooks/useSubcategorias';
+import type { CategoriaSubcategoria } from '../../types/subcategorias.types';
 
 interface Producto {
   id: number;
@@ -55,9 +57,9 @@ export default function PosHome() {
     // Nota: esto puede ser null si aún no se han cargado las categorías
     return userPreferencesService.getPosSelectedCategory();
   });
-  const [subcategoriaDesayunos, setSubcategoriaDesayunos] = useState<string | null>(() => {
+  const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<number | null>(() => {
     // Restaurar la subcategoría guardada al montar el componente
-    return userPreferencesService.getPosDesayunosSubcategory();
+    return userPreferencesService.getPosSubcategoryId();
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,6 +74,15 @@ export default function PosHome() {
   const [editingPriceValue, setEditingPriceValue] = useState<string>('');
   const mostrarMensajeRef = useRef(false);
   const timerCompletadoRef = useRef(false);
+
+  // Hook para cargar subcategorías de la categoría seleccionada
+  const { data: subcategoriasData, isLoading: loadingSubcategorias } = useSubcategorias(
+    categoriaSeleccionada || null
+  );
+  
+  const subcategorias: CategoriaSubcategoria[] = Array.isArray(subcategoriasData?.data)
+    ? subcategoriasData.data
+    : [];
 
   // Obtiene el nombre base sin el sufijo de variante (Chico/Mediano/Grande)
   const obtenerNombreBase = (p: Producto): string => {
@@ -165,27 +176,18 @@ export default function PosHome() {
     if (categorias.length > 0) {
       userPreferencesService.setPosSelectedCategory(categoriaSeleccionada);
       
-      // Resetear subcategoría cuando cambia la categoría principal (solo si no es Desayunos)
-      if (categoriaSeleccionada !== null) {
-        const categoriaNombre = categorias.find(c => c.id === categoriaSeleccionada)?.nombre;
-        if (categoriaNombre !== 'Desayunos') {
-          setSubcategoriaDesayunos(null);
-          userPreferencesService.setPosDesayunosSubcategory(null);
-        }
-      } else {
-        setSubcategoriaDesayunos(null);
-        userPreferencesService.setPosDesayunosSubcategory(null);
-      }
+      // Resetear subcategoría cuando cambia la categoría principal
+      setSubcategoriaSeleccionada(null);
+      userPreferencesService.setPosSubcategoryId(null);
     }
   }, [categoriaSeleccionada, categorias]);
 
-  // Guardar la subcategoría de Desayunos cuando cambia
+  // Guardar la subcategoría cuando cambia
   useEffect(() => {
-    // Solo guardar si estamos en Desayunos y las categorías están cargadas
-    if (esCategoriaDesayunos && categorias.length > 0) {
-      userPreferencesService.setPosDesayunosSubcategory(subcategoriaDesayunos);
+    if (subcategoriaSeleccionada !== null && categoriaSeleccionada !== null) {
+      userPreferencesService.setPosSubcategoryId(subcategoriaSeleccionada);
     }
-  }, [subcategoriaDesayunos, esCategoriaDesayunos, categorias]);
+  }, [subcategoriaSeleccionada, categoriaSeleccionada]);
 
   const loadData = async () => {
     try {
@@ -207,22 +209,15 @@ export default function PosHome() {
             // Restaurar la categoría (puede ser diferente a la inicializada si las categorías cambiaron)
             setCategoriaSeleccionada(categoriaGuardada);
             
-            // Si la categoría guardada es Desayunos, restaurar también la subcategoría
-            const categoriaDesayunos = categoriasCargadas.find((cat: { id: number; nombre: string }) => cat.nombre === 'Desayunos');
-            if (categoriaGuardada === categoriaDesayunos?.id) {
-              const subcategoriaGuardada = userPreferencesService.getPosDesayunosSubcategory();
-              // Restaurar la subcategoría guardada (puede ser null si estaba en "TODOS")
-              setSubcategoriaDesayunos(subcategoriaGuardada);
-            } else {
-              // Si no es Desayunos, asegurarse de limpiar la subcategoría
-              setSubcategoriaDesayunos(null);
-            }
+            // Restaurar la subcategoría guardada si existe
+            const subcategoriaGuardada = userPreferencesService.getPosSubcategoryId();
+            setSubcategoriaSeleccionada(subcategoriaGuardada);
           } else {
             // Si la categoría no existe, limpiar la preferencia
             userPreferencesService.setPosSelectedCategory(null);
-            userPreferencesService.setPosDesayunosSubcategory(null);
+            userPreferencesService.setPosSubcategoryId(null);
             setCategoriaSeleccionada(null);
-            setSubcategoriaDesayunos(null);
+            setSubcategoriaSeleccionada(null);
           }
         }
       }
@@ -336,27 +331,48 @@ export default function PosHome() {
     return producto.categoriaNombre || 'Sin categoría';
   };
 
+  // Función para obtener la subcategoría de un producto basada en su nombre
+  const obtenerSubcategoriaDeProducto = (nombreProducto: string, subcategoriasDisponibles: CategoriaSubcategoria[]): number | null => {
+    if (!nombreProducto || subcategoriasDisponibles.length === 0) return null;
+    
+    const nombreLower = nombreProducto.toLowerCase();
+    
+    // Primero, intentar extraer subcategoría del prefijo [SUBCATEGORIA]
+    const prefixMatch = nombreProducto.match(/^\[([^\]]+)\]/);
+    if (prefixMatch) {
+      const subcatDelPrefijo = prefixMatch[1].toLowerCase();
+      // Buscar la subcategoría que coincida con el prefijo
+      const subcatEncontrada = subcategoriasDisponibles.find(
+        s => s.nombre.toLowerCase() === subcatDelPrefijo
+      );
+      if (subcatEncontrada) {
+        return subcatEncontrada.id || null;
+      }
+    }
+    
+    // Si no hay prefijo, usar detección por palabras clave
+    for (const subcat of subcategoriasDisponibles) {
+      const subcatNameLower = subcat.nombre.toLowerCase();
+      if (nombreLower.includes(subcatNameLower)) {
+        return subcat.id || null;
+      }
+    }
+    
+    return null;
+  };
+
   // Filtrar productos
   let productosFiltrados = categoriaSeleccionada
     ? productos.filter(p => p.categoriaId === categoriaSeleccionada)
     : productos;
 
-  // Si estamos en Desayunos y hay una subcategoría seleccionada, filtrar por subcategoría
-  if (esCategoriaDesayunos && subcategoriaDesayunos) {
+  // Si hay una subcategoría seleccionada, filtrar por subcategoría
+  if (subcategoriaSeleccionada !== null) {
     productosFiltrados = productosFiltrados.filter(p => {
-      const subcat = obtenerSubcategoriaDesayuno(p.nombre);
-      return subcat === subcategoriaDesayunos;
+      const subcatDelProducto = obtenerSubcategoriaDeProducto(p.nombre, subcategorias);
+      return subcatDelProducto === subcategoriaSeleccionada;
     });
   }
-
-  // Subcategorías de Desayunos
-  const subcategoriasDesayunos = [
-    { id: 'todos', label: 'TODOS', icon: <Restaurant /> },
-    { id: 'dulces', label: 'DULCES', icon: <BreakfastDining /> },
-    { id: 'lonches', label: 'LONCHES', icon: <LunchDining /> },
-    { id: 'sandwiches', label: 'SANDWICHES', icon: <Fastfood /> },
-    { id: 'otros', label: 'PLATOS PRINCIPALES', icon: <Restaurant /> },
-  ];
 
   const handleProductoClick = (producto: Producto) => {
     // Si el producto tiene variantes, mostrar diálogo de selección
@@ -485,12 +501,12 @@ export default function PosHome() {
 
       {/* Filtros por categoría */}
       <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: esCategoriaDesayunos ? 2 : 0 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: subcategorias.length > 0 ? 2 : 0 }}>
         <Button
           variant={categoriaSeleccionada === null ? 'contained' : 'outlined'}
             onClick={() => {
               setCategoriaSeleccionada(null);
-              setSubcategoriaDesayunos(null);
+              setSubcategoriaSeleccionada(null);
             }}
           sx={{ minHeight: '48px' }}
         >
@@ -503,7 +519,7 @@ export default function PosHome() {
               onClick={() => {
                 setCategoriaSeleccionada(cat.id);
                 if (cat.nombre !== 'Desayunos') {
-                  setSubcategoriaDesayunos(null);
+                  setSubcategoriaSeleccionada(null);
                 }
               }}
             sx={{ minHeight: '48px' }}
@@ -513,24 +529,42 @@ export default function PosHome() {
         ))}
         </Box>
 
-        {/* Subcategorías de Desayunos */}
-        {esCategoriaDesayunos && (
+        {/* Subcategorías de la categoría seleccionada */}
+        {subcategorias.length > 0 && (
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 2, p: 1.5, backgroundColor: 'rgba(25, 118, 210, 0.08)', borderRadius: 2 }}>
-            {subcategoriasDesayunos.map(subcat => (
-              <Button
-                key={subcat.id}
-                variant={subcategoriaDesayunos === subcat.id ? 'contained' : 'outlined'}
-                onClick={() => setSubcategoriaDesayunos(subcat.id === 'todos' ? null : subcat.id)}
-                size="small"
-                sx={{ 
-                  minHeight: '36px',
-                  textTransform: 'none',
-                }}
-                startIcon={subcat.icon}
-              >
-                {subcat.label}
-              </Button>
-            ))}
+            {/* Botón para mostrar todas */}
+            <Button
+              variant={subcategoriaSeleccionada === null ? 'contained' : 'outlined'}
+              onClick={() => setSubcategoriaSeleccionada(null)}
+              size="small"
+              sx={{ 
+                minHeight: '36px',
+                textTransform: 'none',
+              }}
+              startIcon={<Restaurant />}
+            >
+              TODAS
+            </Button>
+            
+            {/* Botones para cada subcategoría */}
+            {loadingSubcategorias ? (
+              <CircularProgress size={24} />
+            ) : (
+              subcategorias.map(subcat => (
+                <Button
+                  key={subcat.id}
+                  variant={subcategoriaSeleccionada === subcat.id ? 'contained' : 'outlined'}
+                  onClick={() => setSubcategoriaSeleccionada(subcat.id)}
+                  size="small"
+                  sx={{ 
+                    minHeight: '36px',
+                    textTransform: 'none',
+                  }}
+                >
+                  {subcat.nombre.toUpperCase()}
+                </Button>
+              ))
+            )}
           </Box>
         )}
       </Box>

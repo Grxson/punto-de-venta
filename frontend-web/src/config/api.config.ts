@@ -85,6 +85,7 @@ export const API_ENDPOINTS = {
   // Productos (endpoints están bajo /api/inventario/)
   PRODUCTS: '/inventario/productos',
   CATEGORIES: '/inventario/categorias-productos',
+  SUBCATEGORIES: '/categorias', // Endpoint para subcategorías (SIN /inventario)
   
   // Ventas
   SALES: '/ventas',
