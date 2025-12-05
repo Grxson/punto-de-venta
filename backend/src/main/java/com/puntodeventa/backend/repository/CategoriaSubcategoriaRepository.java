@@ -18,10 +18,9 @@ public interface CategoriaSubcategoriaRepository extends JpaRepository<Categoria
     
     /**
      * Obtener todas las subcategorías de una categoría, ordenadas por orden.
-     * Funciona con BOOLEAN o SMALLINT en PostgreSQL.
      */
     @Query("SELECT cs FROM CategoriaSubcategoria cs " +
-           "WHERE cs.categoria.id = :categoriaId " +
+           "WHERE cs.categoria.id = :categoriaId AND cs.activa = true " +
            "ORDER BY cs.orden ASC, cs.nombre ASC")
     List<CategoriaSubcategoria> findByCategoriaIdOrderByOrden(@Param("categoriaId") Long categoriaId);
     
