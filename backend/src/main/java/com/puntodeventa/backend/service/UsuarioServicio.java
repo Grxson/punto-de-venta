@@ -220,7 +220,12 @@ public class UsuarioServicio {
         dto.setEmail(usuario.getEmail());
         dto.setUsername(usuario.getUsername());
         dto.setActivo(usuario.getActivo());
-        dto.setSucursalId(usuario.getSucursal().getId());
+        
+        // Mapear sucursal si existe
+        if (usuario.getSucursal() != null) {
+            dto.setSucursalId(usuario.getSucursal().getId());
+        }
+        
         dto.setUltimoAcceso(usuario.getUltimoAcceso());
         dto.setCreatedAt(usuario.getCreatedAt());
         dto.setUpdatedAt(usuario.getUpdatedAt());
