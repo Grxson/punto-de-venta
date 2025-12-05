@@ -228,6 +228,8 @@ export default function AdminCategorias() {
         await eliminarCategoriaFn.mutateAsync(itemToDelete.item.id!);
         setSuccessMessage(`✅ Categoría "${itemToDelete.item.nombre}" eliminada exitosamente`);
         setSelectedCategoria(null);
+        // Cambiar a filtro "Activas" para no ver las eliminadas
+        setFilterActivos('activas');
       } else {
         await eliminarSubcategoriaFn.mutateAsync({
           categoriaId: selectedCategoria!.id!,

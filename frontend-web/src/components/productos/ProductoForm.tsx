@@ -343,6 +343,9 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
         }
 
         // Actualizar variantes existentes modificadas
+        // ⚠️ IMPORTANTE: NO cambiar el "nombre" completo de la variante
+        // Solo actualizar nombreVariante, precio y orden
+        // El "nombre" completo se reconstruye en el frontend como: "ProductoBase - Variante"
         const variantesExistentes = variantes.filter(v => v.id);
         for (const variante of variantesExistentes) {
           if (variante.nombre.trim()) {
@@ -350,10 +353,8 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
               ? parseFloat(variante.precio)
               : parseFloat(precio) || 0;
 
-            // Enviar los campos actualizables incluyendo el nombre completo
-            const nombreVarianteFinal = `${nombreFinal} - ${variante.nombre.trim()}`;
+            // Solo actualizar campos que deben cambiar, NO el nombre completo
             await productosService.actualizar(variante.id, {
-              nombre: nombreVarianteFinal,
               nombreVariante: variante.nombre.trim(),
               precio: precioVariante,
               ordenVariante: variante.orden,

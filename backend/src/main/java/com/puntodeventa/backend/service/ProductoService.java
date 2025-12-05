@@ -226,6 +226,12 @@ public class ProductoService {
         // Manejar campos específicos de variante
         if (dto.nombreVariante() != null) {
             p.setNombreVariante(dto.nombreVariante());
+            
+            // Si es una variante y cambió el nombreVariante, reconstruir el nombre completo
+            // automáticamente para mantener consistencia
+            if (p.getProductoBase() != null) {
+                p.setNombre(p.getProductoBase().getNombre() + " - " + dto.nombreVariante());
+            }
         }
         if (dto.ordenVariante() != null) {
             p.setOrdenVariante(dto.ordenVariante());
