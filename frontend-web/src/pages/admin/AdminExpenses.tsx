@@ -38,6 +38,8 @@ import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
+import ExpandableExpenseRow from '../../components/expenses/ExpandableExpenseRow';
+import { useGroupExpensesByTime } from '../../hooks/useGroupExpensesByTime';
 import type { DateRangeValue } from '../../types/dateRange.types';
 import { getTodayLocalDate, getDateWithOffset } from '../../utils/dateHelper';
 
@@ -717,49 +719,32 @@ export default function AdminExpenses() {
         {/* Tabla de gastos */}
         <Card>
           <CardContent>
-            <TableContainer component={Paper} variant="outlined">
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Fecha</TableCell>
-                    <TableCell>Tipo</TableCell>
-                    <TableCell>Categoría</TableCell>
-                    <TableCell>Descripción</TableCell>
-                    <TableCell>Proveedor</TableCell>
-                    <TableCell align="right">Monto</TableCell>
-                    <TableCell>Método de Pago</TableCell>
-                    <TableCell align="center">Acciones</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {gastosFiltrados.length > 0 ? (
-                    gastosFiltrados.map((gasto) => (
-                      <TableRow key={gasto.id}>
-                        <TableCell>
-                          {format(new Date(gasto.fecha), 'dd/MM/yyyy HH:mm', { locale: es })}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={gasto.tipoGasto === 'Administrativo' ? 'Administrativo' : 'Operacional'}
-                            size="small"
-                            color={gasto.tipoGasto === 'Administrativo' ? 'warning' : 'success'}
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Chip label={gasto.categoriaGastoNombre} size="small" color="primary" />
-                        </TableCell>
-                        <TableCell>{gasto.nota || '-'}</TableCell>
-                        <TableCell>{gasto.proveedorNombre || '-'}</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                          ${gasto.monto.toFixed(2)}
-                        </TableCell>
-                        <TableCell>{gasto.metodoPagoNombre || '-'}</TableCell>
-                        <TableCell align="center">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => {
+            {/* Hook para agrupar gastos por hora */}
+            {(() => {
+              const gastoGrouped = useGroupExpensesByTime(gastosFiltrados);
+              return (
+                <TableContainer component={Paper} variant="outlined">
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Fecha</TableCell>
+                        <TableCell>Tipo</TableCell>
+                        <TableCell>Categoría</TableCell>
+                        <TableCell>Descripción</TableCell>
+                        <TableCell>Proveedor</TableCell>
+                        <TableCell align="right">Monto</TableCell>
+                        <TableCell>Método de Pago</TableCell>
+                        <TableCell align="center">Acciones</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {gastoGrouped.length > 0 ? (
+                        gastoGrouped.map((group) => (
+                          <ExpandableExpenseRow
+                            key={group.timeGroup}
+                            gastos={group.gastos}
+                            timeGroup={group.timeGroup}
+                            onEdit={(gasto) => {
                               setEditingGasto(gasto);
                               setFecha(new Date(gasto.fecha));
                               setMetodoPagoId(gasto.metodoPagoId || '');
@@ -770,33 +755,22 @@ export default function AdminExpenses() {
                               setTipoGasto(gasto.tipoGasto || 'Operacional');
                               setOpenDialog(true);
                             }}
-                            disabled={loading}
-                            title="Editar"
-                          >
-                            <Edit fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDelete(gasto.id)}
-                            disabled={loading}
-                            title="Eliminar"
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center">
-                        No hay gastos en el rango de fechas seleccionado
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                            onDelete={handleDelete}
+                            isLoading={loading}
+                          />
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={8} align="center">
+                            No hay gastos en el rango de fechas seleccionado
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              );
+            })()}
           </CardContent>
         </Card>
 
