@@ -51,7 +51,9 @@ export const usuariosService = {
    * Crear nuevo usuario
    */
   crear: async (data: CrearUsuarioRequest) => {
+    console.log('🔵 usuariosService.crear() - Datos:', data);
     const response = await apiService.post<Usuario>(API_BASE, data);
+    console.log('🔴 usuariosService.crear() - Respuesta:', response);
     return response.data;
   },
 

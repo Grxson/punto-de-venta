@@ -104,12 +104,14 @@ export const UsuarioForm = ({
       const rolId = Number(data.rolId);
       const sucursalId = Number(data.sucursalId);
       
+      console.log('📝 Datos del formulario:', { ...data, rolId, sucursalId });
+      
       if (!rolId || isNaN(rolId) || rolId <= 0) {
-        console.error('Rol inválido:', data.rolId);
+        console.error('❌ Rol inválido:', data.rolId);
         return;
       }
       if (!sucursalId || isNaN(sucursalId) || sucursalId <= 0) {
-        console.error('Sucursal inválida:', data.sucursalId);
+        console.error('❌ Sucursal inválida:', data.sucursalId);
         return;
       }
 
@@ -118,6 +120,9 @@ export const UsuarioForm = ({
         rolId,
         sucursalId,
       };
+      
+      console.log('✅ Enviando:', submitData);
+      
       await onSubmit(submitData);
       handleClose();
     } catch (err) {

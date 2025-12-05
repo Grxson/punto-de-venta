@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import java.util.Map;
  * Manejador global de excepciones para la API REST.
  * Captura y transforma excepciones en respuestas HTTP apropiadas.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -46,6 +48,8 @@ public class GlobalExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
+
+        log.warn("❌ Error de validación en request: {}", errors);
 
         ErrorResponse error = ErrorResponse.builder()
             .timestamp(LocalDateTime.now())
