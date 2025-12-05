@@ -32,6 +32,7 @@ export default function PosPayment() {
   const [loadingMetodos, setLoadingMetodos] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [clickTimers, setClickTimers] = useState<Record<number, ReturnType<typeof setTimeout> | null>>({});
+  const [isProcessing, setIsProcessing] = useState(false); // Prevenir pagos duplicados
 
   // Obtiene el nombre base sin el sufijo de variante (Chico/Mediano/Grande)
   const obtenerNombreBase = (p: any): string => {
@@ -77,6 +78,12 @@ export default function PosPayment() {
   };
 
   const handleProcesarPago = async () => {
+    // Prevenir ejecución duplicada si ya está procesando
+    if (isProcessing) {
+      console.warn('⚠️ Pago ya está siendo procesado, ignora');
+      return;
+    }
+
     if (!metodoSeleccionado) {
       setError('Selecciona un método de pago');
       return;
@@ -88,6 +95,7 @@ export default function PosPayment() {
     }
 
     try {
+      setIsProcessing(true); // Marcar como procesando
       setLoading(true);
       setError(null);
 
@@ -130,15 +138,22 @@ export default function PosPayment() {
         navigate('/pos', { state: { ventaExitosa: true } });
       } else {
         setError(response.error || 'Error al procesar la venta');
+        setIsProcessing(false); // Permitir reintentos en caso de error
       }
     } catch (err: any) {
       setError(err.message || 'Error al procesar el pago');
+      setIsProcessing(false); // Permitir reintentos en caso de error
     } finally {
       setLoading(false);
     }
   };
 
   const handleMetodoClick = (metodo: MetodoPago) => {
+    // Prevenir clics si ya está procesando
+    if (isProcessing) {
+      return;
+    }
+
     // Cancelar timer anterior si existe
     if (clickTimers[metodo.id]) {
       clearTimeout(clickTimers[metodo.id]!);
@@ -294,7 +309,7 @@ export default function PosPayment() {
                   variant={metodoSeleccionado?.id === metodo.id ? 'contained' : 'outlined'}
                   fullWidth
                   onClick={() => handleMetodoClick(metodo)}
-                  disabled={loading}
+                  disabled={loading || isProcessing}
                   sx={{ 
                     minHeight: '80px', 
                     fontSize: '16px',
