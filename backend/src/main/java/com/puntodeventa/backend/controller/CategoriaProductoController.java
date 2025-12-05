@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,6 +40,7 @@ public class CategoriaProductoController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     @Operation(summary = "Crear categoría")
     public ResponseEntity<CategoriaProductoDTO> crear(@Validated @RequestBody CategoriaProductoDTO dto) {
         CategoriaProductoDTO creada = categoriaService.crear(dto);
@@ -46,12 +48,14 @@ public class CategoriaProductoController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     @Operation(summary = "Actualizar categoría")
     public ResponseEntity<CategoriaProductoDTO> actualizar(@PathVariable Long id, @Validated @RequestBody CategoriaProductoDTO dto) {
         return ResponseEntity.ok(categoriaService.actualizar(id, dto));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     @Operation(summary = "Eliminar categoría", description = "Borrado lógico: marca la categoría como inactiva")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         categoriaService.eliminar(id);

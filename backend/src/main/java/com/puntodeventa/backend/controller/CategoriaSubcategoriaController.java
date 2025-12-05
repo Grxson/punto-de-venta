@@ -3,6 +3,7 @@ package com.puntodeventa.backend.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -61,6 +62,7 @@ public class CategoriaSubcategoriaController {
      * Crear una nueva subcategoría.
      */
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     @Operation(summary = "Crear subcategoría", description = "Crea una nueva subcategoría en la categoría especificada")
     public ResponseEntity<CategoriaSubcategoriaDTO> crear(
             @PathVariable Long categoriaId,
@@ -84,6 +86,7 @@ public class CategoriaSubcategoriaController {
      * Actualizar una subcategoría existente.
      */
     @PutMapping("/{subcategoriaId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     @Operation(summary = "Actualizar subcategoría")
     public ResponseEntity<CategoriaSubcategoriaDTO> actualizar(
             @PathVariable Long categoriaId,
@@ -107,6 +110,7 @@ public class CategoriaSubcategoriaController {
      * Eliminar una subcategoría (borrado lógico).
      */
     @DeleteMapping("/{subcategoriaId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     @Operation(summary = "Eliminar subcategoría", description = "Marca la subcategoría como inactiva (borrado lógico)")
     public ResponseEntity<Void> eliminar(
             @PathVariable Long categoriaId,
