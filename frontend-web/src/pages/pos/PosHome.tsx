@@ -286,10 +286,10 @@ export default function PosHome() {
     // Primero, intentar extraer subcategoría del prefijo [SUBCATEGORIA]
     const prefixMatch = nombreProducto.match(/^\[([^\]]+)\]/);
     if (prefixMatch) {
-      const subcatDelPrefijo = prefixMatch[1].toLowerCase();
-      // Normalizar a los valores válidos
-      if (['dulces', 'lonches', 'sandwiches', 'otros'].includes(subcatDelPrefijo)) {
-        return subcatDelPrefijo;
+      const subcatDelPrefijo = prefixMatch[1].toUpperCase();
+      // Normalizar a los valores válidos (en mayúsculas)
+      if (['DULCES', 'LONCHES', 'SANDWICHES', 'OTROS'].includes(subcatDelPrefijo)) {
+        return subcatDelPrefijo.toLowerCase();
       }
     }
     

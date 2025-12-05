@@ -28,8 +28,10 @@ import {
 import { ExpandMore, Delete, Add } from '@mui/icons-material';
 import type { Producto } from '../../types/productos.types';
 import type { CategoriaProducto } from '../../types/categorias.types';
+import type { CategoriaSubcategoria } from '../../types/subcategorias.types';
 import { productosService } from '../../services/productos.service';
 import { categoriasService } from '../../services/categorias.service';
+import { subcategoriasService } from '../../services/subcategorias.service';
 
 interface ProductoFormProps {
   open: boolean;
@@ -52,6 +54,7 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
   const [precio, setPrecio] = useState<string>('');
   const [sku, setSku] = useState('');
   const [skuGenerado, setSkuGenerado] = useState(false);
+  const [subcategoriasDisponibles, setSubcategoriasDisponibles] = useState<CategoriaSubcategoria[]>([]);
 
   // Variantes
   const [variantes, setVariantes] = useState<Array<{ id?: number; nombre: string; precio: string; orden: number }>>([]);
@@ -111,6 +114,32 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
     }
   };
 
+  // Cargar subcategorías cuando se selecciona una categoría
+  const loadSubcategorias = async (categoriaId: number) => {
+    try {
+      const response = await subcategoriasService.obtenerPorCategoria(categoriaId);
+      if (response.success && response.data) {
+        setSubcategoriasDisponibles(response.data);
+      } else {
+        setSubcategoriasDisponibles([]);
+      }
+    } catch (err) {
+      console.error('Error cargando subcategorías:', err);
+      setSubcategoriasDisponibles([]);
+    }
+  };
+
+  // Efecto para cargar subcategorías cuando cambia la categoría
+  useEffect(() => {
+    if (categoriaId && typeof categoriaId === 'number') {
+      loadSubcategorias(categoriaId);
+      setSubcategoria(''); // Limpiar subcategoría seleccionada
+    } else {
+      setSubcategoriasDisponibles([]);
+      setSubcategoria('');
+    }
+  }, [categoriaId]);
+
   const resetForm = () => {
     setNombre('');
     setDescripcion('');
@@ -135,31 +164,12 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
   const extraerSubcategoriaDelNombre = (nombreProducto: string): string => {
     const prefixMatch = nombreProducto.match(/^\[([^\]]+)\]/);
     if (prefixMatch) {
-      const subcatDelPrefijo = prefixMatch[1].toLowerCase();
-      if (['dulces', 'lonches', 'sandwiches', 'otros'].includes(subcatDelPrefijo)) {
-        return subcatDelPrefijo;
-      }
+      const subcatDelPrefijo = prefixMatch[1];
+      // Retornar tal como está, sin obligar a minúsculas
+      return subcatDelPrefijo;
     }
     return '';
   };
-
-  // Obtener subcategorías disponibles según la categoría seleccionada
-  const getSubcategoriasDisponibles = (): Array<{ id: string; label: string }> => {
-    const categoriaSeleccionada = categorias.find(cat => cat.id === categoriaId);
-    
-    if (categoriaSeleccionada?.nombre === 'Desayunos') {
-      return [
-        { id: 'dulces', label: 'DULCES' },
-        { id: 'lonches', label: 'LONCHES' },
-        { id: 'sandwiches', label: 'SANDWICHES' },
-        { id: 'otros', label: 'OTROS' },
-      ];
-    }
-    
-    return [];
-  };
-
-  const subcategoriasDisponibles = getSubcategoriasDisponibles();
 
   // Plantillas de variantes comunes
   const plantillasVariantes = {
@@ -265,12 +275,20 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
     const categoriaSeleccionada = categorias.find(cat => cat.id === categoriaId);
     if (categoriaSeleccionada?.nombre === 'Desayunos') {
       const nombreLower = nuevoNombre.toLowerCase();
+      
+      // Intentar auto-detectar basado en palabras clave
+      let subcategoriaDetectada = '';
       if (nombreLower.includes('mollete') || nombreLower.includes('waffle') || nombreLower.includes('hot cake')) {
-        setSubcategoria('dulces');
+        subcategoriaDetectada = 'DULCES';
       } else if (nombreLower.includes('lonche') && !nombreLower.includes('sandwich')) {
-        setSubcategoria('lonches');
+        subcategoriaDetectada = 'LONCHES';
       } else if (nombreLower.includes('sandwich')) {
-        setSubcategoria('sandwiches');
+        subcategoriaDetectada = 'SANDWICHES';
+      }
+      
+      // Solo establecer si coincide con una subcategoría disponible en la BD
+      if (subcategoriaDetectada && subcategoriasDisponibles.some(sc => sc.nombre === subcategoriaDetectada)) {
+        setSubcategoria(subcategoriaDetectada);
       }
     }
   };
@@ -453,7 +471,6 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
               label="Categoría"
               onChange={(e) => {
                 setCategoriaId(e.target.value as number | '');
-                setSubcategoria(''); // Reset subcategory when category changes
               }}
             >
               <MenuItem value="">Sin categoría</MenuItem>
@@ -475,8 +492,8 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
               >
                 <MenuItem value="">Sin especificar</MenuItem>
                 {subcategoriasDisponibles.map((subcat) => (
-                  <MenuItem key={subcat.id} value={subcat.id}>
-                    {subcat.label}
+                  <MenuItem key={subcat.id} value={subcat.nombre || ''}>
+                    {subcat.nombre}
                   </MenuItem>
                 ))}
               </Select>
