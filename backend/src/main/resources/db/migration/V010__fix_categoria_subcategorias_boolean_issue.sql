@@ -1,6 +1,12 @@
--- Crear tabla de relaciones categoria-subcategorías
--- Permite que una categoría tenga múltiples subcategorías
-CREATE TABLE IF NOT EXISTS categoria_subcategorias (
+-- V010: Arreglar el problema de tipo BOOLEAN en Railway
+-- Railway tiene la tabla con BOOLEAN, PostgreSQL no puede comparar boolean = integer
+-- Solución: Eliminar y recrear la tabla con SMALLINT desde el inicio
+
+-- Eliminar la tabla anterior (incluye los datos de prueba)
+DROP TABLE IF EXISTS categoria_subcategorias CASCADE;
+
+-- Recrear la tabla con SMALLINT desde el inicio
+CREATE TABLE categoria_subcategorias (
     id BIGSERIAL PRIMARY KEY,
     categoria_id BIGINT NOT NULL,
     nombre VARCHAR(100) NOT NULL,
@@ -17,8 +23,7 @@ CREATE TABLE IF NOT EXISTS categoria_subcategorias (
 CREATE INDEX idx_subcategorias_categoria_id ON categoria_subcategorias(categoria_id);
 CREATE INDEX idx_subcategorias_activa ON categoria_subcategorias(activa);
 
--- Insertar subcategorías de Desayunos
--- Primero obtener el ID de la categoría Desayunos
+-- Reinsertar subcategorías de Desayunos con valores SMALLINT
 INSERT INTO categoria_subcategorias (categoria_id, nombre, descripcion, orden, activa)
 SELECT id, 'DULCES', 'Molletes, Waffles, Mini Hot-Cakes', 1, 1
 FROM categorias_productos WHERE nombre = 'Desayunos'

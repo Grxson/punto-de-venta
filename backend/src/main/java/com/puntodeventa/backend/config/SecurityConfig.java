@@ -87,6 +87,7 @@ public class SecurityConfig {
                 // Endpoints públicos - IMPORTANTE: El orden importa, estos se evalúan primero
                 .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/categorias/**").permitAll() // Subcategorías para el formulario de productos
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs", "/api-docs/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
