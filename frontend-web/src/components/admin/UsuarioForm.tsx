@@ -243,8 +243,8 @@ export const UsuarioForm = ({
                 isEditing && !passwordValue
                   ? undefined
                   : {
-                      value: 6,
-                      message: 'Mínimo 6 caracteres',
+                      value: 8,
+                      message: 'Mínimo 8 caracteres',
                     },
             }}
             render={({ field }) => (
