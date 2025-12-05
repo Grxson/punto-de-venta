@@ -188,6 +188,24 @@ public class UsuarioServicio {
     }
 
     /**
+     * Cambiar rol de un usuario
+     */
+    @Transactional
+    public UsuarioDTO cambiarRol(Long id, Long rolId) {
+        Usuario usuario = usuarioRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        Rol rol = rolRepository.findById(rolId)
+            .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
+
+        usuario.setRol(rol);
+        usuario.setUpdatedAt(LocalDateTime.now());
+        Usuario usuarioActualizado = usuarioRepository.save(usuario);
+
+        return mapearADTO(usuarioActualizado);
+    }
+
+    /**
      * Mapear Usuario a UsuarioDTO
      */
     private UsuarioDTO mapearADTO(Usuario usuario) {

@@ -176,13 +176,13 @@ export const UsuariosTable = ({
                   <TableCell>
                     {usuario.rol ? (
                       <Select
-                        value={usuario.rol.id}
+                        value={usuario.rol.id || ''}
                         onChange={(e) => onChangeRole(usuario.id, Number(e.target.value))}
                         size="small"
                         variant="standard"
                         sx={{ minWidth: 120 }}
                       >
-                        {roles.map((rol) => (
+                        {Array.isArray(roles) && roles.map((rol) => (
                           <MenuItem key={rol.id} value={rol.id}>
                             {rol.nombre}
                           </MenuItem>
