@@ -597,6 +597,9 @@ export default function AdminExpenses() {
     .filter(gasto => gasto.tipoGasto === 'Administrativo')
     .reduce((sum, gasto) => sum + gasto.monto, 0);
 
+  // Agrupar gastos filtrados por hora de registro
+  const gastoGrouped = useGroupExpensesByTime(gastosFiltrados);
+
   if (loadingData) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -719,58 +722,52 @@ export default function AdminExpenses() {
         {/* Tabla de gastos */}
         <Card>
           <CardContent>
-            {/* Hook para agrupar gastos por hora */}
-            {(() => {
-              const gastoGrouped = useGroupExpensesByTime(gastosFiltrados);
-              return (
-                <TableContainer component={Paper} variant="outlined">
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Fecha</TableCell>
-                        <TableCell>Tipo</TableCell>
-                        <TableCell>Categoría</TableCell>
-                        <TableCell>Descripción</TableCell>
-                        <TableCell>Proveedor</TableCell>
-                        <TableCell align="right">Monto</TableCell>
-                        <TableCell>Método de Pago</TableCell>
-                        <TableCell align="center">Acciones</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {gastoGrouped.length > 0 ? (
-                        gastoGrouped.map((group) => (
-                          <ExpandableExpenseRow
-                            key={group.timeGroup}
-                            gastos={group.gastos}
-                            timeGroup={group.timeGroup}
-                            onEdit={(gasto) => {
-                              setEditingGasto(gasto);
-                              setFecha(new Date(gasto.fecha));
-                              setMetodoPagoId(gasto.metodoPagoId || '');
-                              setCategoriaId(gasto.categoriaGastoId || '');
-                              setProveedorId(gasto.proveedorId || '');
-                              setMonto(gasto.monto.toString());
-                              setNota(gasto.nota || '');
-                              setTipoGasto(gasto.tipoGasto || 'Operacional');
-                              setOpenDialog(true);
-                            }}
-                            onDelete={handleDelete}
-                            isLoading={loading}
-                          />
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={8} align="center">
-                            No hay gastos en el rango de fechas seleccionado
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              );
-            })()}
+            <TableContainer component={Paper} variant="outlined">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Fecha</TableCell>
+                    <TableCell>Tipo</TableCell>
+                    <TableCell>Categoría</TableCell>
+                    <TableCell>Descripción</TableCell>
+                    <TableCell>Proveedor</TableCell>
+                    <TableCell align="right">Monto</TableCell>
+                    <TableCell>Método de Pago</TableCell>
+                    <TableCell align="center">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {gastoGrouped.length > 0 ? (
+                    gastoGrouped.map((group) => (
+                      <ExpandableExpenseRow
+                        key={group.timeGroup}
+                        gastos={group.gastos}
+                        timeGroup={group.timeGroup}
+                        onEdit={(gasto) => {
+                          setEditingGasto(gasto);
+                          setFecha(new Date(gasto.fecha));
+                          setMetodoPagoId(gasto.metodoPagoId || '');
+                          setCategoriaId(gasto.categoriaGastoId || '');
+                          setProveedorId(gasto.proveedorId || '');
+                          setMonto(gasto.monto.toString());
+                          setNota(gasto.nota || '');
+                          setTipoGasto(gasto.tipoGasto || 'Operacional');
+                          setOpenDialog(true);
+                        }}
+                        onDelete={handleDelete}
+                        isLoading={loading}
+                      />
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center">
+                        No hay gastos en el rango de fechas seleccionado
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </CardContent>
         </Card>
 

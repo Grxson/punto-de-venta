@@ -272,6 +272,9 @@ export default function PosExpenses() {
   // Los usuarios no-admin NUNCA ven gastos administrativos
   const gastosVisiblesEnTabla = gastosFiltrados.filter(gasto => !gasto.tipoGasto || gasto.tipoGasto === 'Operacional');
 
+  // Agrupar gastos visibles por hora de registro
+  const gastoGrouped = useGroupExpensesByTime(gastosVisiblesEnTabla);
+
   const handleDateRangeChange = (range: DateRangeValue) => {
     setDateRange(range);
   };
@@ -599,56 +602,50 @@ export default function PosExpenses() {
         {/* Tabla de gastos */}
         <Card>
           <CardContent>
-            {/* Hook para agrupar gastos por hora */}
-            {(() => {
-              const gastoGrouped = useGroupExpensesByTime(gastosVisiblesEnTabla);
-              return (
-                <TableContainer component={Paper} variant="outlined">
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Fecha</TableCell>
-                        <TableCell>Tipo</TableCell>
-                        <TableCell>Categoría</TableCell>
-                        <TableCell>Descripción</TableCell>
-                        <TableCell>Proveedor</TableCell>
-                        <TableCell align="right">Monto</TableCell>
-                        <TableCell>Método de Pago</TableCell>
-                        <TableCell align="center">Acciones</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {gastoGrouped.length > 0 ? (
-                        gastoGrouped.map((group) => (
-                          <ExpandableExpenseRow
-                            key={group.timeGroup}
-                            gastos={group.gastos}
-                            timeGroup={group.timeGroup}
-                            onEdit={(gasto) => {
-                              if (isAdmin) {
-                                handleOpenDialog(gasto);
-                              }
-                            }}
-                            onDelete={(gastoId) => {
-                              if (isAdmin) {
-                                handleDelete(gastoId);
-                              }
-                            }}
-                            isLoading={loading}
-                          />
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={8} align="center">
-                            No hay gastos registrados para el rango de fechas seleccionado
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              );
-            })()}
+            <TableContainer component={Paper} variant="outlined">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Fecha</TableCell>
+                    <TableCell>Tipo</TableCell>
+                    <TableCell>Categoría</TableCell>
+                    <TableCell>Descripción</TableCell>
+                    <TableCell>Proveedor</TableCell>
+                    <TableCell align="right">Monto</TableCell>
+                    <TableCell>Método de Pago</TableCell>
+                    <TableCell align="center">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {gastoGrouped.length > 0 ? (
+                    gastoGrouped.map((group) => (
+                      <ExpandableExpenseRow
+                        key={group.timeGroup}
+                        gastos={group.gastos}
+                        timeGroup={group.timeGroup}
+                        onEdit={(gasto) => {
+                          if (isAdmin) {
+                            handleOpenDialog(gasto);
+                          }
+                        }}
+                        onDelete={(gastoId) => {
+                          if (isAdmin) {
+                            handleDelete(gastoId);
+                          }
+                        }}
+                        isLoading={loading}
+                      />
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center">
+                        No hay gastos registrados para el rango de fechas seleccionado
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </CardContent>
         </Card>
 
