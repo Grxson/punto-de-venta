@@ -100,10 +100,23 @@ export const UsuarioForm = ({
 
   const handleFormSubmit = async (data: UsuarioFormData) => {
     try {
+      // Validar que rolId y sucursalId son números válidos
+      const rolId = Number(data.rolId);
+      const sucursalId = Number(data.sucursalId);
+      
+      if (!rolId || isNaN(rolId) || rolId <= 0) {
+        console.error('Rol inválido:', data.rolId);
+        return;
+      }
+      if (!sucursalId || isNaN(sucursalId) || sucursalId <= 0) {
+        console.error('Sucursal inválida:', data.sucursalId);
+        return;
+      }
+
       const submitData = {
         ...data,
-        rolId: Number(data.rolId),
-        sucursalId: Number(data.sucursalId),
+        rolId,
+        sucursalId,
       };
       await onSubmit(submitData);
       handleClose();
@@ -248,7 +261,10 @@ export const UsuarioForm = ({
             <Controller
               name="rolId"
               control={control}
-              rules={{ required: 'El rol es requerido' }}
+              rules={{ 
+                required: 'El rol es requerido',
+                validate: (value) => (value && Number(value) > 0) || 'Selecciona un rol válido'
+              }}
               render={({ field }) => (
                 <Select {...field} label="Rol">
                   <MenuItem value="">Seleccionar rol...</MenuItem>
@@ -260,6 +276,7 @@ export const UsuarioForm = ({
                 </Select>
               )}
             />
+            {errors.rolId && <span style={{ color: '#d32f2f', fontSize: '0.75rem' }}>{String(errors.rolId.message)}</span>}
           </FormControl>
 
           {/* Sucursal */}
@@ -268,7 +285,10 @@ export const UsuarioForm = ({
             <Controller
               name="sucursalId"
               control={control}
-              rules={{ required: 'La sucursal es requerida' }}
+              rules={{ 
+                required: 'La sucursal es requerida',
+                validate: (value) => (value && Number(value) > 0) || 'Selecciona una sucursal válida'
+              }}
               render={({ field }) => (
                 <Select {...field} label="Sucursal">
                   <MenuItem value="">Seleccionar sucursal...</MenuItem>
@@ -280,6 +300,7 @@ export const UsuarioForm = ({
                 </Select>
               )}
             />
+            {errors.sucursalId && <span style={{ color: '#d32f2f', fontSize: '0.75rem' }}>{String(errors.sucursalId.message)}</span>}
           </FormControl>
         </Box>
       </DialogContent>

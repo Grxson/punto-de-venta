@@ -9,6 +9,7 @@ import com.puntodeventa.backend.model.Sucursal;
 import com.puntodeventa.backend.model.Usuario;
 import com.puntodeventa.backend.repository.RolRepository;
 import com.puntodeventa.backend.repository.UsuarioRepository;
+import com.puntodeventa.backend.repository.SucursalRepository;
 import com.puntodeventa.backend.security.JwtUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,9 @@ public class UsuarioServicio {
 
     @Autowired
     private RolRepository rolRepository;
+
+    @Autowired
+    private SucursalRepository sucursalRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -60,8 +64,8 @@ public class UsuarioServicio {
         Rol rol = rolRepository.findById(request.rolId())
             .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
 
-        Sucursal sucursal = new Sucursal(); // Asumiendo que tienes una forma de obtenerlo
-        sucursal.setId(request.sucursalId());
+        Sucursal sucursal = sucursalRepository.findById(request.sucursalId())
+            .orElseThrow(() -> new EntityNotFoundException("Sucursal no encontrada"));
 
         // Crear usuario
         Usuario usuario = new Usuario();

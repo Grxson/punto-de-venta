@@ -105,12 +105,18 @@ productos.get(productos.size() - 1)
 
 ## Flujos de trabajo para desarrolladores
 ### Backend (Java + Spring Boot)
-- Ejecutar el proyecto: `cd backend && ./mvnw spring-boot:run`
+- **EJECUTAR EL PROYECTO**: `cd backend && ./start.sh` (script oficial que gestiona perfiles, build y variables de entorno)
 - Compilar: `./mvnw clean compile`
 - Crear package: `./mvnw clean package`
 - La API estará disponible en `http://localhost:8080`
 - Documentación Swagger: `http://localhost:8080/swagger-ui.html`
 - Consola H2 (desarrollo): `http://localhost:8080/h2-console`
+
+**⚠️ IMPORTANTE - Errores de ejecución:**
+- Si hay errores al ejecutar el backend, **SIEMPRE revisar y arreglar en `start.sh`** o en los archivos de configuración que referencia
+- El script `start.sh` detecta automáticamente el perfil (dev/railway/prod) según el entorno
+- Si falta el JAR, lo compila automáticamente
+- Si hay errores de conexión a BD, revisar variables de entorno en `.env`
 
 ### Frontend (React Native)
 - Ejecutar el proyecto: `cd frontend && npm start`
