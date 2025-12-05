@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Box,
   TableRow,
@@ -9,6 +9,9 @@ import {
   Collapse,
   Table,
   TableBody,
+  Paper,
+  Popper,
+  ClickAwayListener,
 } from '@mui/material';
 import { ExpandMore, ExpandLess, Edit, Delete } from '@mui/icons-material';
 import { format } from 'date-fns';
@@ -53,6 +56,8 @@ export default function ExpandableExpenseRow({
   isLoading = false,
 }: ExpandableExpenseRowProps) {
   const [expanded, setExpanded] = useState(false);
+  const [popperOpen, setPopperOpen] = useState(false);
+  const popperRef = useRef<HTMLElement | null>(null);
 
   // Calcular totales
   const totalMonto = gastos.reduce((sum, g) => sum + g.monto, 0);
@@ -79,7 +84,7 @@ export default function ExpandableExpenseRow({
       >
         {/* Columna Fecha/Hora con indicador expandible */}
         <TableCell>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             {showExpandIcon && (
               <IconButton
                 size="small"
@@ -88,20 +93,14 @@ export default function ExpandableExpenseRow({
                   setExpanded(!expanded);
                 }}
                 disabled={isLoading}
+                sx={{ p: 0.2, minWidth: 32, minHeight: 32 }}
               >
-                {expanded ? <ExpandLess /> : <ExpandMore />}
+                {expanded ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
               </IconButton>
             )}
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               {timeGroup}
             </Typography>
-            {countGastos > 1 && (
-              <Chip
-                label={`${countGastos} gastos`}
-                size="small"
-                variant="outlined"
-              />
-            )}
           </Box>
         </TableCell>
 
@@ -132,31 +131,40 @@ export default function ExpandableExpenseRow({
 
         {/* Columna Descripción */}
         <TableCell>
-          {firstGasto.nota || '-'}
-          {countGastos > 1 && (
-            <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
-              +{countGastos - 1} más...
+          <Box>
+            <Typography variant="body2">
+              {firstGasto.nota || '-'}
             </Typography>
-          )}
+            {countGastos > 1 && (
+              <Typography 
+                ref={(el) => {
+                  if (el) popperRef.current = el;
+                }}
+                variant="caption" 
+                sx={{ 
+                  display: 'block', 
+                  mt: 0.5,
+                  color: 'primary.main',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  '&:hover': {
+                    fontWeight: 'bold'
+                  }
+                }}
+                onClick={() => setPopperOpen(!popperOpen)}
+              >
+                +{countGastos - 1} más... (ver todos)
+              </Typography>
+            )}
+          </Box>
         </TableCell>
 
         {/* Columna Proveedor */}
         <TableCell>{firstGasto.proveedorNombre || '-'}</TableCell>
 
-        {/* Columna Monto (Total si hay múltiples) */}
+        {/* Columna Monto */}
         <TableCell align="right" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-          {countGastos > 1 ? (
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                ${totalMonto.toFixed(2)}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                (promedio: ${(totalMonto / countGastos).toFixed(2)})
-              </Typography>
-            </Box>
-          ) : (
-            `$${firstGasto.monto.toFixed(2)}`
-          )}
+          ${totalMonto.toFixed(2)}
         </TableCell>
 
         {/* Columna Método de Pago */}
@@ -208,10 +216,10 @@ export default function ExpandableExpenseRow({
                 '&:hover': { backgroundColor: 'grey.100' },
               }}
             >
-              {/* Indentación visual y timestamp completo */}
+              {/* Indentación visual y solo fecha */}
               <TableCell sx={{ pl: 5 }}>
                 <Typography variant="caption">
-                  {format(new Date(gasto.fecha), 'dd/MM/yyyy HH:mm:ss', {
+                  {format(new Date(gasto.fecha), 'dd/MM/yyyy', {
                     locale: es,
                   })}
                 </Typography>
@@ -284,6 +292,55 @@ export default function ExpandableExpenseRow({
             </TableRow>
           ))}
         </>
+      )}
+
+      {/* Popper mostrando todos los gastos - Idéntico formato que ventas */}
+      {popperOpen && popperRef.current && (
+        <Popper
+          open={true}
+          anchorEl={popperRef.current}
+          placement="right-start"
+          sx={{ zIndex: 1200 }}
+          disablePortal={false}
+          modifiers={[
+            {
+              name: 'offset',
+              enabled: true,
+              options: {
+                offset: [0, 1],
+              },
+            },
+            {
+              name: 'preventOverflow',
+              enabled: true,
+              options: {
+                altAxis: true,
+                altBoundary: true,
+                tether: true,
+                rootBoundary: 'document',
+              },
+            },
+          ]}
+        >
+          <ClickAwayListener onClickAway={() => setPopperOpen(false)}>
+            <Paper
+              elevation={8}
+              sx={{
+                p: 2,
+                maxWidth: 300
+              }}
+            >
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                Todos los gastos:
+              </Typography>
+              {gastos.map((gasto, index) => (
+                <Typography key={index} variant="body2" display="block" sx={{ mb: 0.5 }}>
+                  {gasto.nota || 'Sin descripción'} - ${gasto.monto.toFixed(2)}
+                </Typography>
+              ))}
+            </Paper>
+          </ClickAwayListener>
+        </Popper>
       )}
     </>
   );
