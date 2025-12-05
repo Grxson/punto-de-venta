@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS categoria_subcategorias (
     nombre VARCHAR(100) NOT NULL,
     descripcion TEXT,
     orden INTEGER DEFAULT 0,
-    activa BOOLEAN DEFAULT TRUE NOT NULL,
+    activa SMALLINT DEFAULT 1 NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(categoria_id, nombre),

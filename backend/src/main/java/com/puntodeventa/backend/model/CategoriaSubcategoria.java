@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.type.SqlTypes;
 
 /**
  * Entidad que representa una subcategoría asociada a una categoría de productos.
@@ -49,6 +51,7 @@ public class CategoriaSubcategoria {
     private Integer orden = 0;
     
     @Column(nullable = false)
+    @ColumnDefault("1")
     @Builder.Default
     private Boolean activa = true;
     
