@@ -94,14 +94,29 @@ class UserPreferencesService {
   }
 
   /**
-   * Guarda la subcategoría seleccionada en Desayunos
+   * Guarda la subcategoría seleccionada
+   */
+  setPosSubcategoryId(subcategoryId: number | null): void {
+    this.setPreference('posSubcategoryId', subcategoryId);
+  }
+
+  /**
+   * Obtiene la subcategoría seleccionada
+   */
+  getPosSubcategoryId(): number | null {
+    const value = this.getPreference<number | null>('posSubcategoryId', null);
+    return value ?? null;
+  }
+
+  /**
+   * Guarda la subcategoría seleccionada en Desayunos (DEPRECATED - usar getPosSubcategoryId)
    */
   setPosDesayunosSubcategory(subcategoryId: string | null): void {
     this.setPreference('posDesayunosSubcategory', subcategoryId);
   }
 
   /**
-   * Obtiene la subcategoría seleccionada en Desayunos
+   * Obtiene la subcategoría seleccionada en Desayunos (DEPRECATED - usar setPosSubcategoryId)
    */
   getPosDesayunosSubcategory(): string | null {
     const value = this.getPreference<string | null>('posDesayunosSubcategory', null);

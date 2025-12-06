@@ -77,7 +77,7 @@ export const useActualizarCategoria = () => {
 
 /**
  * Hook para eliminar categoría
- * Invalida automáticamente el caché
+ * Invalida automáticamente el caché y fuerza refetch inmediato
  */
 export const useEliminarCategoria = () => {
   const queryClient = useQueryClient();
@@ -85,8 +85,11 @@ export const useEliminarCategoria = () => {
   return useMutation({
     mutationFn: (id: number) => categoriasService.eliminar(id),
     onSuccess: () => {
-      // Invalidar todas las listas de categorías
-      queryClient.invalidateQueries({ queryKey: categoriasKeys.lists() });
+      // Invalidar y refetch inmediato de todas las listas de categorías
+      queryClient.invalidateQueries({ 
+        queryKey: categoriasKeys.lists(),
+        refetchType: 'active' // Fuerza refetch inmediato
+      });
     },
   });
 };

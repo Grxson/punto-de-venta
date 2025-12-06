@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -7,6 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -16,6 +18,7 @@ import java.util.Map;
  * Manejador global de excepciones para la API REST.
  * Captura y transforma excepciones en respuestas HTTP apropiadas.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -46,6 +49,8 @@ public class GlobalExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
+
+        log.warn("❌ Error de validación en request: {}", errors);
 
         ErrorResponse error = ErrorResponse.builder()
             .timestamp(LocalDateTime.now())
@@ -85,10 +90,72 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Maneja rutas no encontradas (404).
+     * Este handler evita que NoHandlerFoundException sea capturado por handleGenericException
+     * y devuelva un error 500 en lugar de un 404 apropiado.
+     */
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoHandlerFound(NoHandlerFoundException ex) {
+        log.warn("⚠️ Ruta no encontrada: {} {}", ex.getHttpMethod(), ex.getRequestURL());
+        
+        ErrorResponse error = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.NOT_FOUND.value())
+            .error("Endpoint no encontrado")
+            .message(String.format("La ruta %s %s no existe", ex.getHttpMethod(), ex.getRequestURL()))
+            .build();
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    /**
+     * Maneja errores de autenticación y autorización (401).
+     * Captura IllegalArgumentException lanzadas desde servicios de autenticación.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        // Si el mensaje contiene palabras clave de autenticación, es un error 401
+        String message = ex.getMessage();
+        boolean isAuthError = message != null && (
+            message.toLowerCase().contains("username") ||
+            message.toLowerCase().contains("password") ||
+            message.toLowerCase().contains("contraseña") ||
+            message.toLowerCase().contains("credencial")
+        );
+        
+        if (isAuthError) {
+            log.warn("⚠️ Error de autenticación: {}", message);
+            
+            ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .error("Error de autenticación")
+                .message(message)
+                .build();
+            
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+        
+        // Si no es error de auth, es un bad request genérico (400)
+        log.warn("⚠️ Argumento inválido: {}", message);
+        
+        ErrorResponse error = ErrorResponse.builder()
+            .timestamp(LocalDateTime.now())
+            .status(HttpStatus.BAD_REQUEST.value())
+            .error("Solicitud inválida")
+            .message(message != null ? message : "Argumento inválido")
+            .build();
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
      * Maneja excepciones genéricas no capturadas.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        log.error("❌ Error inesperado: {}", ex.getMessage(), ex);
+        
         ErrorResponse error = ErrorResponse.builder()
             .timestamp(LocalDateTime.now())
             .status(HttpStatus.INTERNAL_SERVER_ERROR.value())

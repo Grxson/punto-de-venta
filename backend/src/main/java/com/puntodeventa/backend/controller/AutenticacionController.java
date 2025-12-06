@@ -33,6 +33,13 @@ public class AutenticacionController {
         return ResponseEntity.status(201).body(usuario);
     }
 
+    @PostMapping("/usuarios")
+    @Operation(summary = "Crear nuevo usuario (Admin)", description = "Crea un nuevo usuario en el sistema con permisos de administrador")
+    public ResponseEntity<UsuarioDTO> crearUsuario(@Valid @RequestBody CrearUsuarioRequest request) {
+        UsuarioDTO usuario = usuarioServicio.crearUsuario(request);
+        return ResponseEntity.status(201).body(usuario);
+    }
+
     @GetMapping("/usuarios/{id}")
     @Operation(summary = "Obtener usuario por ID", description = "Retorna los datos de un usuario específico")
     public ResponseEntity<UsuarioDTO> obtenerUsuario(@PathVariable Long id) {
@@ -71,6 +78,15 @@ public class AutenticacionController {
     @Operation(summary = "Reactivar usuario", description = "Reactiva un usuario desactivado")
     public ResponseEntity<UsuarioDTO> reactivarUsuario(@PathVariable Long id) {
         UsuarioDTO usuario = usuarioServicio.reactivarUsuario(id);
+        return ResponseEntity.ok(usuario);
+    }
+
+    @PutMapping("/usuarios/{id}/rol")
+    @Operation(summary = "Cambiar rol de usuario", description = "Cambia el rol asignado a un usuario")
+    public ResponseEntity<UsuarioDTO> cambiarRolUsuario(
+            @PathVariable Long id,
+            @RequestParam Long rolId) {
+        UsuarioDTO usuario = usuarioServicio.cambiarRol(id, rolId);
         return ResponseEntity.ok(usuario);
     }
 }

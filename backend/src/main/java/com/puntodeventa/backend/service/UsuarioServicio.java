@@ -9,6 +9,7 @@ import com.puntodeventa.backend.model.Sucursal;
 import com.puntodeventa.backend.model.Usuario;
 import com.puntodeventa.backend.repository.RolRepository;
 import com.puntodeventa.backend.repository.UsuarioRepository;
+import com.puntodeventa.backend.repository.SucursalRepository;
 import com.puntodeventa.backend.security.JwtUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,9 @@ public class UsuarioServicio {
 
     @Autowired
     private RolRepository rolRepository;
+
+    @Autowired
+    private SucursalRepository sucursalRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -60,8 +64,8 @@ public class UsuarioServicio {
         Rol rol = rolRepository.findById(request.rolId())
             .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
 
-        Sucursal sucursal = new Sucursal(); // Asumiendo que tienes una forma de obtenerlo
-        sucursal.setId(request.sucursalId());
+        Sucursal sucursal = sucursalRepository.findById(request.sucursalId())
+            .orElseThrow(() -> new EntityNotFoundException("Sucursal no encontrada"));
 
         // Crear usuario
         Usuario usuario = new Usuario();
@@ -188,21 +192,56 @@ public class UsuarioServicio {
     }
 
     /**
+     * Cambiar rol de un usuario
+     */
+    @Transactional
+    public UsuarioDTO cambiarRol(Long id, Long rolId) {
+        Usuario usuario = usuarioRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        Rol rol = rolRepository.findById(rolId)
+            .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
+
+        usuario.setRol(rol);
+        usuario.setUpdatedAt(LocalDateTime.now());
+        Usuario usuarioActualizado = usuarioRepository.save(usuario);
+
+        return mapearADTO(usuarioActualizado);
+    }
+
+    /**
      * Mapear Usuario a UsuarioDTO
      */
     private UsuarioDTO mapearADTO(Usuario usuario) {
-        return new UsuarioDTO(
-            usuario.getId(),
-            usuario.getNombre(),
-            usuario.getApellido(),
-            usuario.getEmail(),
-            usuario.getUsername(),
-            usuario.getActivo(),
-            usuario.getRol().getNombre(),
-            usuario.getSucursal().getId(),
-            usuario.getUltimoAcceso(),
-            usuario.getCreatedAt(),
-            usuario.getUpdatedAt()
-        );
+        UsuarioDTO dto = new UsuarioDTO();
+        dto.setId(usuario.getId());
+        dto.setNombre(usuario.getNombre());
+        dto.setApellido(usuario.getApellido());
+        dto.setEmail(usuario.getEmail());
+        dto.setUsername(usuario.getUsername());
+        dto.setActivo(usuario.getActivo());
+        
+        // Mapear sucursal si existe
+        if (usuario.getSucursal() != null) {
+            dto.setSucursalId(usuario.getSucursal().getId());
+        }
+        
+        dto.setUltimoAcceso(usuario.getUltimoAcceso());
+        dto.setCreatedAt(usuario.getCreatedAt());
+        dto.setUpdatedAt(usuario.getUpdatedAt());
+        
+        // Mapear rol si existe
+        if (usuario.getRol() != null) {
+            UsuarioDTO.RolDTO rolDTO = UsuarioDTO.RolDTO.builder()
+                .id(usuario.getRol().getId())
+                .nombre(usuario.getRol().getNombre())
+                .descripcion(usuario.getRol().getDescripcion())
+                .activo(usuario.getRol().getActivo())
+                .build();
+            dto.setRol(rolDTO);
+            dto.setRolNombre(usuario.getRol().getNombre());
+        }
+        
+        return dto;
     }
 }

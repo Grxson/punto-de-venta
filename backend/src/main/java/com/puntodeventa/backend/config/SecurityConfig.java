@@ -53,10 +53,10 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-        AuthenticationManagerBuilder authenticationManagerBuilder = 
-            http.getSharedObject(AuthenticationManagerBuilder.class);
+        AuthenticationManagerBuilder authenticationManagerBuilder = http
+                .getSharedObject(AuthenticationManagerBuilder.class);
         authenticationManagerBuilder
-            .authenticationProvider(daoAuthenticationProvider());
+                .authenticationProvider(daoAuthenticationProvider());
         return authenticationManagerBuilder.build();
     }
 
@@ -71,42 +71,44 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            // Configurar CORS
-            .cors(cors -> cors.configurationSource(corsConfigurationSource))
-            
-            // Deshabilitar CSRF para API RESTful
-            .csrf(AbstractHttpConfigurer::disable)
-            
-            // Sesiones stateless (sin estado)
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            
-            // Configurar autorización de requests
-            .authorizeHttpRequests(auth -> auth
-                // Endpoints públicos - IMPORTANTE: El orden importa, estos se evalúan primero
-                .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
-                .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs", "/api-docs/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/ws/**", "/topic/**", "/queue/**", "/user/**", "/app/**").permitAll() // WebSocket endpoints
-                .requestMatchers("/error").permitAll()
-                
-                // Permitir OPTIONS para CORS preflight
-                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                
-                // Todos los demás endpoints requieren autenticación
-                .anyRequest().authenticated()
-            )
-            
-            // Agregar filtro JWT antes del filtro de autenticación
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-            
-            // Configuración para H2 Console (solo desarrollo)
-            .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin())
-            );
+                // Configurar CORS
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+
+                // Deshabilitar CSRF para API RESTful
+                .csrf(AbstractHttpConfigurer::disable)
+
+                // Sesiones stateless (sin estado)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // Configurar autorización de requests
+                .authorizeHttpRequests(auth -> auth
+                        // Endpoints públicos - IMPORTANTE: El orden importa, estos se evalúan primero
+                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/categorias/**").permitAll() // Subcategorías para el formulario de
+                                                                           // productos
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs",
+                                "/api-docs/**")
+                        .permitAll()
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/ws/**", "/topic/**", "/queue/**", "/user/**", "/app/**").permitAll() // WebSocket
+                                                                                                                // endpoints
+                        .requestMatchers("/error").permitAll()
+
+                        // Permitir OPTIONS para CORS preflight
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Todos los demás endpoints requieren autenticación
+                        .anyRequest().authenticated())
+
+                // Agregar filtro JWT antes del filtro de autenticación
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // Configuración para H2 Console (solo desarrollo)
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();
     }

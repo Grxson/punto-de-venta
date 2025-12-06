@@ -38,6 +38,8 @@ import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
+import ExpandableExpenseRow from '../../components/expenses/ExpandableExpenseRow';
+import { useGroupExpensesByTime } from '../../hooks/useGroupExpensesByTime';
 import type { DateRangeValue } from '../../types/dateRange.types';
 import { getTodayLocalDate, getDateWithOffset } from '../../utils/dateHelper';
 
@@ -595,6 +597,9 @@ export default function AdminExpenses() {
     .filter(gasto => gasto.tipoGasto === 'Administrativo')
     .reduce((sum, gasto) => sum + gasto.monto, 0);
 
+  // Agrupar gastos filtrados por hora de registro
+  const gastoGrouped = useGroupExpensesByTime(gastosFiltrados);
+
   if (loadingData) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -732,60 +737,26 @@ export default function AdminExpenses() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {gastosFiltrados.length > 0 ? (
-                    gastosFiltrados.map((gasto) => (
-                      <TableRow key={gasto.id}>
-                        <TableCell>
-                          {format(new Date(gasto.fecha), 'dd/MM/yyyy HH:mm', { locale: es })}
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={gasto.tipoGasto === 'Administrativo' ? 'Administrativo' : 'Operacional'}
-                            size="small"
-                            color={gasto.tipoGasto === 'Administrativo' ? 'warning' : 'success'}
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Chip label={gasto.categoriaGastoNombre} size="small" color="primary" />
-                        </TableCell>
-                        <TableCell>{gasto.nota || '-'}</TableCell>
-                        <TableCell>{gasto.proveedorNombre || '-'}</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                          ${gasto.monto.toFixed(2)}
-                        </TableCell>
-                        <TableCell>{gasto.metodoPagoNombre || '-'}</TableCell>
-                        <TableCell align="center">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => {
-                              setEditingGasto(gasto);
-                              setFecha(new Date(gasto.fecha));
-                              setMetodoPagoId(gasto.metodoPagoId || '');
-                              setCategoriaId(gasto.categoriaGastoId || '');
-                              setProveedorId(gasto.proveedorId || '');
-                              setMonto(gasto.monto.toString());
-                              setNota(gasto.nota || '');
-                              setTipoGasto(gasto.tipoGasto || 'Operacional');
-                              setOpenDialog(true);
-                            }}
-                            disabled={loading}
-                            title="Editar"
-                          >
-                            <Edit fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDelete(gasto.id)}
-                            disabled={loading}
-                            title="Eliminar"
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
+                  {gastoGrouped.length > 0 ? (
+                    gastoGrouped.map((group) => (
+                      <ExpandableExpenseRow
+                        key={group.timeGroup}
+                        gastos={group.gastos}
+                        timeGroup={group.timeGroup}
+                        onEdit={(gasto) => {
+                          setEditingGasto(gasto);
+                          setFecha(new Date(gasto.fecha));
+                          setMetodoPagoId(gasto.metodoPagoId || '');
+                          setCategoriaId(gasto.categoriaGastoId || '');
+                          setProveedorId(gasto.proveedorId || '');
+                          setMonto(gasto.monto.toString());
+                          setNota(gasto.nota || '');
+                          setTipoGasto(gasto.tipoGasto || 'Operacional');
+                          setOpenDialog(true);
+                        }}
+                        onDelete={handleDelete}
+                        isLoading={loading}
+                      />
                     ))
                   ) : (
                     <TableRow>

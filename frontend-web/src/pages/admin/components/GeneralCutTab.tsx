@@ -417,7 +417,7 @@ export default function GeneralCutTab({
         <Box>
           {/* Total Ventas */}
           <ExpandableDataRow
-            label="Total Ventas"
+            label="Venta Total"
             value={`$${totalVentas.toFixed(2)}`}
             color="#2e7d32"
             bg="#f1f8f6"
@@ -445,17 +445,9 @@ export default function GeneralCutTab({
             value={`${ganancia.porcentaje.toFixed(2)}%`}
             color={colorGanancia}
           />
-
-          {/* Efectivo - Gastos */}
-          <ExpandableDataRow
-            label="Efectivo - Gastos"
-            value={`$${netos.efectivoMenosGastos.toFixed(2)}`}
-            color={netos.efectivoMenosGastos >= 0 ? '#2e7d32' : '#d32f2f'}
-          />
-
           {/* Ventas Total - Gastos */}
           <ExpandableDataRow
-            label="Ventas Total - Gastos"
+            label="Ventas Tota - Gastos"
             value={`$${netos.ventasMenosGastos.toFixed(2)}`}
             color={colorNeto}
             bg={colorNeto === '#2e7d32' ? '#e8f5e9' : '#ffebee'}

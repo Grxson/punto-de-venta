@@ -127,6 +127,7 @@ class ApiService {
       // Agregar body si existe
       if (options.body) {
         requestOptions.body = JSON.stringify(options.body);
+        console.log(`📤 [${options.method}] ${url}`, options.body);
       }
 
       const response = await this.fetchWithTimeout(url, requestOptions, timeout);

@@ -30,6 +30,8 @@ import AdminInventory from './pages/admin/AdminInventory';
 import AdminFinances from './pages/admin/AdminFinances';
 import AdminExpenses from './pages/admin/AdminExpenses';
 import AdminSales from './pages/admin/AdminSales';
+import AdminCategorias from './pages/admin/AdminCategorias';
+import { AdminUsers } from './pages/admin/AdminUsers';
 
 // Auth
 import Login from './pages/auth/Login';
@@ -207,9 +209,11 @@ function AppRoutes() {
                   <Route index element={<AdminDashboard />} />
                   <Route path="reports" element={<AdminReports />} />
                   <Route path="inventory" element={<AdminInventory />} />
+                  <Route path="categorias" element={<AdminCategorias />} />
                   <Route path="finances" element={<AdminFinances />} />
                   <Route path="expenses" element={<AdminExpenses />} />
                   <Route path="sales" element={<AdminSales />} />
+                  <Route path="usuarios" element={<AdminUsers />} />
             </Route>
 
             {/* Default redirect */}
