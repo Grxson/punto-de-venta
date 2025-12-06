@@ -70,7 +70,7 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
         // Modo edición
         const nombreLimpio = obtenerNombreLimpio(producto.nombre);
         const subcatExtraida = extraerSubcategoriaDelNombre(producto.nombre);
-        
+
         setNombre(nombreLimpio);
         setDescripcion(producto.descripcion || '');
         setCategoriaId(producto.categoriaId || '');
@@ -133,10 +133,10 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
   useEffect(() => {
     if (categoriaId && typeof categoriaId === 'number') {
       loadSubcategorias(categoriaId);
-      setSubcategoria(''); // Limpiar subcategoría seleccionada
+      // ✅ NO limpiar subcategoría aquí para preservar la que se cargó en edición
     } else {
       setSubcategoriasDisponibles([]);
-      setSubcategoria('');
+      // ✅ NO limpiar subcategoría si categoría es vacía, por si el usuario está editando
     }
   }, [categoriaId]);
 
@@ -270,12 +270,12 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
     if (!producto && (!sku || skuGenerado)) {
       generarSkuDesdeNombre(nuevoNombre);
     }
-    
+
     // Auto-detectar subcategoría si la categoría es "Desayunos"
     const categoriaSeleccionada = categorias.find(cat => cat.id === categoriaId);
     if (categoriaSeleccionada?.nombre === 'Desayunos') {
       const nombreLower = nuevoNombre.toLowerCase();
-      
+
       // Intentar auto-detectar basado en palabras clave
       let subcategoriaDetectada = '';
       if (nombreLower.includes('mollete') || nombreLower.includes('waffle') || nombreLower.includes('hot cake')) {
@@ -285,7 +285,7 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
       } else if (nombreLower.includes('sandwich')) {
         subcategoriaDetectada = 'SANDWICHES';
       }
-      
+
       // Solo establecer si coincide con una subcategoría disponible en la BD
       if (subcategoriaDetectada && subcategoriasDisponibles.some(sc => sc.nombre === subcategoriaDetectada)) {
         setSubcategoria(subcategoriaDetectada);
@@ -343,9 +343,8 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
         }
 
         // Actualizar variantes existentes modificadas
-        // ⚠️ IMPORTANTE: NO cambiar el "nombre" completo de la variante
-        // Solo actualizar nombreVariante, precio y orden
-        // El "nombre" completo se reconstruye en el frontend como: "ProductoBase - Variante"
+        // ⚠️ IMPORTANTE: Al actualizar variantes, SIEMPRE incluir productoBaseId
+        // para preservar la relación con el producto base y evitar que se separen
         const variantesExistentes = variantes.filter(v => v.id);
         for (const variante of variantesExistentes) {
           if (variante.nombre.trim()) {
@@ -353,11 +352,13 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
               ? parseFloat(variante.precio)
               : parseFloat(precio) || 0;
 
-            // Solo actualizar campos que deben cambiar, NO el nombre completo
+            // CRUCIAL: Incluir productoBaseId para mantener la relación
             await productosService.actualizar(variante.id, {
+              productoBaseId: producto.id, // ✅ Preservar la relación con el producto base
               nombreVariante: variante.nombre.trim(),
               precio: precioVariante,
               ordenVariante: variante.orden,
+              categoriaId: categoriaId ? Number(categoriaId) : null, // ✅ Sincronizar categoría
             } as Partial<Omit<Producto, 'id'>>);
           }
         }
@@ -471,7 +472,13 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
               value={categoriaId}
               label="Categoría"
               onChange={(e) => {
-                setCategoriaId(e.target.value as number | '');
+                const newCategoriaId = e.target.value as number | '';
+                // Si el usuario CAMBIA la categoría (y no es la inicial), limpiar subcategoría
+                // SOLO si categoriaId ya tenía un valor (significa que el usuario está haciendo cambios)
+                if (categoriaId !== '' && newCategoriaId !== categoriaId) {
+                  setSubcategoria('');
+                }
+                setCategoriaId(newCategoriaId);
               }}
             >
               <MenuItem value="">Sin categoría</MenuItem>
