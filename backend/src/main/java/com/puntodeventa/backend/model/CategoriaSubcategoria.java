@@ -50,7 +50,7 @@ public class CategoriaSubcategoria {
     @Builder.Default
     private Integer orden = 0;
     
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "INTEGER")
     @ColumnDefault("1")
     @Builder.Default
     private Boolean activa = true;
