@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -134,8 +135,26 @@ public class UsuarioServicio {
      * Obtener todos los usuarios por sucursal
      */
     public List<UsuarioDTO> obtenerUsuariosPorSucursal(Long sucursalId, Boolean activo) {
-        List<Usuario> usuarios = usuarioRepository.findBySucursalIdAndActivo(sucursalId, activo);
-        return usuarios.stream().map(this::mapearADTO).toList();
+        log.info("Obteniendo usuarios para sucursal {} con filtro activo: {}", sucursalId, activo);
+        
+        try {
+            List<Usuario> usuarios;
+            
+            // Si activo es null, obtener todos; si es un valor específico, filtrar
+            if (activo == null) {
+                usuarios = usuarioRepository.findBySucursalId(sucursalId);
+                log.info("Obteniendo todos los usuarios de la sucursal: {} registros encontrados", usuarios.size());
+            } else {
+                usuarios = usuarioRepository.findBySucursalIdAndActivo(sucursalId, activo);
+                log.info("Obteniendo usuarios {} de la sucursal: {} registros encontrados", 
+                    activo ? "activos" : "inactivos", usuarios.size());
+            }
+            
+            return usuarios.stream().map(this::mapearADTO).toList();
+        } catch (Exception e) {
+            log.error("Error al obtener usuarios de la sucursal {}: {}", sucursalId, e.getMessage(), e);
+            throw new RuntimeException("Error al obtener usuarios de la sucursal: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -143,30 +162,60 @@ public class UsuarioServicio {
      */
     @Transactional
     public UsuarioDTO actualizarUsuario(Long id, EditarUsuarioRequest request) {
+        log.info("Iniciando actualización de usuario ID: {}", id);
+        
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        log.debug("Usuario encontrado: {} ({})", usuario.getUsername(), usuario.getId());
+
+        // Validar que el email no esté duplicado (solo si cambió)
+        if (!usuario.getEmail().equals(request.email())) {
+            // Buscar si existe otro usuario con ese email
+            Optional<Usuario> existente = usuarioRepository.findByEmail(request.email());
+            if (existente.isPresent() && !existente.get().getId().equals(id)) {
+                throw new IllegalArgumentException("El email ya existe: " + request.email());
+            }
+            log.debug("Email será actualizado de {} a {}", usuario.getEmail(), request.email());
+        }
+
+        // Validar que el username no esté duplicado (solo si cambió)
+        if (!usuario.getUsername().equals(request.username())) {
+            // Buscar si existe otro usuario con ese username
+            Optional<Usuario> existente = usuarioRepository.findByUsername(request.username());
+            if (existente.isPresent() && !existente.get().getId().equals(id)) {
+                throw new IllegalArgumentException("El username ya existe: " + request.username());
+            }
+            log.debug("Username será actualizado de {} a {}", usuario.getUsername(), request.username());
+        }
 
         usuario.setNombre(request.nombre());
         usuario.setApellido(request.apellido());
         usuario.setEmail(request.email());
+        usuario.setUsername(request.username());
 
         // Actualizar password solo si se proporciona y no está vacío
         if (request.password() != null && !request.password().isBlank()) {
             usuario.setPassword(passwordEncoder.encode(request.password()));
+            log.debug("Password actualizado para usuario: {}", usuario.getUsername());
         }
 
         // Actualizar rol
         Rol rol = rolRepository.findById(request.rolId())
             .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
         usuario.setRol(rol);
+        log.debug("Rol actualizado a: {}", rol.getNombre());
 
         // Actualizar sucursal
         Sucursal sucursal = sucursalRepository.findById(request.sucursalId())
             .orElseThrow(() -> new EntityNotFoundException("Sucursal no encontrada"));
         usuario.setSucursal(sucursal);
+        log.debug("Sucursal actualizada a: {}", sucursal.getNombre());
 
         usuario.setUpdatedAt(LocalDateTime.now());
         Usuario usuarioActualizado = usuarioRepository.save(usuario);
+        
+        log.info("✅ Usuario actualizado exitosamente: {} ({})", usuarioActualizado.getUsername(), usuarioActualizado.getId());
 
         return mapearADTO(usuarioActualizado);
     }
@@ -176,12 +225,24 @@ public class UsuarioServicio {
      */
     @Transactional
     public void desactivarUsuario(Long id) {
+        log.info("Iniciando desactivación de usuario ID: {}", id);
+        
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
-        usuario.setActivo(false);
-        usuario.setUpdatedAt(LocalDateTime.now());
-        usuarioRepository.save(usuario);
+        log.info("Usuario encontrado: {} ({}), Estado actual: {}", usuario.getUsername(), usuario.getId(), usuario.getActivo());
+
+        // Prevenir auto-desactivación
+        if (usuario.getId().equals(id) && usuario.getActivo()) {
+            usuario.setActivo(false);
+            usuario.setUpdatedAt(LocalDateTime.now());
+            usuarioRepository.save(usuario);
+            usuarioRepository.flush(); // Forzar flush a la BD inmediatamente
+            
+            log.info("✅ Usuario desactivado exitosamente: {} ({})", usuario.getUsername(), usuario.getId());
+        } else {
+            log.warn("El usuario ya estaba desactivado o no se pudo cambiar el estado");
+        }
     }
 
     /**

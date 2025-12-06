@@ -9,6 +9,7 @@ import java.util.List;
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByUsername(String username);
     Optional<Usuario> findByEmail(String email);
+    List<Usuario> findBySucursalId(Long sucursalId);
     List<Usuario> findBySucursalIdAndActivo(Long sucursalId, Boolean activo);
     List<Usuario> findByRolId(Long rolId);
 }
