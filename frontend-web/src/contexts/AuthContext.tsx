@@ -7,10 +7,15 @@ interface Usuario {
   id: number;
   username: string;
   nombre: string;
-  rol?: string; // Para compatibilidad
+  apellido?: string;
+  email?: string;
+  rol?: string | { id: number; nombre: string; activo: boolean }; // Puede ser string o objeto
   rolNombre?: string; // Campo real del backend
   idSucursal?: number;
   sucursalId?: number; // Mantener compatibilidad // ID de la sucursal del usuario
+  ultimoAcceso?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface AuthContextType {
@@ -29,27 +34,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Función auxiliar para normalizar el rol
+  const normalizarRol = (usuario: any): string => {
+    // Prioridad: rolNombre > rol.nombre > rol > ''
+    if (usuario.rolNombre) return usuario.rolNombre;
+    if (typeof usuario.rol === 'object' && usuario.rol?.nombre) return usuario.rol.nombre;
+    if (typeof usuario.rol === 'string') return usuario.rol;
+    return '';
+  };
+
   // Cargar token y usuario desde localStorage al iniciar
   useEffect(() => {
     const storedToken = localStorage.getItem('auth_token');
     const storedUsuario = localStorage.getItem('auth_usuario');
 
+    console.log('🔐 AuthContext: Cargando desde localStorage...');
+    console.log('   Token existe:', !!storedToken);
+    console.log('   Usuario existe:', !!storedUsuario);
+
     if (storedToken && storedUsuario) {
-      const usuarioData = JSON.parse(storedUsuario);
-      // Normalizar el rol al cargar desde localStorage
-      const usuarioNormalizado: Usuario = {
-        ...usuarioData,
-        rol: usuarioData.rol || usuarioData.rolNombre || '',
-      };
-      setToken(storedToken);
-      setUsuario(usuarioNormalizado);
-      apiService.setAuthToken(storedToken);
+      try {
+        const usuarioData = JSON.parse(storedUsuario);
+        // Normalizar el rol al cargar desde localStorage
+        const usuarioNormalizado: Usuario = {
+          ...usuarioData,
+          rol: normalizarRol(usuarioData), // Usar función auxiliar
+        };
+        setToken(storedToken);
+        setUsuario(usuarioNormalizado);
+        apiService.setAuthToken(storedToken);
+        console.log('✅ AuthContext: Token y usuario cargados correctamente');
+      } catch (error) {
+        console.error('❌ Error al parsear usuario de localStorage:', error);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_usuario');
+      }
     }
     setLoading(false);
   }, []);
 
   const login = async (username: string, password: string) => {
     try {
+      console.log('🔓 AuthContext: Iniciando login para', username);
+      
       const response = await apiService.post(
         API_ENDPOINTS.LOGIN,
         { username, password },
@@ -58,13 +85,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.success && response.data) {
         // El backend retorna: { token, usuario, mensaje }
-        const { token: newToken, usuario: newUsuario } = response.data as { token: string; usuario: Usuario; mensaje?: string };
+        const { token: newToken, usuario: newUsuario } = response.data as { token: string; usuario: any; mensaje?: string };
         
-        // Normalizar el rol: usar rolNombre si existe, sino usar rol
+        console.log('✅ AuthContext: Login exitoso, token recibido');
+        console.log('   Token length:', newToken?.length);
+        console.log('   Usuario:', newUsuario?.username);
+        console.log('   Usuario object:', newUsuario);
+        
+        // Normalizar el rol: usar función auxiliar
         const usuarioNormalizado: Usuario = {
           ...newUsuario,
-          rol: newUsuario.rolNombre || newUsuario.rol || '',
+          rol: normalizarRol(newUsuario),
         };
+        
+        console.log('✅ AuthContext: Usuario normalizado:', usuarioNormalizado);
         
         // Guardar en estado
         setToken(newToken);
@@ -76,10 +110,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // Configurar token en apiService
         apiService.setAuthToken(newToken);
+        
+        console.log('✅ AuthContext: Token guardado en localStorage y apiService');
+        console.log('   localStorage.auth_token:', localStorage.getItem('auth_token')?.substring(0, 20) + '...');
       } else {
+        console.error('❌ AuthContext: Response sin éxito:', response);
         throw new Error(response.error || 'Error al iniciar sesión');
       }
     } catch (error: any) {
+      console.error('❌ AuthContext: Error en login:', error);
       throw new Error(error.message || 'Error al iniciar sesión');
     }
   };

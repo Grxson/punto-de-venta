@@ -97,6 +97,12 @@ export const API_ENDPOINTS = {
   PAYMENT_METHODS: '/ventas/metodos-pago',
   PAYMENT_METHODS_ACTIVOS: '/ventas/metodos-pago/activos',
   
+  // Menú Dinámico (por popularidad)
+  MENU_ORDENADO: '/v1/menu/ordenado',
+  MENU_TOP: '/v1/menu/top',
+  MENU_POR_CATEGORIA: '/v1/menu/por-categoria',
+  MENU_GRILLA: '/v1/menu/grilla',
+  
   // Estadísticas
   STATS_DAILY: '/estadisticas/ventas/dia',
   STATS_SALES_RANGE: '/estadisticas/ventas/rango',

@@ -1,6 +1,7 @@
 package com.puntodeventa.backend.config;
 
 import com.puntodeventa.backend.security.JwtAuthenticationFilter;
+import com.puntodeventa.backend.security.SucursalContextFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,6 +40,9 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Autowired
+    private SucursalContextFilter sucursalContextFilter;
 
     @Autowired
     private UserDetailsService userDetailsService;
@@ -88,6 +92,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/categorias/**").permitAll() // Subcategorías para el formulario de
                                                                            // productos
+                        .requestMatchers("/api/v1/menu/**").permitAll() // Menú dinámico por popularidad
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs",
                                 "/api-docs/**")
@@ -105,6 +110,9 @@ public class SecurityConfig {
 
                 // Agregar filtro JWT antes del filtro de autenticación
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // Agregar filtro de contexto de sucursal (después del JWT para acceder al usuario autenticado)
+                .addFilterAfter(sucursalContextFilter, JwtAuthenticationFilter.class)
 
                 // Configuración para H2 Console (solo desarrollo)
                 .headers(headers -> headers
