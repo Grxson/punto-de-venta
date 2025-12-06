@@ -39,6 +39,10 @@ public class Producto {
     @JoinColumn(name = "categoria_id")
     private CategoriaProducto categoria;
     
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sucursal_id")
+    private Sucursal sucursal;
+    
     @NotNull(message = "El precio es obligatorio")
     @PositiveOrZero(message = "El precio debe ser positivo o cero")
     @Column(nullable = false, precision = 12, scale = 2)

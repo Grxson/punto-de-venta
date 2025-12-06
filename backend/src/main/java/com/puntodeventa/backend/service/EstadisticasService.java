@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.service;
 
+import com.puntodeventa.backend.context.SucursalContext;
 import com.puntodeventa.backend.dto.ProductoRendimientoDTO;
 import com.puntodeventa.backend.dto.ResumenVentasDiaDTO;
 import com.puntodeventa.backend.dto.aggregate.ResumenVentasAggregate;
@@ -41,12 +42,15 @@ public class EstadisticasService {
     }
 
     public ResumenVentasDiaDTO resumenRango(LocalDateTime desde, LocalDateTime hasta, LocalDate fechaRepresentativa) {
-        ResumenVentasAggregate agg = ventaRepository.aggregateResumen(desde, hasta);
+        // ✅ SEGREGACIÓN: Obtener resumen solo de la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+        
+        ResumenVentasAggregate agg = ventaRepository.aggregateResumenBySucursal(sucursalId, desde, hasta);
         BigDecimal totalVentas = agg.totalVentas();
         BigDecimal totalCostosProductos = agg.totalCostos();
         
-        // Sumar SOLO gastos OPERACIONALES del período (NO administrativos)
-        BigDecimal totalGastos = gastoRepository.sumMontoByTipoGastoAndFechaBetween("Operacional", desde, hasta);
+        // ✅ SEGREGACIÓN: Sumar SOLO gastos OPERACIONALES de la sucursal actual
+        BigDecimal totalGastos = gastoRepository.sumMontoByTipoGastoAndSucursalAndFechaBetween("Operacional", sucursalId, desde, hasta);
         if (totalGastos == null) {
             totalGastos = BigDecimal.ZERO;
         }

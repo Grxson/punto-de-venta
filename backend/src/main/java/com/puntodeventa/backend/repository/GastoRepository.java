@@ -46,5 +46,21 @@ public interface GastoRepository extends JpaRepository<Gasto, Long> {
     java.math.BigDecimal sumMontoByTipoGastoAndFechaBetween(@Param("tipoGasto") String tipoGasto,
                                                             @Param("fechaInicio") LocalDateTime fechaInicio,
                                                             @Param("fechaFin") LocalDateTime fechaFin);
+    
+    // ==================== MÉTODOS PARA SEGREGACIÓN POR SUCURSAL ====================
+    
+    /**
+     * Obtener suma de gastos por tipo, sucursal y rango de fechas.
+     * @param tipoGasto Tipo de gasto (Operacional, Administrativo, etc.)
+     * @param sucursalId ID de la sucursal
+     * @param fechaInicio Fecha de inicio
+     * @param fechaFin Fecha de fin
+     * @return Suma total de gastos o 0 si no hay resultados
+     */
+    @Query("SELECT COALESCE(SUM(g.monto), 0) FROM Gasto g WHERE g.tipoGasto = :tipoGasto AND g.sucursal.id = :sucursalId AND g.fecha BETWEEN :fechaInicio AND :fechaFin")
+    java.math.BigDecimal sumMontoByTipoGastoAndSucursalAndFechaBetween(@Param("tipoGasto") String tipoGasto,
+                                                                        @Param("sucursalId") Long sucursalId,
+                                                                        @Param("fechaInicio") LocalDateTime fechaInicio,
+                                                                        @Param("fechaFin") LocalDateTime fechaFin);
 }
 
