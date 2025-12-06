@@ -62,7 +62,7 @@ export const useActualizarSubcategoria = () => {
 
 /**
  * Hook para eliminar subcategoría
- * Invalida automáticamente el caché
+ * Invalida automáticamente el caché y fuerza refetch inmediato
  */
 export const useEliminarSubcategoria = () => {
   const queryClient = useQueryClient();
@@ -71,8 +71,11 @@ export const useEliminarSubcategoria = () => {
     mutationFn: ({ categoriaId, subcategoriaId }: { categoriaId: number; subcategoriaId: number }) =>
       subcategoriasService.eliminar(categoriaId, subcategoriaId),
     onSuccess: (_, variables) => {
-      // Invalidar la lista de subcategorías de esa categoría
-      queryClient.invalidateQueries({ queryKey: subcategoriasKeys.list(variables.categoriaId) });
+      // Invalidar y refetch inmediato de la lista de subcategorías de esa categoría
+      queryClient.invalidateQueries({ 
+        queryKey: subcategoriasKeys.list(variables.categoriaId),
+        refetchType: 'active' // Fuerza refetch inmediato
+      });
     },
   });
 };

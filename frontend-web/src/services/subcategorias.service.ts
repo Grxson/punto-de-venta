@@ -56,7 +56,7 @@ export const subcategoriasService = {
   },
 
   /**
-   * Eliminar subcategoría (borrado lógico)
+   * Eliminar subcategoría (hard delete - eliminación permanente)
    */
   eliminar: async (categoriaId: number, subcategoriaId: number) => {
     return apiService.delete(

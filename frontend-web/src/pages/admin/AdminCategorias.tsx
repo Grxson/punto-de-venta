@@ -38,7 +38,7 @@ import type { CategoriaSubcategoria } from '../../types/subcategorias.types';
 export default function AdminCategorias() {
   // Estados del componente primero (ANTES de los hooks que los usan)
   const [selectedCategoria, setSelectedCategoria] = useState<CategoriaProducto | null>(null);
-  
+
   // Diálogo de categoría
   const [openCategoriaDialog, setOpenCategoriaDialog] = useState(false);
   const [editingCategoria, setEditingCategoria] = useState<CategoriaProducto | null>(null);
@@ -185,7 +185,6 @@ export default function AdminCategorias() {
           data: {
             nombre: formSubcategoriaNombre.trim(),
             descripcion: formSubcategoriaDescripcion.trim(),
-            orden: formSubcategoriaOrden,
             activa: formSubcategoriaActiva,
           },
         });
@@ -196,8 +195,6 @@ export default function AdminCategorias() {
           data: {
             nombre: formSubcategoriaNombre.trim(),
             descripcion: formSubcategoriaDescripcion.trim(),
-            orden: formSubcategoriaOrden,
-            activa: formSubcategoriaActiva,
           },
         });
         setSuccessMessage(`✅ Subcategoría "${formSubcategoriaNombre}" creada exitosamente`);
@@ -556,16 +553,6 @@ export default function AdminCategorias() {
               rows={2}
               disabled={isLoading_mutation}
             />
-            <TextField
-              fullWidth
-              label="Orden"
-              type="number"
-              value={formSubcategoriaOrden}
-              onChange={(e) => setFormSubcategoriaOrden(Number(e.target.value))}
-              inputProps={{ min: 0 }}
-              disabled={isLoading_mutation}
-              helperText="Número para ordenar las subcategorías (0, 1, 2...)"
-            />
             <FormControlLabel
               control={
                 <Switch
@@ -598,7 +585,7 @@ export default function AdminCategorias() {
             <strong>{itemToDelete?.item?.nombre}</strong>?
           </Typography>
           <Alert severity="warning" sx={{ mt: 2 }}>
-            Esta acción marcará el elemento como inactivo y no se podrá usar en nuevos productos.
+            Esta acción eliminará permanentemente el elemento de la base de datos y no se podrá recuperar.
           </Alert>
         </DialogContent>
         <DialogActions>

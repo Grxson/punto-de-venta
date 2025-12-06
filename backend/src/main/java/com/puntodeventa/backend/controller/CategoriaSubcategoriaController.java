@@ -24,28 +24,28 @@ import java.util.List;
 @Validated
 @Tag(name = "Inventario - Subcategorías", description = "Endpoints para gestión de subcategorías de productos")
 public class CategoriaSubcategoriaController {
-    
+
     private final CategoriaSubcategoriaService categoriaSubcategoriaService;
-    
+
     /**
      * Obtener todas las subcategorías activas de una categoría.
      * 
      * @param categoriaId ID de la categoría
      * @return Lista de subcategorías ordenadas
      * 
-     * Ejemplo: GET /api/categorias/1/subcategorias
+     *         Ejemplo: GET /api/categorias/1/subcategorias
      */
     @GetMapping
     @Operation(summary = "Listar subcategorías", description = "Obtiene todas las subcategorías activas de una categoría, ordenadas por orden")
     public ResponseEntity<List<CategoriaSubcategoriaDTO>> listar(
             @PathVariable Long categoriaId) {
-        
-        List<CategoriaSubcategoriaDTO> subcategorias = 
-            categoriaSubcategoriaService.obtenerSubcategoriasPorCategoria(categoriaId);
-        
+
+        List<CategoriaSubcategoriaDTO> subcategorias = categoriaSubcategoriaService
+                .obtenerSubcategoriasPorCategoria(categoriaId);
+
         return ResponseEntity.ok(subcategorias);
     }
-    
+
     /**
      * Obtener una subcategoría por ID.
      */
@@ -53,11 +53,10 @@ public class CategoriaSubcategoriaController {
     @Operation(summary = "Obtener subcategoría por ID")
     public ResponseEntity<CategoriaSubcategoriaDTO> obtener(
             @PathVariable Long categoriaId,
-            @PathVariable Long subcategoriaId
-    ) {
+            @PathVariable Long subcategoriaId) {
         return ResponseEntity.ok(categoriaSubcategoriaService.obtenerPorId(subcategoriaId));
     }
-    
+
     /**
      * Crear una nueva subcategoría.
      */
@@ -66,22 +65,20 @@ public class CategoriaSubcategoriaController {
     @Operation(summary = "Crear subcategoría", description = "Crea una nueva subcategoría en la categoría especificada")
     public ResponseEntity<CategoriaSubcategoriaDTO> crear(
             @PathVariable Long categoriaId,
-            @Validated @RequestBody CategoriaSubcategoriaDTO dto
-    ) {
+            @Validated @RequestBody CategoriaSubcategoriaDTO dto) {
         // Asegurar que el categoriaId del path coincida con el del DTO
         CategoriaSubcategoriaDTO dtoConCategoriaId = new CategoriaSubcategoriaDTO(
-            dto.id(),
-            categoriaId,
-            dto.nombre(),
-            dto.descripcion(),
-            dto.orden(),
-            dto.activa()
-        );
-        
+                dto.id(),
+                categoriaId,
+                dto.nombre(),
+                dto.descripcion(),
+                dto.orden(),
+                dto.activa());
+
         CategoriaSubcategoriaDTO creada = categoriaSubcategoriaService.crear(dtoConCategoriaId);
         return new ResponseEntity<>(creada, HttpStatus.CREATED);
     }
-    
+
     /**
      * Actualizar una subcategoría existente.
      */
@@ -91,31 +88,28 @@ public class CategoriaSubcategoriaController {
     public ResponseEntity<CategoriaSubcategoriaDTO> actualizar(
             @PathVariable Long categoriaId,
             @PathVariable Long subcategoriaId,
-            @Validated @RequestBody CategoriaSubcategoriaDTO dto
-    ) {
+            @Validated @RequestBody CategoriaSubcategoriaDTO dto) {
         // Asegurar que el categoriaId del path coincida con el del DTO
         CategoriaSubcategoriaDTO dtoConCategoriaId = new CategoriaSubcategoriaDTO(
-            subcategoriaId,
-            categoriaId,
-            dto.nombre(),
-            dto.descripcion(),
-            dto.orden(),
-            dto.activa()
-        );
-        
+                subcategoriaId,
+                categoriaId,
+                dto.nombre(),
+                dto.descripcion(),
+                dto.orden(),
+                dto.activa());
+
         return ResponseEntity.ok(categoriaSubcategoriaService.actualizar(subcategoriaId, dtoConCategoriaId));
     }
-    
+
     /**
-     * Eliminar una subcategoría (borrado lógico).
+     * Eliminar una subcategoría (hard delete - eliminación permanente).
      */
     @DeleteMapping("/{subcategoriaId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
-    @Operation(summary = "Eliminar subcategoría", description = "Marca la subcategoría como inactiva (borrado lógico)")
+    @Operation(summary = "Eliminar subcategoría", description = "Elimina permanentemente la subcategoría de la base de datos")
     public ResponseEntity<Void> eliminar(
             @PathVariable Long categoriaId,
-            @PathVariable Long subcategoriaId
-    ) {
+            @PathVariable Long subcategoriaId) {
         categoriaSubcategoriaService.eliminar(subcategoriaId);
         return ResponseEntity.noContent().build();
     }

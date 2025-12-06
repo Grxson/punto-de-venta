@@ -65,10 +65,10 @@ public class CategoriaProductoService {
     public void eliminar(Long id) {
         CategoriaProducto c = categoriaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con id: " + id));
-        
-        c.setActiva(false);
-        categoriaRepository.save(c);
-        log.info("Categoría marcada como inactiva: {} (ID: {})", c.getNombre(), c.getId());
+
+        // Eliminar definitivamente de la BD
+        categoriaRepository.deleteById(id);
+        log.info("Categoría eliminada permanentemente: {} (ID: {})", c.getNombre(), c.getId());
     }
 
     private void apply(CategoriaProductoDTO dto, CategoriaProducto c) {

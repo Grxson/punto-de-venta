@@ -52,7 +52,7 @@ export const categoriasService = {
   },
 
   /**
-   * Eliminar categoría (borrado lógico)
+   * Eliminar categoría (hard delete - eliminación permanente)
    */
   eliminar: async (id: number) => {
     return apiService.delete(`${API_ENDPOINTS.CATEGORIES}/${id}`);
