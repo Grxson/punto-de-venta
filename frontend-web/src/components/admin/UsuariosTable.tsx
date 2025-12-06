@@ -195,9 +195,9 @@ export const UsuariosTable = ({
                   <TableCell>
                     <Chip
                       label={usuario.activo ? 'Activo' : 'Inactivo'}
-                      color={usuario.activo ? 'success' : 'default'}
+                      color={usuario.activo ? 'success' : 'error'}
                       size="small"
-                      variant={usuario.activo ? 'filled' : 'outlined'}
+                      variant="filled"
                     />
                   </TableCell>
                   <TableCell sx={{ textAlign: 'right' }}>

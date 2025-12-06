@@ -1,6 +1,7 @@
 package com.puntodeventa.backend.service;
 
 import com.puntodeventa.backend.dto.CrearUsuarioRequest;
+import com.puntodeventa.backend.dto.EditarUsuarioRequest;
 import com.puntodeventa.backend.dto.LoginRequest;
 import com.puntodeventa.backend.dto.LoginResponse;
 import com.puntodeventa.backend.dto.UsuarioDTO;
@@ -141,7 +142,7 @@ public class UsuarioServicio {
      * Actualizar usuario
      */
     @Transactional
-    public UsuarioDTO actualizarUsuario(Long id, CrearUsuarioRequest request) {
+    public UsuarioDTO actualizarUsuario(Long id, EditarUsuarioRequest request) {
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
@@ -149,13 +150,20 @@ public class UsuarioServicio {
         usuario.setApellido(request.apellido());
         usuario.setEmail(request.email());
 
-        if (!request.password().isBlank()) {
+        // Actualizar password solo si se proporciona y no está vacío
+        if (request.password() != null && !request.password().isBlank()) {
             usuario.setPassword(passwordEncoder.encode(request.password()));
         }
 
+        // Actualizar rol
         Rol rol = rolRepository.findById(request.rolId())
             .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
         usuario.setRol(rol);
+
+        // Actualizar sucursal
+        Sucursal sucursal = sucursalRepository.findById(request.sucursalId())
+            .orElseThrow(() -> new EntityNotFoundException("Sucursal no encontrada"));
+        usuario.setSucursal(sucursal);
 
         usuario.setUpdatedAt(LocalDateTime.now());
         Usuario usuarioActualizado = usuarioRepository.save(usuario);

@@ -18,8 +18,13 @@ import {
   Paper,
   Typography,
   Stack,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { useAuth } from '../../contexts/AuthContext';
 import { useUsuarios, useCrearUsuario, useActualizarUsuario, useCambiarRol, useDesactivarUsuario } from '../../hooks/useUsuarios';
 import { useRoles } from '../../hooks/useRoles';
 import { useSucursales } from '../../hooks/useSucursales';
@@ -28,7 +33,9 @@ import { UsuariosTable } from '../../components/admin/UsuariosTable';
 import type { Usuario, CrearUsuarioRequest, EditarUsuarioRequest } from '../../types/usuario.types';
 
 export const AdminUsers = () => {
+  const { sucursal: sucursalDelUsuario } = useAuth();
   const [sucursalId, setSucursalId] = useState<number | null>(null);
+  const [filtroActivo, setFiltroActivo] = useState<boolean | undefined>(undefined); // undefined = mostrar todos
   const [formOpen, setFormOpen] = useState(false);
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | undefined>();
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -39,23 +46,46 @@ export const AdminUsers = () => {
     severity: 'success' | 'error' | 'info' | 'warning';
   }>({ open: false, message: '', severity: 'success' });
 
-  // Obtener sucursal actual del localStorage o contexto
-  // Por ahora usamos la primera sucursal disponible
-  const { data: sucursales } = useSucursales();
-
+  // Obtener sucursal actual del contexto de autenticación
   useEffect(() => {
-    if (sucursales && sucursales.length > 0 && !sucursalId) {
-      setSucursalId(sucursales[0].id);
+    if (sucursalDelUsuario?.id && sucursalDelUsuario.id > 0) {
+      console.log(`📍 AdminUsers: Usando sucursal del usuario: ${sucursalDelUsuario.id}`);
+      setSucursalId(sucursalDelUsuario.id);
     }
-  }, [sucursales, sucursalId]);
+  }, [sucursalDelUsuario]);
 
-  const { data: usuarios = [], isLoading: usuariosLoading } = useUsuarios(sucursalId || 0);
+  // Solo cargar usuarios si sucursalId es válido (mayor a 0)
+  const queryActivos = useUsuarios(
+    sucursalId && sucursalId > 0 ? sucursalId : 0, 
+    sucursalId && sucursalId > 0 && filtroActivo !== undefined ? filtroActivo : undefined
+  );
+  
+  // Si filtroActivo es undefined (mostrar todos), necesitamos combinar activos + inactivos
+  const queryInactivos = useUsuarios(
+    sucursalId && sucursalId > 0 && filtroActivo === undefined ? sucursalId : 0,
+    sucursalId && sucursalId > 0 && filtroActivo === undefined ? false : undefined
+  );
+
+  // Combinar usuarios según el filtro
+  let usuarios: Usuario[] = [];
+  let usuariosLoading = false;
+
+  if (filtroActivo === undefined) {
+    // Mostrar todos: combinar activos + inactivos
+    usuarios = [...(queryActivos.data || []), ...(queryInactivos.data || [])];
+    usuariosLoading = queryActivos.isLoading || queryInactivos.isLoading;
+  } else {
+    // Filtro específico
+    usuarios = queryActivos.data || [];
+    usuariosLoading = queryActivos.isLoading;
+  }
+
   const { data: roles = [] } = useRoles();
 
-  const crearMutation = useCrearUsuario();
-  const actualizarMutation = useActualizarUsuario();
-  const cambiarRolMutation = useCambiarRol();
-  const desactivarMutation = useDesactivarUsuario();
+  const crearMutation = useCrearUsuario(sucursalId || undefined);
+  const actualizarMutation = useActualizarUsuario(sucursalId || undefined);
+  const cambiarRolMutation = useCambiarRol(sucursalId || undefined);
+  const desactivarMutation = useDesactivarUsuario(sucursalId || undefined);
 
   const handleAbrirForm = (usuario?: Usuario) => {
     setSelectedUsuario(usuario);
@@ -175,6 +205,31 @@ export const AdminUsers = () => {
           </Button>
         </Stack>
 
+        {/* Filtros */}
+        <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel>Estado</InputLabel>
+            <Select
+              value={filtroActivo === undefined ? 'todos' : filtroActivo ? 'activos' : 'inactivos'}
+              label="Estado"
+              onChange={(e) => {
+                const valor = e.target.value;
+                if (valor === 'todos') {
+                  setFiltroActivo(undefined);
+                } else if (valor === 'activos') {
+                  setFiltroActivo(true);
+                } else {
+                  setFiltroActivo(false);
+                }
+              }}
+            >
+              <MenuItem value="todos">Todos los usuarios</MenuItem>
+              <MenuItem value="activos">Solo activos</MenuItem>
+              <MenuItem value="inactivos">Solo inactivos</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+
         {/* Tabla de usuarios */}
         <Box sx={{ mt: 4 }}>
           <UsuariosTable
@@ -192,6 +247,7 @@ export const AdminUsers = () => {
       <UsuarioForm
         open={formOpen}
         usuario={selectedUsuario}
+        sucursalActual={sucursalId || undefined}
         onClose={handleCerrarForm}
         onSubmit={handleGuardarUsuario}
         isLoading={crearMutation.isPending || actualizarMutation.isPending}

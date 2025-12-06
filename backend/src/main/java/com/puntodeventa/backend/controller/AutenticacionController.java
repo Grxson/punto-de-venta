@@ -1,6 +1,7 @@
 package com.puntodeventa.backend.controller;
 
 import com.puntodeventa.backend.dto.CrearUsuarioRequest;
+import com.puntodeventa.backend.dto.EditarUsuarioRequest;
 import com.puntodeventa.backend.dto.LoginRequest;
 import com.puntodeventa.backend.dto.LoginResponse;
 import com.puntodeventa.backend.dto.UsuarioDTO;
@@ -60,7 +61,7 @@ public class AutenticacionController {
     @Operation(summary = "Actualizar usuario", description = "Actualiza los datos de un usuario")
     public ResponseEntity<UsuarioDTO> actualizarUsuario(
             @PathVariable Long id,
-            @Valid @RequestBody CrearUsuarioRequest request) {
+            @Valid @RequestBody EditarUsuarioRequest request) {
         UsuarioDTO usuario = usuarioServicio.actualizarUsuario(id, request);
         return ResponseEntity.ok(usuario);
     }
