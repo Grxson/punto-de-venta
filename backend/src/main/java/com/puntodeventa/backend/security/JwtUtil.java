@@ -26,10 +26,11 @@ public class JwtUtil {
     /**
      * Generar un JWT para un usuario
      */
-    public String generateToken(String username, Long usuarioId, String rolNombre) {
+    public String generateToken(String username, Long usuarioId, String rolNombre, Long sucursalId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("usuarioId", usuarioId);
         claims.put("rol", rolNombre);
+        claims.put("sucursalId", sucursalId);  // Sucursal del usuario
         return createToken(claims, username);
     }
 
@@ -83,6 +84,18 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload()
                 .get("rol");
+    }
+
+    /**
+     * Obtener la sucursal del token
+     */
+    public Long extractSucursalId(String token) {
+        return ((Number) Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("sucursalId")).longValue();
     }
 
     /**

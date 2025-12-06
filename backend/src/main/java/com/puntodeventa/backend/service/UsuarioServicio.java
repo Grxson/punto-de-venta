@@ -107,8 +107,13 @@ public class UsuarioServicio {
             usuario.setUltimoAcceso(LocalDateTime.now());
             usuarioRepository.save(usuario);
 
-            // Generar token JWT
-            String token = jwtUtil.generateToken(usuario.getUsername(), usuario.getId(), usuario.getRol().getNombre());
+            // Generar token JWT con sucursal_id
+            String token = jwtUtil.generateToken(
+                usuario.getUsername(), 
+                usuario.getId(), 
+                usuario.getRol().getNombre(),
+                usuario.getSucursal().getId()  // Incluir sucursal del usuario
+            );
 
             UsuarioDTO usuarioDTO = mapearADTO(usuario);
             return new LoginResponse(token, usuarioDTO, "Login exitoso");

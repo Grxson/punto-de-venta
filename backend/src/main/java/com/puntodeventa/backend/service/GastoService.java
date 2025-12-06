@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.service;
 
+import com.puntodeventa.backend.context.SucursalContext;
 import com.puntodeventa.backend.dto.CrearGastoRequest;
 import com.puntodeventa.backend.dto.GastoDTO;
 import com.puntodeventa.backend.exception.ResourceNotFoundException;
@@ -31,7 +32,8 @@ public class GastoService {
     private final WebSocketNotificationService notificationService;
     
     public List<GastoDTO> obtenerTodos() {
-        return gastoRepository.findAll().stream()
+        Long sucursalId = SucursalContext.getSucursalId();
+        return gastoRepository.findBySucursalId(sucursalId).stream()
             .map(this::toDTO)
             .toList();
     }
@@ -49,7 +51,8 @@ public class GastoService {
     }
     
     public List<GastoDTO> obtenerPorRangoFechas(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
-        return gastoRepository.findByFechaBetween(fechaInicio, fechaFin).stream()
+        Long sucursalId = SucursalContext.getSucursalId();
+        return gastoRepository.findBySucursalAndFechaBetween(sucursalId, fechaInicio, fechaFin).stream()
             .map(this::toDTO)
             .toList();
     }
