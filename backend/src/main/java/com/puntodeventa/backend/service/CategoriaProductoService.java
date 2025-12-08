@@ -5,6 +5,7 @@ import com.puntodeventa.backend.exception.ResourceNotFoundException;
 import com.puntodeventa.backend.model.CategoriaProducto;
 import com.puntodeventa.backend.model.Sucursal;
 import com.puntodeventa.backend.repository.CategoriaProductoRepository;
+import com.puntodeventa.backend.repository.ProductoRepository;
 import com.puntodeventa.backend.repository.SucursalRepository;
 import com.puntodeventa.backend.context.SucursalContext;
 import lombok.RequiredArgsConstructor;
@@ -24,11 +25,14 @@ import java.util.stream.Collectors;
 public class CategoriaProductoService {
 
     private final CategoriaProductoRepository categoriaRepository;
+    private final ProductoRepository productoRepository;
     private final SucursalRepository sucursalRepository;
 
     public CategoriaProductoService(CategoriaProductoRepository categoriaRepository,
+            ProductoRepository productoRepository,
             SucursalRepository sucursalRepository) {
         this.categoriaRepository = categoriaRepository;
+        this.productoRepository = productoRepository;
         this.sucursalRepository = sucursalRepository;
     }
 
@@ -79,6 +83,16 @@ public class CategoriaProductoService {
     public void eliminar(Long id) {
         CategoriaProducto c = categoriaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con id: " + id));
+
+        // ✅ VERIFICAR que no hay productos usando esta categoría
+        long productosConCategoria = productoRepository.findByCategoriaId(id).size();
+        if (productosConCategoria > 0) {
+            throw new IllegalArgumentException(
+                    "No se puede eliminar la categoría '" + c.getNombre() + "' porque tiene " + 
+                    productosConCategoria + " producto(s) asociado(s). " +
+                    "Elimina o reasigna los productos antes de eliminar la categoría."
+            );
+        }
 
         // Eliminar definitivamente de la BD
         categoriaRepository.deleteById(id);
