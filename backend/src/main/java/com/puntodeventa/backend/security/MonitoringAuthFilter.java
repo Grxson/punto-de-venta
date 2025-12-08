@@ -120,7 +120,8 @@ public class MonitoringAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String requestPath = request.getRequestURI();
         
-        // No filtrar rutas que no sean de monitoreo
-        return !requestPath.startsWith("/api/monitoring") && !requestPath.startsWith("/monitoring");
+        // Solo filtrar rutas de monitoreo REST (/api/monitoring/**)
+        // Permitir acceso público a /monitoring (dashboard HTML) y recursos estáticos
+        return !requestPath.startsWith("/api/monitoring");
     }
 }

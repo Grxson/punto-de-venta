@@ -47,22 +47,21 @@ public class SucursalContextFilter extends OncePerRequestFilter {
     @Autowired(required = false)
     private JwtUtil jwtUtil;
 
-        /**
-         * Ignora rutas estáticas y dashboard de monitoreo para no exigir autenticación.
-         */
-        @Override
-        protected boolean shouldNotFilter(HttpServletRequest request) {
-            String path = request.getRequestURI();
-            // Permitir acceso público a recursos estáticos y dashboard de monitoreo
-            return path.startsWith("/monitoring") ||
-                   path.startsWith("/static/") ||
-                   path.startsWith("/css/") ||
-                   path.startsWith("/js/") ||
-                   path.startsWith("/images/") ||
-                   path.startsWith("/favicon.ico");
-        }
-
+    /**
+     * Ignora rutas estáticas y dashboard de monitoreo para no exigir autenticación.
+     */
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        // Permitir acceso público a recursos estáticos y dashboard de monitoreo
+        return path.startsWith("/monitoring") ||
+               path.startsWith("/static/") ||
+               path.startsWith("/css/") ||
+               path.startsWith("/js/") ||
+               path.startsWith("/images/") ||
+               path.startsWith("/favicon.ico") ||
+               path.startsWith("/error");
+    }    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
