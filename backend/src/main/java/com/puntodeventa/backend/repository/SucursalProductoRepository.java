@@ -26,7 +26,7 @@ public interface SucursalProductoRepository extends JpaRepository<SucursalProduc
      */
     @Query("SELECT sp FROM SucursalProducto sp " +
            "WHERE sp.sucursal.id = :sucursalId " +
-           "AND sp.disponible = true " +
+           "AND sp.disponible = 1 " +
            "ORDER BY sp.ordenVisualizacion ASC, sp.producto.nombre ASC")
     List<SucursalProducto> findBySucursalIdAndDisponibleTrueOrderByOrdenVisualizacionAscNombreAsc(
             @Param("sucursalId") Long sucursalId
@@ -47,7 +47,7 @@ public interface SucursalProductoRepository extends JpaRepository<SucursalProduc
      */
     @Query("SELECT sp FROM SucursalProducto sp " +
            "WHERE sp.sucursal.id = :sucursalId " +
-           "AND sp.disponible = true " +
+           "AND sp.disponible = 1 " +
            "AND sp.producto.nombre LIKE CONCAT('%', :nombre, '%') " +
            "ORDER BY sp.ordenVisualizacion ASC, sp.producto.nombre ASC")
     List<SucursalProducto> buscarPorNombreEnSucursal(
@@ -62,7 +62,7 @@ public interface SucursalProductoRepository extends JpaRepository<SucursalProduc
            "JOIN VentaItem vi ON vi.producto.id = sp.producto.id " +
            "JOIN Venta v ON v.id = vi.venta.id " +
            "WHERE sp.sucursal.id = :sucursalId " +
-           "AND sp.disponible = true " +
+           "AND sp.disponible = 1 " +
            "AND v.sucursal.id = :sucursalId " +
            "AND v.fecha >= :desde " +
            "GROUP BY sp.id " +
@@ -90,7 +90,7 @@ public interface SucursalProductoRepository extends JpaRepository<SucursalProduc
     @Query("SELECT COUNT(sp) > 0 FROM SucursalProducto sp " +
            "WHERE sp.sucursal.id = :sucursalId " +
            "AND sp.producto.id = :productoId " +
-           "AND sp.disponible = true")
+           "AND sp.disponible = 1")
     boolean estaDisponibleEnSucursal(
             @Param("sucursalId") Long sucursalId,
             @Param("productoId") Long productoId

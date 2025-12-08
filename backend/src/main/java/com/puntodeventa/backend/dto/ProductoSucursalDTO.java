@@ -15,7 +15,7 @@ public record ProductoSucursalDTO(
     BigDecimal precioEfectivo,  // Precio en esta sucursal (puede ser diferente)
     String sku,
     Integer ordenVisualizacion,
-    Boolean disponible,
+    Integer disponible,  // 1 = disponible, 0 = no disponible
     Boolean productoBase,
     Long productoBaseId,
     String nombreVariante,
