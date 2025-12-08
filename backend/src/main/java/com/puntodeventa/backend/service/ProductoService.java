@@ -32,7 +32,6 @@ public class ProductoService {
         this.sucursalRepository = sucursalRepository;
     }
 
-    @Cacheable(value = "productos", unless = "#result.isEmpty()")
     @Transactional(readOnly = true)
     public List<ProductoDTO> listar(Optional<Boolean> activo, Optional<Boolean> enMenu, Optional<Long> categoriaId,
             Optional<String> q) {
