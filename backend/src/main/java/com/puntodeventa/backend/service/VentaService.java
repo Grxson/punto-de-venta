@@ -730,14 +730,16 @@ public class VentaService {
     
     /**
      * Obtiene el desglose de ventas por método de pago para un rango de fechas.
+     * ✅ SEGREGACIÓN: Solo retorna datos de la sucursal del usuario actual
      * Solo cuenta ventas con estado 'cerrada'.
      * 
      * @param inicio Fecha y hora de inicio del período
      * @param fin Fecha y hora de fin del período
-     * @return Lista de DesglosePagoDTO con el total por cada método de pago
+     * @return Lista de DesglosePagoDTO con el total por cada método de pago de la sucursal
      */
     public List<DesglosePagoDTO> obtenerDesglosePorMetodoPago(LocalDateTime inicio, LocalDateTime fin) {
-        List<Object[]> resultados = ventaRepository.sumByMetodoPago(inicio, fin);
+        Long sucursalId = SucursalContext.getSucursalId();
+        List<Object[]> resultados = ventaRepository.sumByMetodoPago(sucursalId, inicio, fin);
         
         return resultados.stream()
             .map(row -> new DesglosePagoDTO(

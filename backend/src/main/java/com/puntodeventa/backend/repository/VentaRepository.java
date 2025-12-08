@@ -52,11 +52,12 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
         FROM Pago p
         JOIN p.metodoPago mp
         JOIN p.venta v
-        WHERE v.estado = 'cerrada' AND v.fecha BETWEEN :inicio AND :fin
+        WHERE v.sucursal.id = :sucursalId AND LOWER(v.estado) = 'cerrada' AND v.fecha BETWEEN :inicio AND :fin
         GROUP BY mp.id, mp.nombre
         ORDER BY mp.nombre
         """)
-    List<Object[]> sumByMetodoPago(@Param("inicio") LocalDateTime inicio,
+    List<Object[]> sumByMetodoPago(@Param("sucursalId") Long sucursalId,
+                                    @Param("inicio") LocalDateTime inicio,
                                     @Param("fin") LocalDateTime fin);
 
     // ==================== MÉTODOS PARA SEGREGACIÓN POR SUCURSAL ====================
@@ -98,11 +99,11 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
             COALESCE(SUM(v.total), 0),
             COALESCE(SUM(v.subtotal), 0),
             COUNT(DISTINCT v.id),
-            (SELECT COALESCE(SUM(i2.cantidad), 0) FROM VentaItem i2 JOIN i2.venta v2 WHERE v2.sucursal.id = :sucursalId AND v2.estado = 'cerrada' AND v2.fecha BETWEEN :inicio AND :fin),
-            (SELECT COALESCE(SUM(i3.costoEstimado), 0) FROM VentaItem i3 JOIN i3.venta v3 WHERE v3.sucursal.id = :sucursalId AND v3.estado = 'cerrada' AND v3.fecha BETWEEN :inicio AND :fin)
+            (SELECT COALESCE(SUM(i2.cantidad), 0) FROM VentaItem i2 JOIN i2.venta v2 WHERE v2.sucursal.id = :sucursalId AND LOWER(v2.estado) = 'cerrada' AND v2.fecha BETWEEN :inicio AND :fin),
+            (SELECT COALESCE(SUM(i3.costoEstimado), 0) FROM VentaItem i3 JOIN i3.venta v3 WHERE v3.sucursal.id = :sucursalId AND LOWER(v3.estado) = 'cerrada' AND v3.fecha BETWEEN :inicio AND :fin)
         )
         FROM Venta v
-        WHERE v.sucursal.id = :sucursalId AND v.estado = 'cerrada' AND v.fecha BETWEEN :inicio AND :fin
+        WHERE v.sucursal.id = :sucursalId AND LOWER(v.estado) = 'cerrada' AND v.fecha BETWEEN :inicio AND :fin
         """)
     ResumenVentasAggregate aggregateResumenBySucursal(
         @Param("sucursalId") Long sucursalId,
