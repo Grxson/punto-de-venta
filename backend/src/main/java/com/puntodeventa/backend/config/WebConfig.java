@@ -55,6 +55,11 @@ public class WebConfig implements WebMvcConfigurer {
             .addResourceHandler("/static/**", "/public/**", "/resources/**")
             .addResourceLocations("classpath:/static/", "classpath:/public/", "classpath:/resources/");
         
+        // Dashboard de monitoreo - accesible en /monitoring
+        registry
+            .addResourceHandler("/monitoring")
+            .addResourceLocations("classpath:/static/monitoring.html");
+        
         // Swagger UI resources
         registry
             .addResourceHandler("/swagger-ui/**", "/v3/api-docs/**")

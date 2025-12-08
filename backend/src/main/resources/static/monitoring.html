@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Monitoreo - Punto de Venta</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #1e3c72;
+            font-size: 24px;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-badge.disconnected {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        /* Autenticación */
+        .auth-panel {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .auth-panel input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+            font-size: 14px;
+        }
+
+        .auth-panel button {
+            padding: 10px 20px;
+            background: #2a5298;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .auth-panel button:hover {
+            background: #1e3c72;
+        }
+
+        .auth-panel button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        /* Panel de Control */
+        .control-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .control-panel label {
+            display: flex;
+            flex-direction: column;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .control-panel input,
+        .control-panel select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        .buttons-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #2a5298;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1e3c72;
+        }
+
+        .btn-secondary {
+            background: #757575;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #616161;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Estadísticas */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            color: #999;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-top: 5px;
+        }
+
+        .stat-card.error .value {
+            color: #f44336;
+        }
+
+        .stat-card.warning .value {
+            color: #ff9800;
+        }
+
+        .stat-card.info .value {
+            color: #2196f3;
+        }
+
+        /* Logs Container */
+        .logs-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+        }
+
+        .logs-header {
+            background: #f5f5f5;
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logs-list {
+            flex: 1;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .log-entry:hover {
+            background: #f9f9f9;
+        }
+
+        .log-entry.error {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+        }
+
+        .log-entry.warn {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+        }
+
+        .log-entry.info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+
+        .log-entry.debug {
+            background: #f3e5f5;
+            border-left: 4px solid #9c27b0;
+        }
+
+        .log-level {
+            min-width: 60px;
+            font-weight: bold;
+            text-align: center;
+            padding: 2px 8px;
+            border-radius: 3px;
+            color: white;
+            font-size: 11px;
+        }
+
+        .log-level.ERROR {
+            background: #f44336;
+        }
+
+        .log-level.WARN {
+            background: #ff9800;
+        }
+
+        .log-level.INFO {
+            background: #2196f3;
+        }
+
+        .log-level.DEBUG {
+            background: #9c27b0;
+        }
+
+        .log-timestamp {
+            min-width: 160px;
+            color: #999;
+        }
+
+        .log-message {
+            flex: 1;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* Modal para detalles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            color: #1e3c72;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .modal-body p {
+            margin: 10px 0;
+            word-break: break-all;
+        }
+
+        .modal-body .label {
+            font-weight: bold;
+            color: #1e3c72;
+        }
+
+        /* Loading y Empty states */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header-info {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .logs-container {
+                height: 400px;
+            }
+
+            .log-entry {
+                flex-direction: column;
+            }
+
+            .auth-panel input {
+                width: 100%;
+            }
+        }
+
+        /* Auto-refresh indicator */
+        .refresh-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4caf50;
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h1>📊 Dashboard de Monitoreo</h1>
+                <small>Sistema de Punto de Venta - Logs en Tiempo Real</small>
+            </div>
+            <div class="header-info">
+                <div class="status-badge" id="statusBadge">
+                    ⚪ Desconectado
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de Autenticación -->
+        <div class="auth-panel">
+            <label>
+                🔐 Railway Token:
+                <input type="password" id="railwayToken" placeholder="Ingresa tu Railway Token aquí..." value="">
+            </label>
+            <button onclick="conectar()">Conectar</button>
+            <span id="authStatus" style="margin-left: 10px; font-size: 12px; color: #999;"></span>
+        </div>
+
+        <!-- Panel de Control -->
+        <div class="control-panel">
+            <label>
+                Filtro por Nivel:
+                <select id="filterLevel" onchange="aplicarFiltros()">
+                    <option value="">Todos</option>
+                    <option value="ERROR">ERROR</option>
+                    <option value="WARN">WARN</option>
+                    <option value="INFO">INFO</option>
+                    <option value="DEBUG">DEBUG</option>
+                </select>
+            </label>
+
+            <label>
+                Buscar en Mensaje:
+                <input type="text" id="searchText" placeholder="Buscar..." onkeyup="aplicarFiltros()">
+            </label>
+
+            <label>
+                Logger:
+                <input type="text" id="filterLogger" placeholder="ej: ProductoService" onkeyup="aplicarFiltros()">
+            </label>
+
+            <div class="buttons-group">
+                <button class="btn btn-primary" onclick="cargarLogs()">🔄 Recargar</button>
+                <button class="btn btn-secondary" onclick="toggleAutoRefresh()" id="autoRefreshBtn">▶ Auto-Refresh</button>
+                <button class="btn btn-success" onclick="descargarCSV()">📥 Descargar CSV</button>
+                <button class="btn btn-danger" onclick="limpiarFiltros()">🗑 Limpiar</button>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="label">Total Logs</div>
+                <div class="value" id="statTotal">0</div>
+            </div>
+            <div class="stat-card error">
+                <div class="label">Errores</div>
+                <div class="value" id="statErrors">0</div>
+            </div>
+            <div class="stat-card warning">
+                <div class="label">Advertencias</div>
+                <div class="value" id="statWarnings">0</div>
+            </div>
+            <div class="stat-card info">
+                <div class="label">Info</div>
+                <div class="value" id="statInfo">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Capacidad Buffer</div>
+                <div class="value" id="statCapacity">0%</div>
+            </div>
+        </div>
+
+        <!-- Logs Container -->
+        <div class="logs-container">
+            <div class="logs-header">
+                <div>📋 Logs en Tiempo Real</div>
+                <div id="logCount">0 logs</div>
+            </div>
+            <div class="logs-list" id="logsList">
+                <div class="empty-state">
+                    <p>Ingresa tu Railway Token y haz clic en "Conectar" para ver los logs</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para detalles de log -->
+    <div class="modal" id="logModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalles del Log</h2>
+                <button class="close-btn" onclick="cerrarModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let railwayToken = '';
+        let autoRefreshInterval = null;
+        let isConnected = false;
+        let allLogs = [];
+
+        // Cargar token guardado si existe
+        window.addEventListener('load', () => {
+            const savedToken = localStorage.getItem('railwayToken');
+            if (savedToken) {
+                document.getElementById('railwayToken').value = savedToken;
+            }
+        });
+
+        // Conectar con el servidor
+        async function conectar() {
+            railwayToken = document.getElementById('railwayToken').value.trim();
+            
+            if (!railwayToken) {
+                mostrarError('Por favor ingresa tu Railway Token');
+                return;
+            }
+
+            // Guardar token en localStorage
+            localStorage.setItem('railwayToken', railwayToken);
+
+            // Probar conexión
+            try {
+                const response = await fetch('/api/monitoring/logs/health', {
+                    headers: {
+                        'X-Railway-Token': railwayToken
+                    }
+                });
+
+                if (response.ok) {
+                    isConnected = true;
+                    actualizarStatusBadge(true);
+                    document.getElementById('authStatus').textContent = '✅ Conectado';
+                    document.getElementById('authStatus').style.color = '#4caf50';
+                    cargarLogs();
+                    // Auto-refresh cada 5 segundos
+                    if (!autoRefreshInterval) {
+                        autoRefreshInterval = setInterval(cargarLogs, 5000);
+                        document.getElementById('autoRefreshBtn').textContent = '⏸ Pausar Auto-Refresh';
+                    }
+                } else if (response.status === 401) {
+                    mostrarError('❌ Token inválido. Verifica tu Railway Token');
+                } else {
+                    mostrarError('❌ Error de conexión: ' + response.status);
+                }
+            } catch (error) {
+                mostrarError('❌ Error de conexión: ' + error.message);
+                isConnected = false;
+                actualizarStatusBadge(false);
+            }
+        }
+
+        // Cargar logs
+        async function cargarLogs() {
+            if (!isConnected || !railwayToken) return;
+
+            try {
+                const response = await fetch('/api/monitoring/logs', {
+                    headers: {
+                        'X-Railway-Token': railwayToken
+                    }
+                });
+
+                if (response.ok) {
+                    allLogs = await response.json();
+                    mostrarLogs(allLogs);
+                    actualizarEstadisticas();
+                } else if (response.status === 401) {
+                    mostrarError('Token expirado o inválido');
+                    isConnected = false;
+                    actualizarStatusBadge(false);
+                }
+            } catch (error) {
+                console.error('Error al cargar logs:', error);
+            }
+        }
+
+        // Mostrar logs en la interfaz
+        function mostrarLogs(logs) {
+            const logsList = document.getElementById('logsList');
+            
+            if (logs.length === 0) {
+                logsList.innerHTML = '<div class="empty-state"><p>No hay logs</p></div>';
+                document.getElementById('logCount').textContent = '0 logs';
+                return;
+            }
+
+            logsList.innerHTML = logs.map(log => `
+                <div class="log-entry ${log.level.toLowerCase()}" onclick="mostrarDetalle(${JSON.stringify(log).replace(/"/g, '&quot;')})">
+                    <div class="log-level ${log.level}">${log.level}</div>
+                    <div class="log-timestamp">${log.timestamp}</div>
+                    <div class="log-message">${log.message}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('logCount').textContent = `${logs.length} logs`;
+        }
+
+        // Aplicar filtros
+        function aplicarFiltros() {
+            const level = document.getElementById('filterLevel').value;
+            const searchText = document.getElementById('searchText').value.toLowerCase();
+            const logger = document.getElementById('filterLogger').value.toLowerCase();
+
+            let filtered = allLogs.filter(log => {
+                if (level && log.level !== level) return false;
+                if (searchText && !log.message.toLowerCase().includes(searchText)) return false;
+                if (logger && !log.logger.toLowerCase().includes(logger)) return false;
+                return true;
+            });
+
+            mostrarLogs(filtered);
+        }
+
+        // Limpiar filtros
+        function limpiarFiltros() {
+            document.getElementById('filterLevel').value = '';
+            document.getElementById('searchText').value = '';
+            document.getElementById('filterLogger').value = '';
+            mostrarLogs(allLogs);
+        }
+
+        // Actualizar estadísticas
+        async function actualizarEstadisticas() {
+            try {
+                const response = await fetch('/api/monitoring/logs/estadisticas', {
+                    headers: {
+                        'X-Railway-Token': railwayToken
+                    }
+                });
+
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('statTotal').textContent = stats.totalLogsActuales;
+                    
+                    const porNivel = stats.logsPorNivel || {};
+                    document.getElementById('statErrors').textContent = porNivel.ERROR || 0;
+                    document.getElementById('statWarnings').textContent = porNivel.WARN || 0;
+                    document.getElementById('statInfo').textContent = porNivel.INFO || 0;
+                    
+                    const capacity = ((stats.totalLogsActuales / stats.capacidadBuffer) * 100).toFixed(1);
+                    document.getElementById('statCapacity').textContent = capacity + '%';
+                }
+            } catch (error) {
+                console.error('Error al actualizar estadísticas:', error);
+            }
+        }
+
+        // Mostrar detalle de log en modal
+        function mostrarDetalle(log) {
+            const modal = document.getElementById('logModal');
+            const modalBody = document.getElementById('modalBody');
+
+            let html = `
+                <p><span class="label">Nivel:</span> ${log.level}</p>
+                <p><span class="label">Timestamp:</span> ${log.timestamp}</p>
+                <p><span class="label">Logger:</span> ${log.logger}</p>
+                <p><span class="label">Thread:</span> ${log.thread}</p>
+                <p><span class="label">Sucursal:</span> ${log.sucursal || 'N/A'}</p>
+                <p><span class="label">Usuario:</span> ${log.usuario || 'N/A'}</p>
+                <p><span class="label">Mensaje:</span></p>
+                <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;">${log.message}</pre>
+            `;
+
+            if (log.exception) {
+                html += `
+                    <p><span class="label">Excepción:</span></p>
+                    <pre style="background: #ffebee; padding: 10px; border-radius: 4px; overflow-x: auto; color: #c62828;">${log.exception}</pre>
+                `;
+            }
+
+            modalBody.innerHTML = html;
+            modal.classList.add('show');
+        }
+
+        // Cerrar modal
+        function cerrarModal() {
+            document.getElementById('logModal').classList.remove('show');
+        }
+
+        // Toggle Auto-Refresh
+        function toggleAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                document.getElementById('autoRefreshBtn').textContent = '▶ Auto-Refresh';
+            } else {
+                autoRefreshInterval = setInterval(cargarLogs, 5000);
+                document.getElementById('autoRefreshBtn').textContent = '⏸ Pausar Auto-Refresh';
+            }
+        }
+
+        // Descargar CSV
+        async function descargarCSV() {
+            if (!isConnected) {
+                mostrarError('Debe estar conectado');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/monitoring/logs/exportar/csv', {
+                    headers: {
+                        'X-Railway-Token': railwayToken
+                    }
+                });
+
+                if (response.ok) {
+                    const csv = await response.text();
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `logs-${new Date().toISOString()}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }
+            } catch (error) {
+                mostrarError('Error al descargar CSV: ' + error.message);
+            }
+        }
+
+        // Actualizar badge de estado
+        function actualizarStatusBadge(conectado) {
+            const badge = document.getElementById('statusBadge');
+            if (conectado) {
+                badge.textContent = '🟢 Conectado';
+                badge.classList.remove('disconnected');
+            } else {
+                badge.textContent = '⚪ Desconectado';
+                badge.classList.add('disconnected');
+            }
+        }
+
+        // Mostrar error
+        function mostrarError(mensaje) {
+            alert(mensaje);
+        }
+
+        // Cerrar modal al hacer click fuera
+        window.onclick = function(event) {
+            const modal = document.getElementById('logModal');
+            if (event.target === modal) {
+                modal.classList.remove('show');
+            }
+        };
+    </script>
+</body>
+</html>
