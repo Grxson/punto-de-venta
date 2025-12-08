@@ -53,8 +53,16 @@ public class CategoriaProductoService {
     @Cacheable(value = "categorias-productos", key = "#id")
     @Transactional(readOnly = true)
     public CategoriaProductoDTO obtener(Long id) {
+        // ✅ SEGREGACIÓN: Validar que la categoría pertenece a la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+        
         CategoriaProducto c = categoriaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con id: " + id));
+        
+        if (c.getSucursal() == null || !c.getSucursal().getId().equals(sucursalId)) {
+            throw new ResourceNotFoundException("Categoría no encontrada en su sucursal");
+        }
+        
         return toDTO(c);
     }
 
