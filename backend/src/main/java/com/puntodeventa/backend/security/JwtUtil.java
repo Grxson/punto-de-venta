@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.security;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,7 +17,7 @@ public class JwtUtil {
     @Value("${jwt.secret:punto-de-venta-secret-key-2025-debe-ser-muy-larga-para-seguridad}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration-ms:86400000}") // 24 horas por defecto
+    @Value("${jwt.expiration:604800000}") // 7 días por defecto (604800000 ms)
     private long jwtExpiration;
 
     private SecretKey getSigningKey() {
@@ -119,8 +120,29 @@ public class JwtUtil {
                     .build()
                     .parseSignedClaims(token);
             return true;
+        } catch (ExpiredJwtException e) {
+            // Token expirado
+            return false;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    /**
+     * Verificar si un token está expirado
+     * @return true si el token está expirado
+     */
+    public boolean isTokenExpired(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token);
+            return false;  // Token válido
+        } catch (ExpiredJwtException e) {
+            return true;  // Token expirado
+        } catch (Exception e) {
+            return false;  // Otro tipo de error
         }
     }
 }

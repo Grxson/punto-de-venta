@@ -151,13 +151,24 @@ class ApiService {
       if (!response.ok) {
         console.error(`❌ [${options.method}] ${url} - Status ${response.status}`, data);
         
-        // Si es 401, el token expiró
+        // Si es 401, el token expiró o es inválido
         if (response.status === 401) {
-          console.warn('🔓 Token expirado o inválido, limpiando...');
+          console.warn('🔓 Sesión expirada, limpiando datos...');
+          
+          // Limpiar autenticación
           this.clearAuthToken();
-          // Redirigir a login si estamos en el navegador
+          localStorage.removeItem('auth_usuario');
+          localStorage.removeItem('auth_sucursal');
+          
+          // Mostrar mensaje de sesión expirada
           if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+            // Guardar mensaje en sessionStorage para mostrarlo en login
+            sessionStorage.setItem('sessionExpiredMessage', 'Tu sesión ha caducado. Por favor inicia sesión nuevamente.');
+            
+            // Redirigir a login
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 100);
           }
         }
 
