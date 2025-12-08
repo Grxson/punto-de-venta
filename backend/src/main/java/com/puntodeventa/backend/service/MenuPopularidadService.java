@@ -7,6 +7,7 @@ import com.puntodeventa.backend.model.Producto;
 import com.puntodeventa.backend.repository.ProductoRepository;
 import com.puntodeventa.backend.repository.VentaItemRepository;
 import com.puntodeventa.backend.util.PopularityAlgorithm;
+import com.puntodeventa.backend.context.SucursalContext;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +45,9 @@ public class MenuPopularidadService {
     @Cacheable(value = "menuPopularidad", unless = "#result == null")
     @Transactional(readOnly = true)
     public MenuGrillaDTO obtenerMenuOrdenado(int columnasGrid, int diasAnalizar, boolean porCategoria) {
+        // ✅ SEGREGACIÓN: Obtener datos solo de la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+
         LocalDateTime ahora = LocalDateTime.now();
         LocalDateTime desde = ahora.minusDays(diasAnalizar);
         LocalDateTime desdeAntiguo = desde.minusDays(diasAnalizar);
@@ -54,12 +58,15 @@ public class MenuPopularidadService {
                 .filter(Producto::getDisponibleEnMenu)
                 .toList();
 
-        // OPTIMIZACIÓN: Obtener todas las estadísticas en batch (2 queries en lugar de N*2)
-        List<ProductoEstadisticasAggregate> statsRecientes = ventaItemRepository.obtenerTodosLosEstadisticasEnPeriodo(desde);
+        // OPTIMIZACIÓN: Obtener todas las estadísticas en batch (2 queries en lugar de
+        // N*2)
+        List<ProductoEstadisticasAggregate> statsRecientes = ventaItemRepository
+                .obtenerTodosLosEstadisticasEnPeriodo(desde, sucursalId);
         Map<Long, ProductoEstadisticasAggregate> mapaReciente = statsRecientes.stream()
                 .collect(Collectors.toMap(ProductoEstadisticasAggregate::productoId, stat -> stat));
 
-        List<ProductoEstadisticasAggregate> statsAntiguas = ventaItemRepository.obtenerTodosLosEstadisticasEnPeriodo(desdeAntiguo);
+        List<ProductoEstadisticasAggregate> statsAntiguas = ventaItemRepository
+                .obtenerTodosLosEstadisticasEnPeriodo(desdeAntiguo, sucursalId);
         Map<Long, ProductoEstadisticasAggregate> mapaAntiguo = statsAntiguas.stream()
                 .collect(Collectors.toMap(ProductoEstadisticasAggregate::productoId, stat -> stat));
 
@@ -69,14 +76,15 @@ public class MenuPopularidadService {
                 .collect(Collectors.toList());
 
         // Ordenar por popularidad
-        List<ProductoPopularidadDTO> productosOrdenados =
-                PopularityAlgorithm.ordenarPorPopularidad(productosConPopularidad);
+        List<ProductoPopularidadDTO> productosOrdenados = PopularityAlgorithm
+                .ordenarPorPopularidad(productosConPopularidad);
 
         // Distribuir en grilla
         Map<Long, ?> posiciones;
         if (porCategoria) {
             // Por categoría: Map<String, Map<Long, GridPosition>>
-            posiciones = (Map<Long, ?>) (Object) PopularityAlgorithm.distribuirPorCategoria(productosOrdenados, columnasGrid);
+            posiciones = (Map<Long, ?>) (Object) PopularityAlgorithm.distribuirPorCategoria(productosOrdenados,
+                    columnasGrid);
         } else {
             // Simple: Map<Long, GridPosition>
             posiciones = (Map<Long, ?>) (Object) PopularityAlgorithm.distribuirEnGrid(productosOrdenados, columnasGrid);
@@ -86,10 +94,12 @@ public class MenuPopularidadService {
                 columnasGrid,
                 posiciones,
                 productosOrdenados,
-                LocalDateTime.now().toString()
-        );
-    }    /**
-     * Calcula popularidad usando mapas de estadísticas previamente obtenidas en batch (optimización).
+                LocalDateTime.now().toString());
+    }
+
+    /**
+     * Calcula popularidad usando mapas de estadísticas previamente obtenidas en
+     * batch (optimización).
      */
     private ProductoPopularidadDTO calcularPopularidadDesdeMapas(
             Producto producto,
@@ -109,36 +119,34 @@ public class MenuPopularidadService {
         double tendencia = PopularityAlgorithm.calcularTendencia(cantidad, cantidadAntigua);
 
         java.math.BigDecimal score = PopularityAlgorithm.calcularScore(
-            producto.getId(),
-            frecuencia,
-            cantidad,
-            ingreso,
-            ultimaVenta,
-            tendencia
-        );
+                producto.getId(),
+                frecuencia,
+                cantidad,
+                ingreso,
+                ultimaVenta,
+                tendencia);
 
         String categoriaNombre = producto.getCategoria() != null
-            ? producto.getCategoria().getNombre()
-            : "Sin Categoría";
+                ? producto.getCategoria().getNombre()
+                : "Sin Categoría";
 
         return new ProductoPopularidadDTO(
-            producto.getId(),
-            producto.getNombre(),
-            categoriaNombre,
-            producto.getPrecio(),
-            producto.getDescripcion(),
-            frecuencia,
-            cantidad,
-            ingreso,
-            ultimaVenta,
-            score
-        );
+                producto.getId(),
+                producto.getNombre(),
+                categoriaNombre,
+                producto.getPrecio(),
+                producto.getDescripcion(),
+                frecuencia,
+                cantidad,
+                ingreso,
+                ultimaVenta,
+                score);
     }
 
     /**
      * Obtiene el top N productos por popularidad.
      *
-     * @param limite Número máximo de productos
+     * @param limite       Número máximo de productos
      * @param diasAnalizar Días para análisis
      * @return Lista ordenada de productos populares
      */

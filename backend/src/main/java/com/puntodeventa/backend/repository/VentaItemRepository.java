@@ -17,43 +17,45 @@ import java.util.Optional;
 public interface VentaItemRepository extends JpaRepository<VentaItem, Long> {
 
     @Query("""
-        SELECT new com.puntodeventa.backend.dto.aggregate.ProductoRendimientoAggregate(
-            i.producto.id,
-            i.producto.nombre,
-            i.producto.precio,
-            i.producto.costoEstimado,
-            COALESCE(SUM(i.cantidad),0),
-            COALESCE(SUM(i.subtotal),0),
-            COALESCE(SUM(i.costoEstimado),0)
-        )
-        FROM VentaItem i
-        JOIN i.venta v
-        WHERE v.estado IN ('PAGADA', 'cerrada') AND v.fecha BETWEEN :inicio AND :fin
-        GROUP BY i.producto.id, i.producto.nombre, i.producto.precio, i.producto.costoEstimado
-        ORDER BY SUM(i.subtotal) DESC
-        """)
+            SELECT new com.puntodeventa.backend.dto.aggregate.ProductoRendimientoAggregate(
+                i.producto.id,
+                i.producto.nombre,
+                i.producto.precio,
+                i.producto.costoEstimado,
+                COALESCE(SUM(i.cantidad),0),
+                COALESCE(SUM(i.subtotal),0),
+                COALESCE(SUM(i.costoEstimado),0)
+            )
+            FROM VentaItem i
+            JOIN i.venta v
+            WHERE v.estado IN ('PAGADA', 'cerrada') AND v.fecha BETWEEN :inicio AND :fin AND v.sucursal.id = :sucursalId
+            GROUP BY i.producto.id, i.producto.nombre, i.producto.precio, i.producto.costoEstimado
+            ORDER BY SUM(i.subtotal) DESC
+            """)
     List<ProductoRendimientoAggregate> topProductos(@Param("inicio") LocalDateTime inicio,
-                                                    @Param("fin") LocalDateTime fin,
-                                                    Pageable pageable);
+            @Param("fin") LocalDateTime fin,
+            @Param("sucursalId") Long sucursalId,
+            Pageable pageable);
 
     /**
      * Obtiene las estadísticas de venta de un producto desde una fecha en adelante.
-     * Incluye: frecuencia (número de transacciones), cantidad total, ingreso y última venta.
+     * Incluye: frecuencia (número de transacciones), cantidad total, ingreso y
+     * última venta.
      */
     @Query("""
-        SELECT new com.puntodeventa.backend.dto.aggregate.ProductoEstadisticasAggregate(
-            i.producto.id,
-            COUNT(DISTINCT i.venta.id) as frecuencia,
-            COALESCE(SUM(i.cantidad), 0) as cantidad,
-            COALESCE(SUM(i.subtotal), 0) as ingreso,
-            MAX(v.fecha) as ultimaVenta
-        )
-        FROM VentaItem i
-        JOIN i.venta v
-        WHERE i.producto.id = :productoId 
-            AND v.estado IN ('cerrada', 'PAGADA')
-            AND v.fecha >= :desde
-        """)
+            SELECT new com.puntodeventa.backend.dto.aggregate.ProductoEstadisticasAggregate(
+                i.producto.id,
+                COUNT(DISTINCT i.venta.id) as frecuencia,
+                COALESCE(SUM(i.cantidad), 0) as cantidad,
+                COALESCE(SUM(i.subtotal), 0) as ingreso,
+                MAX(v.fecha) as ultimaVenta
+            )
+            FROM VentaItem i
+            JOIN i.venta v
+            WHERE i.producto.id = :productoId
+                AND v.estado IN ('cerrada', 'PAGADA')
+                AND v.fecha >= :desde
+            """)
     Optional<ProductoEstadisticasAggregate> obtenerEstadisticasProducto(
             @Param("productoId") Long productoId,
             @Param("desde") LocalDateTime desde);
@@ -61,21 +63,24 @@ public interface VentaItemRepository extends JpaRepository<VentaItem, Long> {
     /**
      * Obtiene estadísticas para todos los productos desde una fecha.
      * Retorna solo productos que tienen ventas en el período especificado.
+     * ✅ SEGREGACIÓN: Filtra por sucursal de la venta
      */
     @Query("""
-        SELECT new com.puntodeventa.backend.dto.aggregate.ProductoEstadisticasAggregate(
-            i.producto.id,
-            COUNT(DISTINCT i.venta.id),
-            COALESCE(SUM(i.cantidad), 0),
-            COALESCE(SUM(i.subtotal), 0),
-            MAX(v.fecha)
-        )
-        FROM VentaItem i
-        JOIN i.venta v
-        WHERE v.estado IN ('cerrada', 'PAGADA')
-            AND v.fecha >= :desde
-        GROUP BY i.producto.id
-        """)
-    List<ProductoEstadisticasAggregate> obtenerTodosLosEstadisticasEnPeriodo(@Param("desde") LocalDateTime desde);
+            SELECT new com.puntodeventa.backend.dto.aggregate.ProductoEstadisticasAggregate(
+                i.producto.id,
+                COUNT(DISTINCT i.venta.id),
+                COALESCE(SUM(i.cantidad), 0),
+                COALESCE(SUM(i.subtotal), 0),
+                MAX(v.fecha)
+            )
+            FROM VentaItem i
+            JOIN i.venta v
+            WHERE v.estado IN ('cerrada', 'PAGADA')
+                AND v.fecha >= :desde
+                AND v.sucursal.id = :sucursalId
+            GROUP BY i.producto.id
+            """)
+    List<ProductoEstadisticasAggregate> obtenerTodosLosEstadisticasEnPeriodo(
+            @Param("desde") LocalDateTime desde,
+            @Param("sucursalId") Long sucursalId);
 }
-

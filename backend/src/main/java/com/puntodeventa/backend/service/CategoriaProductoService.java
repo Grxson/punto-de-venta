@@ -3,7 +3,10 @@ package com.puntodeventa.backend.service;
 import com.puntodeventa.backend.dto.CategoriaProductoDTO;
 import com.puntodeventa.backend.exception.ResourceNotFoundException;
 import com.puntodeventa.backend.model.CategoriaProducto;
+import com.puntodeventa.backend.model.Sucursal;
 import com.puntodeventa.backend.repository.CategoriaProductoRepository;
+import com.puntodeventa.backend.repository.SucursalRepository;
+import com.puntodeventa.backend.context.SucursalContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -21,16 +24,21 @@ import java.util.stream.Collectors;
 public class CategoriaProductoService {
 
     private final CategoriaProductoRepository categoriaRepository;
+    private final SucursalRepository sucursalRepository;
 
-    public CategoriaProductoService(CategoriaProductoRepository categoriaRepository) {
+    public CategoriaProductoService(CategoriaProductoRepository categoriaRepository,
+            SucursalRepository sucursalRepository) {
         this.categoriaRepository = categoriaRepository;
+        this.sucursalRepository = sucursalRepository;
     }
 
     // ❌ NO CACHEAR: El filtro activa cambia frecuentemente (soft deletes)
     // Se está moviendo hacia invalidación de caché completo
     @Transactional(readOnly = true)
     public List<CategoriaProductoDTO> listar(Optional<Boolean> activa, Optional<String> q) {
-        return categoriaRepository.findAll().stream()
+        // ✅ SEGREGACIÓN: Obtener categorías solo de la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+        return categoriaRepository.findBySucursal(sucursalId).stream()
                 .filter(c -> activa.map(a -> a.equals(c.getActiva())).orElse(true))
                 .filter(c -> q.map(s -> c.getNombre() != null && c.getNombre().toLowerCase().contains(s.toLowerCase()))
                         .orElse(true))
@@ -48,8 +56,14 @@ public class CategoriaProductoService {
 
     @CacheEvict(value = "categorias-productos", allEntries = true)
     public CategoriaProductoDTO crear(CategoriaProductoDTO dto) {
+        // ✅ SEGREGACIÓN: Asignar la categoría a la sucursal del usuario actual
+        Long sucursalId = SucursalContext.getSucursalId();
+        Sucursal sucursal = sucursalRepository.findById(sucursalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sucursal no encontrada: " + sucursalId));
+
         CategoriaProducto c = new CategoriaProducto();
         apply(dto, c);
+        c.setSucursal(sucursal);
         return toDTO(categoriaRepository.save(c));
     }
 

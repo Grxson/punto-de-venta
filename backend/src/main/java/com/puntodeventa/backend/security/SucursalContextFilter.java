@@ -8,7 +8,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -39,11 +39,13 @@ import io.jsonwebtoken.JwtException;
  * 3. Sucursal del usuario en BD (fallback)
  */
 @Component
-@RequiredArgsConstructor
 public class SucursalContextFilter extends OncePerRequestFilter {
 
-    private final UsuarioRepository usuarioRepository;
-    private final JwtUtil jwtUtil;
+    @Autowired(required = false)
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired(required = false)
+    private JwtUtil jwtUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -55,19 +57,23 @@ public class SucursalContextFilter extends OncePerRequestFilter {
 
             // PASO 1: Intentar obtener sucursal del JWT
             String bearerToken = extractBearerToken(request);
-            if (bearerToken != null && jwtUtil.isTokenValid(bearerToken)) {
+            if (bearerToken != null && jwtUtil != null && jwtUtil.isTokenValid(bearerToken)) {
                 try {
                     sucursalId = jwtUtil.extractSucursalId(bearerToken);
                     rolNombre = jwtUtil.extractRol(bearerToken);
-                    logger.debug("✅ Sucursal obtenida del JWT: " + sucursalId);
+                    logger.info("✅ [SucursalContextFilter] Sucursal obtenida del JWT: " + sucursalId + " | Rol: "
+                            + rolNombre);
                 } catch (JwtException | ClassCastException | NumberFormatException e) {
-                    logger.warn("⚠️ Error al extraer sucursal del JWT: " + e.getMessage());
+                    logger.error("❌ [SucursalContextFilter] Error al extraer sucursal del JWT: " + e.getMessage()
+                            + " | Exception: " + e.getClass().getSimpleName(), e);
                     sucursalId = null;
                 }
+            } else {
+                logger.warn("⚠️ [SucursalContextFilter] No hay token Bearer válido en el request");
             }
 
             // PASO 2: Si el JWT no tiene sucursal, obtener de la BD
-            if (sucursalId == null) {
+            if (sucursalId == null && usuarioRepository != null) {
                 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
                     String username = auth.getName();
@@ -112,9 +118,12 @@ public class SucursalContextFilter extends OncePerRequestFilter {
                     sucursalNombre = "Sucursal-" + sucursalId;
                 }
                 SucursalContext.setSucursal(sucursalId, sucursalNombre);
-                logger.debug("📍 SucursalContext establecido: ID=" + sucursalId + ", Nombre=" + sucursalNombre);
+                logger.info("📍 [SucursalContextFilter] SucursalContext establecido: ID=" + sucursalId + ", Nombre="
+                        + sucursalNombre + " | Request: " + request.getRequestURI());
             } else {
-                logger.warn("❌ No se pudo establecer contexto de sucursal - usando sucursal 1 como fallback");
+                logger.error(
+                        "❌ [SucursalContextFilter] No se pudo establecer contexto de sucursal - usando sucursal 1 como fallback | Request: "
+                                + request.getRequestURI());
                 SucursalContext.setSucursal(1L, "Default");
             }
 
