@@ -9,6 +9,7 @@ import com.puntodeventa.backend.model.Sucursal;
 import com.puntodeventa.backend.repository.CategoriaProductoRepository;
 import com.puntodeventa.backend.repository.ProductoRepository;
 import com.puntodeventa.backend.repository.SucursalRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 public class ProductoService {
@@ -181,29 +183,34 @@ public class ProductoService {
 
     /**
      * Eliminar producto definitivamente (hard delete)
-     * Solo permite eliminar si el producto no tiene:
-     * - Ventas asociadas
-     * - Recetas asociadas
-     * - Variantes (si es producto base)
+     * Elimina en cascada:
+     * - Todas las variantes del producto base
+     * - El producto base
      */
     @CacheEvict(value = "productos", allEntries = true)
     public void eliminarDefinitivamente(Long id) {
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
 
-        // Verificar si el producto tiene variantes (si es un producto base)
-        List<Producto> variantes = productoRepository.findAll().stream()
-                .filter(prod -> prod.getProductoBase() != null && prod.getProductoBase().getId().equals(id))
-                .toList();
-        if (!variantes.isEmpty()) {
-            throw new IllegalStateException("No se puede eliminar un producto base que tiene variantes");
+        // ✅ SEGREGACIÓN: Validar que el producto pertenece a la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+        if (p.getSucursal() == null || !p.getSucursal().getId().equals(sucursalId)) {
+            throw new ResourceNotFoundException("Producto no encontrado en su sucursal");
+        }
+
+        // Si es un producto base, obtener todas sus variantes para eliminarlas primero
+        if (p.getProductoBase() == null && p.getVariantes() != null && !p.getVariantes().isEmpty()) {
+            // Hay variantes: eliminarlas en cascada (JPA lo hará automáticamente)
+            log.info("Eliminando {} variantes del producto base: {} (ID: {})", 
+                    p.getVariantes().size(), p.getNombre(), id);
         }
 
         // TODO: Verificar que no tenga ventas asociadas
         // TODO: Verificar que no tenga recetas asociadas
 
-        // Realizar el hard delete
+        // Realizar el hard delete - JPA eliminará en cascada todas las variantes
         productoRepository.deleteById(id);
+        log.info("Producto eliminado definitivamente: {} (ID: {})", p.getNombre(), id);
     }
 
     public ProductoDTO cambiarEstado(Long id, boolean activo) {

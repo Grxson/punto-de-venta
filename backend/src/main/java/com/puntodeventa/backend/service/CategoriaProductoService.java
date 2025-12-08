@@ -94,7 +94,13 @@ public class CategoriaProductoService {
             );
         }
 
-        // Eliminar definitivamente de la BD
+        // ✅ CASCADA: Las subcategorías se eliminarán automáticamente por JPA (CascadeType.ALL)
+        if (c.getSubcategorias() != null && !c.getSubcategorias().isEmpty()) {
+            log.info("Eliminando {} subcategorías de la categoría: {} (ID: {})", 
+                    c.getSubcategorias().size(), c.getNombre(), id);
+        }
+
+        // Eliminar definitivamente de la BD - JPA eliminará en cascada todas las subcategorías
         categoriaRepository.deleteById(id);
         log.info("Categoría eliminada permanentemente: {} (ID: {})", c.getNombre(), c.getId());
     }

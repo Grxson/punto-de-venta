@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 /**
  * Entidad que representa una categoría de productos.
@@ -43,4 +44,11 @@ public class CategoriaProducto {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "sucursal_id", nullable = false)
     private Sucursal sucursal;
+
+    /**
+     * Lista de subcategorías de esta categoría.
+     * ✅ CASCADA: Al eliminar una categoría, se eliminan automáticamente todas sus subcategorías
+     */
+    @OneToMany(mappedBy = "categoria", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CategoriaSubcategoria> subcategorias;
 }
