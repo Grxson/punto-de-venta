@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS sucursal_productos (
     sucursal_id BIGINT NOT NULL,
     producto_id BIGINT NOT NULL,
     precio_sucursal DECIMAL(12, 2),
-    disponible SMALLINT NOT NULL DEFAULT 1,
+    disponible INTEGER NOT NULL DEFAULT 1,
     orden_visualizacion INT,
     stock_maximo INT,
     horario_disponibilidad TEXT,
