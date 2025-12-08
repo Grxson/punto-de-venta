@@ -45,6 +45,9 @@ public class SecurityConfig {
     private SucursalContextFilter sucursalContextFilter;
 
     @Autowired
+    private com.puntodeventa.backend.security.MonitoringAuthFilter monitoringAuthFilter;
+
+    @Autowired
     private UserDetailsService userDetailsService;
 
     @Autowired
@@ -98,6 +101,8 @@ public class SecurityConfig {
                                 "/api-docs/**")
                         .permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/monitoring").permitAll() // Dashboard de monitoreo
+                        .requestMatchers("/api/monitoring/**").permitAll() // API endpoints de monitoreo
                         .requestMatchers("/ws/**", "/topic/**", "/queue/**", "/user/**", "/app/**").permitAll() // WebSocket
                                                                                                                 // endpoints
                         .requestMatchers("/error").permitAll()
@@ -107,6 +112,9 @@ public class SecurityConfig {
 
                         // Todos los demás endpoints requieren autenticación
                         .anyRequest().authenticated())
+
+                // Agregar filtro de monitoreo ANTES del JWT para que valide primero
+                .addFilterBefore(monitoringAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
                 // Agregar filtro JWT antes del filtro de autenticación
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

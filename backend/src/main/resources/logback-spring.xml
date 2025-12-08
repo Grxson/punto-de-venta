@@ -64,6 +64,11 @@
             <totalSizeCap>200MB</totalSizeCap>
         </rollingPolicy>
     </appender>
+
+    <!-- ✅ Appender para Monitoreo en Tiempo Real (CircularBuffer) -->
+    <appender name="CIRCULAR" class="com.puntodeventa.backend.util.CircularLogAppender">
+        <!-- Sin necesidad de encoder - maneja logs internamente -->
+    </appender>
     
     <!-- Logger específico para SQL (solo en desarrollo) -->
     <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
@@ -80,6 +85,7 @@
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
         <appender-ref ref="ERROR_FILE"/>
+        <appender-ref ref="CIRCULAR"/>
     </logger>
     
     <!-- Logger para Spring -->
@@ -93,6 +99,7 @@
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
         <appender-ref ref="ERROR_FILE"/>
+        <appender-ref ref="CIRCULAR"/>
     </root>
     
 </configuration>
