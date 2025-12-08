@@ -15,88 +15,133 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import io.jsonwebtoken.JwtException;
 
 /**
  * Filtro que establece el contexto de sucursal para cada request.
  * 
  * Flujo:
- * 1. Obtiene el usuario autenticado del SecurityContext
- * 2. Obtiene la sucursal del usuario (o del header X-Sucursal-Id si es admin)
- * 3. Establece la sucursal en SucursalContext
- * 4. Continúa el request
- * 5. Limpia el contexto al final
+ * 1. Obtiene el token JWT del header Authorization
+ * 2. Extrae la sucursal_id del JWT (primera opción - más confiable)
+ * 3. Si no hay JWT o no contiene sucursal, obtiene del usuario en BD
+ * 4. Establece la sucursal en SucursalContext
+ * 5. Continúa el request
+ * 6. Limpia el contexto al final
  * 
  * Headers soportados:
- * - X-Sucursal-Id: ID de la sucursal (solo si el usuario es admin)
- * - Sin header: Usa la sucursal del usuario
+ * - Authorization: Bearer <JWT> - Token con sucursal_id incluido
+ * - X-Sucursal-Id: ID de la sucursal (solo si el usuario es admin, para cambiar
+ * de sucursal)
+ * 
+ * Prioridad:
+ * 1. Sucursal del JWT (más confiable porque viene del token autenticado)
+ * 2. Header X-Sucursal-Id (si es admin y lo proporciona)
+ * 3. Sucursal del usuario en BD (fallback)
  */
 @Component
 @RequiredArgsConstructor
 public class SucursalContextFilter extends OncePerRequestFilter {
 
     private final UsuarioRepository usuarioRepository;
+    private final JwtUtil jwtUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         try {
-            // Obtener usuario autenticado
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Long sucursalId = null;
+            String sucursalNombre = null;
+            String rolNombre = null;
 
-            if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
-                String username = auth.getName();
-                
-                // Obtener el usuario de la BD para acceder a su sucursal
-                Usuario usuario = usuarioRepository.findByUsername(username)
-                    .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
-
-                // IMPORTANTE: Acceder a los valores lazy-loaded dentro del contexto de la sesión
-                Long sucursalId = null;
-                String sucursalNombre = null;
-                String rolNombre = null;
-                
+            // PASO 1: Intentar obtener sucursal del JWT
+            String bearerToken = extractBearerToken(request);
+            if (bearerToken != null && jwtUtil.isTokenValid(bearerToken)) {
                 try {
-                    // Estos accesos ocurren dentro de la sesión de Hibernate
-                    if (usuario.getSucursal() != null) {
-                        sucursalId = usuario.getSucursal().getId();
-                        sucursalNombre = usuario.getSucursal().getNombre();
-                    }
-                    if (usuario.getRol() != null) {
-                        rolNombre = usuario.getRol().getNombre();
-                    }
-                } catch (Exception e) {
-                    logger.warn("Error al cargar lazy-loaded fields para usuario: " + username + ". Error: " + e.getMessage());
-                    // Si no se pueden cargar los lazy-loaded, usar valores por defecto
-                    if (sucursalId == null) sucursalId = 1L; // Sucursal por defecto
-                    if (sucursalNombre == null) sucursalNombre = "Default";
-                }
-
-                // Si es admin, puede cambiar de sucursal con header X-Sucursal-Id
-                if (rolNombre != null && rolNombre.equalsIgnoreCase("ADMIN")) {
-                    String sucursalHeader = request.getHeader("X-Sucursal-Id");
-                    if (sucursalHeader != null && !sucursalHeader.isBlank()) {
-                        try {
-                            sucursalId = Long.parseLong(sucursalHeader);
-                            // TODO: Validar que la sucursal existe
-                            sucursalNombre = "Sucursal-" + sucursalId; // Placeholder
-                        } catch (NumberFormatException ignored) {
-                            // Usar la sucursal del usuario si el header es inválido
-                        }
-                    }
-                }
-
-                // Establecer el contexto con valores seguros
-                if (sucursalId != null && sucursalNombre != null) {
-                    SucursalContext.setSucursal(sucursalId, sucursalNombre);
-                } else {
-                    logger.warn("No se pudo establecer contexto de sucursal para usuario: " + username);
+                    sucursalId = jwtUtil.extractSucursalId(bearerToken);
+                    rolNombre = jwtUtil.extractRol(bearerToken);
+                    logger.debug("✅ Sucursal obtenida del JWT: " + sucursalId);
+                } catch (JwtException | ClassCastException | NumberFormatException e) {
+                    logger.warn("⚠️ Error al extraer sucursal del JWT: " + e.getMessage());
+                    sucursalId = null;
                 }
             }
 
+            // PASO 2: Si el JWT no tiene sucursal, obtener de la BD
+            if (sucursalId == null) {
+                Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+                    String username = auth.getName();
+                    try {
+                        Usuario usuario = usuarioRepository.findByUsername(username)
+                                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado: " + username));
+
+                        // Acceder a los valores lazy-loaded dentro del contexto de la sesión
+                        if (usuario.getSucursal() != null) {
+                            sucursalId = usuario.getSucursal().getId();
+                            sucursalNombre = usuario.getSucursal().getNombre();
+                            logger.debug(
+                                    "✅ Sucursal obtenida de la BD para usuario: " + username + " -> " + sucursalId);
+                        }
+                        if (usuario.getRol() != null) {
+                            rolNombre = usuario.getRol().getNombre();
+                        }
+                    } catch (Exception e) {
+                        logger.warn("⚠️ Error al cargar usuario o sucursal desde BD: " + e.getMessage());
+                    }
+                }
+            }
+
+            // PASO 3: Si es admin, permitir cambiar de sucursal con header X-Sucursal-Id
+            if (rolNombre != null && rolNombre.equalsIgnoreCase("ADMIN")) {
+                String sucursalHeader = request.getHeader("X-Sucursal-Id");
+                if (sucursalHeader != null && !sucursalHeader.isBlank()) {
+                    try {
+                        Long headerSucursalId = Long.parseLong(sucursalHeader);
+                        logger.info("🔄 Admin cambió de sucursal: " + sucursalId + " -> " + headerSucursalId);
+                        sucursalId = headerSucursalId;
+                        sucursalNombre = "Sucursal-" + sucursalId;
+                    } catch (NumberFormatException e) {
+                        logger.warn("❌ Header X-Sucursal-Id inválido: " + sucursalHeader);
+                    }
+                }
+            }
+
+            // PASO 4: Establecer el contexto con valores seguros
+            if (sucursalId != null) {
+                if (sucursalNombre == null) {
+                    sucursalNombre = "Sucursal-" + sucursalId;
+                }
+                SucursalContext.setSucursal(sucursalId, sucursalNombre);
+                logger.debug("📍 SucursalContext establecido: ID=" + sucursalId + ", Nombre=" + sucursalNombre);
+            } else {
+                logger.warn("❌ No se pudo establecer contexto de sucursal - usando sucursal 1 como fallback");
+                SucursalContext.setSucursal(1L, "Default");
+            }
+
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            logger.error("❌ Error en SucursalContextFilter: " + e.getMessage(), e);
+            // Continuar con sucursal por defecto si hay error
+            try {
+                SucursalContext.setSucursal(1L, "Default");
+            } catch (Exception ignore) {
+                // Si hasta aquí falla, dejar que el request continúe sin contexto
+            }
             filterChain.doFilter(request, response);
         } finally {
             // Limpiar el contexto al final del request
             SucursalContext.clear();
         }
+    }
+
+    /**
+     * Extrae el token Bearer del header Authorization
+     */
+    private String extractBearerToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
     }
 }
