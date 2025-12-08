@@ -58,11 +58,12 @@ public class SucursalProducto {
 
     /**
      * Indica si el producto está disponible en esta sucursal.
+     * 1 = disponible, 0 = no disponible.
      * Permite desactivar un producto para una sucursal específica sin eliminarlo del catálogo.
      */
     @Column(nullable = false)
     @Builder.Default
-    private Boolean disponible = true;
+    private Integer disponible = 1;
 
     /**
      * Orden de visualización en el menú de esta sucursal.
@@ -120,7 +121,7 @@ public class SucursalProducto {
      * considerando horario, días, y disponibilidad general.
      */
     public boolean estaDisponibleAhora() {
-        if (!disponible) {
+        if (disponible == 0) {
             return false;
         }
 
