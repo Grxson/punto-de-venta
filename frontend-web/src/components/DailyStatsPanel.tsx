@@ -112,8 +112,9 @@ export default function DailyStatsPanel() {
     }
   };
 
-  // Neto = Total Ventas - Gastos
-  const neto = (stats ? stats.totalVentas : 0) - (stats ? (stats.totalGastos || 0) : 0);
+  // Neto = Efectivo - Gastos
+  const efectivoTotal = desglosePagos.find((p) => p.metodoPago?.toLowerCase() === 'efectivo')?.total ?? 0;
+  const neto = efectivoTotal - (stats ? (stats.totalGastos || 0) : 0);
 
   // Ordenar métodos de pago: Transferencia, Tarjeta, Efectivo (y luego cualquiera extra)
   const ordenMetodos = ['Transferencia', 'Tarjeta', 'Efectivo'];
