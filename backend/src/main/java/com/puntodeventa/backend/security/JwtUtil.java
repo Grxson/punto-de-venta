@@ -88,14 +88,25 @@ public class JwtUtil {
 
     /**
      * Obtener la sucursal del token
+     * @throws IllegalArgumentException si sucursalId no existe o no es válido
      */
     public Long extractSucursalId(String token) {
-        return ((Number) Jwts.parser()
+        Object sucursalObj = Jwts.parser()
                 .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload()
-                .get("sucursalId")).longValue();
+                .get("sucursalId");
+        
+        if (sucursalObj == null) {
+            throw new IllegalArgumentException("Token no contiene 'sucursalId'. El JWT debe incluir la sucursal del usuario.");
+        }
+        
+        if (!(sucursalObj instanceof Number)) {
+            throw new IllegalArgumentException("'sucursalId' en token debe ser un número, pero es: " + sucursalObj.getClass().getSimpleName());
+        }
+        
+        return ((Number) sucursalObj).longValue();
     }
 
     /**

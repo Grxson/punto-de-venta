@@ -61,10 +61,16 @@ public class SucursalContextFilter extends OncePerRequestFilter {
                 try {
                     sucursalId = jwtUtil.extractSucursalId(bearerToken);
                     rolNombre = jwtUtil.extractRol(bearerToken);
+                    String usernameFromToken = jwtUtil.extractUsername(bearerToken);
                     logger.info("✅ [SucursalContextFilter] Sucursal obtenida del JWT: " + sucursalId + " | Rol: "
-                            + rolNombre);
-                } catch (JwtException | ClassCastException | NumberFormatException e) {
-                    logger.error("❌ [SucursalContextFilter] Error al extraer sucursal del JWT: " + e.getMessage()
+                            + rolNombre + " | Usuario: " + usernameFromToken);
+                } catch (IllegalArgumentException e) {
+                    // MEJORADO: Distinción clara entre errores
+                    logger.error("❌ [SucursalContextFilter] Token JWT inválido - sucursalId no encontrado o mal formado: " 
+                        + e.getMessage(), e);
+                    sucursalId = null;
+                } catch (Exception e) {
+                    logger.error("❌ [SucursalContextFilter] Error inesperado al extraer datos del JWT: " + e.getMessage()
                             + " | Exception: " + e.getClass().getSimpleName(), e);
                     sucursalId = null;
                 }
@@ -72,28 +78,42 @@ public class SucursalContextFilter extends OncePerRequestFilter {
                 logger.warn("⚠️ [SucursalContextFilter] No hay token Bearer válido en el request");
             }
 
-            // PASO 2: Si el JWT no tiene sucursal, obtener de la BD
+            // PASO 2: Si el JWT no tiene sucursal, obtener de la BD (fallback)
             if (sucursalId == null && usuarioRepository != null) {
+                logger.info("ℹ️ [SucursalContextFilter] Sucursal no obtenida del JWT, intentando fallback a BD");
                 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                 if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
                     String username = auth.getName();
+                    logger.debug("✅ Usuario autenticado en SecurityContext: " + username);
                     try {
                         Usuario usuario = usuarioRepository.findByUsername(username)
                                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado: " + username));
+
+                        logger.debug("✅ Usuario encontrado en BD: " + username);
 
                         // Acceder a los valores lazy-loaded dentro del contexto de la sesión
                         if (usuario.getSucursal() != null) {
                             sucursalId = usuario.getSucursal().getId();
                             sucursalNombre = usuario.getSucursal().getNombre();
-                            logger.debug(
-                                    "✅ Sucursal obtenida de la BD para usuario: " + username + " -> " + sucursalId);
+                            logger.info("✅ [FALLBACK BD] Sucursal obtenida para usuario: " + username 
+                                + " -> sucursal_id=" + sucursalId + " (" + sucursalNombre + ")");
+                        } else {
+                            logger.error("❌ [FALLBACK BD] Usuario " + username 
+                                + " NO tiene sucursal asignada en la BD!");
                         }
+                        
                         if (usuario.getRol() != null) {
                             rolNombre = usuario.getRol().getNombre();
+                            logger.debug("✅ Rol obtenido de la BD: " + rolNombre);
                         }
+                    } catch (EntityNotFoundException e) {
+                        logger.error("❌ [FALLBACK BD] Usuario no encontrado en BD: " + e.getMessage());
                     } catch (Exception e) {
-                        logger.warn("⚠️ Error al cargar usuario o sucursal desde BD: " + e.getMessage());
+                        logger.error("❌ [FALLBACK BD] Error al cargar usuario o sucursal: " + e.getMessage() 
+                            + " | Exception: " + e.getClass().getSimpleName(), e);
                     }
+                } else {
+                    logger.warn("⚠️ [FALLBACK BD] No hay usuario autenticado en SecurityContext");
                 }
             }
 
@@ -118,23 +138,29 @@ public class SucursalContextFilter extends OncePerRequestFilter {
                     sucursalNombre = "Sucursal-" + sucursalId;
                 }
                 SucursalContext.setSucursal(sucursalId, sucursalNombre);
-                logger.info("📍 [SucursalContextFilter] SucursalContext establecido: ID=" + sucursalId + ", Nombre="
-                        + sucursalNombre + " | Request: " + request.getRequestURI());
+                logger.info("📍 [SucursalContextFilter] ✅ SucursalContext establecido: ID=" + sucursalId 
+                    + ", Nombre=" + sucursalNombre + " | Request: " + request.getRequestURI());
             } else {
-                logger.error(
-                        "❌ [SucursalContextFilter] No se pudo establecer contexto de sucursal - usando sucursal 1 como fallback | Request: "
-                                + request.getRequestURI());
-                SucursalContext.setSucursal(1L, "Default");
+                // CRÍTICO: No se pudo obtener sucursal_id de ningún origen
+                logger.error("❌ [SucursalContextFilter] CRÍTICO - No se pudo obtener sucursal_id de:");
+                logger.error("   - JWT (no contiene sucursalId o token inválido)");
+                logger.error("   - BD (usuario no autenticado, no encontrado, o sin sucursal asignada)");
+                logger.error("   Usando sucursal 1 como fallback (ESTO NO DEBERÍA OCURRIR EN PRODUCCIÓN)");
+                logger.error("   Request: " + request.getRequestURI());
+                SucursalContext.setSucursal(1L, "Default-FALLBACK");
             }
 
             filterChain.doFilter(request, response);
         } catch (Exception e) {
-            logger.error("❌ Error en SucursalContextFilter: " + e.getMessage(), e);
+            logger.error("❌ [SucursalContextFilter] EXCEPCIÓN INESPERADA en filter: " + e.getMessage() 
+                + " | Exception: " + e.getClass().getName(), e);
             // Continuar con sucursal por defecto si hay error
             try {
-                SucursalContext.setSucursal(1L, "Default");
+                SucursalContext.setSucursal(1L, "Default-ERROR");
+                logger.warn("⚠️ [SucursalContextFilter] SucursalContext establecido con fallback debido a error");
             } catch (Exception ignore) {
                 // Si hasta aquí falla, dejar que el request continúe sin contexto
+                logger.error("❌ [SucursalContextFilter] No se pudo ni hacer fallback a sucursal 1");
             }
             filterChain.doFilter(request, response);
         } finally {

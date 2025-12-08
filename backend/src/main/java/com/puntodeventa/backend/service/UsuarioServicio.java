@@ -103,17 +103,26 @@ public class UsuarioServicio {
             log.info("Usuario encontrado: {} - Activo: {} - Rol: {}", 
                 usuario.getUsername(), usuario.getActivo(), usuario.getRol().getNombre());
 
+            // VALIDACIÓN: Asegurar que el usuario tiene sucursal asignada
+            if (usuario.getSucursal() == null) {
+                log.error("❌ Usuario {} no tiene sucursal asignada", usuario.getUsername());
+                throw new IllegalStateException("El usuario debe tener una sucursal asignada antes de iniciar sesión");
+            }
+
             // Actualizar último acceso
             usuario.setUltimoAcceso(LocalDateTime.now());
             usuarioRepository.save(usuario);
 
-            // Generar token JWT con sucursal_id
+            // Generar token JWT con sucursal_id del usuario
+            Long sucursalId = usuario.getSucursal().getId();
             String token = jwtUtil.generateToken(
                 usuario.getUsername(), 
                 usuario.getId(), 
                 usuario.getRol().getNombre(),
-                usuario.getSucursal().getId()  // Incluir sucursal del usuario
+                sucursalId
             );
+            
+            log.info("✅ Token generado exitosamente para {} con sucursal_id={}", usuario.getUsername(), sucursalId);
 
             UsuarioDTO usuarioDTO = mapearADTO(usuario);
             return new LoginResponse(token, usuarioDTO, "Login exitoso");
