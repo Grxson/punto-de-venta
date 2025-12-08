@@ -44,7 +44,10 @@ public class CacheConfig {
                 // Datos dinámicos (actualizaciones frecuentes, caché corto)
                 "inventario",
                 "turnos-activos",
-                "cajas-activas");
+                "cajas-activas",
+
+                // Menú por popularidad (dinámico)
+                "menuPopularidad");
 
         cacheManager.setCaffeine(caffeineCacheBuilder());
         return cacheManager;

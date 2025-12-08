@@ -313,12 +313,8 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
       setLoading(true);
       setError(null);
 
-      // Preparar el nombre: incluir subcategoría como prefijo si está seleccionada
-      let nombreFinal = nombre.trim();
-      if (subcategoria) {
-        // Codificar subcategoría en el nombre con un prefijo especial: [subcategoria]
-        nombreFinal = `[${subcategoria.toUpperCase()}] ${nombreFinal}`;
-      }
+      // Preparar el nombre: sin prefijo de subcategoría
+      const nombreFinal = nombre.trim();
 
       const productoData = {
         nombre: nombreFinal,

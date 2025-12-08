@@ -1,11 +1,15 @@
 package com.puntodeventa.backend.service;
 
+import com.puntodeventa.backend.context.SucursalContext;
 import com.puntodeventa.backend.dto.ProductoDTO;
 import com.puntodeventa.backend.exception.ResourceNotFoundException;
 import com.puntodeventa.backend.model.CategoriaProducto;
 import com.puntodeventa.backend.model.Producto;
+import com.puntodeventa.backend.model.Sucursal;
 import com.puntodeventa.backend.repository.CategoriaProductoRepository;
 import com.puntodeventa.backend.repository.ProductoRepository;
+import com.puntodeventa.backend.repository.SucursalRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -15,25 +19,29 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 public class ProductoService {
 
     private final ProductoRepository productoRepository;
     private final CategoriaProductoRepository categoriaRepository;
+    private final SucursalRepository sucursalRepository;
 
-    public ProductoService(ProductoRepository productoRepository, CategoriaProductoRepository categoriaRepository) {
+    public ProductoService(ProductoRepository productoRepository, CategoriaProductoRepository categoriaRepository, SucursalRepository sucursalRepository) {
         this.productoRepository = productoRepository;
         this.categoriaRepository = categoriaRepository;
+        this.sucursalRepository = sucursalRepository;
     }
 
-    @Cacheable(value = "productos", unless = "#result.isEmpty()")
     @Transactional(readOnly = true)
     public List<ProductoDTO> listar(Optional<Boolean> activo, Optional<Boolean> enMenu, Optional<Long> categoriaId,
             Optional<String> q) {
-        // Obtener solo productos base (producto_base_id IS NULL) - más eficiente que
-        // findAll()
-        List<Producto> productos = productoRepository.findByProductoBaseIdIsNull().stream()
+        // ✅ SEGREGACIÓN: Obtener solo productos de la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+        
+        // Obtener solo productos base (producto_base_id IS NULL) de la sucursal actual
+        List<Producto> productos = productoRepository.findBySucursalIdAndProductoBaseIdIsNull(sucursalId).stream()
                 .filter(p -> activo.map(a -> a.equals(p.getActivo())).orElse(true))
                 .filter(p -> enMenu.map(m -> m.equals(p.getDisponibleEnMenu())).orElse(true))
                 .filter(p -> categoriaId.map(id -> p.getCategoria() != null && id.equals(p.getCategoria().getId()))
@@ -50,8 +58,16 @@ public class ProductoService {
     @Cacheable(value = "productos", key = "#id")
     @Transactional(readOnly = true)
     public ProductoDTO obtener(Long id) {
+        // ✅ SEGREGACIÓN: Validar que el producto pertenece a la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+        
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
+        
+        // Validar segregación: el producto debe pertenecer a la sucursal del usuario
+        if (p.getSucursal() == null || !p.getSucursal().getId().equals(sucursalId)) {
+            throw new ResourceNotFoundException("Producto no encontrado en su sucursal");
+        }
 
         // Si es un producto base (no tiene producto base), devolver con variantes
         if (p.getProductoBase() == null) {
@@ -68,11 +84,18 @@ public class ProductoService {
     @Cacheable(value = "productos", key = "'variantes-' + #productoBaseId")
     @Transactional(readOnly = true)
     public List<ProductoDTO> obtenerVariantes(Long productoBaseId) {
-        // Verificar que el producto base existe
+        // ✅ SEGREGACIÓN: Validar que el producto base pertenece a la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+        
+        // Verificar que el producto base existe y pertenece a esta sucursal
         Producto productoBase = productoRepository.findById(productoBaseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + productoBaseId));
+        
+        if (productoBase.getSucursal() == null || !productoBase.getSucursal().getId().equals(sucursalId)) {
+            throw new ResourceNotFoundException("Producto no encontrado en su sucursal");
+        }
 
-        // Buscar variantes
+        // Buscar variantes (todas las variantes están en la misma sucursal que el base)
         return productoRepository.findAll().stream()
                 .filter(p -> p.getProductoBase() != null && p.getProductoBase().getId().equals(productoBaseId))
                 .sorted((v1, v2) -> {
@@ -86,16 +109,30 @@ public class ProductoService {
 
     @CacheEvict(value = "productos", allEntries = true)
     public ProductoDTO crear(ProductoDTO dto) {
+        // ✅ SEGREGACIÓN: Auto-asignar sucursal del usuario actual
+        Long sucursalId = SucursalContext.getSucursalId();
+        Sucursal sucursal = sucursalRepository.findById(sucursalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sucursal no encontrada"));
+        
         Producto p = new Producto();
         apply(dto, p);
+        p.setSucursal(sucursal);
+        
         Producto guardado = productoRepository.save(p);
         return toDTO(guardado);
     }
 
     @CacheEvict(value = "productos", allEntries = true)
     public ProductoDTO actualizar(Long id, ProductoDTO dto) {
+        // ✅ SEGREGACIÓN: Validar que el producto pertenece a la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+        
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
+        
+        if (p.getSucursal() == null || !p.getSucursal().getId().equals(sucursalId)) {
+            throw new ResourceNotFoundException("Producto no encontrado en su sucursal");
+        }
 
         // Si es una variante, validar que no haya otro nombreVariante igual en el mismo
         // productoBase
@@ -122,8 +159,15 @@ public class ProductoService {
 
     @CacheEvict(value = "productos", allEntries = true)
     public void eliminar(Long id) {
+        // ✅ SEGREGACIÓN: Validar que el producto pertenece a la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+        
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
+        
+        if (p.getSucursal() == null || !p.getSucursal().getId().equals(sucursalId)) {
+            throw new ResourceNotFoundException("Producto no encontrado en su sucursal");
+        }
 
         // Borrado lógico en cascada: marcar todas las variantes como inactivas
         List<Producto> variantes = productoRepository.findByProductoBaseIdOrderByOrdenVarianteAsc(id);
@@ -139,29 +183,34 @@ public class ProductoService {
 
     /**
      * Eliminar producto definitivamente (hard delete)
-     * Solo permite eliminar si el producto no tiene:
-     * - Ventas asociadas
-     * - Recetas asociadas
-     * - Variantes (si es producto base)
+     * Elimina en cascada:
+     * - Todas las variantes del producto base
+     * - El producto base
      */
     @CacheEvict(value = "productos", allEntries = true)
     public void eliminarDefinitivamente(Long id) {
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
 
-        // Verificar si el producto tiene variantes (si es un producto base)
-        List<Producto> variantes = productoRepository.findAll().stream()
-                .filter(prod -> prod.getProductoBase() != null && prod.getProductoBase().getId().equals(id))
-                .toList();
-        if (!variantes.isEmpty()) {
-            throw new IllegalStateException("No se puede eliminar un producto base que tiene variantes");
+        // ✅ SEGREGACIÓN: Validar que el producto pertenece a la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+        if (p.getSucursal() == null || !p.getSucursal().getId().equals(sucursalId)) {
+            throw new ResourceNotFoundException("Producto no encontrado en su sucursal");
+        }
+
+        // Si es un producto base, obtener todas sus variantes para eliminarlas primero
+        if (p.getProductoBase() == null && p.getVariantes() != null && !p.getVariantes().isEmpty()) {
+            // Hay variantes: eliminarlas en cascada (JPA lo hará automáticamente)
+            log.info("Eliminando {} variantes del producto base: {} (ID: {})", 
+                    p.getVariantes().size(), p.getNombre(), id);
         }
 
         // TODO: Verificar que no tenga ventas asociadas
         // TODO: Verificar que no tenga recetas asociadas
 
-        // Realizar el hard delete
+        // Realizar el hard delete - JPA eliminará en cascada todas las variantes
         productoRepository.deleteById(id);
+        log.info("Producto eliminado definitivamente: {} (ID: {})", p.getNombre(), id);
     }
 
     public ProductoDTO cambiarEstado(Long id, boolean activo) {

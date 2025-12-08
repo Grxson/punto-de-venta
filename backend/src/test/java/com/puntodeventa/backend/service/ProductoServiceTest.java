@@ -1,10 +1,14 @@
 package com.puntodeventa.backend.service;
 
+import com.puntodeventa.backend.context.SucursalContext;
 import com.puntodeventa.backend.dto.ProductoDTO;
 import com.puntodeventa.backend.model.CategoriaProducto;
 import com.puntodeventa.backend.model.Producto;
+import com.puntodeventa.backend.model.Sucursal;
 import com.puntodeventa.backend.repository.CategoriaProductoRepository;
 import com.puntodeventa.backend.repository.ProductoRepository;
+import com.puntodeventa.backend.repository.SucursalRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +36,10 @@ class ProductoServiceTest {
         @Autowired
         private CategoriaProductoRepository categoriaRepository;
 
+        @Autowired
+        private SucursalRepository sucursalRepository;
+
+        private Sucursal sucursal;
         private CategoriaProducto categoria1;
         private CategoriaProducto categoria2;
         private Producto productoBase;
@@ -40,11 +48,23 @@ class ProductoServiceTest {
 
         @BeforeEach
         void setUp() {
+                // Crear sucursal
+                sucursal = new Sucursal();
+                sucursal.setNombre("Sucursal Test");
+                sucursal.setDireccion("Dirección Test");
+                sucursal.setTelefono("1234567890");
+                sucursal.setActivo(true);
+                sucursal = sucursalRepository.save(sucursal);
+
+                // Inicializar contexto de sucursal para las pruebas
+                SucursalContext.setSucursal(sucursal.getId(), sucursal.getNombre());
+
                 // Crear categorías
                 categoria1 = CategoriaProducto.builder()
                                 .nombre("Bebidas")
                                 .descripcion("Bebidas diversas")
                                 .activa(true)
+                                .sucursal(sucursal)
                                 .build();
                 categoria1 = categoriaRepository.save(categoria1);
 
@@ -52,8 +72,12 @@ class ProductoServiceTest {
                                 .nombre("Refrescos")
                                 .descripcion("Bebidas refrescantes")
                                 .activa(true)
+                                .sucursal(sucursal)
                                 .build();
                 categoria2 = categoriaRepository.save(categoria2);
+
+                // Inicializar contexto de sucursal para las pruebas
+                SucursalContext.setSucursal(1L, "Sucursal Test");
 
                 // Crear producto base
                 productoBase = Producto.builder()
@@ -66,6 +90,7 @@ class ProductoServiceTest {
                                 .activo(true)
                                 .disponibleEnMenu(true)
                                 .productoBase(null)
+                                .sucursal(sucursal)
                                 .build();
                 productoBase = productoRepository.save(productoBase);
 
@@ -82,6 +107,7 @@ class ProductoServiceTest {
                                 .productoBase(productoBase)
                                 .nombreVariante("500ml")
                                 .ordenVariante(1)
+                                .sucursal(sucursal)
                                 .build();
                 variante1 = productoRepository.save(variante1);
 
@@ -97,8 +123,24 @@ class ProductoServiceTest {
                                 .productoBase(productoBase)
                                 .nombreVariante("1 Litro")
                                 .ordenVariante(2)
+                                .sucursal(sucursal)
                                 .build();
                 variante2 = productoRepository.save(variante2);
+        }
+
+        @AfterEach
+        void tearDown() {
+                // Limpiar contexto de sucursal después de cada prueba
+                SucursalContext.clear();
+        }
+
+        /**
+         * Reinicializar el contexto de sucursal para las pruebas
+         * Esto es necesario porque el contexto es un ThreadLocal que puede limpiarse
+         * entre operaciones
+         */
+        private void reinitializeContext() {
+                SucursalContext.setSucursal(sucursal.getId(), sucursal.getNombre());
         }
 
         /**
@@ -107,6 +149,8 @@ class ProductoServiceTest {
          */
         @Test
         void testUpdateProductBaseCategoryDoesNotAffectVariants() {
+                reinitializeContext();
+
                 // Obtener variante antes de actualizar
                 Producto varianteBefore = productoRepository.findById(variante1.getId())
                                 .orElseThrow();
@@ -154,6 +198,8 @@ class ProductoServiceTest {
          */
         @Test
         void testVariantesPreserveOrder() {
+                reinitializeContext();
+
                 ProductoDTO updateDTO = new ProductoDTO(
                                 variante2.getId(),
                                 "Agua - 1 Litro Actualizada",
@@ -182,6 +228,8 @@ class ProductoServiceTest {
          */
         @Test
         void testUpdateProductBaseExplicitly() {
+                reinitializeContext();
+
                 // Crear otro producto base
                 Producto otroProductoBase = Producto.builder()
                                 .nombre("Refresco")
@@ -193,6 +241,7 @@ class ProductoServiceTest {
                                 .activo(true)
                                 .disponibleEnMenu(true)
                                 .productoBase(null)
+                                .sucursal(sucursal)
                                 .build();
                 otroProductoBase = productoRepository.save(otroProductoBase);
 
@@ -226,6 +275,8 @@ class ProductoServiceTest {
          */
         @Test
         void testVarianteNameUniquenessByProductBase() {
+                reinitializeContext();
+
                 ProductoDTO duplicateDTO = new ProductoDTO(
                                 variante2.getId(),
                                 "Agua - 500ml",
@@ -293,6 +344,8 @@ class ProductoServiceTest {
          */
         @Test
         void testEditVarianteCategoryPreservesProductoBaseId() {
+                reinitializeContext();
+
                 // Arrange: Verificar que la variante tiene productoBaseId
                 Producto varianteActual = productoRepository.findById(variante1.getId())
                                 .orElseThrow(() -> new RuntimeException("Variante no encontrada"));
@@ -345,6 +398,8 @@ class ProductoServiceTest {
          */
         @Test
         void testEditVarianteCategoryTransactional() {
+                reinitializeContext();
+
                 // Arrange
                 Long varianteId = variante1.getId();
                 Long productoBaseIdEsperado = productoBase.getId();

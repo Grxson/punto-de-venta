@@ -1,6 +1,7 @@
 package com.puntodeventa.backend.config;
 
 import com.puntodeventa.backend.security.JwtAuthenticationFilter;
+import com.puntodeventa.backend.security.SucursalContextFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,6 +40,12 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Autowired
+    private SucursalContextFilter sucursalContextFilter;
+
+    @Autowired
+    private com.puntodeventa.backend.security.MonitoringAuthFilter monitoringAuthFilter;
 
     @Autowired
     private UserDetailsService userDetailsService;
@@ -88,11 +95,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/categorias/**").permitAll() // Subcategorías para el formulario de
                                                                            // productos
+                        .requestMatchers("/api/v1/menu/**").permitAll() // Menú dinámico por popularidad
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs",
                                 "/api-docs/**")
                         .permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/monitoring").permitAll() // Dashboard de monitoreo
+                        .requestMatchers("/api/monitoring/**").permitAll() // API endpoints de monitoreo
                         .requestMatchers("/ws/**", "/topic/**", "/queue/**", "/user/**", "/app/**").permitAll() // WebSocket
                                                                                                                 // endpoints
                         .requestMatchers("/error").permitAll()
@@ -103,8 +113,14 @@ public class SecurityConfig {
                         // Todos los demás endpoints requieren autenticación
                         .anyRequest().authenticated())
 
+                // Agregar filtro de monitoreo ANTES del JWT para que valide primero
+                .addFilterBefore(monitoringAuthFilter, UsernamePasswordAuthenticationFilter.class)
+
                 // Agregar filtro JWT antes del filtro de autenticación
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // Agregar filtro de contexto de sucursal (después del JWT para acceder al usuario autenticado)
+                .addFilterAfter(sucursalContextFilter, JwtAuthenticationFilter.class)
 
                 // Configuración para H2 Console (solo desarrollo)
                 .headers(headers -> headers

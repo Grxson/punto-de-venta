@@ -15,20 +15,27 @@ import java.util.Optional;
  */
 @Repository
 public interface CategoriaSubcategoriaRepository extends JpaRepository<CategoriaSubcategoria, Long> {
-    
+
     /**
      * Obtener todas las subcategorías de una categoría, ordenadas por orden.
      */
     @Query("SELECT cs FROM CategoriaSubcategoria cs " +
-           "WHERE cs.categoria.id = :categoriaId AND cs.activa = true " +
-           "ORDER BY cs.orden ASC, cs.nombre ASC")
+            "WHERE cs.categoria.id = :categoriaId AND cs.activa = true " +
+            "ORDER BY cs.orden ASC, cs.nombre ASC")
     List<CategoriaSubcategoria> findByCategoriaIdOrderByOrden(@Param("categoriaId") Long categoriaId);
-    
+
+    /**
+     * Obtener todas las subcategorías de una sucursal.
+     * ✅ SEGREGACIÓN: Filtra por sucursal_id
+     */
+    @Query("SELECT cs FROM CategoriaSubcategoria cs WHERE cs.sucursal.id = :sucursalId")
+    List<CategoriaSubcategoria> findBySucursal(@Param("sucursalId") Long sucursalId);
+
     /**
      * Obtener una subcategoría por nombre dentro de una categoría.
      */
     Optional<CategoriaSubcategoria> findByCategoriaIdAndNombre(Long categoriaId, String nombre);
-    
+
     /**
      * Verificar si existe una subcategoría en una categoría.
      */

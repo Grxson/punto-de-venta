@@ -42,14 +42,30 @@ export const useUsuario = (id: number) => {
 /**
  * Hook para crear un usuario
  */
-export const useCrearUsuario = () => {
+export const useCrearUsuario = (sucursalId?: number) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: CrearUsuarioRequest) => usuariosService.crear(data),
-    onSuccess: () => {
-      // Invalidar cache de usuarios
-      queryClient.invalidateQueries({ queryKey: usuariosKeys.lists() });
+    onSuccess: (_, data) => {
+      console.log('✅ Usuario creado:', data);
+      // Invalidar cache específico de la sucursal si se conoce
+      if (sucursalId) {
+        queryClient.invalidateQueries({ 
+          queryKey: usuariosKeys.listBySucursal(sucursalId) 
+        });
+      } else if (data.sucursalId) {
+        // Si no se pasó sucursalId como param, usar del data
+        queryClient.invalidateQueries({ 
+          queryKey: usuariosKeys.listBySucursal(data.sucursalId) 
+        });
+      } else {
+        // Último recurso: invalidar toda la caché de usuarios
+        queryClient.invalidateQueries({ queryKey: usuariosKeys.lists() });
+      }
+    },
+    onError: (error) => {
+      console.error('❌ Error al crear usuario:', error);
     },
   });
 };
@@ -57,16 +73,31 @@ export const useCrearUsuario = () => {
 /**
  * Hook para actualizar un usuario
  */
-export const useActualizarUsuario = () => {
+export const useActualizarUsuario = (sucursalId?: number) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: EditarUsuarioRequest }) =>
       usuariosService.actualizar(id, data),
-    onSuccess: (_, { id }) => {
-      // Invalidar cache específico del usuario y lista
+    onSuccess: (_, { id, data }) => {
+      console.log('✅ Usuario actualizado:', id);
+      // Invalidar cache específico del usuario y la sucursal
       queryClient.invalidateQueries({ queryKey: usuariosKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: usuariosKeys.lists() });
+      
+      if (sucursalId) {
+        queryClient.invalidateQueries({ 
+          queryKey: usuariosKeys.listBySucursal(sucursalId) 
+        });
+      } else if (data.sucursalId) {
+        queryClient.invalidateQueries({ 
+          queryKey: usuariosKeys.listBySucursal(data.sucursalId) 
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: usuariosKeys.lists() });
+      }
+    },
+    onError: (error) => {
+      console.error('❌ Error al actualizar usuario:', error);
     },
   });
 };
@@ -74,15 +105,26 @@ export const useActualizarUsuario = () => {
 /**
  * Hook para cambiar rol de un usuario
  */
-export const useCambiarRol = () => {
+export const useCambiarRol = (sucursalId?: number) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ id, rolId }: { id: number; rolId: number }) =>
       usuariosService.cambiarRol(id, rolId),
     onSuccess: (_, { id }) => {
+      console.log('✅ Rol cambiado:', id);
       queryClient.invalidateQueries({ queryKey: usuariosKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: usuariosKeys.lists() });
+      
+      if (sucursalId) {
+        queryClient.invalidateQueries({ 
+          queryKey: usuariosKeys.listBySucursal(sucursalId) 
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: usuariosKeys.lists() });
+      }
+    },
+    onError: (error) => {
+      console.error('❌ Error al cambiar rol:', error);
     },
   });
 };
@@ -90,13 +132,25 @@ export const useCambiarRol = () => {
 /**
  * Hook para desactivar un usuario
  */
-export const useDesactivarUsuario = () => {
+export const useDesactivarUsuario = (sucursalId?: number) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: number) => usuariosService.desactivar(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: usuariosKeys.lists() });
+    onSuccess: (_, id) => {
+      console.log('✅ Usuario desactivado:', id);
+      queryClient.invalidateQueries({ queryKey: usuariosKeys.detail(id) });
+      
+      if (sucursalId) {
+        queryClient.invalidateQueries({ 
+          queryKey: usuariosKeys.listBySucursal(sucursalId) 
+        });
+      } else {
+        queryClient.invalidateQueries({ queryKey: usuariosKeys.lists() });
+      }
+    },
+    onError: (error) => {
+      console.error('❌ Error al desactivar usuario:', error);
     },
   });
 };

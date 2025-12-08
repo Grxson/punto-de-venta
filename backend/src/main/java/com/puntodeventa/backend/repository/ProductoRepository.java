@@ -38,4 +38,57 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     // Contar variantes de un producto base - EFICIENTE CON QUERY
     @Query("SELECT COUNT(p) FROM Producto p WHERE p.productoBase.id = :productoBaseId")
     long countVariantesByProductoBaseId(@Param("productoBaseId") Long productoBaseId);
+
+    // ==================== MÉTODOS PARA SEGREGACIÓN POR SUCURSAL ====================
+
+    /**
+     * Obtener todos los productos de una sucursal específica.
+     * @param sucursalId ID de la sucursal
+     * @return Lista de productos de esa sucursal
+     */
+    List<Producto> findBySucursalId(Long sucursalId);
+
+    /**
+     * Obtener productos activos de una sucursal.
+     * @param sucursalId ID de la sucursal
+     * @return Lista de productos activos
+     */
+    List<Producto> findBySucursalIdAndActivoTrue(Long sucursalId);
+
+    /**
+     * Obtener productos en menú de una sucursal.
+     * @param sucursalId ID de la sucursal
+     * @return Lista de productos en menú
+     */
+    List<Producto> findBySucursalIdAndDisponibleEnMenuTrue(Long sucursalId);
+
+    /**
+     * Buscar productos en una sucursal por nombre.
+     * @param sucursalId ID de la sucursal
+     * @param nombre Nombre del producto (parcial)
+     * @return Lista de productos encontrados
+     */
+    @Query("SELECT p FROM Producto p WHERE p.sucursal.id = :sucursalId AND p.nombre LIKE %:nombre%")
+    List<Producto> buscarBySucursalYNombre(@Param("sucursalId") Long sucursalId, @Param("nombre") String nombre);
+
+    /**
+     * Obtener productos base (sin variantes) de una sucursal.
+     * @param sucursalId ID de la sucursal
+     * @return Lista de productos base
+     */
+    List<Producto> findBySucursalIdAndProductoBaseIdIsNull(Long sucursalId);
+
+    /**
+     * Obtener productos base activos de una sucursal.
+     * @param sucursalId ID de la sucursal
+     * @return Lista de productos base activos
+     */
+    List<Producto> findBySucursalIdAndProductoBaseIdIsNullAndActivoTrue(Long sucursalId);
+
+    /**
+     * Obtener productos base en menú de una sucursal.
+     * @param sucursalId ID de la sucursal
+     * @return Lista de productos base en menú
+     */
+    List<Producto> findBySucursalIdAndProductoBaseIdIsNullAndDisponibleEnMenuTrue(Long sucursalId);
 }

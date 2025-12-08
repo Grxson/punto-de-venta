@@ -222,10 +222,10 @@ export default function PosHome() {
         }
       }
 
-      // Cargar productos activos y disponibles en menú
-      const productosResponse = await apiService.get(`${API_ENDPOINTS.PRODUCTS}?activo=true&enMenu=true`);
+      // Cargar productos desde inventario
+      const productosResponse = await apiService.get(`${API_ENDPOINTS.PRODUCTS}?activo=true&disponibleEnMenu=true`);
+      
       if (productosResponse.success && productosResponse.data) {
-        // Asegurar que el precio sea un número y filtrar solo activos y disponibles en menú
         const productosActivos = productosResponse.data
           .filter((p: any) => p.activo && p.disponibleEnMenu)
           .map((p: any) => ({
@@ -249,10 +249,10 @@ export default function PosHome() {
       setRefreshing(true);
       setRefreshSuccess(false);
       
-      // Cargar productos activos y disponibles en menú
-      const productosResponse = await apiService.get(`${API_ENDPOINTS.PRODUCTS}?activo=true&enMenu=true`);
+      // Cargar productos desde inventario
+      const productosResponse = await apiService.get(`${API_ENDPOINTS.PRODUCTS}?activo=true&disponibleEnMenu=true`);
+      
       if (productosResponse.success && productosResponse.data) {
-        // Asegurar que el precio sea un número y filtrar solo activos y disponibles en menú
         const productosActivos = productosResponse.data
           .filter((p: any) => p.activo && p.disponibleEnMenu)
           .map((p: any) => ({

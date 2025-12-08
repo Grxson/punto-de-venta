@@ -11,10 +11,18 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [sessionExpiredMessage, setSessionExpiredMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Si ya está autenticado, redirigir según rol
   useEffect(() => {
+    // Buscar mensaje de sesión expirada
+    const expiredMsg = sessionStorage.getItem('sessionExpiredMessage');
+    if (expiredMsg) {
+      setSessionExpiredMessage(expiredMsg);
+      sessionStorage.removeItem('sessionExpiredMessage');
+    }
+    
     if (isAuthenticated && usuario) {
       // Obtener el rol (puede venir como 'rol' o 'rolNombre')
       const rol = usuario.rol || usuario.rolNombre || '';
@@ -81,6 +89,12 @@ export default function Login() {
           <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
             Iniciar Sesión
           </Typography>
+
+          {sessionExpiredMessage && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              {sessionExpiredMessage}
+            </Alert>
+          )}
 
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>

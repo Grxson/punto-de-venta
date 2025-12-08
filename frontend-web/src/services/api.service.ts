@@ -76,6 +76,9 @@ class ApiService {
       const token = this.getAuthToken();
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
+        console.log('🔑 [API] Authorization header agregado, token length:', token.length);
+      } else {
+        console.warn('⚠️ [API] requiresAuth=true pero no hay token disponible');
       }
     }
 
@@ -128,6 +131,8 @@ class ApiService {
       if (options.body) {
         requestOptions.body = JSON.stringify(options.body);
         console.log(`📤 [${options.method}] ${url}`, options.body);
+      } else {
+        console.log(`📤 [${options.method}] ${url}`, { requiresAuth: options.requiresAuth, hasAuth: !!headers['Authorization'] });
       }
 
       const response = await this.fetchWithTimeout(url, requestOptions, timeout);
@@ -144,12 +149,26 @@ class ApiService {
 
       // Verificar si fue exitosa
       if (!response.ok) {
-        // Si es 401, el token expiró
+        console.error(`❌ [${options.method}] ${url} - Status ${response.status}`, data);
+        
+        // Si es 401, el token expiró o es inválido
         if (response.status === 401) {
+          console.warn('🔓 Sesión expirada, limpiando datos...');
+          
+          // Limpiar autenticación
           this.clearAuthToken();
-          // Redirigir a login si estamos en el navegador
+          localStorage.removeItem('auth_usuario');
+          localStorage.removeItem('auth_sucursal');
+          
+          // Mostrar mensaje de sesión expirada
           if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+            // Guardar mensaje en sessionStorage para mostrarlo en login
+            sessionStorage.setItem('sessionExpiredMessage', 'Tu sesión ha caducado. Por favor inicia sesión nuevamente.');
+            
+            // Redirigir a login
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 100);
           }
         }
 
@@ -161,12 +180,16 @@ class ApiService {
         };
       }
 
+      console.log(`✅ [${options.method}] ${url} - Status ${response.status}`);
+      
       return {
         success: true,
         data,
         statusCode: response.status,
       };
     } catch (error: any) {
+      console.error(`❌ [${options.method || 'GET'}] ${url} - Error:`, error);
+      
       // Si es error de red y hay reintentos disponibles
       if (attempt < this.retries && error.name === 'AbortError') {
         console.log(`Reintento ${attempt}/${this.retries} para ${endpoint}`);
@@ -194,23 +217,47 @@ class ApiService {
    */
 
   async get<T = any>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
-    return this.requestWithRetry<T>(endpoint, { ...options, method: 'GET' });
+    // Por defecto, requiresAuth es true a menos que se especifique lo contrario
+    return this.requestWithRetry<T>(endpoint, { 
+      ...options, 
+      method: 'GET',
+      requiresAuth: options?.requiresAuth !== false ? true : false
+    });
   }
 
   async post<T = any>(endpoint: string, body?: any, options?: Omit<RequestOptions, 'method'>): Promise<ApiResponse<T>> {
-    return this.requestWithRetry<T>(endpoint, { ...options, body, method: 'POST' });
+    return this.requestWithRetry<T>(endpoint, { 
+      ...options, 
+      body, 
+      method: 'POST',
+      requiresAuth: options?.requiresAuth !== false ? true : false
+    });
   }
 
   async put<T = any>(endpoint: string, body?: any, options?: Omit<RequestOptions, 'method'>): Promise<ApiResponse<T>> {
-    return this.requestWithRetry<T>(endpoint, { ...options, body, method: 'PUT' });
+    return this.requestWithRetry<T>(endpoint, { 
+      ...options, 
+      body, 
+      method: 'PUT',
+      requiresAuth: options?.requiresAuth !== false ? true : false
+    });
   }
 
   async patch<T = any>(endpoint: string, body?: any, options?: Omit<RequestOptions, 'method'>): Promise<ApiResponse<T>> {
-    return this.requestWithRetry<T>(endpoint, { ...options, body, method: 'PATCH' });
+    return this.requestWithRetry<T>(endpoint, { 
+      ...options, 
+      body, 
+      method: 'PATCH',
+      requiresAuth: options?.requiresAuth !== false ? true : false
+    });
   }
 
   async delete<T = any>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
-    return this.requestWithRetry<T>(endpoint, { ...options, method: 'DELETE' });
+    return this.requestWithRetry<T>(endpoint, { 
+      ...options, 
+      method: 'DELETE',
+      requiresAuth: options?.requiresAuth !== false ? true : false
+    });
   }
 
   /**

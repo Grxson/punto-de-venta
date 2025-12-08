@@ -28,6 +28,7 @@ import type { Sucursal } from '../../types/sucursal.types';
 interface UsuarioFormProps {
   open: boolean;
   usuario?: Usuario;
+  sucursalActual?: number;
   onClose: () => void;
   onSubmit: (data: CrearUsuarioRequest | EditarUsuarioRequest) => Promise<void>;
   isLoading?: boolean;
@@ -42,6 +43,7 @@ interface UsuarioFormData extends Omit<CrearUsuarioRequest, 'rolId' | 'sucursalI
 export const UsuarioForm = ({
   open,
   usuario,
+  sucursalActual,
   onClose,
   onSubmit,
   isLoading = false,
@@ -82,7 +84,7 @@ export const UsuarioForm = ({
           username: usuario.username,
           password: '',
           rolId: usuario.rol?.id || '',
-          sucursalId: usuario.sucursal?.id || '',
+          sucursalId: usuario.sucursal?.id || sucursalActual || '',
         });
       } else {
         reset({
@@ -92,11 +94,11 @@ export const UsuarioForm = ({
           username: '',
           password: '',
           rolId: '',
-          sucursalId: '',
+          sucursalId: sucursalActual || '',
         });
       }
     }
-  }, [open, usuario, reset]);
+  }, [open, usuario, reset, sucursalActual]);
 
   const handleFormSubmit = async (data: UsuarioFormData) => {
     try {

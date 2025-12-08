@@ -53,8 +53,9 @@ export interface EditarUsuarioRequest {
   apellido: string;
   email: string;
   username: string;
+  password?: string; // Opcional al editar
   rolId: number;
-  sucursalId?: number;
+  sucursalId: number;
 }
 
 export interface CambiarRolRequest {

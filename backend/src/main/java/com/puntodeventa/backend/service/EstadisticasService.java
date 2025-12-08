@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.service;
 
+import com.puntodeventa.backend.context.SucursalContext;
 import com.puntodeventa.backend.dto.ProductoRendimientoDTO;
 import com.puntodeventa.backend.dto.ResumenVentasDiaDTO;
 import com.puntodeventa.backend.dto.aggregate.ResumenVentasAggregate;
@@ -28,7 +29,8 @@ public class EstadisticasService {
     private final VentaItemRepository ventaItemRepository;
     private final GastoRepository gastoRepository;
 
-    public EstadisticasService(VentaRepository ventaRepository, VentaItemRepository ventaItemRepository, GastoRepository gastoRepository) {
+    public EstadisticasService(VentaRepository ventaRepository, VentaItemRepository ventaItemRepository,
+            GastoRepository gastoRepository) {
         this.ventaRepository = ventaRepository;
         this.ventaItemRepository = ventaItemRepository;
         this.gastoRepository = gastoRepository;
@@ -41,27 +43,33 @@ public class EstadisticasService {
     }
 
     public ResumenVentasDiaDTO resumenRango(LocalDateTime desde, LocalDateTime hasta, LocalDate fechaRepresentativa) {
-        ResumenVentasAggregate agg = ventaRepository.aggregateResumen(desde, hasta);
+        // ✅ SEGREGACIÓN: Obtener resumen solo de la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+
+        ResumenVentasAggregate agg = ventaRepository.aggregateResumenBySucursal(sucursalId, desde, hasta);
         BigDecimal totalVentas = agg.totalVentas();
         BigDecimal totalCostosProductos = agg.totalCostos();
-        
-        // Sumar SOLO gastos OPERACIONALES del período (NO administrativos)
-        BigDecimal totalGastos = gastoRepository.sumMontoByTipoGastoAndFechaBetween("Operacional", desde, hasta);
+
+        // ✅ SEGREGACIÓN: Sumar SOLO gastos OPERACIONALES de la sucursal actual
+        BigDecimal totalGastos = gastoRepository.sumMontoByTipoGastoAndSucursalAndFechaBetween("Operacional",
+                sucursalId, desde, hasta);
         if (totalGastos == null) {
             totalGastos = BigDecimal.ZERO;
         }
-        
+
         // Total de costos = costos de productos + gastos operativos
         BigDecimal totalCostos = totalCostosProductos.add(totalGastos);
-        
+
         long itemsVendidos = agg.itemsVendidos();
         int cantidadVentas = agg.cantidadVentas().intValue();
         BigDecimal margenBruto = totalVentas.subtract(totalCostos);
-        BigDecimal ticketPromedio = cantidadVentas > 0 ?
-                totalVentas.divide(BigDecimal.valueOf(cantidadVentas), 2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
-        BigDecimal margenPorcentaje = totalVentas.compareTo(BigDecimal.ZERO) > 0 ?
-                margenBruto.divide(totalVentas, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
-                        .setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+        BigDecimal ticketPromedio = cantidadVentas > 0
+                ? totalVentas.divide(BigDecimal.valueOf(cantidadVentas), 2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+        BigDecimal margenPorcentaje = totalVentas.compareTo(BigDecimal.ZERO) > 0
+                ? margenBruto.divide(totalVentas, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100))
+                        .setScale(2, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
 
         return new ResumenVentasDiaDTO(
                 fechaRepresentativa,
@@ -72,8 +80,7 @@ public class EstadisticasService {
                 cantidadVentas,
                 itemsVendidos,
                 ticketPromedio,
-                margenPorcentaje
-        );
+                margenPorcentaje);
     }
 
     public List<ProductoRendimientoDTO> rendimientoProductosDia(LocalDate fecha, int limite) {
@@ -82,31 +89,35 @@ public class EstadisticasService {
         return rendimientoProductosRango(inicio, fin, limite);
     }
 
-    public List<ProductoRendimientoDTO> rendimientoProductosRango(LocalDateTime desde, LocalDateTime hasta, int limite) {
-    List<ProductoRendimientoAggregate> agregados = ventaItemRepository.topProductos(desde, hasta,
-        org.springframework.data.domain.PageRequest.of(0, limite));
+    public List<ProductoRendimientoDTO> rendimientoProductosRango(LocalDateTime desde, LocalDateTime hasta,
+            int limite) {
+        // ✅ SEGREGACIÓN: Obtener rendimiento de productos solo de la sucursal del
+        // usuario
+        Long sucursalId = SucursalContext.getSucursalId();
 
-    return agregados.stream().map(a -> {
-        BigDecimal margenUnitario = null;
-        BigDecimal margenPct = null;
-        if (a.precio() != null && a.costoEstimado() != null && a.precio().compareTo(BigDecimal.ZERO) > 0) {
-        margenUnitario = a.precio().subtract(a.costoEstimado()).setScale(4, RoundingMode.HALF_UP);
-        margenPct = margenUnitario.divide(a.precio(), 4, RoundingMode.HALF_UP)
-            .multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
-        }
-        BigDecimal margenBrutoTotal = a.ingresoTotal().subtract(a.costoTotal());
-        return new ProductoRendimientoDTO(
-            a.productoId(),
-            a.nombreProducto(),
-            a.precio(),
-            a.costoEstimado(),
-            margenUnitario,
-            margenPct,
-            a.unidadesVendidas(),
-            a.ingresoTotal().setScale(2, RoundingMode.HALF_UP),
-            a.costoTotal().setScale(4, RoundingMode.HALF_UP),
-            margenBrutoTotal.setScale(2, RoundingMode.HALF_UP)
-        );
-    }).toList();
+        List<ProductoRendimientoAggregate> agregados = ventaItemRepository.topProductos(desde, hasta, sucursalId,
+                org.springframework.data.domain.PageRequest.of(0, limite));
+
+        return agregados.stream().map(a -> {
+            BigDecimal margenUnitario = null;
+            BigDecimal margenPct = null;
+            if (a.precio() != null && a.costoEstimado() != null && a.precio().compareTo(BigDecimal.ZERO) > 0) {
+                margenUnitario = a.precio().subtract(a.costoEstimado()).setScale(4, RoundingMode.HALF_UP);
+                margenPct = margenUnitario.divide(a.precio(), 4, RoundingMode.HALF_UP)
+                        .multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+            }
+            BigDecimal margenBrutoTotal = a.ingresoTotal().subtract(a.costoTotal());
+            return new ProductoRendimientoDTO(
+                    a.productoId(),
+                    a.nombreProducto(),
+                    a.precio(),
+                    a.costoEstimado(),
+                    margenUnitario,
+                    margenPct,
+                    a.unidadesVendidas(),
+                    a.ingresoTotal().setScale(2, RoundingMode.HALF_UP),
+                    a.costoTotal().setScale(4, RoundingMode.HALF_UP),
+                    margenBrutoTotal.setScale(2, RoundingMode.HALF_UP));
+        }).toList();
     }
 }

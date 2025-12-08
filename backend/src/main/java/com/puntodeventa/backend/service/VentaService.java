@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.service;
 
+import com.puntodeventa.backend.context.SucursalContext;
 import com.puntodeventa.backend.dto.*;
 import com.puntodeventa.backend.exception.ResourceNotFoundException;
 import com.puntodeventa.backend.model.*;
@@ -40,8 +41,12 @@ public class VentaService {
     @PersistenceContext
     private EntityManager entityManager;
     
+    /**
+     * ✅ SEGREGACIÓN: Obtener solo ventas de la sucursal del usuario actual
+     */
     public List<VentaDTO> obtenerTodas() {
-        return ventaRepository.findAll().stream()
+        Long sucursalId = SucursalContext.getSucursalId();
+        return ventaRepository.findBySucursalId(sucursalId).stream()
             .map(this::toDTO)
             .toList();
     }
@@ -52,8 +57,12 @@ public class VentaService {
         return toDTO(venta);
     }
     
+    /**
+     * ✅ SEGREGACIÓN: Obtener ventas por estado en la sucursal del usuario actual
+     */
     public List<VentaDTO> obtenerPorEstado(String estado) {
-        return ventaRepository.findByEstado(estado).stream()
+        Long sucursalId = SucursalContext.getSucursalId();
+        return ventaRepository.findBySucursalIdAndEstado(sucursalId, estado).stream()
             .map(this::toDTO)
             .toList();
     }
@@ -64,9 +73,13 @@ public class VentaService {
             .toList();
     }
     
+    /**
+     * ✅ SEGREGACIÓN: Obtener ventas por rango de fechas en la sucursal del usuario actual
+     */
     public List<VentaDTO> obtenerPorRangoFechas(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
-        List<Venta> ventas = ventaRepository.findByFechaBetween(fechaInicio, fechaFin);
-        System.out.println("🔍 [VentaService] obtenerPorRangoFechas: encontradas " + ventas.size() + " ventas");
+        Long sucursalId = SucursalContext.getSucursalId();
+        List<Venta> ventas = ventaRepository.findBySucursalAndFechaBetween(sucursalId, fechaInicio, fechaFin);
+        System.out.println("🔍 [VentaService] obtenerPorRangoFechas: encontradas " + ventas.size() + " ventas en sucursal " + sucursalId);
         ventas.forEach(v -> System.out.println("  - Venta ID: " + v.getId() + ", Items: " + (v.getItems() != null ? v.getItems().size() : 0)));
         
         List<VentaDTO> resultado = ventas.stream()
@@ -79,6 +92,9 @@ public class VentaService {
     
     @Transactional // Permite escritura (sobrescribe readOnly=true de la clase)
     public VentaDTO crearVenta(CrearVentaRequest request) {
+        // ✅ SEGREGACIÓN: Auto-obtener sucursal del usuario actual
+        Long sucursalId = SucursalContext.getSucursalId();
+        
         LocalDateTime ahora = LocalDateTime.now();
         
         // 1. Crear la venta principal
@@ -96,7 +112,7 @@ public class VentaService {
         Long cajaId = null;
         try { cajaId = request.cajaId(); } catch (Exception ignored) {}
         if (cajaId == null) {
-            cajaId = seleccionarCajaActiva(request.sucursalId());
+            cajaId = seleccionarCajaActiva(sucursalId);
             org.slf4j.LoggerFactory.getLogger(VentaService.class)
                 .warn("crearVenta(): cajaId no proporcionado; resolviendo caja activa -> {}", cajaId);
         }
@@ -112,12 +128,17 @@ public class VentaService {
         }
         venta.setTurnoId(turnoId);
         
-        // 2. Asignar sucursal si se proporciona
-        if (request.sucursalId() != null) {
-            Sucursal sucursal = sucursalRepository.findById(request.sucursalId())
-                .orElseThrow(() -> new ResourceNotFoundException("Sucursal no encontrada con ID: " + request.sucursalId()));
-            venta.setSucursal(sucursal);
+        // 2. Asignar sucursal
+        // ✅ SEGREGACIÓN: Usar sucursal del contexto (del JWT) o de la request si es admin
+        Long sucursalIdFinal = sucursalId; // Del contexto
+        if (request.sucursalId() != null && !request.sucursalId().equals(sucursalId)) {
+            // Si viene diferente en la request y es admin, usar la del contexto por seguridad
+            log.warn("⚠️ Request especificó sucursalId {} pero contexto tiene {}, usando contexto", request.sucursalId(), sucursalId);
         }
+        
+        Sucursal sucursal = sucursalRepository.findById(sucursalIdFinal)
+            .orElseThrow(() -> new ResourceNotFoundException("Sucursal no encontrada con ID: " + sucursalIdFinal));
+        venta.setSucursal(sucursal);
         
         // 2.1. Asignar usuario actual si está autenticado
         Usuario usuarioActual = obtenerUsuarioActual();
@@ -528,9 +549,17 @@ public class VentaService {
      */
     @Transactional
     public VentaDTO actualizarVenta(Long ventaId, ActualizarVentaRequest request) {
+        // ✅ SEGREGACIÓN: Validar que la venta pertenece a la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+        
         // Buscar la venta
         Venta venta = ventaRepository.findById(ventaId)
             .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con ID: " + ventaId));
+        
+        // Validar que la venta pertenece a la sucursal del usuario
+        if (venta.getSucursal() == null || !venta.getSucursal().getId().equals(sucursalId)) {
+            throw new ResourceNotFoundException("Venta no encontrada en su sucursal");
+        }
         
         // Validar que no esté cancelada
         if ("cancelada".equals(venta.getEstado())) {
@@ -553,8 +582,11 @@ public class VentaService {
         // 1. Revertir movimientos de inventario anteriores
         revertirMovimientosInventario(venta);
         
-        // 2. Actualizar sucursal si se proporciona
+        // 2. Actualizar sucursal si se proporciona (pero validar que sea la misma sucursal del usuario)
         if (request.sucursalId() != null) {
+            if (!request.sucursalId().equals(sucursalId)) {
+                throw new IllegalArgumentException("No puede cambiar una venta a otra sucursal");
+            }
             Sucursal sucursal = sucursalRepository.findById(request.sucursalId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sucursal no encontrada con ID: " + request.sucursalId()));
             venta.setSucursal(sucursal);
@@ -698,14 +730,16 @@ public class VentaService {
     
     /**
      * Obtiene el desglose de ventas por método de pago para un rango de fechas.
+     * ✅ SEGREGACIÓN: Solo retorna datos de la sucursal del usuario actual
      * Solo cuenta ventas con estado 'cerrada'.
      * 
      * @param inicio Fecha y hora de inicio del período
      * @param fin Fecha y hora de fin del período
-     * @return Lista de DesglosePagoDTO con el total por cada método de pago
+     * @return Lista de DesglosePagoDTO con el total por cada método de pago de la sucursal
      */
     public List<DesglosePagoDTO> obtenerDesglosePorMetodoPago(LocalDateTime inicio, LocalDateTime fin) {
-        List<Object[]> resultados = ventaRepository.sumByMetodoPago(inicio, fin);
+        Long sucursalId = SucursalContext.getSucursalId();
+        List<Object[]> resultados = ventaRepository.sumByMetodoPago(sucursalId, inicio, fin);
         
         return resultados.stream()
             .map(row -> new DesglosePagoDTO(
@@ -809,9 +843,17 @@ public class VentaService {
     public void eliminarVenta(Long ventaId) {
         log.info("eliminarVenta(): eliminando venta con ID {}", ventaId);
         
+        // ✅ SEGREGACIÓN: Validar que la venta pertenece a la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+        
         // Verificar que la venta existe
         Venta venta = ventaRepository.findById(ventaId)
             .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con ID: " + ventaId));
+        
+        // Validar que la venta pertenece a la sucursal del usuario
+        if (venta.getSucursal() == null || !venta.getSucursal().getId().equals(sucursalId)) {
+            throw new ResourceNotFoundException("Venta no encontrada en su sucursal");
+        }
         
         // Eliminar movimientos de inventario asociados (si existen)
         List<InventarioMovimiento> movimientos = inventarioMovimientoRepository

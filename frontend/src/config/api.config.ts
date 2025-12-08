@@ -25,7 +25,7 @@ import Config from 'react-native-config';
 const ENV: Environment = {
   dev: {
     apiUrl: Config.API_URL_DEV || 'http://localhost:8080/api',
-    timeout: Number(Config.API_TIMEOUT) || 30000,
+    timeout: Number(Config.API_TIMEOUT) || 30000, // Timeout normal después de optimización del menu
     retries: Number(Config.API_RETRIES) || 3,
   },
   staging: {
