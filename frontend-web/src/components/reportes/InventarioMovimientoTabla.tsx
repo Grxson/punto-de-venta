@@ -54,8 +54,14 @@ const InventarioMovimientoTabla = memo(
     }
 
     return (
-      <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650 }}>
+      <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+        <Table sx={{ 
+          minWidth: 650,
+          '& td, & th': {
+            padding: '8px 6px',
+            border: '1px solid #ddd',
+          }
+        }}>
           <EncabezadoColumnas diasOperacion={reporte.diasOperacion} />
           <CuerpoTabla
             productos={reporte.productos}
@@ -97,80 +103,121 @@ const EncabezadoColumnas = memo(({ diasOperacion }: EncabezadoColumnasProps) => 
             textAlign: 'center',
             verticalAlign: 'middle',
             rowSpan: 2,
-            minWidth: '150px',
+            minWidth: '120px',
+            bgcolor: '#FFF3E0',
+            borderRight: '2px solid #ccc',
           }}
         >
           Producto
+        </TableCell>
+
+        {/* Columna "Inicio" que abarca 2 filas */}
+        <TableCell
+          sx={{
+            fontWeight: 'bold',
+            fontSize: '12px',
+            textAlign: 'center',
+            verticalAlign: 'middle',
+            rowSpan: 2,
+            minWidth: '60px',
+            bgcolor: '#FFF3E0',
+            borderRight: '1px solid #ccc',
+          }}
+        >
+          Inicio
         </TableCell>
 
         {/* Columnas por día */}
         {diasFormateados.map(dia => (
           <TableCell
             key={dia.fecha.toISOString()}
-            colSpan={5}
+            colSpan={4}
             align="center"
             sx={{
               fontWeight: 'bold',
-              fontSize: '13px',
-              borderRight: '1px solid #ccc',
+              fontSize: '12px',
+              color: '#fff',
+              borderRight: '1px solid #fff',
+              paddingY: '4px',
             }}
           >
             {dia.texto}
             <br />
-            <span style={{ fontSize: '11px', fontWeight: 'normal' }}>
-              {format(dia.fecha, 'dd/MM', { locale: es })}
+            <span style={{ fontSize: '10px', fontWeight: 'normal' }}>
+              {format(dia.fecha, 'dd/MM')}
             </span>
           </TableCell>
         ))}
 
         {/* Columna de totales */}
         <TableCell
-          colSpan={5}
+          colSpan={3}
           align="center"
           sx={{
             fontWeight: 'bold',
-            fontSize: '13px',
-            bgcolor: '#FFE0B2',
+            fontSize: '12px',
+            color: '#fff',
+            bgcolor: '#F57C00',
           }}
         >
           TOTALES
         </TableCell>
       </TableRow>
 
-      {/* Fila 2: Subcategorías (Inicio, Compra, Venta, Merma, Queda) */}
+      {/* Fila 2: Subcategorías */}
       <TableRow sx={{ bgcolor: '#FFF3E0' }}>
-        {/* Subcategorías por cada día */}
+        {/* Celda vacía para alineación con nombre del producto */}
+        <TableCell
+          align="center"
+          sx={{
+            fontSize: '10px',
+            fontWeight: 'bold',
+            minWidth: '120px',
+            borderRight: '2px solid #ccc',
+          }}
+        >
+          {/* Vacío */}
+        </TableCell>
+
+        {/* Columna "Inicio" separada */}
+        <TableCell
+          align="center"
+          sx={{
+            fontSize: '10px',
+            fontWeight: 'bold',
+            minWidth: '60px',
+            borderRight: '1px solid #ddd',
+          }}
+        >
+          Inicio
+        </TableCell>
+
+        {/* Subcategorías por cada día (Compra, Venta, Merma, Queda) */}
         {diasFormateados.map(dia => (
           <React.Fragment key={`subcategorías-${dia.fecha.toISOString()}`}>
-            <TableCell align="center" sx={{ fontSize: '11px', fontWeight: 'bold' }}>
-              Inicio
-            </TableCell>
-            <TableCell align="center" sx={{ fontSize: '11px', fontWeight: 'bold' }}>
+            <TableCell align="center" sx={{ fontSize: '10px', fontWeight: 'bold' }}>
               Compra
             </TableCell>
-            <TableCell align="center" sx={{ fontSize: '11px', fontWeight: 'bold' }}>
+            <TableCell align="center" sx={{ fontSize: '10px', fontWeight: 'bold' }}>
               Venta
             </TableCell>
-            <TableCell align="center" sx={{ fontSize: '11px', fontWeight: 'bold' }}>
+            <TableCell align="center" sx={{ fontSize: '10px', fontWeight: 'bold' }}>
               Merma
             </TableCell>
-            <TableCell align="center" sx={{ fontSize: '11px', fontWeight: 'bold' }}>
+            <TableCell align="center" sx={{ fontSize: '10px', fontWeight: 'bold' }}>
               Queda
             </TableCell>
           </React.Fragment>
         ))}
 
-        {/* Subcategorías para totales */}
-        <TableCell align="center" sx={{ fontSize: '11px', fontWeight: 'bold' }}>
+        {/* Subcategorías para totales - Compra, Venta, Queda (SIN Merma) */}
+        <TableCell align="center" sx={{ fontSize: '10px', fontWeight: 'bold' }}>
           Compra
         </TableCell>
-        <TableCell align="center" sx={{ fontSize: '11px', fontWeight: 'bold' }}>
+        <TableCell align="center" sx={{ fontSize: '10px', fontWeight: 'bold' }}>
           Venta
         </TableCell>
-        <TableCell align="center" sx={{ fontSize: '11px', fontWeight: 'bold' }}>
-          Merma
-        </TableCell>
-        <TableCell align="center" sx={{ fontSize: '11px', fontWeight: 'bold' }}>
+        <TableCell align="center" sx={{ fontSize: '10px', fontWeight: 'bold' }}>
           Queda
         </TableCell>
       </TableRow>
@@ -216,48 +263,73 @@ interface FilaProductoProps {
 
 const FilaProducto = memo(
   ({ producto, diasOperacion, esAlternado }: FilaProductoProps) => {
-    const filaColor = esAlternado ? 'rgba(0,0,0,0.02)' : 'white';
+    const filaColor = esAlternado ? '#F5F5F5' : '#FAFAFA';
+    const primerDia = diasOperacion[0];
+    const primerMovimiento = producto.datos[primerDia];
 
     return (
-      <TableRow sx={{ bgcolor: filaColor, '&:hover': { bgcolor: 'rgba(0,0,0,0.05)' } }}>
+      <TableRow sx={{ 
+        bgcolor: filaColor,
+        fontSize: '12px',
+        '&:hover': { bgcolor: 'rgba(255, 152, 0, 0.05)' }
+      }}>
         {/* Nombre del producto */}
         <TableCell
           sx={{
-            fontWeight: 'bold',
-            minWidth: '150px',
+            fontWeight: '600',
+            minWidth: '120px',
             textAlign: 'left',
-            fontSize: '13px',
+            fontSize: '12px',
+            paddingY: '6px',
+            paddingX: '8px',
+            borderRight: '2px solid #ccc',
           }}
         >
           {producto.nombre}
         </TableCell>
 
-        {/* Datos por día */}
+        {/* Columna "Inicio" separada */}
+        <TableCell
+          sx={{
+            textAlign: 'center',
+            minWidth: '60px',
+            fontSize: '12px',
+            paddingY: '6px',
+            paddingX: '4px',
+            borderRight: '1px solid #ddd',
+          }}
+        >
+          {primerMovimiento ? (
+            <CeldaNumerico valor={primerMovimiento.inicio} />
+          ) : (
+            <span>0.00</span>
+          )}
+        </TableCell>
+
+        {/* Datos por día (solo Compra, Venta, Merma, Queda) */}
         {diasOperacion.map(dia => {
           const movimiento = producto.datos[dia];
           if (!movimiento) return null;
 
           return (
             <React.Fragment key={`${producto.id}-${dia}`}>
-              <CeldaNumerico valor={movimiento.inicio} />
               <CeldaNumerico valor={movimiento.compra} />
               <CeldaNumerico valor={movimiento.venta} />
-              <CeldaNumerico valor={movimiento.merma} resaltar="rojo" />
+              <CeldaNumerico valor={movimiento.merma} />
               <CeldaNumerico
                 valor={movimiento.queda}
-                resaltar={movimiento.queda < 0 ? 'rojo' : undefined}
+                resaltar="rojo"
               />
             </React.Fragment>
           );
         })}
 
-        {/* Totales */}
+        {/* Totales - Compra, Venta, Queda (SIN Merma, SIN Inicio) */}
         <CeldaNumerico valor={producto.totales.compra} />
-        <CeldaNumerico valor={producto.totales.venta} sx={{ fontWeight: 'bold' }} />
-        <CeldaNumerico valor={producto.totales.merma} resaltar="rojo" />
+        <CeldaNumerico valor={producto.totales.venta} />
         <CeldaNumerico
           valor={producto.totales.queda}
-          resaltar={producto.totales.queda < 0 ? 'rojo' : undefined}
+          resaltar="rojo"
           sx={{ fontWeight: 'bold' }}
         />
       </TableRow>
@@ -281,13 +353,14 @@ const CeldaNumerico = memo(({ valor, resaltar, sx }: CeldaNumericoProps) => {
     typeof valor === 'number' ? valor : valor?.toNumber?.() ?? 0;
 
   const bgcolor =
-    resaltar === 'rojo' ? 'error.light' : resaltar === 'verde' ? 'success.light' : 'inherit';
+    resaltar === 'rojo' ? '#FFCDD2' : resaltar === 'verde' ? '#C8E6C9' : 'inherit';
 
   return (
     <TableCell
       align="center"
       sx={{
-        fontSize: '12px',
+        fontSize: '11px',
+        padding: '4px 6px',
         bgcolor,
         ...sx,
       }}
