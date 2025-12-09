@@ -245,7 +245,7 @@ const FilaProducto = memo(
               <CeldaNumerico valor={movimiento.merma} resaltar="rojo" />
               <CeldaNumerico
                 valor={movimiento.queda}
-                resaltar={movimiento.queda.toNumber() < 0 ? 'rojo' : undefined}
+                resaltar={movimiento.queda < 0 ? 'rojo' : undefined}
               />
             </React.Fragment>
           );
@@ -257,7 +257,7 @@ const FilaProducto = memo(
         <CeldaNumerico valor={producto.totales.merma} resaltar="rojo" />
         <CeldaNumerico
           valor={producto.totales.queda}
-          resaltar={producto.totales.queda.toNumber() < 0 ? 'rojo' : undefined}
+          resaltar={producto.totales.queda < 0 ? 'rojo' : undefined}
           sx={{ fontWeight: 'bold' }}
         />
       </TableRow>

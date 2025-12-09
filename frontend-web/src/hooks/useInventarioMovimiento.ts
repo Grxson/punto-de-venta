@@ -53,14 +53,14 @@ export const useInventarioMovimiento = (
         const fechaInicioFull = `${fechaInicio}T00:00:00`;
         const fechaFinFull = `${fechaFin}T23:59:59`;
 
+        // Construir URL con query parameters
+        const queryParams = new URLSearchParams({
+          fechaInicio: fechaInicioFull,
+          fechaFin: fechaFinFull,
+        });
+
         const response = await apiService.get<InventarioMovimientoReporteDTO>(
-          '/api/reportes/inventario-movimiento',
-          {
-            params: {
-              fechaInicio: fechaInicioFull,
-              fechaFin: fechaFinFull,
-            },
-          }
+          `/api/reportes/inventario-movimiento?${queryParams.toString()}`
         );
 
         if (response.success && response.data) {

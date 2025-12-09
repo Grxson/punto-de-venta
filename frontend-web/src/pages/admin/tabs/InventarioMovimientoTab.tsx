@@ -10,11 +10,11 @@ import {
 } from '@mui/material';
 import { Refresh } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { getTodayLocalDate, getDateWithOffset } from '../../utils/dateHelper';
-import DateRangeFilter from '../../components/common/DateRangeFilter';
-import InventarioMovimientoTabla from '../../components/reportes/InventarioMovimientoTabla';
-import { useInventarioMovimiento } from '../../hooks/useInventarioMovimiento';
-import type { DateRangeValue } from '../../types/dateRange.types';
+import { getTodayLocalDate, getDateWithOffset } from '../../../utils/dateHelper';
+import DateRangeFilter from '../../../components/common/DateRangeFilter';
+import InventarioMovimientoTabla from '../../../components/reportes/InventarioMovimientoTabla';
+import { useInventarioMovimiento } from '../../../hooks/useInventarioMovimiento';
+import type { DateRangeValue } from '../../../types/dateRange.types';
 
 /**
  * Tab para mostrar el reporte de movimiento de inventario.
@@ -22,16 +22,17 @@ import type { DateRangeValue } from '../../types/dateRange.types';
  */
 export const InventarioMovimientoTab: React.FC = () => {
   const todayLocal = getTodayLocalDate();
+  const sevenDaysAgo = getDateWithOffset(-6); // Última semana
   
   const [dateRange, setDateRange] = useState<DateRangeValue>({
-    desde: getDateWithOffset(todayLocal, -6), // Última semana
+    desde: sevenDaysAgo,
     hasta: todayLocal,
   });
 
   // Hook optimizado con caché automático
   const { reporte, cargando, error, refetch } = useInventarioMovimiento({
-    fechaInicio: format(dateRange.desde, 'yyyy-MM-dd'),
-    fechaFin: format(dateRange.hasta, 'yyyy-MM-dd'),
+    fechaInicio: dateRange.desde,
+    fechaFin: dateRange.hasta,
   });
 
   const handleDateRangeChange = useCallback((newRange: DateRangeValue) => {
@@ -39,10 +40,7 @@ export const InventarioMovimientoTab: React.FC = () => {
   }, []);
 
   const handleRefresh = useCallback(() => {
-    refetch(
-      format(dateRange.desde, 'yyyy-MM-dd'),
-      format(dateRange.hasta, 'yyyy-MM-dd')
-    );
+    refetch(dateRange.desde, dateRange.hasta);
   }, [refetch, dateRange]);
 
   return (
@@ -75,8 +73,8 @@ export const InventarioMovimientoTab: React.FC = () => {
           <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
             <Typography variant="body2" color="info.main">
               📅 Mostrando datos de:{' '}
-              <strong>{format(dateRange.desde, 'dd/MM/yyyy')}</strong> a{' '}
-              <strong>{format(dateRange.hasta, 'dd/MM/yyyy')}</strong>
+              <strong>{format(new Date(dateRange.desde), 'dd/MM/yyyy')}</strong> a{' '}
+              <strong>{format(new Date(dateRange.hasta), 'dd/MM/yyyy')}</strong>
             </Typography>
             {reporte && (
               <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>
