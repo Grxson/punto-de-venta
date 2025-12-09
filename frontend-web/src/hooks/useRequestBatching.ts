@@ -34,7 +34,7 @@ const defaultConfig: BatchConfig = {
 export function useRequestBatching(config: BatchConfig = {}) {
   const mergedConfig = { ...defaultConfig, ...config };
   const batchMap = useRef<Map<string, BatchRequest<any>>>(new Map());
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const cacheRef = useRef<Map<string, { result: any; timestamp: number }>>(new Map());
 
   // Limpiar caché expirado

@@ -255,10 +255,10 @@ function App() {
       <AuthProvider>
         <CartProvider>
           <DashboardProvider>
-            <WebSocketHandlers />
             <BrowserRouter>
+              <WebSocketHandlers />
               <AppRoutes />
-        </BrowserRouter>
+            </BrowserRouter>
           </DashboardProvider>
         </CartProvider>
       </AuthProvider>
