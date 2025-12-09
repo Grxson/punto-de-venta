@@ -44,6 +44,7 @@ import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { limpiarNombreProducto } from '../../utils/stringFormatters';
 
 interface VentaItem {
   id: number;
@@ -268,7 +269,7 @@ export default function PosSales() {
             // Crear un objeto producto básico para los productos que no están en la lista
             return {
               id: item.productoId,
-              nombre: item.productoNombre,
+              nombre: limpiarNombreProducto(item.productoNombre),
               precio: item.precioUnitario,
               activo: true,
               productoBaseId: null,
@@ -758,7 +759,7 @@ export default function PosSales() {
                               </Typography>
                               {venta.items.slice(0, 2).map((item, index) => (
                                 <Typography key={index} variant="caption" display="block" color="text.secondary">
-                                  {item.cantidad}x {item.productoNombre}
+                                  {item.cantidad}x {limpiarNombreProducto(item.productoNombre)}
                                 </Typography>
                               ))}
                               {venta.items.length > 2 && (
@@ -817,7 +818,7 @@ export default function PosSales() {
                                           </Typography>
                                           {venta.items.map((item, index) => (
                                             <Typography key={index} variant="body2" display="block" sx={{ mb: 0.5 }}>
-                                              {item.cantidad}x {item.productoNombre} - ${(item.precioUnitario * item.cantidad).toFixed(2)}
+                                              {item.cantidad}x {limpiarNombreProducto(item.productoNombre)} - ${(item.precioUnitario * item.cantidad).toFixed(2)}
                                             </Typography>
                                           ))}
                                         </Paper>
@@ -1058,7 +1059,7 @@ export default function PosSales() {
                                   <MenuItem key={item.productoId} value={item.productoId} sx={{ minHeight: '48px' }}>
                                     <Box>
                                       <Typography variant="body1" fontWeight="medium">
-                                        {item.productoNombre}
+                                        {limpiarNombreProducto(item.productoNombre)}
                                       </Typography>
                                       <Typography component="span" variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                                         ${item.precioUnitario.toFixed(2)}
