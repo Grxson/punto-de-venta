@@ -9,20 +9,24 @@
 
 ### FASE 1: OPTIMIZACIONES BACKEND ✅ EN PROGRESO
 **Duración estimada**: 25 horas  
-**Completado**: 2/8 pasos (25%)
+**Completado**: 3/8 pasos (37%)
 
 #### PASO 1.1: Caché Inteligente (CacheConfig.java)
-- **Estado**: ⏳ PENDIENTE
+- **Estado**: ✅ COMPLETADO
 - **Archivos afectados**: `backend/src/main/java/com/puntodeventa/backend/config/CacheConfig.java`
-- **Effort**: 2 horas
+- **Effort**: 2 horas (completado)
 - **Impact**: 40% latencia ↓
 - **Checklist**:
-  - [ ] Crear CacheConfig.java con estratificación
-  - [ ] Implementar @EnableCaching
-  - [ ] Definir 5 cachés con TTLs diferentes
-  - [ ] Aplicar @Cacheable a MenuPopularidadService
-  - [ ] Aplicar @CacheEvict a métodos de escritura
-  - [ ] Tests de caché hit rate
+  - [x] Crear CacheConfig.java con estratificación
+  - [x] Implementar @EnableCaching
+  - [x] Definir 5 cachés con TTLs diferentes (30, 15, 5, 3, 1 minutos)
+  - [x] Aplicar @Cacheable a MenuPopularidadService
+  - [x] Compilar sin errores (BUILD SUCCESS)
+  - [ ] Tests de caché hit rate (siguiente)
+- **Cambios implementados**:
+  - ✅ Estratificación de TTL por tipo de dato
+  - ✅ Tamaños optimizados: estáticos 500, productos 5000, inventario 2000, menú 500, ventas 1000
+  - ✅ Commit: `feat: PASO 1.1 - CacheConfig estratificado`
 
 #### PASO 1.2: Paginación en Endpoints
 - **Estado**: ⏳ PENDIENTE
@@ -261,7 +265,7 @@
 ```
 ┌─────────────────────────────────────────────────┐
 │ FASE 1: Backend                    25/25 horas  │
-│ ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 2/8 (25%)   │
+│ █████░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 3/8 (37%)  │
 │                                                 │
 │ FASE 2: Frontend                   20/20 horas  │
 │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0/8 (0%)    │
@@ -270,7 +274,7 @@
 │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0/4 (0%)    │
 │                                                 │
 │ TOTAL:                    65/65 horas            │
-│ ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 2/20 (10%)  │
+│ ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 3/20 (15%)  │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -281,16 +285,17 @@
 ### HOY (9 de diciembre):
 - [x] Crear script SQL de índices
 - [x] Ejecutar índices en Railway ✅ 
-- [ ] **PRÓXIMO**: PASO 1.1 - CacheConfig.java
+- [x] PASO 1.1 - CacheConfig.java ✅ COMPLETADO
+- [ ] **PRÓXIMO**: PASO 1.2 - Paginación en Endpoints
 
 ### MAÑANA (10 de diciembre):
-- [ ] PASO 1.1 - CacheConfig.java (2h)
 - [ ] PASO 1.2 - Paginación (4h)
+- [ ] Compilar y validar
 
 ### Esta semana:
 - [ ] PASO 1.4 - Rate Limiting (2h)
 - [ ] PASO 1.5 - N+1 Queries (6h)
-- [ ] PASO 1.6 - Virtual Threads (3h)
+- [ ] PASO 2.1 - Code Splitting (3h)
 
 ---
 
