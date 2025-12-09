@@ -3,6 +3,7 @@ package com.puntodeventa.backend.config;
 import com.puntodeventa.backend.security.JwtAuthenticationFilter;
 import com.puntodeventa.backend.security.SucursalContextFilter;
 import com.puntodeventa.backend.filter.RateLimitFilter;
+import com.puntodeventa.backend.filter.QueryProfilerFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,6 +48,9 @@ public class SecurityConfig {
 
     @Autowired
     private RateLimitFilter rateLimitFilter;
+
+    @Autowired
+    private QueryProfilerFilter queryProfilerFilter;
 
     @Autowired
     private com.puntodeventa.backend.security.MonitoringAuthFilter monitoringAuthFilter;
@@ -100,6 +104,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/categorias/**").permitAll() // Subcategorías para el formulario de
                                                                            // productos
                         .requestMatchers("/api/v1/menu/**").permitAll() // Menú dinámico por popularidad
+                        .requestMatchers("/api/v1/metrics/**").permitAll() // Performance metrics
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs",
                                 "/api-docs/**")
@@ -119,6 +124,9 @@ public class SecurityConfig {
 
                 // Agregar filtro de Rate Limiting PRIMERO para proteger desde el inicio
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // Agregar filtro de Query Profiling para métricas de performance
+                .addFilterBefore(queryProfilerFilter, UsernamePasswordAuthenticationFilter.class)
 
                 // Agregar filtro de monitoreo ANTES del JWT para que valide primero
                 .addFilterBefore(monitoringAuthFilter, UsernamePasswordAuthenticationFilter.class)                // Agregar filtro JWT antes del filtro de autenticación
