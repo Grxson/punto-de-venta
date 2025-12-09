@@ -116,13 +116,14 @@ public class CacheConfig {
      * Configuración alternativa: Usar CaffeineCacheManager con default
      * (descomentar si prefieres una configuración más simple)
      */
-    @Bean
-    public CaffeineCacheManager defaultCaffeineCacheManager() {
-        CaffeineCacheManager cacheManager = new CaffeineCacheManager();
-        cacheManager.setCaffeine(Caffeine.newBuilder()
-                .maximumSize(5000)
-                .expireAfterWrite(10, TimeUnit.MINUTES)
-                .recordStats());
-        return cacheManager;
-    }
+    // COMENTADO: Usar el cacheManager() principal arriba
+    // @Bean
+    // public CaffeineCacheManager defaultCaffeineCacheManager() {
+    //     CaffeineCacheManager cacheManager = new CaffeineCacheManager();
+    //     cacheManager.setCaffeine(Caffeine.newBuilder()
+    //             .maximumSize(5000)
+    //             .expireAfterWrite(10, TimeUnit.MINUTES)
+    //             .recordStats());
+    //     return cacheManager;
+    // }
 }
