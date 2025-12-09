@@ -2,6 +2,7 @@ package com.puntodeventa.backend.config;
 
 import com.puntodeventa.backend.security.JwtAuthenticationFilter;
 import com.puntodeventa.backend.security.SucursalContextFilter;
+import com.puntodeventa.backend.filter.RateLimitFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,6 +44,9 @@ public class SecurityConfig {
 
     @Autowired
     private SucursalContextFilter sucursalContextFilter;
+
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
 
     @Autowired
     private com.puntodeventa.backend.security.MonitoringAuthFilter monitoringAuthFilter;
@@ -107,16 +111,17 @@ public class SecurityConfig {
                                                                                                                 // endpoints
                         .requestMatchers("/error").permitAll()
 
-                        // Permitir OPTIONS para CORS preflight
-                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                // Permitir OPTIONS para CORS preflight
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Todos los demás endpoints requieren autenticación
-                        .anyRequest().authenticated())
+                // Todos los demás endpoints requieren autenticación
+                .anyRequest().authenticated())
+
+                // Agregar filtro de Rate Limiting PRIMERO para proteger desde el inicio
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
 
                 // Agregar filtro de monitoreo ANTES del JWT para que valide primero
-                .addFilterBefore(monitoringAuthFilter, UsernamePasswordAuthenticationFilter.class)
-
-                // Agregar filtro JWT antes del filtro de autenticación
+                .addFilterBefore(monitoringAuthFilter, UsernamePasswordAuthenticationFilter.class)                // Agregar filtro JWT antes del filtro de autenticación
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
                 // Agregar filtro de contexto de sucursal (después del JWT para acceder al usuario autenticado)
