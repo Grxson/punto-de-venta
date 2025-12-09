@@ -750,7 +750,7 @@ export default function PosSales() {
                         <Box sx={{ maxWidth: 250 }}>
                           {venta.items.length === 1 ? (
                             <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                              {venta.items[0].cantidad}x {venta.items[0].productoNombre}
+                              {venta.items[0].cantidad}x {limpiarNombreProducto(venta.items[0].productoNombre)}
                             </Typography>
                           ) : (
                             <Box>
@@ -1016,7 +1016,7 @@ export default function PosSales() {
                                 return nombreCompleto;
                               }
                               // Si no se encuentra, usar el nombre guardado en el item
-                              return item.productoNombre || 'Producto desconocido';
+                              return limpiarNombreProducto(item.productoNombre) || 'Producto desconocido';
                             }}
                             sx={{ minHeight: '56px', fontSize: '16px' }}
                           >
