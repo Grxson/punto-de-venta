@@ -40,6 +40,23 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
     
     @Query("SELECT v FROM Venta v WHERE v.sucursal.id = :sucursalId AND v.fecha BETWEEN :fechaInicio AND :fechaFin")
     List<Venta> findBySucursalAndFechaBetween(Long sucursalId, LocalDateTime fechaInicio, LocalDateTime fechaFin);
+
+    /**
+     * Obtiene ventas con items cargados (eager loading) para evitar N+1 queries.
+     * Optimizado para reportes que necesitan acceder a items.
+     * 
+     * @param sucursalId ID de la sucursal
+     * @param fechaInicio Fecha inicio
+     * @param fechaFin Fecha fin
+     * @return Lista de ventas con items precargados
+     */
+    @EntityGraph(attributePaths = {"items", "items.producto"})
+    @Query("SELECT v FROM Venta v WHERE v.sucursal.id = :sucursalId AND v.fecha BETWEEN :fechaInicio AND :fechaFin")
+    List<Venta> findBySucursalIdAndFechaBetween(
+        @Param("sucursalId") Long sucursalId,
+        @Param("fechaInicio") LocalDateTime fechaInicio,
+        @Param("fechaFin") LocalDateTime fechaFin
+    );
     
     /**
      * Obtiene el desglose de ventas por método de pago para un rango de fechas.

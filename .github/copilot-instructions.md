@@ -211,4 +211,159 @@ El proyecto utiliza una estrategia de branching profesional para mantener el có
 - No generes código si no está relacionado con el contexto del proyecto Punto de Venta.
 - Sugerir actualizaciones a las instrucciones si se identifican áreas de mejora.
 
+## ⚡ Optimización de Componentes para Respuestas Rápidas
+
+### Backend (Java 21 + Spring Boot)
+Cuando se solicite crear componentes para reportes/agregaciones, aplicar SIEMPRE estas prácticas:
+
+**1. Queries Optimizadas:**
+```java
+// ✅ CORRECTO: Usar proyecciones, evitar N+1, filtrar en BD
+@Query("""
+    SELECT new com.puntodeventa.backend.dto.ReporteAgreDTO(
+        CAST(DATE(v.fecha) AS date),
+        v.producto.id,
+        v.producto.nombre,
+        COUNT(v.id),
+        SUM(v.cantidad),
+        SUM(v.subtotal)
+    )
+    FROM Venta v
+    WHERE v.fecha BETWEEN :inicio AND :fin
+      AND v.sucursal.id = :sucursalId
+    GROUP BY DATE(v.fecha), v.producto.id, v.producto.nombre
+    ORDER BY DATE(v.fecha), v.producto.id
+""")
+List<ReporteAgreDTO> obtenerReporteAgregado(
+    @Param("inicio") LocalDateTime inicio,
+    @Param("fin") LocalDateTime fin,
+    @Param("sucursalId") Long sucursalId
+);
+
+// ❌ EVITAR: Traer todos los datos y agrupar en Java
+List<Venta> ventasAll = ventaRepository.findAll();
+ventasAll.stream().filter(...).collect(...);
+```
+
+**2. DTOs apropiados para la respuesta:**
+```java
+// ✅ CORRECTO: Estructura flexible, datos mínimos necesarios
+public record InventarioMovimientoReporteDTO(
+    List<LocalDate> diasOperacion,              // Solo días con datos
+    List<ProductoInventarioDTO> productos,
+    
+    public record ProductoInventarioDTO(
+        Long id,
+        String nombre,
+        Map<LocalDate, DiaMovimientoDTO> datos, // Datos por día
+        DiaMovimientoDTO totales
+    )
+    
+    public record DiaMovimientoDTO(
+        BigDecimal inicio,
+        BigDecimal compra,
+        BigDecimal venta,
+        BigDecimal merma,
+        BigDecimal queda
+    )
+) {}
+```
+
+**3. Caché estratégico:**
+```java
+// ✅ CORRECTO: Cachear reportes pesados
+@Cacheable(
+    value = "reportes_inventario",
+    key = "#sucursalId + '_' + #inicio.toLocalDate()",
+    unless = "#result == null"
+)
+public InventarioMovimientoReporteDTO obtenerReporte(
+    Long sucursalId,
+    LocalDateTime inicio,
+    LocalDateTime fin
+) { ... }
+
+// Invalidar al crear venta/movimiento
+@CacheEvict(value = "reportes_inventario", allEntries = true)
+public VentaDTO crearVenta(...) { ... }
+```
+
+**4. Procesamiento eficiente en Java:**
+```java
+// ✅ CORRECTO: Procesar datos una sola vez, construir estructura
+var diasSet = new TreeSet<LocalDate>();
+var productoMap = new HashMap<Long, ProductoInventarioDTO>();
+
+for (var row : datos) {
+    diasSet.add(row.fecha());
+    productoMap.computeIfAbsent(row.productoId(), k -> 
+        new ProductoInventarioDTO(...)
+    ).datos().put(row.fecha(), row.movimiento());
+}
+
+return new InventarioMovimientoReporteDTO(
+    new ArrayList<>(diasSet),
+    productoMap.values().toList()
+);
+```
+
+### Frontend (React 18 + TypeScript)
+Cuando recibas respuesta de reportes:
+
+**1. Memoización de datos:**
+```tsx
+// ✅ CORRECTO: Cachear datos en estado + memo
+const [reporteCache, setReporteCache] = useState<InventarioMovimientoReporteDTO | null>(null);
+const [cacheKey, setCacheKey] = useState<string>('');
+
+const cargarReporte = async (sucursalId: number, fechaInicio: string) => {
+    const key = `${sucursalId}_${fechaInicio}`;
+    if (cacheKey === key && reporteCache) return; // Ya está cargado
+    
+    const data = await api.get(`/reportes/inventario-movimiento?...`);
+    setReporteCache(data);
+    setCacheKey(key);
+};
+```
+
+**2. Renderizado eficiente de tablas:**
+```tsx
+// ✅ CORRECTO: Renderizar solo columnas necesarias
+const InventarioTable = memo(({ reporte }: Props) => {
+    const diasOperacion = reporte.diasOperacion;
+    
+    return (
+        <Table>
+            <TableHead>
+                <TableRow>
+                    <TableCell>Producto</TableCell>
+                    {diasOperacion.map(dia => (
+                        <TableCell colSpan={5} key={dia}>
+                            {format(new Date(dia), 'EEE', { locale: es })}
+                        </TableCell>
+                    ))}
+                    <TableCell colSpan={5}>TOTALES</TableCell>
+                </TableRow>
+            </TableHead>
+            <TableBody>
+                {reporte.productos.map(prod => (
+                    <ProductoRow key={prod.id} producto={prod} dias={diasOperacion} />
+                ))}
+            </TableBody>
+        </Table>
+    );
+});
+```
+
+**3. Evitar renders innecesarios:**
+```tsx
+// ✅ CORRECTO: useMemo para cálculos derivados
+const totalPorDia = useMemo(() => {
+    return diasOperacion.map(dia => ({
+        dia,
+        total: productos.reduce((sum, p) => sum + (p.datos[dia]?.venta || 0), 0)
+    }));
+}, [productos, diasOperacion]);
+```
+
 ---
