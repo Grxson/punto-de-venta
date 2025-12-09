@@ -41,6 +41,7 @@ import { getTodayLocalDate, getDateWithOffset } from '../../utils/dateHelper';
 import { limpiarNombreProducto, truncarTexto } from '../../utils/stringFormatters';
 import type { ResumenVentas, ProductoRendimiento, VentaDetalle, GastoDetallado } from './types/reportTypes';
 import { GeneralCutTab } from './components';
+import { InventarioMovimientoTab } from './tabs/InventarioMovimientoTab';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -302,6 +303,7 @@ export default function AdminReports() {
             <Tab label="📊 Dashboard General" />
             <Tab label="📋 Corte Por Producto" />
             <Tab label="📅 Corte General" />
+            <Tab label="📦 Movimiento de Inventario" />
           </Tabs>
         </Box>
 
@@ -845,6 +847,11 @@ export default function AdminReports() {
                 gastosDetallados={gastosDetallados}
                 dateRange={dateRange} 
               />
+            )}
+
+            {/* Tab 3: Movimiento de Inventario */}
+            {currentTab === 3 && (
+              <InventarioMovimientoTab />
             )}
           </>
         ) : (
