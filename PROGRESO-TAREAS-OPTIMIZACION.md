@@ -44,7 +44,7 @@
   - [ ] Tests de paginación (siguiente)
 - **Cambios implementados**:
   - ✅ Endpoint GET /listar con page/size
-  - ✅ Page<ProductoDTO> con metadatos de paginación
+  - ✅ Page<ProductoDTO> con metadatos de paginacióne
   - ✅ Validación de límites automática
   - ✅ SEGREGACIÓN por sucursal
   - ✅ Commit: `feat: PASO 1.2 - Paginación`

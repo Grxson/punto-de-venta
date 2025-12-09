@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 
 // Context
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -17,24 +17,45 @@ import AdminRoute from './components/AdminRoute';
 import PosLayout from './layouts/PosLayout';
 import AdminLayout from './layouts/AdminLayout';
 
-// POS Routes
-import PosHome from './pages/pos/PosHome';
-import PosPayment from './pages/pos/PosPayment';
-import PosExpenses from './pages/pos/PosExpenses';
-import PosSales from './pages/pos/PosSales';
+// OPTIMIZACIÓN PASO 2.1: Code Splitting con lazy()
+// Importar solo cuando se necesitan (lazy loading)
+const Login = lazy(() => import('./pages/auth/Login'));
 
-// Admin Routes
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminReports from './pages/admin/AdminReports';
-import AdminInventory from './pages/admin/AdminInventory';
-import AdminFinances from './pages/admin/AdminFinances';
-import AdminExpenses from './pages/admin/AdminExpenses';
-import AdminSales from './pages/admin/AdminSales';
-import AdminCategorias from './pages/admin/AdminCategorias';
-import { AdminUsers } from './pages/admin/AdminUsers';
+// POS Routes - Lazy loaded
+const PosHome = lazy(() => import('./pages/pos/PosHome'));
+const PosPayment = lazy(() => import('./pages/pos/PosPayment'));
+const PosExpenses = lazy(() => import('./pages/pos/PosExpenses'));
+const PosSales = lazy(() => import('./pages/pos/PosSales'));
 
-// Auth
-import Login from './pages/auth/Login';
+// Admin Routes - Lazy loaded (estos son los más pesados)
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
+const AdminInventory = lazy(() => import('./pages/admin/AdminInventory'));
+const AdminFinances = lazy(() => import('./pages/admin/AdminFinances'));
+const AdminExpenses = lazy(() => import('./pages/admin/AdminExpenses'));
+const AdminSales = lazy(() => import('./pages/admin/AdminSales'));
+const AdminCategorias = lazy(() => import('./pages/admin/AdminCategorias'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+
+/**
+ * OPTIMIZACIÓN PASO 2.1: Loading fallback component
+ * Se muestra mientras se carga un chunk lazy
+ */
+function LoadingFallback() {
+  return (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      height: '100vh',
+      backgroundColor: '#f5f5f5',
+      fontSize: '18px',
+      color: '#666',
+    }}>
+      Cargando...
+    </div>
+  );
+}
 
 // Theme optimizado para táctil
 const theme = createTheme({
@@ -178,47 +199,51 @@ function AppRoutes() {
     <>
       <RouteTracker />
       <RouteRestorer />
-            <Routes>
-            {/* Auth */}
-            <Route path="/login" element={<Login />} />
+      
+      {/* OPTIMIZACIÓN PASO 2.1: Suspense wrapper para lazy-loaded routes */}
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          {/* Auth - No lazy (necesario para login) */}
+          <Route path="/login" element={<Login />} />
 
-            {/* POS Routes - Protegidas */}
-            <Route
-              path="/pos"
-              element={
-                <ProtectedRoute>
-                  <PosLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<PosHome />} />
-              <Route path="payment" element={<PosPayment />} />
-              <Route path="expenses" element={<PosExpenses />} />
-              <Route path="sales" element={<PosSales />} />
-            </Route>
+          {/* POS Routes - Lazy loaded con Suspense */}
+          <Route
+            path="/pos"
+            element={
+              <ProtectedRoute>
+                <PosLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<PosHome />} />
+            <Route path="payment" element={<PosPayment />} />
+            <Route path="expenses" element={<PosExpenses />} />
+            <Route path="sales" element={<PosSales />} />
+          </Route>
 
-            {/* Admin Routes - Protegidas con verificación de rol */}
-            <Route
-              path="/admin"
-              element={
-                <AdminRoute>
-                  <AdminLayout />
-                </AdminRoute>
-              }
-            >
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="reports" element={<AdminReports />} />
-                  <Route path="inventory" element={<AdminInventory />} />
-                  <Route path="categorias" element={<AdminCategorias />} />
-                  <Route path="finances" element={<AdminFinances />} />
-                  <Route path="expenses" element={<AdminExpenses />} />
-                  <Route path="sales" element={<AdminSales />} />
-                  <Route path="usuarios" element={<AdminUsers />} />
-            </Route>
+          {/* Admin Routes - Lazy loaded con Suspense */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="inventory" element={<AdminInventory />} />
+            <Route path="categorias" element={<AdminCategorias />} />
+            <Route path="finances" element={<AdminFinances />} />
+            <Route path="expenses" element={<AdminExpenses />} />
+            <Route path="sales" element={<AdminSales />} />
+            <Route path="usuarios" element={<AdminUsers />} />
+          </Route>
 
-            {/* Default redirect */}
-            <Route path="/" element={<Navigate to="/pos" replace />} />
-          </Routes>
+          {/* Default redirect */}
+          <Route path="/" element={<Navigate to="/pos" replace />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }
