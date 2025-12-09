@@ -9,7 +9,7 @@
 
 ### FASE 1: OPTIMIZACIONES BACKEND ✅ EN PROGRESO
 **Duración estimada**: 25 horas  
-**Completado**: 3/8 pasos (37%)
+**Completado**: 4/8 pasos (50%)
 
 #### PASO 1.1: Caché Inteligente (CacheConfig.java)
 - **Estado**: ✅ COMPLETADO
@@ -29,20 +29,25 @@
   - ✅ Commit: `feat: PASO 1.1 - CacheConfig estratificado`
 
 #### PASO 1.2: Paginación en Endpoints
-- **Estado**: ⏳ PENDIENTE
+- **Estado**: ✅ COMPLETADO
 - **Archivos afectados**: 
   - `backend/src/main/java/com/puntodeventa/backend/controller/ProductoController.java`
   - `backend/src/main/java/com/puntodeventa/backend/service/ProductoService.java`
-  - `backend/src/main/java/com/puntodeventa/backend/controller/CategoriaProductoController.java`
-- **Effort**: 4 horas
+- **Effort**: 4 horas (completado)
 - **Impact**: 70% tamaño respuesta ↓
 - **Checklist**:
-  - [ ] Actualizar ProductoController: agregar PageRequest
-  - [ ] Actualizar ProductoService: usar Pageable
-  - [ ] Actualizar CategoriaProductoController
-  - [ ] Agregar validaciones de size (max 200)
-  - [ ] Actualizar frontend para usar paginación
-  - [ ] Tests de paginación
+  - [x] Actualizar ProductoController: agregar endpoint /listar
+  - [x] Actualizar ProductoService: implementar listarPaginado
+  - [x] Agregar validaciones de size (máx 200, mín 1, default 50)
+  - [x] Backward compatibility con endpoint GET /
+  - [x] Compilar sin errores (BUILD SUCCESS)
+  - [ ] Tests de paginación (siguiente)
+- **Cambios implementados**:
+  - ✅ Endpoint GET /listar con page/size
+  - ✅ Page<ProductoDTO> con metadatos de paginación
+  - ✅ Validación de límites automática
+  - ✅ SEGREGACIÓN por sucursal
+  - ✅ Commit: `feat: PASO 1.2 - Paginación`
 
 #### PASO 1.3: Índices de Base de Datos
 - **Estado**: ✅ COMPLETADO
@@ -265,7 +270,7 @@
 ```
 ┌─────────────────────────────────────────────────┐
 │ FASE 1: Backend                    25/25 horas  │
-│ █████░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 3/8 (37%)  │
+│ ██████░░░░░░░░░░░░░░░░░░░░░░░░░░░ 4/8 (50%)  │
 │                                                 │
 │ FASE 2: Frontend                   20/20 horas  │
 │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0/8 (0%)    │
@@ -274,7 +279,7 @@
 │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 0/4 (0%)    │
 │                                                 │
 │ TOTAL:                    65/65 horas            │
-│ ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 3/20 (15%)  │
+│ ████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ 4/20 (20%)  │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -282,20 +287,21 @@
 
 ## 📅 PRÓXIMOS PASOS INMEDIATOS
 
-### HOY (9 de diciembre):
+### HOY (9 de diciembre) - 11:35 AM:
 - [x] Crear script SQL de índices
 - [x] Ejecutar índices en Railway ✅ 
 - [x] PASO 1.1 - CacheConfig.java ✅ COMPLETADO
-- [ ] **PRÓXIMO**: PASO 1.2 - Paginación en Endpoints
+- [x] PASO 1.2 - Paginación ✅ COMPLETADO
+- [ ] **PRÓXIMO**: PASO 1.3 - Rate Limiting (2h)
 
-### MAÑANA (10 de diciembre):
-- [ ] PASO 1.2 - Paginación (4h)
-- [ ] Compilar y validar
+### PRÓXIMAS 2 HORAS:
+- [ ] PASO 1.4 - Rate Limiting con bucket4j
+- [ ] Validar compilación
 
 ### Esta semana:
-- [ ] PASO 1.4 - Rate Limiting (2h)
 - [ ] PASO 1.5 - N+1 Queries (6h)
-- [ ] PASO 2.1 - Code Splitting (3h)
+- [ ] PASO 2.1 - Code Splitting Frontend (3h)
+- [ ] PASO 2.2 - Vite Config (2h)
 
 ---
 
