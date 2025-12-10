@@ -60,7 +60,7 @@ export const useInventarioMovimiento = (
         });
 
         const response = await apiService.get<InventarioMovimientoReporteDTO>(
-          `/api/reportes/inventario-movimiento?${queryParams.toString()}`
+          `/reportes/inventario-movimiento?${queryParams.toString()}`
         );
 
         if (response.success && response.data) {

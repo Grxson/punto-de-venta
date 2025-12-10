@@ -33,12 +33,12 @@ public class InventarioMovimientoReporteService {
 
     /**
      * Obtiene el reporte de movimiento de inventario por producto.
-     * Solo incluye días donde hubo operación (ventas/movimientos).
+     * Incluye todos los días en el rango especificado (no solo días con operación).
      *
      * @param sucursalId ID de la sucursal
      * @param fechaInicio Inicio del rango (LocalDateTime)
      * @param fechaFin Fin del rango (LocalDateTime)
-     * @return Reporte con estructura dinámica basada en días activos
+     * @return Reporte con estructura dinámica basada en el rango solicitado
      */
     @Cacheable(
         value = "reportes_inventario_movimiento",
@@ -60,8 +60,8 @@ public class InventarioMovimientoReporteService {
             sucursalId, fechaInicio, fechaFin
         );
 
-        // 2. Detectar días con operación (en memoria, es muy rápido)
-        var diasOperacion = detectarDiasActivos(ventas);
+        // 2. Generar lista de todos los días en el rango (no solo con ventas)
+        var diasOperacion = generarDiasDelRango(fechaInicio.toLocalDate(), fechaFin.toLocalDate());
 
         // 3. Agrupar datos por producto y día (procesamiento de una sola pasada)
         var productoMap = construirMapaProductos(ventas, diasOperacion);
@@ -75,8 +75,23 @@ public class InventarioMovimientoReporteService {
         long duracion = System.currentTimeMillis() - inicio;
         log.info("Reporte generado en {}ms con {} productos y {} días", 
             duracion, productos.size(), diasOperacion.size());
+        log.info("Dias generados: {}", diasOperacion);
 
         return new InventarioMovimientoReporteDTO(diasOperacion, productos);
+    }
+
+    /**
+     * Genera una lista de todos los días dentro del rango especificado.
+     * Útil para mostrar todas las columnas de fecha en la tabla.
+     */
+    private List<LocalDate> generarDiasDelRango(LocalDate inicio, LocalDate fin) {
+        List<LocalDate> dias = new ArrayList<>();
+        LocalDate actual = inicio;
+        while (!actual.isAfter(fin)) {
+            dias.add(actual);
+            actual = actual.plusDays(1);
+        }
+        return dias;
     }
 
     /**

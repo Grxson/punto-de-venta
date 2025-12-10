@@ -85,10 +85,15 @@ interface EncabezadoColumnasProps {
 const EncabezadoColumnas = memo(({ diasOperacion }: EncabezadoColumnasProps) => {
   const diasFormateados = useMemo(
     () =>
-      diasOperacion.map(dia => ({
-        fecha: new Date(dia),
-        texto: format(new Date(dia), 'EEE', { locale: es }).toUpperCase(),
-      })),
+      diasOperacion.map(dia => {
+        // Convertir string ISO date (YYYY-MM-DD) a Date sin desfase de zona horaria
+        const [year, month, day] = dia.split('-').map(Number);
+        const fecha = new Date(year, month - 1, day);
+        return {
+          fecha,
+          texto: format(fecha, 'EEE', { locale: es }).toUpperCase(),
+        };
+      }),
     [diasOperacion]
   );
 

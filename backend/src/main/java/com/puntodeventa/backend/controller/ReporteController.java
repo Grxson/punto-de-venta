@@ -7,12 +7,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.preAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.puntodeventa.backend.dto.InventarioMovimientoReporteDTO;
 import com.puntodeventa.backend.service.InventarioMovimientoReporteService;
-import com.puntodeventa.backend.security.SecurityUtil;
+import com.puntodeventa.backend.context.SucursalContext;
 
 import java.time.LocalDateTime;
 
@@ -28,7 +28,6 @@ import java.time.LocalDateTime;
 public class ReporteController {
 
     private final InventarioMovimientoReporteService reporteService;
-    private final SecurityUtil securityUtil;
 
     /**
      * Obtiene reporte de movimiento de inventario por producto.
@@ -60,12 +59,16 @@ public class ReporteController {
             @Parameter(description = "Fecha fin (ej: 2025-12-07T23:59:59)")
             LocalDateTime fechaFin) {
 
-        Long sucursalId = securityUtil.obtenerSucursalActual();
+        Long sucursalId = SucursalContext.getSucursalId();
         
-        log.info("Consultando reporte inventario para sucursal {} entre {} y {}", 
+        log.info("📊 Consultando reporte inventario para sucursal {} entre {} y {}", 
             sucursalId, fechaInicio.toLocalDate(), fechaFin.toLocalDate());
+        log.info("   Fechas exactas: {} a {}", fechaInicio, fechaFin);
 
         var reporte = reporteService.obtenerReporte(sucursalId, fechaInicio, fechaFin);
+        
+        log.info("   Reporte generado con {} días: {}", 
+            reporte.diasOperacion().size(), reporte.diasOperacion());
 
         return ResponseEntity.ok(reporte);
     }

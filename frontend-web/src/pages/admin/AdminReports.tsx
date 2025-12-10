@@ -851,7 +851,7 @@ export default function AdminReports() {
 
             {/* Tab 3: Movimiento de Inventario */}
             {currentTab === 3 && (
-              <InventarioMovimientoTab />
+              <InventarioMovimientoTab dateRange={dateRange} />
             )}
           </>
         ) : (
