@@ -7,6 +7,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLDialect;
+import org.hibernate.type.descriptor.jdbc.BooleanJdbcType;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,7 +46,8 @@ public class ProductoAtributo {
     @Enumerated(EnumType.STRING)
     private TipoAtributo tipo;
     
-    @Column(nullable = false)
+    @JdbcType(BooleanJdbcType.class)
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
     @Builder.Default
     private Boolean requerido = false;
     
@@ -51,7 +55,8 @@ public class ProductoAtributo {
     @Builder.Default
     private Integer orden = 0;
     
-    @Column(nullable = false, columnDefinition = "INTEGER")
+    @JdbcType(BooleanJdbcType.class)
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
     @Builder.Default
     private Boolean activo = true;
     

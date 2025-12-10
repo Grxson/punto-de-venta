@@ -30,6 +30,7 @@ import { useCategorias } from '../../hooks/useCategorias';
 import ProductosTable from '../../components/productos/ProductosTable';
 import ProductoForm from '../../components/productos/ProductoForm';
 import VariantesManager from '../../components/productos/VariantesManager';
+import AtributosManager from '../../components/productos/AtributosManager';
 
 export default function AdminInventory() {
   const { usuario } = useAuth();
@@ -65,6 +66,7 @@ export default function AdminInventory() {
   // Estados de diálogos
   const [openForm, setOpenForm] = useState(false);
   const [openVariantes, setOpenVariantes] = useState(false);
+  const [openAtributos, setOpenAtributos] = useState(false);
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
   const [openDeletePermanenteConfirm, setOpenDeletePermanenteConfirm] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
@@ -131,6 +133,27 @@ export default function AdminInventory() {
       setOpenVariantes(true);
     } catch (err: any) {
       const errorMessage = err?.message || err?.toString() || 'Error al cargar variantes';
+      setError(errorMessage);
+    } finally {
+      setLoadingVariantes(false);
+    }
+  };
+
+  const handleVerAtributos = async (producto: Producto) => {
+    try {
+      setLoadingVariantes(true);
+      setError(null);
+      // Cargar el producto completo desde el backend
+      const response = await productosService.obtener(producto.id!);
+      if (response.success && response.data) {
+        setProductoSeleccionado(response.data);
+      } else {
+        setError(response.error || 'Error al cargar el producto');
+        return;
+      }
+      setOpenAtributos(true);
+    } catch (err: any) {
+      const errorMessage = err?.message || err?.toString() || 'Error al cargar atributos';
       setError(errorMessage);
     } finally {
       setLoadingVariantes(false);
@@ -365,6 +388,7 @@ export default function AdminInventory() {
             onDelete={handleEliminarProducto}
             onDeletePermanente={isAdmin ? handleEliminarPermanente : undefined}
             onView={handleVerVariantes}
+            onViewAtributos={handleVerAtributos}
             loadingView={loadingVariantes}
           />
           <TablePagination
@@ -468,6 +492,38 @@ export default function AdminInventory() {
               disabled={loading}
             >
               Eliminar Definitivamente
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
+
+      {/* Diálogo de gestión de atributos/ingredientes */}
+      {productoSeleccionado && productoSeleccionado.id && (
+        <Dialog
+          open={openAtributos}
+          onClose={() => {
+            setOpenAtributos(false);
+            setProductoSeleccionado(null);
+          }}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            Gestión de Ingredientes/Componentes - {productoSeleccionado.nombre}
+          </DialogTitle>
+          <DialogContent>
+            <AtributosManager
+              productoId={productoSeleccionado.id}
+              productoNombre={productoSeleccionado.nombre}
+              onUpdate={() => refetch()}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => {
+              setOpenAtributos(false);
+              setProductoSeleccionado(null);
+            }}>
+              Cerrar
             </Button>
           </DialogActions>
         </Dialog>
