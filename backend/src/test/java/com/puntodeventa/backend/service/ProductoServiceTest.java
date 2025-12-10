@@ -173,7 +173,9 @@ class ProductoServiceTest {
                                 null, // Sin variantes
                                 null, // ⚠️ IMPORTANTE: productoBaseId NO viene en el DTO
                                 variante1.getNombreVariante(),
-                                variante1.getOrdenVariante());
+                                variante1.getOrdenVariante(),
+                                null, // tamaños
+                                null); // atributos
 
                 // Ejecutar actualización
                 ProductoDTO updatedDTO = productoService.actualizar(variante1.getId(), updateDTO);
@@ -214,7 +216,9 @@ class ProductoServiceTest {
                                 null,
                                 null, // productoBaseId no viene
                                 variante2.getNombreVariante(),
-                                variante2.getOrdenVariante());
+                                variante2.getOrdenVariante(),
+                                null, // tamaños
+                                null); // atributos
 
                 productoService.actualizar(variante2.getId(), updateDTO);
 
@@ -260,7 +264,9 @@ class ProductoServiceTest {
                                 null,
                                 otroProductoBase.getId(), // ✅ Cambiar explícitamente
                                 "500ml",
-                                1);
+                                1,
+                                null, // tamaños
+                                null); // atributos
 
                 productoService.actualizar(variante1.getId(), updateDTO);
 
@@ -291,7 +297,9 @@ class ProductoServiceTest {
                                 null,
                                 null, // Mantener el mismo producto base
                                 "500ml", // ❌ Mismo nombre que variante1
-                                2);
+                                2,
+                                null, // tamaños
+                                null); // atributos
 
                 assertThrows(IllegalArgumentException.class,
                                 () -> productoService.actualizar(variante2.getId(), duplicateDTO),
@@ -317,7 +325,9 @@ class ProductoServiceTest {
                                 null,
                                 null,
                                 "2 Litros",
-                                3);
+                                3,
+                                null, // tamaños
+                                null); // atributos
 
                 ProductoDTO created = productoService.crearVariante(productoBase.getId(), newVariantDTO);
 
@@ -370,7 +380,9 @@ class ProductoServiceTest {
                                 null, // Sin variantes
                                 null, // 👈 productoBaseId NO se envía (null) - reproduce el bug
                                 variante1.getNombreVariante(),
-                                variante1.getOrdenVariante());
+                                variante1.getOrdenVariante(),
+                                null, // tamaños
+                                null); // atributos
 
                 ProductoDTO actualizado = productoService.actualizar(variante1.getId(), updateDTO);
 
@@ -419,7 +431,9 @@ class ProductoServiceTest {
                                 null,
                                 null, // No enviar productoBaseId
                                 variante1.getNombreVariante(),
-                                variante1.getOrdenVariante());
+                                variante1.getOrdenVariante(),
+                                null, // tamaños
+                                null); // atributos
 
                 ProductoDTO resultado = productoService.actualizar(varianteId, updateDTO);
 

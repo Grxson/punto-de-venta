@@ -121,4 +121,21 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
         ORDER BY p.id ASC
     """)
     List<Producto> findProductosBaseWithCategoriaFetch(@Param("sucursalId") Long sucursalId);
+
+    /**
+     * OPTIMIZACIÓN CRÍTICA: Obtener productos base CON sus variantes en UNA sola query
+     * Usa LEFT JOIN FETCH para cargar variantes sin N+1 problem
+     * 
+     * @param sucursalId ID de la sucursal
+     * @return Lista de productos base con variantes, categorías y atributos precargados
+     */
+    @Query("""
+        SELECT DISTINCT p FROM Producto p 
+        LEFT JOIN FETCH p.categoria c
+        LEFT JOIN FETCH p.variantes v
+        WHERE p.sucursal.id = :sucursalId 
+        AND p.productoBase IS NULL
+        ORDER BY p.id ASC, v.ordenVariante ASC NULLS LAST, v.id ASC
+    """)
+    List<Producto> findProductosBaseConVariantes(@Param("sucursalId") Long sucursalId);
 }

@@ -45,7 +45,7 @@ import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
 import type { DateRangeValue } from '../../types/dateRange.types';
-import { limpiarNombreProducto } from '../../utils/stringFormatters';
+import { limpiarNombreProducto, limpiarNombreVariante } from '../../utils/stringFormatters';
 
 interface VentaItem {
   id: number;
@@ -460,7 +460,7 @@ export default function AdminSales() {
       if (productoBase.productoBaseId) {
         const productoBasePadre = productos.find(p => p.id === productoBase.productoBaseId);
         if (productoBasePadre) {
-          nombreCompleto = `${productoBasePadre.nombre} - ${productoBase.nombreVariante || productoBase.nombre}`;
+          nombreCompleto = `${productoBasePadre.nombre} - ${limpiarNombreVariante(productoBase.nombreVariante) || productoBase.nombre}`;
         }
       }
       
@@ -524,7 +524,7 @@ export default function AdminSales() {
           if (producto.productoBaseId) {
             const productoBase = productos.find(p => p.id === producto.productoBaseId);
             if (productoBase) {
-              nombreCompleto = `${productoBase.nombre} - ${producto.nombreVariante || producto.nombre}`;
+              nombreCompleto = `${productoBase.nombre} - ${limpiarNombreVariante(producto.nombreVariante) || producto.nombre}`;
             }
           }
           

@@ -18,6 +18,18 @@ export const limpiarNombreProducto = (nombre: string): string => {
 };
 
 /**
+ * Limpia el nombreVariante removiendo el prefijo "- " si existe
+ * Ejemplo: "- Mediano" → "Mediano"
+ * 
+ * @param nombreVariante - Nombre de la variante con posible prefijo
+ * @returns Nombre sin prefijo
+ */
+export const limpiarNombreVariante = (nombreVariante: string | null | undefined): string => {
+  if (!nombreVariante) return '';
+  return nombreVariante.replace(/^\s*-\s*/, '').trim();
+};
+
+/**
  * Trunca un string a un máximo de caracteres
  * 
  * @param texto - Texto a truncar

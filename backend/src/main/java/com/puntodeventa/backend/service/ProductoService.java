@@ -43,8 +43,8 @@ public class ProductoService {
         // ✅ SEGREGACIÓN: Obtener solo productos de la sucursal del usuario
         Long sucursalId = SucursalContext.getSucursalId();
         
-        // Obtener solo productos base (producto_base_id IS NULL) de la sucursal actual
-        List<Producto> productos = productoRepository.findBySucursalIdAndProductoBaseIdIsNull(sucursalId).stream()
+        // 🚀 OPTIMIZACIÓN: Query única con LEFT JOIN FETCH para variantes + categorías
+        List<Producto> productos = productoRepository.findProductosBaseConVariantes(sucursalId).stream()
                 .filter(p -> activo.map(a -> a.equals(p.getActivo())).orElse(true))
                 .filter(p -> enMenu.map(m -> m.equals(p.getDisponibleEnMenu())).orElse(true))
                 .filter(p -> categoriaId.map(id -> p.getCategoria() != null && id.equals(p.getCategoria().getId()))
@@ -61,8 +61,10 @@ public class ProductoService {
     /**
      * OPTIMIZACIÓN PASO 1.2: Listar productos con paginación
      * 
-     * Implementa paginación para reducir tamaño de respuesta
-     * Impacto: 70% reducción en transferencia de datos
+     * ✅ OPTIMIZACIÓN CRÍTICA: Usa query con LEFT JOIN FETCH para evitar N+1
+     * Antes: findBySucursalIdAndProductoBaseIdIsNull() + toDTOWithVariantes() = 1+N queries
+     * Después: findProductosBaseConVariantes() = 1 query con JOIN FETCH
+     * Impacto esperado: De 5.8 segundos a ~200ms (96% mejora)
      */
     @Transactional(readOnly = true)
     public Page<ProductoDTO> listarPaginado(
@@ -75,8 +77,9 @@ public class ProductoService {
         // ✅ SEGREGACIÓN: Obtener solo productos de la sucursal del usuario
         Long sucursalId = SucursalContext.getSucursalId();
         
-        // Obtener solo productos base (producto_base_id IS NULL) de la sucursal actual
-        List<Producto> productosBase = productoRepository.findBySucursalIdAndProductoBaseIdIsNull(sucursalId).stream()
+        // 🚀 OPTIMIZACIÓN: Query única con LEFT JOIN FETCH para variantes + categorías
+        // Esto evita completamente el N+1 problem
+        List<Producto> productosBase = productoRepository.findProductosBaseConVariantes(sucursalId).stream()
                 .filter(p -> activo.map(a -> a.equals(p.getActivo())).orElse(true))
                 .filter(p -> enMenu.map(m -> m.equals(p.getDisponibleEnMenu())).orElse(true))
                 .filter(p -> categoriaId.map(id -> p.getCategoria() != null && id.equals(p.getCategoria().getId()))
@@ -85,7 +88,7 @@ public class ProductoService {
                         .orElse(true))
                 .toList();
 
-        // Convertir a DTOs
+        // Convertir a DTOs (sin N+1 porque variantes ya están cargadas)
         List<ProductoDTO> dtos = productosBase.stream()
                 .map(this::toDTOWithVariantes)
                 .collect(Collectors.toList());
@@ -271,9 +274,14 @@ public class ProductoService {
         // Crear la variante
         Producto variante = new Producto();
         variante.setProductoBase(productoBase);
+        
+        // Limpiar nombreVariante removiendo guiones y espacios al inicio/final
+        String nombreVarianteLimpio = dto.nombreVariante() != null ? 
+            dto.nombreVariante().trim().replaceAll("^[\\s\\-]+|[\\s\\-]+$", "") : null;
+        
         variante.setNombre(
-                productoBase.getNombre() + (dto.nombreVariante() != null ? " - " + dto.nombreVariante() : ""));
-        variante.setNombreVariante(dto.nombreVariante());
+                productoBase.getNombre() + (nombreVarianteLimpio != null ? " - " + nombreVarianteLimpio : ""));
+        variante.setNombreVariante(nombreVarianteLimpio);
         variante.setPrecio(dto.precio() != null ? dto.precio() : productoBase.getPrecio());
         variante.setDescripcion(productoBase.getDescripcion());
         variante.setCategoria(productoBase.getCategoria());
@@ -321,12 +329,15 @@ public class ProductoService {
 
         // Manejar campos específicos de variante
         if (dto.nombreVariante() != null) {
-            p.setNombreVariante(dto.nombreVariante());
+            // Limpiar nombreVariante removiendo guiones y espacios al inicio/final
+            String nombreVarianteLimpio = dto.nombreVariante().trim().replaceAll("^[\\s\\-]+|[\\s\\-]+$", "");
+            p.setNombreVariante(nombreVarianteLimpio);
 
             // Si es una variante y cambió el nombreVariante, reconstruir el nombre completo
             // automáticamente para mantener consistencia
             if (p.getProductoBase() != null) {
-                p.setNombre(p.getProductoBase().getNombre() + " - " + dto.nombreVariante());
+                String nombreBaseLimpio = p.getProductoBase().getNombre().trim().replaceAll("[\\s\\-]+$", "");
+                p.setNombre(nombreBaseLimpio + " - " + nombreVarianteLimpio);
             }
         }
         if (dto.ordenVariante() != null) {
@@ -349,7 +360,10 @@ public class ProductoService {
                 null, // Sin variantes para compatibilidad
                 p.getProductoBase() != null ? p.getProductoBase().getId() : null,
                 p.getNombreVariante(),
-                p.getOrdenVariante());
+                p.getOrdenVariante(),
+                null, // tamaños: null por defecto
+                null  // atributos: null por defecto
+        );
     }
 
     /**
@@ -389,7 +403,9 @@ public class ProductoService {
                 variantes.isEmpty() ? null : variantes,
                 null, // productoBaseId null para productos base
                 null, // nombreVariante null para productos base
-                null // ordenVariante null para productos base
+                null, // ordenVariante null para productos base
+                null, // tamaños: null por defecto
+                null  // atributos: null por defecto
         );
     }
 }

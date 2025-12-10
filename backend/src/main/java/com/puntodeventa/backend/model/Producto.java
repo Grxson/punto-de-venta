@@ -90,4 +90,20 @@ public class Producto {
      */
     @Column(name = "orden_variante")
     private Integer ordenVariante;
+    
+    // ============================================================
+    // Relaciones para variantes multi-paso
+    // ============================================================
+    
+    /**
+     * Tamaños disponibles para este producto/variante
+     */
+    @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductoVarianteTamaño> tamañosDisponibles;
+    
+    /**
+     * Atributos disponibles para este producto/variante (ingredientes, salsas, etc.)
+     */
+    @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductoAtributo> atributos;
 }

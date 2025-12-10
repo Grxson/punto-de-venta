@@ -54,7 +54,7 @@ public class DataInitializerMenuHelper {
         // Crear variantes
         int orden = 1;
         for (String[] variante : variantes) {
-            String nombreVariante = variante[0];
+            String nombreVariante = variante[0].trim().replaceAll("^[\\s\\-]+|[\\s\\-]+$", "");
             double precioVariante = Double.parseDouble(variante[1]);
             
             jdbcTemplate.update(

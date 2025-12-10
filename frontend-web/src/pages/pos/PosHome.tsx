@@ -21,6 +21,8 @@ import {
   Collapse,
   Badge,
   Snackbar,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import { TextField } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -31,6 +33,7 @@ import { useCart } from '../../contexts/CartContext';
 import { websocketService } from '../../services/websocket.service';
 import { userPreferencesService } from '../../services/userPreferences.service';
 import { useSubcategorias } from '../../hooks/useSubcategorias';
+import { limpiarNombreVariante } from '../../utils/stringFormatters';
 import type { CategoriaSubcategoria } from '../../types/subcategorias.types';
 
 interface Producto {
@@ -68,6 +71,11 @@ export default function PosHome() {
   const [ventaExitosa, setVentaExitosa] = useState(false);
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
+  const [tamañoSeleccionado, setTamañoSeleccionado] = useState<any | null>(null);
+  const [pasoModal, setpasoModal] = useState<'tamaños' | 'ingredientes'>('tamaños');
+  const [ingredientesSeleccionados, setIngredientesSeleccionados] = useState<Set<number>>(new Set());
+  const [atributosProducto, setAtributosProducto] = useState<any[]>([]); // Atributos cargados del producto
+  const [loadingAtributos, setLoadingAtributos] = useState(false);
   const [carritoExpandido, setCarritoExpandido] = useState(true);
   // Estado local para edición inline de precio por item del carrito
   const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
@@ -385,10 +393,33 @@ export default function PosHome() {
     }
   };
 
-  const handleSeleccionarVariante = (variante: Producto) => {
-    addToCart(variante);
-    setDialogoVariantes(false);
-    setProductoSeleccionado(null);
+  const handleSeleccionarVariante = async (variante: Producto) => {
+    setTamañoSeleccionado(variante);
+    setIngredientesSeleccionados(new Set());
+    
+    // Cargar atributos del producto
+    try {
+      setLoadingAtributos(true);
+      const response = await apiService.get(`/v1/productos/${variante.id}/atributos`);
+      
+      if (response.success && Array.isArray(response.data)) {
+        setAtributosProducto(response.data);
+        // Si tiene atributos, ir al paso de ingredientes
+        // Si no tiene, agregar directamente al carrito
+        if (response.data.length > 0) {
+          setpasoModal('ingredientes');
+        } else {
+          // Sin atributos, agregar directamente
+          handleAgregarSinIngredientes(variante);
+        }
+      }
+    } catch (err) {
+      console.error('Error cargando atributos:', err);
+      // Si hay error, intentar agregar sin atributos
+      handleAgregarSinIngredientes(variante);
+    } finally {
+      setLoadingAtributos(false);
+    }
   };
 
   const handleAgregarProductoBase = () => {
@@ -397,6 +428,120 @@ export default function PosHome() {
       setDialogoVariantes(false);
       setProductoSeleccionado(null);
     }
+  };
+
+  const handleAgregarSinIngredientes = (variante: Producto) => {
+    // Agregar el tamaño seleccionado sin ingredientes
+    // Limpiar nombreVariante removiendo guiones y espacios al inicio/final
+    const nombreVariante = (variante.nombreVariante || variante.nombre)
+      .trim()
+      .replace(/^[\s\-]+|[\s\-]+$/g, ''); // Remover - y espacios al inicio y final
+    
+    const nombreCompleto = `${productoSeleccionado?.nombre} - ${nombreVariante}`.trim();
+    
+    const productoFinal = {
+      ...variante,
+      nombre: nombreCompleto,
+    };
+    
+    addToCart(productoFinal as any);
+    
+    // Cerrar modal y limpiar estados
+    setDialogoVariantes(false);
+    setProductoSeleccionado(null);
+    setTamañoSeleccionado(null);
+    setIngredientesSeleccionados(new Set());
+    setAtributosProducto([]);
+    setpasoModal('tamaños');
+  };
+
+  const handleAgregarConIngredientes = () => {
+    if (tamañoSeleccionado) {
+      // Crear mapeo dinámico de ingredientes desde los atributos cargados
+      const ingredientesMap: { [key: number]: { nombre: string; precio: number } } = {};
+      
+      atributosProducto.forEach(atributo => {
+        atributo.opciones?.forEach((opcion: any) => {
+          ingredientesMap[opcion.id] = {
+            nombre: opcion.nombre,
+            precio: opcion.precioExtra || 0,
+          };
+        });
+      });
+
+      // Crear nombre con ingredientes
+      const ingredientesNombres = Array.from(ingredientesSeleccionados)
+        .map(id => ingredientesMap[id]?.nombre || '')
+        .filter(Boolean)
+        .join(',');
+      
+      // Limpiar nombreVariante removiendo guiones y espacios al inicio/final
+      const nombreVariante = (tamañoSeleccionado.nombreVariante || tamañoSeleccionado.nombre)
+        .trim()
+        .replace(/^[\s\-]+|[\s\-]+$/g, ''); // Remover - y espacios al inicio y final
+      
+      const nombreCompleto = ingredientesNombres 
+        ? `${productoSeleccionado?.nombre} C/${ingredientesNombres} - ${nombreVariante}`
+        : `${productoSeleccionado?.nombre} - ${nombreVariante}`;
+
+      // Calcular precio total (tamaño + ingredientes)
+      const precioIngredientes = Array.from(ingredientesSeleccionados)
+        .reduce((suma, id) => suma + (ingredientesMap[id]?.precio || 0), 0);
+      
+      const precioTotal = (tamañoSeleccionado.precio || 0) + precioIngredientes;
+
+      // Crear ID único para este item
+      const ingredientesStr = Array.from(ingredientesSeleccionados).sort().join(',');
+      const cartItemId = `${tamañoSeleccionado.id}_ingredientes_${ingredientesStr}`;
+
+      // Crear objeto con ingredientes seleccionados
+      const productoConIngredientes = {
+        ...tamañoSeleccionado,
+        nombre: nombreCompleto,
+        precio: precioTotal,
+        ingredientesSeleccionados: Array.from(ingredientesSeleccionados),
+        cartItemId,
+      };
+      addToCart(productoConIngredientes as any);
+      
+      // Cerrar modal y limpiar estados
+      setDialogoVariantes(false);
+      setProductoSeleccionado(null);
+      setTamañoSeleccionado(null);
+      setIngredientesSeleccionados(new Set());
+      setAtributosProducto([]);
+      setpasoModal('tamaños');
+    }
+  };
+
+  // Helper para calcular precio total en el paso 2
+  const calcularPrecioTotal = (): number => {
+    // Crear mapeo dinámico desde atributos cargados
+    const ingredientesMap: { [key: number]: { nombre: string; precio: number } } = {};
+    
+    atributosProducto.forEach(atributo => {
+      atributo.opciones?.forEach((opcion: any) => {
+        ingredientesMap[opcion.id] = {
+          nombre: opcion.nombre,
+          precio: opcion.precioExtra || 0,
+        };
+      });
+    });
+
+    const precioIngredientes = Array.from(ingredientesSeleccionados)
+      .reduce((suma, id) => suma + (ingredientesMap[id]?.precio || 0), 0);
+    
+    return (tamañoSeleccionado?.precio || 0) + precioIngredientes;
+  };
+
+  const toggleIngrediente = (ingredienteId: number) => {
+    const nuevos = new Set(ingredientesSeleccionados);
+    if (nuevos.has(ingredienteId)) {
+      nuevos.delete(ingredienteId);
+    } else {
+      nuevos.add(ingredienteId);
+    }
+    setIngredientesSeleccionados(nuevos);
   };
 
   const handleCarritoClick = () => {
@@ -741,7 +886,7 @@ export default function PosHome() {
                     >
                       <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
                         {item.producto.nombreVariante
-                          ? `${obtenerNombreLimpio(obtenerNombreBase(item.producto))} - ${item.producto.nombreVariante}`
+                          ? `${obtenerNombreLimpio(obtenerNombreBase(item.producto))} - ${limpiarNombreVariante(item.producto.nombreVariante)}`
                           : obtenerNombreLimpio(item.producto.nombre)}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between' }}>
@@ -751,9 +896,9 @@ export default function PosHome() {
                             onClick={(e) => {
                               e.stopPropagation();
                               if (item.cantidad > 1) {
-                                updateQuantity(item.producto.id, item.cantidad - 1);
+                                updateQuantity(item.producto.id, item.cantidad - 1, item.cartItemId);
                               } else {
-                                removeFromCart(item.producto.id);
+                                removeFromCart(item.producto.id, item.cartItemId);
                               }
                             }}
                             sx={{ 
@@ -775,7 +920,7 @@ export default function PosHome() {
                             size="small"
                             onClick={(e) => {
                               e.stopPropagation();
-                              updateQuantity(item.producto.id, item.cantidad + 1);
+                              updateQuantity(item.producto.id, item.cantidad + 1, item.cartItemId);
                             }}
                             sx={{ 
                               color: 'white',
@@ -803,7 +948,7 @@ export default function PosHome() {
                               // Dividir el total entre la cantidad para obtener el precio unitario
                               const unitPrice = item.cantidad > 0 ? totalVal / item.cantidad : totalVal;
                               if (!isNaN(unitPrice) && unitPrice >= 0) {
-                                updateItemPrice(item.producto.id, unitPrice);
+                                updateItemPrice(item.producto.id, unitPrice, item.cartItemId);
                               }
                               setEditingPriceId(null);
                             }}
@@ -812,7 +957,7 @@ export default function PosHome() {
                                 const totalVal = parseFloat(editingPriceValue);
                                 const unitPrice = item.cantidad > 0 ? totalVal / item.cantidad : totalVal;
                                 if (!isNaN(unitPrice) && unitPrice >= 0) {
-                                  updateItemPrice(item.producto.id, unitPrice);
+                                  updateItemPrice(item.producto.id, unitPrice, item.cartItemId);
                                 }
                                 setEditingPriceId(null);
                               } else if (e.key === 'Escape') {
@@ -892,78 +1037,201 @@ export default function PosHome() {
         </Box>
       )}
 
-      {/* Diálogo para seleccionar variantes */}
+      {/* Diálogo para seleccionar variantes y ingredientes - MULTI PASO */}
       <Dialog
         open={dialogoVariantes}
         onClose={() => {
           setDialogoVariantes(false);
           setProductoSeleccionado(null);
+          setTamañoSeleccionado(null);
+          setIngredientesSeleccionados(new Set());
+          setAtributosProducto([]);
+          setpasoModal('tamaños');
         }}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>
-          Seleccionar {productoSeleccionado?.nombre}
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Este producto tiene diferentes tamaños/presentaciones disponibles. Selecciona una opción:
-          </Typography>
-          <List>
-            {productoSeleccionado?.variantes?.map((variante, index) => (
-              <div key={variante.id}>
-                <ListItem disablePadding>
-                  <ListItemButton onClick={() => handleSeleccionarVariante(variante)}>
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="h6">
-                            {variante.nombreVariante || variante.nombre}
-                          </Typography>
-                          <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-                            ${variante.precio.toFixed(2)}
-                          </Typography>
-                        </Box>
-                      }
-                      secondary={variante.nombreVariante || variante.nombre}
-                    />
-                  </ListItemButton>
-                </ListItem>
-                {index < (productoSeleccionado?.variantes?.length || 0) - 1 && <Divider />}
-              </div>
-            ))}
-          </List>
-          {productoSeleccionado && productoSeleccionado.precio > 0 && (
-            <>
-              <Divider sx={{ my: 2 }} />
+        {/* PASO 1: Seleccionar tamaño */}
+        {pasoModal === 'tamaños' && (
+          <>
+            <DialogTitle>
+              Seleccionar tamaño - {productoSeleccionado?.nombre}
+            </DialogTitle>
+            <DialogContent>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Este producto tiene diferentes tamaños disponibles. Selecciona el tamaño que deseas:
+              </Typography>
+              <List>
+                {productoSeleccionado?.variantes?.map((variante, index) => (
+                  <div key={variante.id}>
+                    <ListItem disablePadding>
+                      <ListItemButton onClick={() => handleSeleccionarVariante(variante)}>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="h6">
+                                {variante.nombreVariante || variante.nombre}
+                              </Typography>
+                              <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+                                ${variante.precio.toFixed(2)}
+                              </Typography>
+                            </Box>
+                          }
+                          secondary={variante.nombreVariante || variante.nombre}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                    {index < (productoSeleccionado?.variantes?.length || 0) - 1 && <Divider />}
+                  </div>
+                ))}
+              </List>
+              {productoSeleccionado && productoSeleccionado.precio > 0 && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={handleAgregarProductoBase}
+                    sx={{ minHeight: '48px' }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                      <Typography variant="body1">
+                        {productoSeleccionado.nombre} (Precio base)
+                      </Typography>
+                      <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+                        ${productoSeleccionado.precio.toFixed(2)}
+                      </Typography>
+                    </Box>
+                  </Button>
+                </>
+              )}
+            </DialogContent>
+            <DialogActions>
               <Button
-                fullWidth
-                variant="outlined"
-                onClick={handleAgregarProductoBase}
-                sx={{ minHeight: '48px' }}
+                onClick={() => {
+                  setDialogoVariantes(false);
+                  setProductoSeleccionado(null);
+                  setTamañoSeleccionado(null);
+                  setIngredientesSeleccionados(new Set());
+                  setpasoModal('tamaños');
+                }}
               >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                  <Typography variant="body1">
-                    {productoSeleccionado.nombre} (Precio base)
-                  </Typography>
-                  <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-                    ${productoSeleccionado.precio.toFixed(2)}
-                  </Typography>
-                </Box>
+                Cancelar
               </Button>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setDialogoVariantes(false);
-              setProductoSeleccionado(null);
-            }}
-          >
-            Cancelar
-          </Button>
-        </DialogActions>
+            </DialogActions>
+          </>
+        )}
+
+        {/* PASO 2: Seleccionar ingredientes/atributos */}
+        {pasoModal === 'ingredientes' && (
+          <>
+            <DialogTitle>
+              Complementos para {tamañoSeleccionado?.nombreVariante || tamañoSeleccionado?.nombre}
+            </DialogTitle>
+            <DialogContent>
+              {loadingAtributos ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                  <CircularProgress />
+                </Box>
+              ) : atributosProducto.length === 0 ? (
+                <Typography color="text.secondary">
+                  No hay complementos disponibles para este producto.
+                </Typography>
+              ) : (
+                <>
+                  {atributosProducto.map((atributo) => (
+                    <Box key={atributo.id} sx={{ mb: 3 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
+                        {atributo.nombre}
+                        {atributo.requerido && <span style={{ color: 'red' }}> *</span>}
+                      </Typography>
+                      
+                      <List sx={{ pl: 0 }}>
+                        {atributo.opciones?.map((opcion: any, index: number, arr: any[]) => (
+                          <div key={opcion.id}>
+                            <ListItem 
+                              disablePadding
+                              sx={{
+                                backgroundColor: ingredientesSeleccionados.has(opcion.id) 
+                                  ? 'rgba(25, 118, 210, 0.08)' 
+                                  : 'transparent',
+                                borderRadius: '4px',
+                                mb: 0.5,
+                              }}
+                            >
+                              <ListItemButton 
+                                onClick={() => toggleIngrediente(opcion.id)}
+                                sx={{
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                                  },
+                                }}
+                              >
+                                <ListItemText
+                                  primary={
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <Typography 
+                                        variant="h6"
+                                        sx={{
+                                          color: ingredientesSeleccionados.has(opcion.id) 
+                                            ? '#1976d2' 
+                                            : 'inherit',
+                                          fontWeight: ingredientesSeleccionados.has(opcion.id) 
+                                            ? 600 
+                                            : 500,
+                                        }}
+                                      >
+                                        {opcion.nombre}
+                                      </Typography>
+                                      <Typography 
+                                        variant="h6" 
+                                        color="primary" 
+                                        sx={{ 
+                                          fontWeight: 'bold',
+                                          color: ingredientesSeleccionados.has(opcion.id) 
+                                            ? '#1976d2' 
+                                            : '#1976d2',
+                                        }}
+                                      >
+                                        +${(opcion.precioExtra || 0).toFixed(2)}
+                                      </Typography>
+                                    </Box>
+                                  }
+                                  secondary={opcion.nombre}
+                                />
+                              </ListItemButton>
+                            </ListItem>
+                            {index < arr.length - 1 && <Divider sx={{ my: 0.5 }} />}
+                          </div>
+                        ))}
+                      </List>
+                    </Box>
+                  ))}
+                </>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={() => {
+                  setpasoModal('tamaños');
+                  setTamañoSeleccionado(null);
+                  setIngredientesSeleccionados(new Set());
+                  setAtributosProducto([]);
+                }}
+              >
+                Atrás
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleAgregarConIngredientes}
+                sx={{ minHeight: '44px' }}
+              >
+                Agregar al carrito - ${calcularPrecioTotal().toFixed(2)}
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     </Box>
   );

@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
+import { limpiarNombreVariante } from '../../utils/stringFormatters';
 
 interface MetodoPago {
   id: number;
@@ -240,7 +241,7 @@ export default function PosPayment() {
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="body1" fontWeight="medium">
                         {item.producto.nombreVariante
-                          ? `${obtenerNombreBase(item.producto)} - ${item.producto.nombreVariante}`
+                          ? `${obtenerNombreBase(item.producto)} - ${limpiarNombreVariante(item.producto.nombreVariante)}`
                           : item.producto.nombre}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
