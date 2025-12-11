@@ -111,6 +111,15 @@ export default defineConfig({
       compress: {
         drop_console: true, // Eliminar console.* en producción
         drop_debugger: true, // Eliminar debuggers
+        sequences: false, // No combinar statements (rompe orden de inicialización)
+        unused: true, // Remover variables no usadas PERO...
+        passes: 1, // Una sola pasada para evitar cambios en el orden
+      },
+      mangle: {
+        reserved: ['React', 'ReactDOM', 'emotion', 'e'], // Proteger variables críticas
+      },
+      output: {
+        comments: false,
       },
     },
     // Optimizar reportCompressedSize para builds más rápidos en dev
@@ -183,6 +192,15 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
+      },
+      // Asegurar que los chunks críticos se carguen primero
+      manualChunks: (id, api) => {
+        if (id.includes('node_modules/@emotion/')) {
+          return 'emotion';
+        }
+        if (id.includes('node_modules/react')) {
+          return 'react-vendor';
+        }
       },
     },
   },
