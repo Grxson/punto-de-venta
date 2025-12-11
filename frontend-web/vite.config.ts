@@ -105,33 +105,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false,
-    minify: false, // DESHABILITAR minificación completamente
-    // Confiar en gzip del servidor para compresión
-    // esbuild: {
-    //   drop: ['console', 'debugger'],
-    //   minifyIdentifiers: false,
-    //   minifySyntax: true,
-    //   minifyWhitespace: true,
-    // },
-    // Optimizar reportCompressedSize para builds más rápidos en dev
+    sourcemap: true,
+    minify: false,
     reportCompressedSize: false,
-    // Aumentar chunk size limit
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          // MAXIMA SIMPLICIDAD: Solo separar pages por área
-          // Todo lo demás (services, hooks, utils, components) va junto
-          // para evitar circular dependencies
-          
-          if (id.includes('/pages/pos/')) {
-            return 'pos-pages';
-          }
-          if (id.includes('/pages/admin/')) {
-            return 'admin-pages';
-          }
-        },
+        manualChunks: undefined,
         // Optimizar nombres de chunks
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
