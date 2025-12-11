@@ -38,7 +38,8 @@ public class Proveedor {
     @Column(length = 100)
     private String email;
     
-    @Column(nullable = false, columnDefinition = "INTEGER")
+    @Column(nullable = false, columnDefinition = "SMALLINT DEFAULT 1")
+    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activo = true;
 }

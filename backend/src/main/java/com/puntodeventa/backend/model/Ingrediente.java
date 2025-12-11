@@ -55,7 +55,8 @@ public class Ingrediente {
     @Column(length = 50)
     private String sku;
     
-    @Column(nullable = false, columnDefinition = "INTEGER")
+    @Column(nullable = false, columnDefinition = "SMALLINT DEFAULT 1")
+    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activo = true;
 }
