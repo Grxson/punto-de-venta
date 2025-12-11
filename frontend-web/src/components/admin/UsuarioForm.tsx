@@ -105,9 +105,9 @@ export const UsuarioForm = ({
       // Validar que rolId y sucursalId son números válidos
       const rolId = Number(data.rolId);
       const sucursalId = Number(data.sucursalId);
-      
+
       console.log('📝 Datos del formulario:', { ...data, rolId, sucursalId });
-      
+
       if (!rolId || isNaN(rolId) || rolId <= 0) {
         console.error('❌ Rol inválido:', data.rolId);
         return;
@@ -117,14 +117,22 @@ export const UsuarioForm = ({
         return;
       }
 
-      const submitData = {
-        ...data,
+      const submitData: any = {
+        nombre: data.nombre,
+        apellido: data.apellido,
+        email: data.email,
+        username: data.username,
         rolId,
         sucursalId,
       };
-      
+
+      // Solo incluir password si no está vacío
+      if (data.password && data.password.trim().length > 0) {
+        submitData.password = data.password;
+      }
+
       console.log('✅ Enviando:', submitData);
-      
+
       await onSubmit(submitData);
       handleClose();
     } catch (err) {
@@ -245,9 +253,9 @@ export const UsuarioForm = ({
                 isEditing && !passwordValue
                   ? undefined
                   : {
-                      value: 8,
-                      message: 'Mínimo 8 caracteres',
-                    },
+                    value: 8,
+                    message: 'Mínimo 8 caracteres',
+                  },
             }}
             render={({ field }) => (
               <TextField
@@ -268,7 +276,7 @@ export const UsuarioForm = ({
             <Controller
               name="rolId"
               control={control}
-              rules={{ 
+              rules={{
                 required: 'El rol es requerido',
                 validate: (value) => (value && Number(value) > 0) || 'Selecciona un rol válido'
               }}
@@ -292,7 +300,7 @@ export const UsuarioForm = ({
             <Controller
               name="sucursalId"
               control={control}
-              rules={{ 
+              rules={{
                 required: 'La sucursal es requerida',
                 validate: (value) => (value && Number(value) > 0) || 'Selecciona una sucursal válida'
               }}
