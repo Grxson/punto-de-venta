@@ -121,37 +121,15 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // MANTENER EXTREMADAMENTE SIMPLE
-          // NO separar librerías que dependen de React (recharts, react-query, etc)
-          // Dejar que bundlen naturalmente para evitar problemas de contexto
+          // MAXIMA SIMPLICIDAD: Solo separar pages por área
+          // Todo lo demás (services, hooks, utils, components) va junto
+          // para evitar circular dependencies
           
-          // Solo separar por categorías de CÓDIGO (no dependencias)
-          
-          // Rutas y features
           if (id.includes('/pages/pos/')) {
             return 'pos-pages';
           }
           if (id.includes('/pages/admin/')) {
             return 'admin-pages';
-          }
-          if (id.includes('/pages/')) {
-            return 'pages';
-          }
-          
-          // Servicios y hooks compartidos
-          if (id.includes('/services/')) {
-            return 'services';
-          }
-          if (id.includes('/hooks/')) {
-            return 'hooks';
-          }
-          if (id.includes('/utils/') || id.includes('/helpers/')) {
-            return 'utils';
-          }
-          
-          // Componentes compartidos
-          if (id.includes('/components/')) {
-            return 'components';
           }
         },
         // Optimizar nombres de chunks
