@@ -23,7 +23,20 @@ import {
   ArrowDownward,
   AttachMoney,
 } from '@mui/icons-material';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  ChartSuspense,
+} from '../../components/charts/RechartsDynamic';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import apiService from '../../services/api.service';
@@ -279,29 +292,31 @@ export default function AdminDashboard() {
               </Typography>
               <Box sx={{ flex: 1, minHeight: 350 }}>
                 {pieData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {pieData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
-                      <Legend 
-                        verticalAlign="bottom" 
-                        height={36}
-                        formatter={(value: string) => <span style={{ fontSize: '14px' }}>{value}</span>}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <ChartSuspense>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {pieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+                        <Legend 
+                          verticalAlign="bottom" 
+                          height={36}
+                          formatter={(value: string) => <span style={{ fontSize: '14px' }}>{value}</span>}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </ChartSuspense>
                 ) : (
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
                     <Typography color="text.secondary">No hay datos para mostrar</Typography>
@@ -322,15 +337,17 @@ export default function AdminDashboard() {
               {topProductos.length > 0 ? (
                 <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <Box sx={{ height: 200 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={barData} margin={{ top: 10, right: 20, left: 10, bottom: 40 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" angle={-35} textAnchor="end" tick={{ fontSize: 11 }} interval={0} />
-                        <YAxis tick={{ fontSize: 11 }} />
-                        <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
-                        <Bar dataKey="ingreso" fill="#1976d2" radius={[6, 6, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <ChartSuspense>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={barData} margin={{ top: 10, right: 20, left: 10, bottom: 40 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" angle={-35} textAnchor="end" tick={{ fontSize: 11 }} interval={0} />
+                          <YAxis tick={{ fontSize: 11 }} />
+                          <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+                          <Bar dataKey="ingreso" fill="#1976d2" radius={[6, 6, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartSuspense>
                   </Box>
                   <List sx={{ flex: 1, overflow: 'auto' }}>
                     {topProductos.filter(p => p && p.nombre).map((producto, index) => (
