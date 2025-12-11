@@ -25,7 +25,6 @@
     "strictFunctionTypes": false,
     "strictPropertyInitialization": false,
     "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true
-  },
+    "noImplicitReturns": true},
   "include": ["src"]
 }
