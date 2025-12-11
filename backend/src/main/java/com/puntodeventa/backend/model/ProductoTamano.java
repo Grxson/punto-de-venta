@@ -19,7 +19,7 @@ import java.util.List;
  * Ejemplo: "Pequeño", "Mediano", "Grande"
  */
 @Entity
-@Table(name = "producto_tamaño")
+@Table(name = "producto_tamano")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -57,6 +57,6 @@ public class ProductoTamano {
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private LocalDateTime updatedAt;
     
-    @OneToMany(mappedBy = "tamaño", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "tamano", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<ProductoVarianteTamano> variantes;
 }
