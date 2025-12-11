@@ -46,7 +46,7 @@ public class ProductoAtributoOpcion {
     @Builder.Default
     private Integer orden = 0;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "BOOLEAN")
     @Builder.Default
     private Boolean activo = true;
 
