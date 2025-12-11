@@ -121,22 +121,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // ESTRATEGIA NUEVA: Unificar React + Emotion + MUI en un super-chunk
-          // Para evitar problemas de inicialización, deben cargarse JUNTOS
-          
-          // React + Emotion + MUI juntos (críticos, deben estar siempre disponibles)
-          if (id.includes('node_modules/react') || 
-              id.includes('node_modules/@emotion/') ||
-              id.includes('node_modules/@mui/')) {
-            return 'framework'; // Un solo chunk para todas las dependencias framework
-          }
+          // MANTENER SIMPLE: Solo separar por categorías GRANDES
+          // NO separar recharts - debe estar con el framework
           
           // Utilidades de manejo de datos/consultas
           if (id.includes('node_modules/date-fns/')) {
             return 'date-fns';
-          }
-          if (id.includes('node_modules/recharts/')) {
-            return 'recharts';
           }
           if (id.includes('node_modules/@tanstack/')) {
             return 'react-query';
