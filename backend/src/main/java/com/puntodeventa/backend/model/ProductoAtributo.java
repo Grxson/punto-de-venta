@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.model;
 
+import com.puntodeventa.backend.config.BooleanToIntegerConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -46,8 +47,8 @@ public class ProductoAtributo {
     @Enumerated(EnumType.STRING)
     private TipoAtributo tipo;
     
-    @JdbcType(BooleanJdbcType.class)
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
+    @Column(nullable = false, columnDefinition = "SMALLINT DEFAULT 0")
+    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean requerido = false;
     
@@ -55,8 +56,8 @@ public class ProductoAtributo {
     @Builder.Default
     private Integer orden = 0;
     
-    @JdbcType(BooleanJdbcType.class)
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT true")
+    @Column(nullable = false, columnDefinition = "SMALLINT DEFAULT 1")
+    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activo = true;
     
