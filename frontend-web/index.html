@@ -10,6 +10,10 @@
       if (typeof global === 'undefined') {
         var global = globalThis;
       }
+      // Asegurar que Object es accesible para Emotion
+      if (!window.Object) {
+        window.Object = Object;
+      }
     </script>
   </head>
   <body>
