@@ -63,9 +63,9 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png',
+            src: '/vite.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
             purpose: 'any',
           },
         ],
