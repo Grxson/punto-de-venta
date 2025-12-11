@@ -74,7 +74,7 @@ public class ProductoVarianteTamanoService {
         
         ProductoVarianteTamano varianteTamano = ProductoVarianteTamano.builder()
             .producto(producto)
-            .tamaño(tamaño)
+            .tamano(tamaño)
             .orden(orden != null ? orden : 0)
             .build();
         
