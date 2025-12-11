@@ -92,27 +92,45 @@ export default function AdminSales() {
   const [error, setError] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState<number | null>(null);
   const [editando, setEditando] = useState<number | null>(null);
-  
+
+  // Función auxiliar para obtener la fecha local en formato YYYY-MM-DD
+  const obtenerFechaLocal = (fecha: Date = new Date()): string => {
+    const year = fecha.getFullYear();
+    const month = String(fecha.getMonth() + 1).padStart(2, '0');
+    const date = String(fecha.getDate()).padStart(2, '0');
+    return `${year}-${month}-${date}`;
+  };
+
+  // Función auxiliar para crear una Date a partir de YYYY-MM-DD en zona horaria local
+  const crearFechaLocal = (fechaString: string, hora: 'inicio' | 'fin' = 'inicio'): Date => {
+    const [year, month, date] = fechaString.split('-').map(Number);
+    if (hora === 'inicio') {
+      return new Date(year, month - 1, date, 0, 0, 0, 0);
+    } else {
+      return new Date(year, month - 1, date, 23, 59, 59, 999);
+    }
+  };
+
   // Estado para el filtro de fechas
   const [dateRange, setDateRange] = useState<DateRangeValue>({
-    desde: new Date().toISOString().split('T')[0],
-    hasta: new Date().toISOString().split('T')[0],
+    desde: obtenerFechaLocal(),
+    hasta: obtenerFechaLocal(),
   });
-  
+
   // Estado para el paginador de días
   const [diaSeleccionado, setDiaSeleccionado] = useState<number>(0); // 0 = hoy, -1 = ayer, -2 = hace 2 días, etc.
-  
+
   // Estado para el diálogo de cancelación
   const [dialogoCancelacion, setDialogoCancelacion] = useState(false);
   const [ventaSeleccionada, setVentaSeleccionada] = useState<Venta | null>(null);
   const [motivoCancelacion, setMotivoCancelacion] = useState('');
   const [errorMotivo, setErrorMotivo] = useState<string | null>(null);
-  
+
   // Estado para el diálogo de eliminación permanente
   const [dialogoEliminacion, setDialogoEliminacion] = useState(false);
   const [ventaAEliminar, setVentaAEliminar] = useState<Venta | null>(null);
   const [eliminando, setEliminando] = useState(false);
-  
+
   // Estado para el diálogo de edición
   const [dialogoEdicion, setDialogoEdicion] = useState(false);
   const [itemsEditados, setItemsEditados] = useState<VentaItem[]>([]);
@@ -147,12 +165,12 @@ export default function AdminSales() {
     const totalVenta = itemsEditados.reduce((sum, item) => sum + item.subtotal, 0);
     const totalPagosActuales = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
     const diferencia = totalVenta - totalPagosActuales;
-    
+
     // Solo actualizar si hay una diferencia significativa
     if (Math.abs(diferencia) > 0.01) {
       const ultimoPagoIndex = pagosEditados.length - 1;
       const nuevoMonto = Math.max(0, pagosEditados[ultimoPagoIndex].monto + diferencia);
-      
+
       // Actualizar solo si el monto cambió significativamente
       if (Math.abs(pagosEditados[ultimoPagoIndex].monto - nuevoMonto) > 0.01) {
         setPagosEditados(prevPagos => {
@@ -188,22 +206,22 @@ export default function AdminSales() {
   // Filtrar ventas por rango de fechas
   const ventasFiltradas = useMemo(() => {
     if (!dateRange.desde || !dateRange.hasta) return ventas;
-    
+
     // Crear fechas en zona horaria local
-    const desde = new Date(dateRange.desde + 'T00:00:00');
-    const hasta = new Date(dateRange.hasta + 'T23:59:59');
-    
+    const desde = crearFechaLocal(dateRange.desde, 'inicio');
+    const hasta = crearFechaLocal(dateRange.hasta, 'fin');
+
     console.log('Filtro de ventas:', {
       desde: desde.toISOString(),
       hasta: hasta.toISOString(),
       totalVentas: ventas.length,
       ventasEjemplo: ventas.slice(0, 3).map(v => ({ id: v.id, fecha: v.fecha }))
     });
-    
+
     const filtradas = ventas.filter(venta => {
       const fechaVenta = new Date(venta.fecha);
       const cumpleFiltro = fechaVenta >= desde && fechaVenta <= hasta;
-      
+
       if (ventas.length <= 5) { // Solo log si hay pocas ventas para no saturar
         console.log('Venta', venta.id, {
           fechaVenta: fechaVenta.toISOString(),
@@ -212,10 +230,10 @@ export default function AdminSales() {
           cumpleFiltro
         });
       }
-      
+
       return cumpleFiltro;
     });
-    
+
     console.log('Ventas filtradas:', filtradas.length);
     return filtradas;
   }, [ventas, dateRange]);
@@ -225,14 +243,13 @@ export default function AdminSales() {
   };
 
   const handleCambiarDia = (dias: number) => {
-    // Calcular la nueva fecha
-    const hoy = new Date();
-    const nuevaFecha = new Date(hoy);
+    // Calcular la nueva fecha usando la fecha local
+    const nuevaFecha = new Date();
     nuevaFecha.setDate(nuevaFecha.getDate() + dias);
-    
-    // Convertir a formato YYYY-MM-DD
-    const fechaFormato = nuevaFecha.toISOString().split('T')[0];
-    
+
+    // Convertir a formato YYYY-MM-DD usando la fecha local
+    const fechaFormato = obtenerFechaLocal(nuevaFecha);
+
     // Actualizar el estado y el rango de fechas
     setDiaSeleccionado(dias);
     setDateRange({
@@ -342,7 +359,7 @@ export default function AdminSales() {
     if (!usuario) {
       return false;
     }
-    
+
     // No se puede cancelar si ya está cancelada
     if (venta.estado === 'CANCELADA') {
       return false;
@@ -357,7 +374,7 @@ export default function AdminSales() {
     const fechaVenta = new Date(venta.fecha);
     const ahora = new Date();
     const horasDiferencia = (ahora.getTime() - fechaVenta.getTime()) / (1000 * 60 * 60);
-    
+
     return horasDiferencia <= 24;
   };
 
@@ -373,14 +390,14 @@ export default function AdminSales() {
     setNotaEditada(venta.nota || '');
     setFechaEditada(venta.fecha);
     setErrorEdicion(null);
-    
+
     // Cargar productos y métodos de pago
     try {
       const [productosRes, metodosRes] = await Promise.all([
         apiService.get(API_ENDPOINTS.PRODUCTS),
         apiService.get(API_ENDPOINTS.PAYMENT_METHODS_ACTIVOS),
       ]);
-      
+
       if (productosRes.success && productosRes.data) {
         // Cargar variantes para cada producto base
         const productosConVariantes = await Promise.all(
@@ -399,7 +416,7 @@ export default function AdminSales() {
             return producto;
           })
         );
-        
+
         // Agregar productos de la venta que no estén en la lista (por si son variantes o productos eliminados)
         // const productosIdsEnVenta = new Set(venta.items.map(item => item.productoId)); // No usado
         const productosIdsDisponibles = new Set(productosConVariantes.map(p => p.id));
@@ -417,7 +434,7 @@ export default function AdminSales() {
               ordenVariante: null,
             };
           });
-        
+
         setProductos([...productosConVariantes, ...productosFaltantes]);
       }
       if (metodosRes.success && metodosRes.data) {
@@ -426,7 +443,7 @@ export default function AdminSales() {
     } catch (err) {
       console.error('Error al cargar datos:', err);
     }
-    
+
     setDialogoEdicion(true);
   };
 
@@ -443,11 +460,11 @@ export default function AdminSales() {
 
   const handleAgregarItem = () => {
     if (productos.length === 0) return;
-    
+
     // Buscar el primer producto base activo
     const productoBase = productos.find(p => !p.productoBaseId && p.activo);
     if (!productoBase) return;
-    
+
     // Si tiene variantes, mostrar diálogo de selección
     if (productoBase.variantes && productoBase.variantes.length > 0) {
       setProductoSeleccionadoParaVariante(productoBase);
@@ -463,7 +480,7 @@ export default function AdminSales() {
           nombreCompleto = `${productoBasePadre.nombre} - ${limpiarNombreVariante(productoBase.nombreVariante) || productoBase.nombre}`;
         }
       }
-      
+
       const nuevoItem: VentaItem = {
         id: 0,
         productoId: productoBase.id,
@@ -484,11 +501,11 @@ export default function AdminSales() {
   const handleEliminarItem = (index: number) => {
     const itemAEliminar = itemsEditados[index];
     const montoARegresar = itemAEliminar.subtotal;
-    
+
     // Calcular el total actual de pagos
     const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
     const nuevoTotalVenta = calcularTotal() - montoARegresar;
-    
+
     // Si los pagos exceden el nuevo total, mostrar advertencia
     if (totalPagos > nuevoTotalVenta) {
       const exceso = totalPagos - nuevoTotalVenta;
@@ -504,7 +521,7 @@ export default function AdminSales() {
         tipo: 'info',
       });
     }
-    
+
     setItemsEditados(itemsEditados.filter((_, i) => i !== index));
   };
 
@@ -527,7 +544,7 @@ export default function AdminSales() {
               nombreCompleto = `${productoBase.nombre} - ${limpiarNombreVariante(producto.nombreVariante) || producto.nombre}`;
             }
           }
-          
+
           const nuevosItems = [...itemsEditados];
           nuevosItems[index] = {
             ...nuevosItems[index],
@@ -566,7 +583,7 @@ export default function AdminSales() {
         nombre: `${productoSeleccionadoParaVariante?.nombre} - ${variante.nombreVariante || variante.nombre}`,
       }]);
     }
-    
+
     if (indiceItemParaVariante === null) {
       // Es un nuevo item
       const nuevoItem: VentaItem = {
@@ -600,7 +617,7 @@ export default function AdminSales() {
         tipo: 'success',
       });
     }
-    
+
     setDialogoVariantes(false);
     setProductoSeleccionadoParaVariante(null);
     setIndiceItemParaVariante(null);
@@ -608,7 +625,7 @@ export default function AdminSales() {
 
   const handleAgregarProductoBase = () => {
     if (!productoSeleccionadoParaVariante) return;
-    
+
     if (indiceItemParaVariante === null) {
       // Es un nuevo item
       const nuevoItem: VentaItem = {
@@ -642,7 +659,7 @@ export default function AdminSales() {
         tipo: 'success',
       });
     }
-    
+
     setDialogoVariantes(false);
     setProductoSeleccionadoParaVariante(null);
     setIndiceItemParaVariante(null);
@@ -713,7 +730,7 @@ export default function AdminSales() {
       setErrorEdicion(null);
 
       // Verificar si solo cambió la fecha (sin editar items/pagos/nota)
-      const soloFechaCambio = 
+      const soloFechaCambio =
         JSON.stringify(itemsEditados) === JSON.stringify(ventaSeleccionada.items) &&
         JSON.stringify(pagosEditados) === JSON.stringify(ventaSeleccionada.pagos) &&
         notaEditada === (ventaSeleccionada.nota || '');
@@ -726,7 +743,7 @@ export default function AdminSales() {
         const fechaResponse = await apiService.put(
           `${API_ENDPOINTS.SALES}/${ventaSeleccionada.id}/fecha?fecha=${encodeURIComponent(fechaLocal)}`
         );
-        
+
         if (fechaResponse.success) {
           setSnackbar({
             open: true,
@@ -829,15 +846,15 @@ export default function AdminSales() {
 
       {/* Filtro de fechas + Paginador de Días */}
       {/* Filtro de fechas y paginador de días dentro del mismo recuadro */}
-      <DateRangeFilter 
-        onChange={handleDateRangeChange} 
+      <DateRangeFilter
+        onChange={handleDateRangeChange}
         initialRange={dateRange}
         label="Filtrar ventas por fecha"
       >
         {/* Paginador de Días */}
         <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', justifyContent: 'flex-end', mt: { xs: 2, md: 0 } }}>
-          <Button 
-            size="small" 
+          <Button
+            size="small"
             variant="outlined"
             onClick={() => handleCambiarDia(diaSeleccionado - 1)}
             startIcon={<ChevronLeft />}
@@ -851,8 +868,8 @@ export default function AdminSales() {
               `Hace ${Math.abs(diaSeleccionado)} día${Math.abs(diaSeleccionado) > 1 ? 's' : ''}`
             )}
           </Typography>
-          <Button 
-            size="small" 
+          <Button
+            size="small"
             variant="outlined"
             onClick={() => handleCambiarDia(diaSeleccionado + 1)}
             disabled={diaSeleccionado >= 0}
@@ -939,19 +956,19 @@ export default function AdminSales() {
                           ))}
                           {venta.items.length > 2 && (
                             <>
-                              <Typography 
-                                ref={(el) => { 
+                              <Typography
+                                ref={(el) => {
                                   if (el) {
                                     tooltipRefs.current[venta.id] = el;
                                   } else {
                                     delete tooltipRefs.current[venta.id];
                                   }
                                 }}
-                                variant="caption" 
-                                color="primary" 
+                                variant="caption"
+                                color="primary"
                                 onClick={() => setTooltipOpen(prev => ({ ...prev, [venta.id]: !prev[venta.id] }))}
-                                sx={{ 
-                                  fontStyle: 'italic', 
+                                sx={{
+                                  fontStyle: 'italic',
                                   cursor: 'pointer',
                                   textDecoration: 'underline',
                                   '&:hover': { color: 'primary.dark' }
@@ -1173,7 +1190,7 @@ export default function AdminSales() {
             </Typography>
           )}
         </DialogTitle>
-        
+
         <DialogContent sx={{ flex: 1, overflow: 'auto', px: 2 }}>
           {errorEdicion && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErrorEdicion(null)}>
@@ -1202,7 +1219,7 @@ export default function AdminSales() {
                               if (!selected) return 'Seleccionar producto';
                               const prodEncontrado = productos.find(p => p.id === selected);
                               if (prodEncontrado) {
-                                const nombreCompleto = prodEncontrado.productoBaseId 
+                                const nombreCompleto = prodEncontrado.productoBaseId
                                   ? `${productos.find(p => p.id === prodEncontrado.productoBaseId)?.nombre || ''} - ${prodEncontrado.nombreVariante || prodEncontrado.nombre}`
                                   : prodEncontrado.nombre;
                                 return nombreCompleto;
@@ -1217,10 +1234,10 @@ export default function AdminSales() {
                               .filter((prod) => !prod.productoBaseId || prod.activo) // Solo productos base o variantes activas
                               .map((prod) => {
                                 // Si es una variante, mostrar el nombre completo
-                                const nombreCompleto = prod.productoBaseId 
+                                const nombreCompleto = prod.productoBaseId
                                   ? `${productos.find(p => p.id === prod.productoBaseId)?.nombre || ''} - ${prod.nombreVariante || prod.nombre}`
                                   : prod.nombre;
-                                
+
                                 return (
                                   <MenuItem key={prod.id} value={prod.id} sx={{ minHeight: '48px' }}>
                                     <Box>
@@ -1232,9 +1249,9 @@ export default function AdminSales() {
                                           ${prod.precio.toFixed(2)}
                                         </Typography>
                                         {prod.variantes && prod.variantes.length > 0 && (
-                                          <Chip 
-                                            label={`${prod.variantes.length} variantes`} 
-                                            size="small" 
+                                          <Chip
+                                            label={`${prod.variantes.length} variantes`}
+                                            size="small"
                                           />
                                         )}
                                       </Box>
@@ -1264,7 +1281,7 @@ export default function AdminSales() {
                             })()}
                           </Select>
                         </FormControl>
-                        
+
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Typography variant="body1" sx={{ minWidth: '80px' }}>
                             Cantidad:
@@ -1290,7 +1307,7 @@ export default function AdminSales() {
                           </Box>
                         </Box>
                       </Box>
-                      
+
                       <IconButton
                         color="error"
                         onClick={() => handleEliminarItem(index)}
@@ -1299,7 +1316,7 @@ export default function AdminSales() {
                         <Delete />
                       </IconButton>
                     </Box>
-                    
+
                     <Divider sx={{ my: 1 }} />
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="body2" color="text.secondary">
@@ -1313,7 +1330,7 @@ export default function AdminSales() {
                 </Card>
               );
             })}
-            
+
             <Button
               variant="outlined"
               startIcon={<Add />}
@@ -1344,7 +1361,7 @@ export default function AdminSales() {
               const metodo = metodosPago.find(m => m.id === pago.metodoPagoId);
               // const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0); // No usado aquí
               // const restante = calcularTotal() - totalPagos; // No usado aquí
-              
+
               return (
                 <Card key={index} variant="outlined" sx={{ mb: 1.5, borderRadius: 2 }}>
                   <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
@@ -1368,7 +1385,7 @@ export default function AdminSales() {
                             ))}
                           </Select>
                         </FormControl>
-                        
+
                         {/* Campo de monto - Grande y visible con botón de auto-completar */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="body2" color="text.secondary" sx={{ minWidth: '50px' }}>
@@ -1400,7 +1417,7 @@ export default function AdminSales() {
                             $
                           </Typography>
                         </Box>
-                        
+
                         {/* Campo de referencia - Solo si es necesario */}
                         {metodo?.requiereReferencia && (
                           <TextField
@@ -1482,7 +1499,7 @@ export default function AdminSales() {
                   const totalVenta = calcularTotal();
                   const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
                   const restante = Math.max(0, totalVenta - totalPagos);
-                  
+
                   const nuevoPago: Pago = {
                     id: 0,
                     metodoPagoId: metodosPago[0]?.id || 0,
@@ -1525,7 +1542,7 @@ export default function AdminSales() {
                 const totalVenta = calcularTotal();
                 const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
                 const diferencia = totalPagos - totalVenta;
-                
+
                 if (diferencia < 0) {
                   return (
                     <Alert severity="warning" sx={{ mt: 1, backgroundColor: 'rgba(255,255,255,0.2)' }}>
@@ -1549,7 +1566,7 @@ export default function AdminSales() {
             </CardContent>
           </Card>
         </DialogContent>
-        
+
         <DialogActions sx={{ px: 3, pb: 2, gap: 2 }}>
           <Button
             onClick={handleCerrarDialogoEdicion}
@@ -1591,7 +1608,7 @@ export default function AdminSales() {
             {productoSeleccionadoParaVariante?.variantes?.map((variante: any, index: number) => (
               <div key={variante.id}>
                 <ListItem disablePadding>
-                  <ListItemButton 
+                  <ListItemButton
                     onClick={() => handleSeleccionarVariante(variante)}
                     sx={{ minHeight: '64px' }}
                   >
@@ -1629,7 +1646,7 @@ export default function AdminSales() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button 
+          <Button
             onClick={() => {
               setDialogoVariantes(false);
               setProductoSeleccionadoParaVariante(null);
