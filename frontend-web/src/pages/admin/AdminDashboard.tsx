@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -23,14 +23,12 @@ import {
   ArrowDownward,
   AttachMoney,
 } from '@mui/icons-material';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useDashboard } from '../../contexts/DashboardContext';
-
-// Lazy load charts to prevent circular dependencies with recharts
-const DashboardChartsModule = lazy(() => import('./charts/DashboardCharts'));
 
 interface DailyStats {
   fecha: string;
@@ -279,9 +277,37 @@ export default function AdminDashboard() {
               <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
                 Distribución Financiera del Día
               </Typography>
-              <Suspense fallback={<CircularProgress />}>
-                <DashboardChartsModule.DashboardPieChart data={pieData} />
-              </Suspense>
+              <Box sx={{ flex: 1, minHeight: 350 }}>
+                {pieData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value: string) => <span style={{ fontSize: '14px' }}>{value}</span>}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                    <Typography color="text.secondary">No hay datos para mostrar</Typography>
+                  </Box>
+                )}
+              </Box>
             </CardContent>
           </Card>
         </Grid>
@@ -295,9 +321,17 @@ export default function AdminDashboard() {
               </Typography>
               {topProductos.length > 0 ? (
                 <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <Suspense fallback={<CircularProgress />}>
-                    <DashboardChartsModule.DashboardBarChart data={barData} />
-                  </Suspense>
+                  <Box sx={{ height: 200 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={barData} margin={{ top: 10, right: 20, left: 10, bottom: 40 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" angle={-35} textAnchor="end" tick={{ fontSize: 11 }} interval={0} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+                        <Bar dataKey="ingreso" fill="#1976d2" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </Box>
                   <List sx={{ flex: 1, overflow: 'auto' }}>
                     {topProductos.filter(p => p && p.nombre).map((producto, index) => (
                       <ListItem 
