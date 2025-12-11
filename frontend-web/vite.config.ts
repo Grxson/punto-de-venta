@@ -83,115 +83,51 @@ export default defineConfig({
     dedupe: ['react', 'react-dom'],
   },
   optimizeDeps: {
-    // Pre-bundlear dependencias críticas para evitar problemas en el navegador
-    // SOLO React y DOM que son ABSOLUTAMENTE críticos
+    // Solo React - es lo único que debe pre-bundlearse
     include: [
       'react',
       'react-dom',
     ],
-    // EXCLUIR librerías que tienen circular dependencies con React
-    // Estas se cargarán como chunks separados en runtime después de que React esté listo
+    // Excluir TODOS los demás para evitar circular dependencies
     exclude: [
       'recharts',
-      'react-query',
       '@tanstack/react-query',
+      'react-query',
       '@mui/material',
       '@mui/icons-material',
       '@emotion/react',
       '@emotion/styled',
       'react-hook-form',
       'react-router-dom',
+      'react-router',
     ],
-    // Forzar re-bundlear ciertos módulos que pueden causar problemas
-    esbuildOptions: {
-      define: {
-        global: 'globalThis',
-      },
-    },
   },
   // OPTIMIZACIÓN PASO 2.2: Vite Config mejorado para máximo splitting
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: false, // DESHABILITAR minificación completamente
-    // Confiar en gzip del servidor para compresión
-    // esbuild: {
-    //   drop: ['console', 'debugger'],
-    //   minifyIdentifiers: false,
-    //   minifySyntax: true,
-    //   minifyWhitespace: true,
-    // },
-    // Optimizar reportCompressedSize para builds más rápidos en dev
+    minify: 'terser',
     reportCompressedSize: false,
-    // Aumentar chunk size limit
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // CRÍTICO: Recharts Y react-query deben ir en chunks separados ANTES que framework
-          // Para evitar que se mezclen con React durante la inicialización
+          // Recharts en chunk separado - NO se pre-bundlea, se carga solo cuando se necesita
           if (id.includes('node_modules/recharts/')) {
             return 'recharts-vendor';
           }
           
+          // React-Query en su propio chunk
           if (id.includes('node_modules/@tanstack/react-query/') ||
               id.includes('node_modules/react-query/')) {
             return 'react-query-vendor';
           }
           
-          // CRÍTICO: React debe estar SOLO, sin mezcla
-          if (id.includes('node_modules/react/') ||
-              id.includes('node_modules/react-dom/')) {
-            return 'react-vendor';
-          }
-          
-          // Emotion y MUI ahora sin React
+          // MUI/Emotion juntos (no tienen issues si React ya está listo)
           if (id.includes('node_modules/@emotion/') ||
               id.includes('node_modules/@mui/')) {
             return 'ui-vendors';
-          }
-          
-          // Utilidades de manejo de datos/consultas
-          if (id.includes('node_modules/date-fns/')) {
-            return 'date-fns';
-          }
-          
-          // Routing y hooks
-          if (id.includes('node_modules/react-router-dom/') ||
-              id.includes('node_modules/react-router/')) {
-            return 'react-router';
-          }
-          
-          if (id.includes('node_modules/react-hook-form/')) {
-            return 'react-hook-form';
-          }
-          
-          // Rutas y features
-          if (id.includes('/pages/pos/')) {
-            return 'pos-pages';
-          }
-          if (id.includes('/pages/admin/')) {
-            return 'admin-pages';
-          }
-          if (id.includes('/pages/')) {
-            return 'pages';
-          }
-          
-          // Servicios y hooks compartidos
-          if (id.includes('/services/')) {
-            return 'services';
-          }
-          if (id.includes('/hooks/')) {
-            return 'hooks';
-          }
-          if (id.includes('/utils/') || id.includes('/helpers/')) {
-            return 'utils';
-          }
-          
-          // Componentes compartidos
-          if (id.includes('/components/')) {
-            return 'components';
           }
         },
         // Optimizar nombres de chunks
