@@ -90,7 +90,7 @@ public class VentaItem {
      * Precio extra del tamaño aplicado a este item
      */
     @PositiveOrZero(message = "El precio extra del tamaño debe ser positivo o cero")
-    @Column(name = "precio_extra_tamaño", nullable = false, precision = 12, scale = 2)
+    @Column(name = "precio_extra_tamano", nullable = false, precision = 12, scale = 2)
     @Builder.Default
     private BigDecimal precioExtraTamano = BigDecimal.ZERO;
 
