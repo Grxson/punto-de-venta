@@ -3,10 +3,10 @@ package com.puntodeventa.backend.dto;
 import java.math.BigDecimal;
 
 /**
- * DTO para ProductoVarianteTamaño
+ * DTO para ProductoVarianteTamano
  * Representa la relación entre un producto/variante y un tamaño disponible
  */
-public record ProductoVarianteTamañoDTO(
+public record ProductoVarianteTamanoDTO(
     Long id,
     Long productoId,
     String productoNombre,

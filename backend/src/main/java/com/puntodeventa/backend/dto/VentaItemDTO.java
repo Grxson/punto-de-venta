@@ -35,6 +35,6 @@ public record VentaItemDTO(
     // ============================================================
     Long tamañoId,
     String tamañoNombre,
-    BigDecimal precioExtraTamaño,
+    BigDecimal precioExtraTamano,
     List<VentaItemAtributoSeleccionadoDTO> atributosSeleccionados
 ) {}

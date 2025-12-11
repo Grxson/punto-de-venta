@@ -24,7 +24,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductoTamaño {
+public class ProductoTamano {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,5 +58,5 @@ public class ProductoTamaño {
     private LocalDateTime updatedAt;
     
     @OneToMany(mappedBy = "tamaño", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<ProductoVarianteTamaño> variantes;
+    private List<ProductoVarianteTamano> variantes;
 }

@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductoVarianteTamaño {
+public class ProductoVarianteTamano {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,7 +36,7 @@ public class ProductoVarianteTamaño {
     @NotNull(message = "El tamaño es obligatorio")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tamaño_id", nullable = false)
-    private ProductoTamaño tamaño;
+    private ProductoTamano tamaño;
     
     @Column(nullable = false)
     @Builder.Default

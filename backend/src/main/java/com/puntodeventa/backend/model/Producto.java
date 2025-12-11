@@ -96,10 +96,10 @@ public class Producto {
     // ============================================================
     
     /**
-     * Tamaños disponibles para este producto/variante
+     * Tamanos disponibles para este producto/variante
      */
     @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProductoVarianteTamaño> tamañosDisponibles;
+    private List<ProductoVarianteTamano> tamañosDisponibles;
     
     /**
      * Atributos disponibles para este producto/variante (ingredientes, salsas, etc.)
