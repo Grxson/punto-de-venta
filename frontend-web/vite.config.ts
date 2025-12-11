@@ -79,6 +79,27 @@ export default defineConfig({
     alias: {
       // Asegurar que sockjs-client funcione correctamente
     },
+    // Optimizar resolución de módulos para React/MUI
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    // Pre-bundlear dependencias críticas para evitar problemas en el navegador
+    include: [
+      'react',
+      'react-dom',
+      '@mui/material',
+      '@mui/icons-material',
+      '@emotion/react',
+      '@emotion/styled',
+      'react-hook-form',
+      'react-router-dom',
+    ],
+    // Forzar re-bundlear ciertos módulos que pueden causar problemas
+    esbuildOptions: {
+      define: {
+        global: 'globalThis',
+      },
+    },
   },
   // OPTIMIZACIÓN PASO 2.2: Vite Config mejorado para máximo splitting
   build: {
@@ -101,7 +122,23 @@ export default defineConfig({
         manualChunks(id) {
           // Estrategia de splitting más agresiva
           
-          // Vendor libraries
+          // React debe estar ANTES de MUI para evitar duplicación
+          if (id.includes('node_modules/react/') && !id.includes('node_modules/@')) {
+            return 'react-vendor';
+          }
+          if (id.includes('node_modules/react-dom/')) {
+            return 'react-vendor';
+          }
+          if (id.includes('node_modules/react-router-dom/')) {
+            return 'react-vendor';
+          }
+          
+          // Emotion (dependencia de MUI)
+          if (id.includes('node_modules/@emotion/')) {
+            return 'emotion';
+          }
+          
+          // Vendor libraries - DESPUÉS de React
           if (id.includes('node_modules/@mui/')) {
             return 'mui-chunk';
           }
@@ -113,10 +150,6 @@ export default defineConfig({
           }
           if (id.includes('node_modules/@tanstack/')) {
             return 'react-query';
-          }
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom/') ||
-              id.includes('node_modules/react-router-dom/')) {
-            return 'react-vendor';
           }
           
           // Rutas y features

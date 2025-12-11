@@ -11,12 +11,12 @@ RUN apk add --no-cache python3 make g++
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies (usar --legacy-peer-deps para evitar conflictos de versiones)
-# Agregar --force para resolver conflictos de rollup en Alpine Linux
-RUN npm install --legacy-peer-deps --force
+# Install dependencies sin --force para evitar conflictos de React/MUI en bundling
+# El --legacy-peer-deps permite MUI v5 con React 18
+RUN npm install --legacy-peer-deps
 
 # Rebuild native modules para Linux Alpine (rollup, etc.)
-RUN npm rebuild --verbose
+RUN npm rebuild
 
 # Copy source code
 COPY . .
