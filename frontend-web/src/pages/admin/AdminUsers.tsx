@@ -290,3 +290,5 @@ export const AdminUsers = () => {
     </Container>
   );
 };
+
+export default AdminUsers;

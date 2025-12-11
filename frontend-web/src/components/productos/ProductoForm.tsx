@@ -32,6 +32,7 @@ import type { CategoriaSubcategoria } from '../../types/subcategorias.types';
 import { productosService } from '../../services/productos.service';
 import { categoriasService } from '../../services/categorias.service';
 import { subcategoriasService } from '../../services/subcategorias.service';
+import AtributosManager from './AtributosManager';
 
 interface ProductoFormProps {
   open: boolean;
@@ -61,6 +62,11 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
   const [variantesEliminadas, setVariantesEliminadas] = useState<number[]>([]);
   const [plantillaVariantes, setPlantillaVariantes] = useState<string>('');
   const [accordionExpanded, setAccordionExpanded] = useState(false);
+
+  // Ingredientes/Atributos
+  const [mostrarIngredientes, setMostrarIngredientes] = useState(false);
+  const [atributos, setAtributos] = useState<any[]>([]);
+  const [loadingAtributos, setLoadingAtributos] = useState(false);
 
   // Cargar categorías al abrir el diálogo
   useEffect(() => {
@@ -152,6 +158,8 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
     setVariantesEliminadas([]);
     setPlantillaVariantes('');
     setAccordionExpanded(false);
+    setAtributos([]);
+    setMostrarIngredientes(false);
     setError(null);
   };
 
@@ -636,6 +644,32 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
               </Box>
             </AccordionDetails>
           </Accordion>
+
+          {/* Sección de Ingredientes/Componentes */}
+          {producto && producto.id && (
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 'medium' }}>
+                  Ingredientes/Componentes {atributos.length > 0 && `(${atributos.length})`}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Gestiona los ingredientes o componentes disponibles para este producto. 
+                    Los clientes podrán seleccionar estas opciones al agregar el producto al carrito.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => setMostrarIngredientes(true)}
+                  >
+                    Gestionar Ingredientes/Componentes
+                  </Button>
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+          )}
         </Box>
       </DialogContent>
       <DialogActions>
@@ -651,6 +685,34 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
           {producto ? 'Actualizar' : 'Crear'}
         </Button>
       </DialogActions>
+
+      {/* Dialog para gestionar ingredientes/componentes */}
+      {producto && producto.id && (
+        <Dialog
+          open={mostrarIngredientes}
+          onClose={() => setMostrarIngredientes(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            Gestión de Ingredientes/Componentes - {producto.nombre}
+          </DialogTitle>
+          <DialogContent>
+            <AtributosManager
+              productoId={producto.id}
+              productoNombre={producto.nombre}
+              onUpdate={() => {
+                setMostrarIngredientes(false);
+              }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setMostrarIngredientes(false)}>
+              Cerrar
+            </Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Dialog>
   );
 }

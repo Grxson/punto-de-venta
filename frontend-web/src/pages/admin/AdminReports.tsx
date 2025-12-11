@@ -38,8 +38,10 @@ import { API_ENDPOINTS } from '../../config/api.config';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
 import type { DateRangeValue } from '../../types/dateRange.types';
 import { getTodayLocalDate, getDateWithOffset } from '../../utils/dateHelper';
+import { limpiarNombreProducto, truncarTexto } from '../../utils/stringFormatters';
 import type { ResumenVentas, ProductoRendimiento, VentaDetalle, GastoDetallado } from './types/reportTypes';
 import { GeneralCutTab } from './components';
+import { InventarioMovimientoTab } from './tabs/InventarioMovimientoTab';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -122,7 +124,7 @@ export default function AdminReports() {
       if (productosResponse.success && productosResponse.data) {
         const productos = productosResponse.data.map((p: any) => ({
           productoId: p.productoId,
-          nombre: p.nombre,
+          nombre: limpiarNombreProducto(p.nombre),
           precio: parseFloat(p.precio) || 0,
           costoEstimado: parseFloat(p.costoEstimado) || 0,
           margenUnitario: parseFloat(p.margenUnitario) || 0,
@@ -205,12 +207,15 @@ export default function AdminReports() {
       ]
     : [];
 
-  const datosGraficaProductos = productosTop.slice(0, 5).map((p) => ({
-    name: p.nombre, // Nombre completo para tooltip
-    nameShort: p.nombre.length > 20 ? p.nombre.substring(0, 20) + '...' : p.nombre, // Nombre corto para eje X
-    ventas: p.unidadesVendidas,
-    ingresos: p.ingresoTotal,
-  }));
+  const datosGraficaProductos = productosTop.slice(0, 5).map((p) => {
+    const nombreLimpio = limpiarNombreProducto(p.nombre);
+    return {
+      name: nombreLimpio, // Nombre completo para tooltip
+      nameShort: truncarTexto(nombreLimpio, 20), // Nombre corto para eje X
+      ventas: p.unidadesVendidas,
+      ingresos: p.ingresoTotal,
+    };
+  });
 
   const datosGraficaPie = productosTop.slice(0, 6).map((p) => ({
     name: p.nombre.length > 20 ? p.nombre.substring(0, 20) + '...' : p.nombre,
@@ -298,6 +303,7 @@ export default function AdminReports() {
             <Tab label="📊 Dashboard General" />
             <Tab label="📋 Corte Por Producto" />
             <Tab label="📅 Corte General" />
+            <Tab label="📦 Movimiento de Inventario" />
           </Tabs>
         </Box>
 
@@ -584,7 +590,7 @@ export default function AdminReports() {
                           {productosMasVendidos.length > 0 ? (
                             productosMasVendidos.map((producto) => (
                               <TableRow key={producto.productoId}>
-                                <TableCell>{producto.nombre}</TableCell>
+                                <TableCell>{limpiarNombreProducto(producto.nombre)}</TableCell>
                                 <TableCell align="right">{producto.unidadesVendidas}</TableCell>
                                 <TableCell align="right">${producto.ingresoTotal.toFixed(2)}</TableCell>
                                 <TableCell align="right" sx={{ color: producto.margenBrutoTotal >= 0 ? 'success.main' : 'error.main' }}>
@@ -626,7 +632,7 @@ export default function AdminReports() {
                           {productosMenosVendidos.length > 0 ? (
                             productosMenosVendidos.map((producto) => (
                               <TableRow key={producto.productoId}>
-                                <TableCell>{producto.nombre}</TableCell>
+                                <TableCell>{limpiarNombreProducto(producto.nombre)}</TableCell>
                                 <TableCell align="right">{producto.unidadesVendidas}</TableCell>
                                 <TableCell align="right">${producto.ingresoTotal.toFixed(2)}</TableCell>
                                 <TableCell align="right" sx={{ color: producto.margenBrutoTotal >= 0 ? 'success.main' : 'error.main' }}>
@@ -793,10 +799,10 @@ export default function AdminReports() {
                               {(() => {
                                 const productosAgrupados = ventas.reduce((acc, venta) => {
                                   venta.items.forEach((item) => {
-                                    const key = item.productoNombre;
+                                    const key = limpiarNombreProducto(item.productoNombre);
                                     if (!acc[key]) {
                                       acc[key] = {
-                                        nombre: item.productoNombre,
+                                        nombre: key,
                                         cantidad: 0,
                                         total: 0,
                                         precioUnitario: item.precioUnitario,
@@ -841,6 +847,11 @@ export default function AdminReports() {
                 gastosDetallados={gastosDetallados}
                 dateRange={dateRange} 
               />
+            )}
+
+            {/* Tab 3: Movimiento de Inventario */}
+            {currentTab === 3 && (
+              <InventarioMovimientoTab dateRange={dateRange} />
             )}
           </>
         ) : (

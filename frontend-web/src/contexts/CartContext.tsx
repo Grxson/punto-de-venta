@@ -18,14 +18,16 @@ interface CartItem {
   cantidad: number;
   // Precio editado solo para esta venta (no persiste en BD)
   overridePrice?: number;
+  // ID único para diferenciar combinaciones con ingredientes
+  cartItemId?: string;
 }
 
 interface CartContextType {
   cart: CartItem[];
   addToCart: (producto: Producto) => void;
-  removeFromCart: (productoId: number) => void;
-  updateQuantity: (productoId: number, cantidad: number) => void;
-  updateItemPrice: (productoId: number, precio: number) => void;
+  removeFromCart: (productoId: number, cartItemId?: string) => void;
+  updateQuantity: (productoId: number, cantidad: number, cartItemId?: string) => void;
+  updateItemPrice: (productoId: number, precio: number, cartItemId?: string) => void;
   clearCart: () => void;
   total: number;
   itemCount: number;
@@ -55,55 +57,66 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (producto: Producto) => {
     setCart((prevCart) => {
-      const itemExistente = prevCart.find((item) => item.producto.id === producto.id);
+      // Usar cartItemId si existe (para productos con ingredientes), si no usar ID del producto
+      const cartItemId = (producto as any).cartItemId || String(producto.id);
+      const itemExistente = prevCart.find((item) => (item.cartItemId || String(item.producto.id)) === cartItemId);
+      
       if (itemExistente) {
         // Si el producto ya existe, muévelo al principio e incrementa cantidad
         const updatedCart = prevCart
-          .filter((item) => item.producto.id !== producto.id)
-          .map((item) =>
-            item.producto.id === producto.id
-              ? { ...item, cantidad: item.cantidad + 1 }
-              : item
-          );
+          .filter((item) => (item.cartItemId || String(item.producto.id)) !== cartItemId)
+          .map((item) => item);
+        
         // Crear el item actualizado y ponerlo al principio
         const updatedItem = {
           producto,
           cantidad: itemExistente.cantidad + 1,
           overridePrice: itemExistente.overridePrice,
+          cartItemId: (producto as any).cartItemId,
         };
-        return [updatedItem, ...updatedCart.filter((item) => item.producto.id !== producto.id)];
+        return [updatedItem, ...updatedCart];
       } else {
         // Nuevo producto: agregarlo al principio
-        return [{ producto, cantidad: 1 }, ...prevCart];
+        return [{ producto, cantidad: 1, cartItemId: (producto as any).cartItemId }, ...prevCart];
       }
     });
   };
 
-  const removeFromCart = (productoId: number) => {
-    setCart((prevCart) => prevCart.filter((item) => item.producto.id !== productoId));
+  const removeFromCart = (productoId: number, cartItemId?: string) => {
+    setCart((prevCart) => {
+      if (cartItemId) {
+        // Si hay cartItemId, usarlo para identificar el item
+        return prevCart.filter((item) => item.cartItemId !== cartItemId);
+      } else {
+        // Si no hay cartItemId, usar el ID del producto (para compatibilidad)
+        return prevCart.filter((item) => item.producto.id !== productoId);
+      }
+    });
   };
 
-  const updateQuantity = (productoId: number, cantidad: number) => {
+  const updateQuantity = (productoId: number, cantidad: number, cartItemId?: string) => {
     if (cantidad <= 0) {
-      removeFromCart(productoId);
+      removeFromCart(productoId, cartItemId);
       return;
     }
     setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.producto.id === productoId ? { ...item, cantidad } : item
-      )
+      prevCart.map((item) => {
+        const itemId = item.cartItemId || String(item.producto.id);
+        const targetId = cartItemId || String(productoId);
+        return itemId === targetId ? { ...item, cantidad } : item;
+      })
     );
   };
 
   // Actualiza el precio del ítem solo para esta venta
-  const updateItemPrice = (productoId: number, precio: number) => {
+  const updateItemPrice = (productoId: number, precio: number, cartItemId?: string) => {
     const normalized = Number.isFinite(precio) && precio >= 0 ? Number(precio) : undefined;
     setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.producto.id === productoId
-          ? { ...item, overridePrice: normalized }
-          : item
-      )
+      prevCart.map((item) => {
+        const itemId = item.cartItemId || String(item.producto.id);
+        const targetId = cartItemId || String(productoId);
+        return itemId === targetId ? { ...item, overridePrice: normalized } : item;
+      })
     );
   };
 

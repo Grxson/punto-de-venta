@@ -20,17 +20,17 @@ import {
   IconButton,
   Collapse,
   Badge,
-  Snackbar,
 } from '@mui/material';
 import { TextField } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Payment, ShoppingCart, ExpandMore, Add, Remove, Restaurant, LunchDining, Fastfood, BreakfastDining, CheckCircle, Refresh } from '@mui/icons-material';
+import { Payment, ShoppingCart, ExpandMore, Add, Remove, Restaurant, CheckCircle, Refresh } from '@mui/icons-material';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useCart } from '../../contexts/CartContext';
 import { websocketService } from '../../services/websocket.service';
 import { userPreferencesService } from '../../services/userPreferences.service';
 import { useSubcategorias } from '../../hooks/useSubcategorias';
+import { limpiarNombreVariante } from '../../utils/stringFormatters';
 import type { CategoriaSubcategoria } from '../../types/subcategorias.types';
 
 interface Producto {
@@ -40,6 +40,7 @@ interface Producto {
   categoriaId: number | null;
   categoriaNombre: string | null;
   activo: boolean;
+  disponibleEnMenu?: boolean;
   productoBaseId?: number | null;
   nombreVariante?: string | null;
   ordenVariante?: number | null;
@@ -68,6 +69,11 @@ export default function PosHome() {
   const [ventaExitosa, setVentaExitosa] = useState(false);
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
+  const [tamañoSeleccionado, setTamañoSeleccionado] = useState<{ id?: number; precio?: number; nombreVariante?: string; nombre: string } | null>(null);
+  const [pasoModal, setpasoModal] = useState<'tamaños' | 'ingredientes'>('tamaños');
+  const [ingredientesSeleccionados, setIngredientesSeleccionados] = useState<Set<number>>(new Set());
+  const [atributosProducto, setAtributosProducto] = useState<Array<{ id?: number; nombre?: string; requerido?: boolean; opciones?: Array<{ id: number; nombre: string; precioExtra?: number }> }>>([]); // Atributos cargados del producto
+  const [loadingAtributos, setLoadingAtributos] = useState(false);
   const [carritoExpandido, setCarritoExpandido] = useState(true);
   // Estado local para edición inline de precio por item del carrito
   const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
@@ -79,7 +85,7 @@ export default function PosHome() {
   const { data: subcategoriasData, isLoading: loadingSubcategorias } = useSubcategorias(
     categoriaSeleccionada || null
   );
-  
+
   const subcategorias: CategoriaSubcategoria[] = Array.isArray(subcategoriasData?.data)
     ? subcategoriasData.data
     : [];
@@ -107,20 +113,20 @@ export default function PosHome() {
     }
 
     const ventaExitosaState = location.state?.ventaExitosa || localStorage.getItem('ventaExitosa') === 'true';
-    
+
     if (ventaExitosaState) {
       mostrarMensajeRef.current = true;
-      
+
       // Limpiar INMEDIATAMENTE
       localStorage.removeItem('ventaExitosa');
       if (location.state?.ventaExitosa) {
         window.history.replaceState({}, document.title);
       }
-      
+
       // Mostrar el mensaje
       setVentaExitosa(true);
     }
-  }, []);
+  }, [location.state]);
 
   // Segundo useEffect para manejar el temporizador de ocultamiento
   useEffect(() => {
@@ -147,7 +153,7 @@ export default function PosHome() {
     const initializeData = async () => {
       await loadData();
     };
-    
+
     initializeData();
 
     // Conectar WebSocket para actualizaciones en tiempo real
@@ -157,7 +163,7 @@ export default function PosHome() {
     const unsubscribe = websocketService.on('productos', (message) => {
       if (message.tipo === 'PRODUCTO_CREADO' || message.tipo === 'PRODUCTO_ACTUALIZADO') {
         // Recargar productos cuando hay cambios
-    loadData();
+        loadData();
       }
     });
 
@@ -166,16 +172,12 @@ export default function PosHome() {
     };
   }, []);
 
-  // Determinar si la categoría seleccionada es "Desayunos" (debe estar antes de los useEffect que lo usan)
-  const categoriaDesayunos = categorias.find(c => c.nombre === 'Desayunos');
-  const esCategoriaDesayunos = categoriaSeleccionada === categoriaDesayunos?.id;
-
   // Guardar la categoría seleccionada cuando cambia
   useEffect(() => {
     // Solo guardar si las categorías ya están cargadas
     if (categorias.length > 0) {
       userPreferencesService.setPosSelectedCategory(categoriaSeleccionada);
-      
+
       // Resetear subcategoría cuando cambia la categoría principal
       setSubcategoriaSeleccionada(null);
       userPreferencesService.setPosSubcategoryId(null);
@@ -199,7 +201,7 @@ export default function PosHome() {
       if (categoriasResponse.success && categoriasResponse.data) {
         const categoriasCargadas = categoriasResponse.data;
         setCategorias(categoriasCargadas);
-        
+
         // Siempre restaurar la categoría seleccionada guardada al cargar las categorías
         const categoriaGuardada = userPreferencesService.getPosSelectedCategory();
         if (categoriaGuardada !== null) {
@@ -208,7 +210,7 @@ export default function PosHome() {
           if (categoriaExiste) {
             // Restaurar la categoría (puede ser diferente a la inicializada si las categorías cambiaron)
             setCategoriaSeleccionada(categoriaGuardada);
-            
+
             // Restaurar la subcategoría guardada si existe
             const subcategoriaGuardada = userPreferencesService.getPosSubcategoryId();
             setSubcategoriaSeleccionada(subcategoriaGuardada);
@@ -224,20 +226,21 @@ export default function PosHome() {
 
       // Cargar productos desde inventario
       const productosResponse = await apiService.get(`${API_ENDPOINTS.PRODUCTS}?activo=true&disponibleEnMenu=true`);
-      
+
       if (productosResponse.success && productosResponse.data) {
         const productosActivos = productosResponse.data
-          .filter((p: any) => p.activo && p.disponibleEnMenu)
-          .map((p: any) => ({
+          .filter((p: Producto) => p.activo && p.disponibleEnMenu)
+          .map((p: Producto) => ({
             ...p,
-            precio: typeof p.precio === 'number' ? p.precio : parseFloat(p.precio) || 0,
+            precio: typeof p.precio === 'number' ? p.precio : parseFloat(p.precio as unknown as string) || 0,
           }));
         setProductos(productosActivos);
       } else {
         setError(productosResponse.error || 'Error al cargar productos');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error de conexión');
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Error de conexión');
     } finally {
       setLoading(false);
     }
@@ -248,95 +251,46 @@ export default function PosHome() {
     try {
       setRefreshing(true);
       setRefreshSuccess(false);
-      
+
       // Cargar productos desde inventario
       const productosResponse = await apiService.get(`${API_ENDPOINTS.PRODUCTS}?activo=true&disponibleEnMenu=true`);
-      
+
       if (productosResponse.success && productosResponse.data) {
         const productosActivos = productosResponse.data
-          .filter((p: any) => p.activo && p.disponibleEnMenu)
-          .map((p: any) => ({
+          .filter((p: Producto) => p.activo && p.disponibleEnMenu)
+          .map((p: Producto) => ({
             ...p,
-            precio: typeof p.precio === 'number' ? p.precio : parseFloat(p.precio) || 0,
+            precio: typeof p.precio === 'number' ? p.precio : parseFloat(p.precio as unknown as string) || 0,
           }));
         setProductos(productosActivos);
         setRefreshSuccess(true);
-        
+
         // Mostrar mensaje de éxito durante 3 segundos
         setTimeout(() => setRefreshSuccess(false), 3000);
       } else {
         setError(productosResponse.error || 'Error al actualizar productos');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al actualizar el menú');
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message || 'Error al actualizar el menú');
     } finally {
       setRefreshing(false);
     }
   };
 
   // Función para determinar la subcategoría de un producto de desayunos
-  const obtenerSubcategoriaDesayuno = (nombreProducto: string): string => {
-    const nombreLower = nombreProducto.toLowerCase();
-    
-    // Primero, intentar extraer subcategoría del prefijo [SUBCATEGORIA]
-    const prefixMatch = nombreProducto.match(/^\[([^\]]+)\]/);
-    if (prefixMatch) {
-      const subcatDelPrefijo = prefixMatch[1].toUpperCase();
-      // Normalizar a los valores válidos (en mayúsculas)
-      if (['DULCES', 'LONCHES', 'SANDWICHES', 'OTROS'].includes(subcatDelPrefijo)) {
-        return subcatDelPrefijo.toLowerCase();
-      }
-    }
-    
-    // Si no hay prefijo, usar detección por palabras clave
-    // Dulces: molletes, waffles, mini hot cakes
-    if (nombreLower.includes('mollete') || nombreLower.includes('waffle') || nombreLower.includes('hot cake')) {
-      return 'dulces';
-    }
-    if (nombreLower.includes('lonche') && !nombreLower.includes('sandwich')) return 'lonches';
-    if (nombreLower.includes('sandwich')) return 'sandwiches';
-    return 'otros';
-  };
-
   // Función para obtener el nombre limpio del producto (sin prefijo de subcategoría)
   const obtenerNombreLimpio = (nombreProducto: string): string => {
     // Remover el prefijo [SUBCATEGORIA] si existe
     return nombreProducto.replace(/^\[[^\]]+\]\s*/, '').trim();
   };
 
-  // Función para obtener el tipo específico de producto en "Licuados y Chocomiles"
-  const obtenerTipoProducto = (producto: Producto): string => {
-    // Si no es de la categoría "Licuados y Chocomiles", retornar el nombre de la categoría normal
-    if (producto.categoriaNombre !== 'Licuados y Chocomiles') {
-      return producto.categoriaNombre || 'Sin categoría';
-    }
-    
-    // Si es de "Licuados y Chocomiles", determinar si es "Licuado" o "Chocomilk"
-    const nombreLower = producto.nombre.toLowerCase();
-    
-    // Lista de nombres de licuados (sin prefijo "Licuado de")
-    const licuados = ['fresa', 'plátano', 'platano', 'manzana', 'papaya', 'frutas', 'cereales'];
-    
-    // Si el nombre contiene "chocomilk", es un chocomilk
-    if (nombreLower.includes('chocomilk')) {
-      return 'Chocomilk';
-    }
-    
-    // Si el nombre está en la lista de licuados, es un licuado
-    if (licuados.some(licuado => nombreLower === licuado || nombreLower.includes(licuado))) {
-      return 'Licuado';
-    }
-    
-    // Por defecto, retornar el nombre de la categoría
-    return producto.categoriaNombre || 'Sin categoría';
-  };
-
   // Función para obtener la subcategoría de un producto basada en su nombre
   const obtenerSubcategoriaDeProducto = (nombreProducto: string, subcategoriasDisponibles: CategoriaSubcategoria[]): number | null => {
     if (!nombreProducto || subcategoriasDisponibles.length === 0) return null;
-    
+
     const nombreLower = nombreProducto.toLowerCase();
-    
+
     // Primero, intentar extraer subcategoría del prefijo [SUBCATEGORIA]
     const prefixMatch = nombreProducto.match(/^\[([^\]]+)\]/);
     if (prefixMatch) {
@@ -349,7 +303,7 @@ export default function PosHome() {
         return subcatEncontrada.id || null;
       }
     }
-    
+
     // Si no hay prefijo, usar detección por palabras clave
     for (const subcat of subcategoriasDisponibles) {
       const subcatNameLower = subcat.nombre.toLowerCase();
@@ -357,7 +311,7 @@ export default function PosHome() {
         return subcat.id || null;
       }
     }
-    
+
     return null;
   };
 
@@ -385,10 +339,33 @@ export default function PosHome() {
     }
   };
 
-  const handleSeleccionarVariante = (variante: Producto) => {
-    addToCart(variante);
-    setDialogoVariantes(false);
-    setProductoSeleccionado(null);
+  const handleSeleccionarVariante = async (variante: Producto) => {
+    setTamañoSeleccionado(variante);
+    setIngredientesSeleccionados(new Set());
+
+    // Cargar atributos del producto
+    try {
+      setLoadingAtributos(true);
+      const response = await apiService.get(`/v1/productos/${variante.id}/atributos`);
+
+      if (response.success && Array.isArray(response.data)) {
+        setAtributosProducto(response.data);
+        // Si tiene atributos, ir al paso de ingredientes
+        // Si no tiene, agregar directamente al carrito
+        if (response.data.length > 0) {
+          setpasoModal('ingredientes');
+        } else {
+          // Sin atributos, agregar directamente
+          handleAgregarSinIngredientes(variante);
+        }
+      }
+    } catch (err) {
+      console.error('Error cargando atributos:', err);
+      // Si hay error, intentar agregar sin atributos
+      handleAgregarSinIngredientes(variante);
+    } finally {
+      setLoadingAtributos(false);
+    }
   };
 
   const handleAgregarProductoBase = () => {
@@ -399,9 +376,125 @@ export default function PosHome() {
     }
   };
 
+  const handleAgregarSinIngredientes = (variante: Producto) => {
+    // Agregar el tamaño seleccionado sin ingredientes
+    // Limpiar nombreVariante removiendo guiones y espacios al inicio/final
+    const nombreVariante = (variante.nombreVariante || variante.nombre)
+      .trim()
+      .replace(/^[\s-]+|[\s-]+$/g, ''); // Remover - y espacios al inicio y final
+
+    const nombreCompleto = `${productoSeleccionado?.nombre} - ${nombreVariante}`.trim();
+
+    const productoFinal: Producto = {
+      ...variante,
+      id: variante.id || 0,
+      categoriaId: variante.categoriaId || null,
+      categoriaNombre: variante.categoriaNombre || null,
+      activo: true,
+      nombre: nombreCompleto,
+    };
+
+    addToCart(productoFinal);
+
+    // Cerrar modal y limpiar estados
+    setDialogoVariantes(false);
+    setProductoSeleccionado(null);
+    setTamañoSeleccionado(null);
+    setIngredientesSeleccionados(new Set());
+    setAtributosProducto([]);
+    setpasoModal('tamaños');
+  };
+
+  const handleAgregarConIngredientes = () => {
+    if (tamañoSeleccionado) {
+      // Crear mapeo dinámico de ingredientes desde los atributos cargados
+      const ingredientesMap: { [key: number]: { nombre: string; precio: number } } = {};
+
+      atributosProducto.forEach((atributo: { opciones?: Array<{ id: number; nombre: string; precioExtra?: number }> }) => {
+        atributo.opciones?.forEach((opcion: { id: number; nombre: string; precioExtra?: number }) => {
+          ingredientesMap[opcion.id] = {
+            nombre: opcion.nombre,
+            precio: opcion.precioExtra || 0,
+          };
+        });
+      });
+
+      // Crear nombre con ingredientes
+      const ingredientesNombres = Array.from(ingredientesSeleccionados)
+        .map((id: number) => ingredientesMap[id]?.nombre || '')
+        .filter((n: string) => Boolean(n))
+        .join(',');
+
+      // Limpiar nombreVariante removiendo guiones y espacios al inicio/final
+      const nombreVariante = (tamañoSeleccionado?.nombreVariante || tamañoSeleccionado?.nombre || '')
+        .trim()
+        .replace(/^[\s-]+|[\s-]+$/g, ''); // Remover - y espacios al inicio y final
+
+      const nombreCompleto = ingredientesNombres
+        ? `${productoSeleccionado?.nombre} C/${ingredientesNombres} - ${nombreVariante}`
+        : `${productoSeleccionado?.nombre} - ${nombreVariante}`;
+
+      // Calcular precio total (tamaño + ingredientes)
+      const precioIngredientes = Array.from(ingredientesSeleccionados)
+        .reduce((suma, id) => suma + (ingredientesMap[id]?.precio || 0), 0);
+
+      const precioTotal = (tamañoSeleccionado.precio || 0) + precioIngredientes;
+
+      // Crear objeto con ingredientes seleccionados
+      const productoConIngredientes: Producto = {
+        ...tamañoSeleccionado,
+        id: tamañoSeleccionado?.id || 0,
+        categoriaId: productoSeleccionado?.categoriaId || null,
+        categoriaNombre: productoSeleccionado?.categoriaNombre || null,
+        activo: true,
+        nombre: nombreCompleto,
+        precio: precioTotal,
+      };
+      addToCart(productoConIngredientes);
+
+      // Cerrar modal y limpiar estados
+      setDialogoVariantes(false);
+      setProductoSeleccionado(null);
+      setTamañoSeleccionado(null);
+      setIngredientesSeleccionados(new Set());
+      setAtributosProducto([]);
+      setpasoModal('tamaños');
+    }
+  };
+
+  // Helper para calcular precio total en el paso 2
+  const calcularPrecioTotal = (): number => {
+    // Crear mapeo dinámico desde atributos cargados
+    const ingredientesMap: { [key: number]: { nombre: string; precio: number } } = {};
+
+    atributosProducto.forEach((atributo: { opciones?: Array<{ id: number; nombre: string; precioExtra?: number }> }) => {
+      atributo.opciones?.forEach((opcion: { id: number; nombre: string; precioExtra?: number }) => {
+        ingredientesMap[opcion.id] = {
+          nombre: opcion.nombre,
+          precio: opcion.precioExtra || 0,
+        };
+      });
+    });
+
+    const precioIngredientes = Array.from(ingredientesSeleccionados)
+      .reduce((suma, id) => suma + (ingredientesMap[id]?.precio || 0), 0);
+
+    return (tamañoSeleccionado?.precio || 0) + precioIngredientes;
+  };
+
+  const toggleIngrediente = (ingredienteId: number) => {
+    const nuevos = new Set(ingredientesSeleccionados);
+    if (nuevos.has(ingredienteId)) {
+      nuevos.delete(ingredienteId);
+    } else {
+      nuevos.add(ingredienteId);
+    }
+    setIngredientesSeleccionados(nuevos);
+  };
+
   const handleCarritoClick = () => {
     // Ir directamente a pago desde el carrito flotante
-      navigate('/pos/payment');
+    navigate('/pos/payment');
   };
 
   const handleCerrarVentaExitosa = () => {
@@ -502,31 +595,31 @@ export default function PosHome() {
       {/* Filtros por categoría */}
       <Box sx={{ mb: 3 }}>
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: subcategorias.length > 0 ? 2 : 0 }}>
-        <Button
-          variant={categoriaSeleccionada === null ? 'contained' : 'outlined'}
+          <Button
+            variant={categoriaSeleccionada === null ? 'contained' : 'outlined'}
             onClick={() => {
               setCategoriaSeleccionada(null);
               setSubcategoriaSeleccionada(null);
             }}
-          sx={{ minHeight: '48px' }}
-        >
-          Todas
-        </Button>
-        {categorias.map(cat => (
-          <Button
-            key={cat.id}
-            variant={categoriaSeleccionada === cat.id ? 'contained' : 'outlined'}
+            sx={{ minHeight: '48px' }}
+          >
+            Todas
+          </Button>
+          {categorias.map(cat => (
+            <Button
+              key={cat.id}
+              variant={categoriaSeleccionada === cat.id ? 'contained' : 'outlined'}
               onClick={() => {
                 setCategoriaSeleccionada(cat.id);
                 if (cat.nombre !== 'Desayunos') {
                   setSubcategoriaSeleccionada(null);
                 }
               }}
-            sx={{ minHeight: '48px' }}
-          >
-            {cat.nombre}
-          </Button>
-        ))}
+              sx={{ minHeight: '48px' }}
+            >
+              {cat.nombre}
+            </Button>
+          ))}
         </Box>
 
         {/* Subcategorías de la categoría seleccionada */}
@@ -537,7 +630,7 @@ export default function PosHome() {
               variant={subcategoriaSeleccionada === null ? 'contained' : 'outlined'}
               onClick={() => setSubcategoriaSeleccionada(null)}
               size="small"
-              sx={{ 
+              sx={{
                 minHeight: '36px',
                 textTransform: 'none',
               }}
@@ -545,7 +638,7 @@ export default function PosHome() {
             >
               TODAS
             </Button>
-            
+
             {/* Botones para cada subcategoría */}
             {loadingSubcategorias ? (
               <CircularProgress size={24} />
@@ -556,7 +649,7 @@ export default function PosHome() {
                   variant={subcategoriaSeleccionada === subcat.id ? 'contained' : 'outlined'}
                   onClick={() => setSubcategoriaSeleccionada(subcat.id)}
                   size="small"
-                  sx={{ 
+                  sx={{
                     minHeight: '36px',
                     textTransform: 'none',
                   }}
@@ -602,7 +695,7 @@ export default function PosHome() {
             onClick={() => handleProductoClick(producto)}
           >
             <CardContent sx={{ flexGrow: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <Typography variant="h6" component="div" sx={{ 
+              <Typography variant="h6" component="div" sx={{
                 fontWeight: 600,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -657,8 +750,8 @@ export default function PosHome() {
         >
           {/* Botón minimizado */}
           {!carritoExpandido && (
-            <Badge 
-              badgeContent={itemCount} 
+            <Badge
+              badgeContent={itemCount}
               color="error"
               sx={{
                 '& .MuiBadge-badge': {
@@ -680,7 +773,7 @@ export default function PosHome() {
                 onClick={() => setCarritoExpandido(true)}
                 sx={{
                   backgroundColor: 'primary.main',
-            color: 'white',
+                  color: 'white',
                   width: 64,
                   height: 64,
                   boxShadow: 6,
@@ -709,8 +802,8 @@ export default function PosHome() {
                 boxShadow: 12,
                 display: 'flex',
                 flexDirection: 'column',
-          }}
-        >
+              }}
+            >
               <CardContent sx={{ flex: 1, overflow: 'auto', pb: 1 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
@@ -724,7 +817,7 @@ export default function PosHome() {
                     <ExpandMore />
                   </IconButton>
                 </Box>
-                
+
                 {/* Lista de items del carrito */}
                 <List sx={{ mb: 2, maxHeight: '300px', overflow: 'auto' }}>
                   {cart.map((item, index) => (
@@ -741,7 +834,7 @@ export default function PosHome() {
                     >
                       <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
                         {item.producto.nombreVariante
-                          ? `${obtenerNombreLimpio(obtenerNombreBase(item.producto))} - ${item.producto.nombreVariante}`
+                          ? `${obtenerNombreLimpio(obtenerNombreBase(item.producto))} - ${limpiarNombreVariante(item.producto.nombreVariante)}`
                           : obtenerNombreLimpio(item.producto.nombre)}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between' }}>
@@ -751,12 +844,12 @@ export default function PosHome() {
                             onClick={(e) => {
                               e.stopPropagation();
                               if (item.cantidad > 1) {
-                                updateQuantity(item.producto.id, item.cantidad - 1);
+                                updateQuantity(item.producto.id, item.cantidad - 1, item.cartItemId);
                               } else {
-                                removeFromCart(item.producto.id);
+                                removeFromCart(item.producto.id, item.cartItemId);
                               }
                             }}
-                            sx={{ 
+                            sx={{
                               color: 'white',
                               backgroundColor: 'rgba(255, 255, 255, 0.2)',
                               width: 28,
@@ -775,9 +868,9 @@ export default function PosHome() {
                             size="small"
                             onClick={(e) => {
                               e.stopPropagation();
-                              updateQuantity(item.producto.id, item.cantidad + 1);
+                              updateQuantity(item.producto.id, item.cantidad + 1, item.cartItemId);
                             }}
-                            sx={{ 
+                            sx={{
                               color: 'white',
                               backgroundColor: 'rgba(255, 255, 255, 0.2)',
                               width: 28,
@@ -803,7 +896,7 @@ export default function PosHome() {
                               // Dividir el total entre la cantidad para obtener el precio unitario
                               const unitPrice = item.cantidad > 0 ? totalVal / item.cantidad : totalVal;
                               if (!isNaN(unitPrice) && unitPrice >= 0) {
-                                updateItemPrice(item.producto.id, unitPrice);
+                                updateItemPrice(item.producto.id, unitPrice, item.cartItemId);
                               }
                               setEditingPriceId(null);
                             }}
@@ -812,14 +905,14 @@ export default function PosHome() {
                                 const totalVal = parseFloat(editingPriceValue);
                                 const unitPrice = item.cantidad > 0 ? totalVal / item.cantidad : totalVal;
                                 if (!isNaN(unitPrice) && unitPrice >= 0) {
-                                  updateItemPrice(item.producto.id, unitPrice);
+                                  updateItemPrice(item.producto.id, unitPrice, item.cartItemId);
                                 }
                                 setEditingPriceId(null);
                               } else if (e.key === 'Escape') {
                                 setEditingPriceId(null);
                               }
                             }}
-                            inputProps={{min: '0' }}
+                            inputProps={{ min: '0' }}
                             sx={{ width: 100, '& input': { textAlign: 'right' } }}
                           />
                         ) : (
@@ -856,24 +949,24 @@ export default function PosHome() {
                     </ListItem>
                   ))}
                 </List>
-                
+
                 <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0)', my: 2 }} />
-                
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                   <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
                     Total:
-          </Typography>
+                  </Typography>
                   <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
                     ${total.toFixed(2)}
-          </Typography>
+                  </Typography>
                 </Box>
-                
-          <Button
-            variant="contained"
-            color="secondary"
-            fullWidth
-            onClick={handleCarritoClick}
-                  sx={{ 
+
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  fullWidth
+                  onClick={handleCarritoClick}
+                  sx={{
                     minHeight: '48px',
                     fontWeight: 'bold',
                     textTransform: 'none',
@@ -883,87 +976,210 @@ export default function PosHome() {
                     },
                   }}
                   startIcon={<Payment />}
-          >
+                >
                   Ir a Pagar
-          </Button>
+                </Button>
               </CardContent>
             </Card>
           </Collapse>
         </Box>
       )}
 
-      {/* Diálogo para seleccionar variantes */}
+      {/* Diálogo para seleccionar variantes y ingredientes - MULTI PASO */}
       <Dialog
         open={dialogoVariantes}
         onClose={() => {
           setDialogoVariantes(false);
           setProductoSeleccionado(null);
+          setTamañoSeleccionado(null);
+          setIngredientesSeleccionados(new Set());
+          setAtributosProducto([]);
+          setpasoModal('tamaños');
         }}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>
-          Seleccionar {productoSeleccionado?.nombre}
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Este producto tiene diferentes tamaños/presentaciones disponibles. Selecciona una opción:
-          </Typography>
-          <List>
-            {productoSeleccionado?.variantes?.map((variante, index) => (
-              <div key={variante.id}>
-                <ListItem disablePadding>
-                  <ListItemButton onClick={() => handleSeleccionarVariante(variante)}>
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography variant="h6">
-                            {variante.nombreVariante || variante.nombre}
-                          </Typography>
-                          <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-                            ${variante.precio.toFixed(2)}
-                          </Typography>
-                        </Box>
-                      }
-                      secondary={variante.nombreVariante || variante.nombre}
-                    />
-                  </ListItemButton>
-                </ListItem>
-                {index < (productoSeleccionado?.variantes?.length || 0) - 1 && <Divider />}
-              </div>
-            ))}
-          </List>
-          {productoSeleccionado && productoSeleccionado.precio > 0 && (
-            <>
-              <Divider sx={{ my: 2 }} />
+        {/* PASO 1: Seleccionar tamaño */}
+        {pasoModal === 'tamaños' && (
+          <>
+            <DialogTitle>
+              Seleccionar tamaño - {productoSeleccionado?.nombre}
+            </DialogTitle>
+            <DialogContent>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Este producto tiene diferentes tamaños disponibles. Selecciona el tamaño que deseas:
+              </Typography>
+              <List>
+                {productoSeleccionado?.variantes?.map((variante, index) => (
+                  <div key={variante.id}>
+                    <ListItem disablePadding>
+                      <ListItemButton onClick={() => handleSeleccionarVariante(variante)}>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="h6">
+                                {variante.nombreVariante || variante.nombre}
+                              </Typography>
+                              <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+                                ${variante.precio.toFixed(2)}
+                              </Typography>
+                            </Box>
+                          }
+                          secondary={variante.nombreVariante || variante.nombre}
+                        />
+                      </ListItemButton>
+                    </ListItem>
+                    {index < (productoSeleccionado?.variantes?.length || 0) - 1 && <Divider />}
+                  </div>
+                ))}
+              </List>
+              {productoSeleccionado && productoSeleccionado.precio > 0 && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={handleAgregarProductoBase}
+                    sx={{ minHeight: '48px' }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                      <Typography variant="body1">
+                        {productoSeleccionado.nombre} (Precio base)
+                      </Typography>
+                      <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+                        ${productoSeleccionado.precio.toFixed(2)}
+                      </Typography>
+                    </Box>
+                  </Button>
+                </>
+              )}
+            </DialogContent>
+            <DialogActions>
               <Button
-                fullWidth
-                variant="outlined"
-                onClick={handleAgregarProductoBase}
-                sx={{ minHeight: '48px' }}
+                onClick={() => {
+                  setDialogoVariantes(false);
+                  setProductoSeleccionado(null);
+                  setTamañoSeleccionado(null);
+                  setIngredientesSeleccionados(new Set());
+                  setpasoModal('tamaños');
+                }}
               >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                  <Typography variant="body1">
-                    {productoSeleccionado.nombre} (Precio base)
-                  </Typography>
-                  <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-                    ${productoSeleccionado.precio.toFixed(2)}
-                  </Typography>
-                </Box>
+                Cancelar
               </Button>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setDialogoVariantes(false);
-              setProductoSeleccionado(null);
-            }}
-          >
-            Cancelar
-          </Button>
-        </DialogActions>
+            </DialogActions>
+          </>
+        )}
+
+        {/* PASO 2: Seleccionar ingredientes/atributos */}
+        {pasoModal === 'ingredientes' && (
+          <>
+            <DialogTitle>
+              Complementos para {tamañoSeleccionado?.nombreVariante || tamañoSeleccionado?.nombre}
+            </DialogTitle>
+            <DialogContent>
+              {loadingAtributos ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                  <CircularProgress />
+                </Box>
+              ) : atributosProducto.length === 0 ? (
+                <Typography color="text.secondary">
+                  No hay complementos disponibles para este producto.
+                </Typography>
+              ) : (
+                <>
+                  {atributosProducto.map((atributo) => (
+                    <Box key={atributo.id} sx={{ mb: 3 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
+                        {atributo.nombre}
+                        {atributo.requerido && <span style={{ color: 'red' }}> *</span>}
+                      </Typography>
+
+                      <List sx={{ pl: 0 }}>
+                        {atributo.opciones?.map((opcion: { id: number; nombre: string; precioExtra?: number }, index: number) => (
+                          <div key={opcion.id}>
+                            <ListItem
+                              disablePadding
+                              sx={{
+                                backgroundColor: ingredientesSeleccionados.has(opcion.id)
+                                  ? 'rgba(25, 118, 210, 0.08)'
+                                  : 'transparent',
+                                borderRadius: '4px',
+                                mb: 0.5,
+                              }}
+                            >
+                              <ListItemButton
+                                onClick={() => toggleIngrediente(opcion.id)}
+                                sx={{
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                                  },
+                                }}
+                              >
+                                <ListItemText
+                                  primary={
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <Typography
+                                        variant="h6"
+                                        sx={{
+                                          color: ingredientesSeleccionados.has(opcion.id)
+                                            ? '#1976d2'
+                                            : 'inherit',
+                                          fontWeight: ingredientesSeleccionados.has(opcion.id)
+                                            ? 600
+                                            : 500,
+                                        }}
+                                      >
+                                        {opcion.nombre}
+                                      </Typography>
+                                      <Typography
+                                        variant="h6"
+                                        color="primary"
+                                        sx={{
+                                          fontWeight: 'bold',
+                                          color: ingredientesSeleccionados.has(opcion.id)
+                                            ? '#1976d2'
+                                            : '#1976d2',
+                                        }}
+                                      >
+                                        +${(opcion.precioExtra || 0).toFixed(2)}
+                                      </Typography>
+                                    </Box>
+                                  }
+                                  secondary={opcion.nombre}
+                                />
+                              </ListItemButton>
+                            </ListItem>
+                            {index !== undefined && index < (atributo.opciones?.length ?? 0) - 1 && <Divider sx={{ my: 0.5 }} />}
+                          </div>
+                        ))}
+                      </List>
+                    </Box>
+                  ))}
+                </>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={() => {
+                  setpasoModal('tamaños');
+                  setTamañoSeleccionado(null);
+                  setIngredientesSeleccionados(new Set());
+                  setAtributosProducto([]);
+                }}
+              >
+                Atrás
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleAgregarConIngredientes}
+                sx={{ minHeight: '44px' }}
+              >
+                Agregar al carrito - ${calcularPrecioTotal().toFixed(2)}
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     </Box>
   );

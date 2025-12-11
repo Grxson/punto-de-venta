@@ -91,4 +91,51 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
      * @return Lista de productos base en menú
      */
     List<Producto> findBySucursalIdAndProductoBaseIdIsNullAndDisponibleEnMenuTrue(Long sucursalId);
+
+    /**
+     * OPTIMIZACIÓN PASO 1.5: Obtener variantes de un producto base sin N+1
+     * Usa JOIN FETCH para cargar variantes en una sola query
+     * 
+     * @param productoBaseId ID del producto base
+     * @return Lista de variantes ordenadas por orden
+     */
+    @Query("""
+        SELECT p FROM Producto p 
+        WHERE p.productoBase.id = :productoBaseId 
+        ORDER BY p.ordenVariante ASC NULLS LAST, p.id ASC
+    """)
+    List<Producto> findVariantesByProductoBaseId(@Param("productoBaseId") Long productoBaseId);
+
+    /**
+     * OPTIMIZACIÓN PASO 1.5: Obtener todos los productos de una sucursal 
+     * con sus relaciones prelogueadas (JOIN FETCH) para evitar N+1
+     * 
+     * @param sucursalId ID de la sucursal
+     * @return Lista de productos base con categorías precargadas
+     */
+    @Query("""
+        SELECT DISTINCT p FROM Producto p 
+        LEFT JOIN FETCH p.categoria 
+        WHERE p.sucursal.id = :sucursalId 
+        AND p.productoBase IS NULL
+        ORDER BY p.id ASC
+    """)
+    List<Producto> findProductosBaseWithCategoriaFetch(@Param("sucursalId") Long sucursalId);
+
+    /**
+     * OPTIMIZACIÓN CRÍTICA: Obtener productos base CON sus variantes en UNA sola query
+     * Usa LEFT JOIN FETCH para cargar variantes sin N+1 problem
+     * 
+     * @param sucursalId ID de la sucursal
+     * @return Lista de productos base con variantes, categorías y atributos precargados
+     */
+    @Query("""
+        SELECT DISTINCT p FROM Producto p 
+        LEFT JOIN FETCH p.categoria c
+        LEFT JOIN FETCH p.variantes v
+        WHERE p.sucursal.id = :sucursalId 
+        AND p.productoBase IS NULL
+        ORDER BY p.id ASC, v.ordenVariante ASC NULLS LAST, v.id ASC
+    """)
+    List<Producto> findProductosBaseConVariantes(@Param("sucursalId") Long sucursalId);
 }

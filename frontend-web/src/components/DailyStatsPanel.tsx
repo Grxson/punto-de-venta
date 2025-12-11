@@ -41,23 +41,23 @@ export default function DailyStatsPanel() {
 
   useEffect(() => {
     loadStats();
-    
+
     // Escuchar eventos WebSocket para actualización inmediata
     const unsubscribeEstadisticas = websocketService.on('estadisticas', (message) => {
       if (message.tipo === 'ESTADISTICAS_ACTUALIZADAS') {
         loadStats(); // Actualizar inmediatamente
       }
     });
-    
+
     const unsubscribeVentas = websocketService.on('ventas', (message) => {
       if (message.tipo === 'VENTA_CREADA') {
         loadStats(); // Actualizar inmediatamente
       }
     });
-    
+
     // Actualizar cada 30 segundos como fallback
     const interval = setInterval(loadStats, 30000);
-    
+
     return () => {
       unsubscribeEstadisticas();
       unsubscribeVentas();
@@ -68,7 +68,7 @@ export default function DailyStatsPanel() {
   const loadStats = async () => {
     try {
       setError(null);
-      
+
       // Cargar estadísticas del día
       const response = await apiService.get(API_ENDPOINTS.STATS_DAILY);
       if (response.success && response.data) {
@@ -85,23 +85,32 @@ export default function DailyStatsPanel() {
           margenPorcentaje: parseFloat(data.margenPorcentaje) || 0,
         });
       }
-      
+
       // Cargar desglose de pagos por método
+      // Obtener la fecha local del usuario (no UTC)
       const hoy = new Date();
-      const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
-      const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
-      
+      const year = hoy.getFullYear();
+      const month = String(hoy.getMonth() + 1).padStart(2, '0');
+      const date = String(hoy.getDate()).padStart(2, '0');
+      const fechaHoy = `${year}-${month}-${date}`; // YYYY-MM-DD en zona horaria local
+
+      // Convertir a UTC para las queries
+      const inicioDia = new Date(year, hoy.getMonth(), hoy.getDate(), 0, 0, 0, 0);
+      const finDia = new Date(year, hoy.getMonth(), hoy.getDate(), 23, 59, 59, 999);
+      const inicioDiaISO = inicioDia.toISOString();
+      const finDiaISO = finDia.toISOString();
+
       const desgloseResponse = await apiService.get(
-        `${API_ENDPOINTS.SALES}/resumen/metodos-pago?desde=${inicioDia.toISOString()}&hasta=${finDia.toISOString()}`
+        `${API_ENDPOINTS.SALES}/resumen/metodos-pago?desde=${inicioDiaISO}&hasta=${finDiaISO}`
       );
-      
+
       if (desgloseResponse.success && desgloseResponse.data) {
         setDesglosePagos(desgloseResponse.data.map((item: any) => ({
           metodoPago: item.metodoPago,
           total: parseFloat(item.total) || 0,
         })));
       }
-      
+
       if (!response.success) {
         setError('Error al cargar estadísticas');
       }
@@ -208,7 +217,7 @@ export default function DailyStatsPanel() {
                       ${stats.totalVentas.toFixed(2)}
                     </Typography>
                   </Box>
-                  
+
                   {/* Desglose de métodos de pago */}
                   {desgloseOrdenado.length > 0 && (
                     <Box

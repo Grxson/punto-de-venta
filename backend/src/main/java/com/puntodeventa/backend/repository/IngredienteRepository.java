@@ -23,6 +23,7 @@ public interface IngredienteRepository extends JpaRepository<Ingrediente, Long> 
     @Query("SELECT DISTINCT i.categoria FROM Ingrediente i WHERE i.categoria IS NOT NULL ORDER BY i.categoria")
     List<String> findAllCategorias();
     
-    @Query("SELECT i FROM Ingrediente i WHERE i.activo = true AND i.stockMinimo IS NOT NULL")
+    // ✅ ARREGLO: Usar IS TRUE para PostgreSQL compatibility
+    @Query("SELECT i FROM Ingrediente i WHERE i.activo IS TRUE AND i.stockMinimo IS NOT NULL")
     List<Ingrediente> findIngredientesConStockMinimo();
 }

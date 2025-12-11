@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * DTO para items de venta.
@@ -27,5 +28,13 @@ public record VentaItemDTO(
     
     BigDecimal subtotal,
     BigDecimal costoEstimado,
-    String nota
+    String nota,
+    
+    // ============================================================
+    // Nuevos campos para variantes multi-paso
+    // ============================================================
+    Long tamañoId,
+    String tamañoNombre,
+    BigDecimal precioExtraTamaño,
+    List<VentaItemAtributoSeleccionadoDTO> atributosSeleccionados
 ) {}

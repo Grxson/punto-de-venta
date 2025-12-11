@@ -395,12 +395,16 @@ public class VentaService {
             .map(item -> new VentaItemDTO(
                 item.getId(),
                 item.getProducto().getId(),
-                item.getProducto().getNombre(),
+                item.getProductoNombre(),
                 item.getCantidad(),
                 item.getPrecioUnitario(),
                 item.getSubtotal(),
                 item.getCostoEstimado(),
-                item.getNota()
+                item.getNota(),
+                item.getTamaño() != null ? item.getTamaño().getId() : null,
+                item.getTamañoNombre(),
+                item.getPrecioExtraTamaño(),
+                null // atributosSeleccionados: cargar del servicio si es necesario
             ))
             .toList();
         

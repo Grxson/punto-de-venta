@@ -25,6 +25,7 @@ interface ProductosTableProps {
   onDelete: (producto: Producto) => void;
   onDeletePermanente?: (producto: Producto) => void;
   onView?: (producto: Producto) => void;
+  onViewAtributos?: (producto: Producto) => void;
   loadingView?: boolean;
 }
 
@@ -35,6 +36,7 @@ export default function ProductosTable({
   onDelete,
   onDeletePermanente,
   onView,
+  onViewAtributos,
   loadingView = false,
 }: ProductosTableProps) {
   const { usuario } = useAuth();
@@ -152,6 +154,28 @@ export default function ProductosTable({
                             <CircularProgress size={20} color="inherit" />
                           ) : (
                             <Settings fontSize="small" />
+                          )}
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {onViewAtributos && (
+                      <Tooltip title="Gestionar ingredientes/componentes">
+                        <IconButton
+                          size="medium"
+                          color="warning"
+                          onClick={() => onViewAtributos(producto)}
+                          disabled={loadingView}
+                          sx={{
+                            bgcolor: 'warning.light',
+                            '&:hover': { bgcolor: 'warning.main', color: 'white' },
+                            p: 1.5,
+                            ml: 1
+                          }}
+                        >
+                          {loadingView ? (
+                            <CircularProgress size={20} color="inherit" />
+                          ) : (
+                            <Visibility fontSize="small" />
                           )}
                         </IconButton>
                       </Tooltip>

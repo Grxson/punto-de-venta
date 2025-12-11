@@ -9,6 +9,7 @@ import com.puntodeventa.backend.repository.VentaItemRepository;
 import com.puntodeventa.backend.util.PopularityAlgorithm;
 import com.puntodeventa.backend.context.SucursalContext;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -179,5 +181,74 @@ public class MenuPopularidadService {
      */
     public MenuGrillaDTO obtenerDistribucionPorCategoria(int columnasGrid, int diasAnalizar) {
         return obtenerMenuOrdenado(columnasGrid, diasAnalizar, true);
+    }
+
+    /**
+     * OPTIMIZACIÓN PASO 1.6: Versión asincrónica del cálculo de menú.
+     * 
+     * Utiliza CompletableFuture y Virtual Threads (Java 21) para:
+     * - Obtener datos en paralelo
+     * - Calcular popularidad sin bloquear
+     * - Mejor experiencia de usuario
+     * 
+     * Ideal para operaciones que pueden tardar > 500ms
+     * 
+     * @param columnasGrid Número de columnas en la grilla
+     * @param diasAnalizar Número de días para calcular popularidad
+     * @param porCategoria Si se distribuye por categoría o todo junto
+     * @return CompletableFuture<MenuGrillaDTO> completado en background
+     */
+    @Async("asyncExecutor")
+    @Transactional(readOnly = true)
+    public CompletableFuture<MenuGrillaDTO> obtenerMenuOrdenadoAsync(
+            int columnasGrid, 
+            int diasAnalizar, 
+            boolean porCategoria) {
+        try {
+            MenuGrillaDTO resultado = obtenerMenuOrdenado(columnasGrid, diasAnalizar, porCategoria);
+            return CompletableFuture.completedFuture(resultado);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    /**
+     * OPTIMIZACIÓN PASO 1.6: Obtener top productos de forma asincrónica.
+     * 
+     * @param limite Número máximo de productos
+     * @param diasAnalizar Días para análisis
+     * @return CompletableFuture<List<ProductoPopularidadDTO>>
+     */
+    @Async("asyncExecutor")
+    @Transactional(readOnly = true)
+    public CompletableFuture<List<ProductoPopularidadDTO>> obtenerTopProductosAsync(
+            int limite, 
+            int diasAnalizar) {
+        try {
+            List<ProductoPopularidadDTO> resultado = obtenerTopProductos(limite, diasAnalizar);
+            return CompletableFuture.completedFuture(resultado);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    /**
+     * OPTIMIZACIÓN PASO 1.6: Obtener distribución en grilla de forma asincrónica.
+     * 
+     * @param columnasGrid Columnas en la grilla
+     * @param diasAnalizar Días para análisis
+     * @return CompletableFuture<MenuGrillaDTO>
+     */
+    @Async("fastAsyncExecutor")
+    @Transactional(readOnly = true)
+    public CompletableFuture<MenuGrillaDTO> obtenerDistribucionGrillaAsync(
+            int columnasGrid, 
+            int diasAnalizar) {
+        try {
+            MenuGrillaDTO resultado = obtenerDistribucionGrilla(columnasGrid, diasAnalizar);
+            return CompletableFuture.completedFuture(resultado);
+        } catch (Exception e) {
+            return CompletableFuture.failedFuture(e);
+        }
     }
 }

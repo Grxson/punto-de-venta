@@ -17,7 +17,9 @@ public record ProductoDTO(
         List<VarianteDTO> variantes,
         Long productoBaseId,
         String nombreVariante,
-        Integer ordenVariante
+        Integer ordenVariante,
+        List<ProductoVarianteTamañoDTO> tamaños,
+        List<ProductoAtributoDTO> atributos
 ) {
     /**
      * DTO para variantes de producto

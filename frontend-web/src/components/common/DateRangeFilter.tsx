@@ -33,8 +33,14 @@ interface DateRangeFilterProps {
 const getStartOfWeek = (date: Date): Date => {
   const d = new Date(date);
   const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Ajustar para que lunes sea el inicio
-  return new Date(d.setDate(diff));
+  // Calcular días a retroceder: lunes es 1, domingo es 0
+  // Si es lunes (1), retroceder 0 días; si es martes (2), retroceder 1; etc.
+  // Si es domingo (0), retroceder 6 días (para llegar al lunes anterior)
+  const daysToSubtract = day === 0 ? 6 : day - 1;
+  console.log(`getStartOfWeek: date=${d.toLocaleDateString('es-ES')}, day=${day}, daysToSubtract=${daysToSubtract}`);
+  d.setDate(d.getDate() - daysToSubtract);
+  console.log(`  -> resultado=${d.toLocaleDateString('es-ES')}`);
+  return d;
 };
 
 // Función para obtener el fin de la semana (domingo)
@@ -128,6 +134,7 @@ export default function DateRangeFilter({
       const range = presets[preset];
       setCustomRange(range);
       console.log('Preset seleccionado:', preset, range);
+      console.log('Desde:', new Date(range.desde), 'Hasta:', new Date(range.hasta));
       onChange(range);
     }
   };
