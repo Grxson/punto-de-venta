@@ -63,9 +63,9 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/src/assets/react.svg',
+            src: '/icon-192.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any',
           },
         ],
