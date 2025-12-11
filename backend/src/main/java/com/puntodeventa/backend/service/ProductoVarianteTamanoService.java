@@ -25,7 +25,7 @@ public class ProductoVarianteTamanoService {
 
     private final ProductoVarianteTamanoRepository varianteTamanoRepository;
     private final ProductoRepository productoRepository;
-    private final ProductoTamanoRepository tamañoRepository;
+    private final ProductoTamanoRepository tamanoRepository;
 
     /**
      * Obtiene todos los tamaños de una variante/producto
@@ -53,28 +53,28 @@ public class ProductoVarianteTamanoService {
      * Verifica si un producto tiene un tamaño específico
      */
     @Transactional(readOnly = true)
-    public boolean existeTamanoEnProducto(Long productoId, Long tamañoId) {
-        return varianteTamanoRepository.findByProductoIdAndTamanoId(productoId, tamañoId).isPresent();
+    public boolean existeTamanoEnProducto(Long productoId, Long tamanoId) {
+        return varianteTamanoRepository.findByProductoIdAndTamanoId(productoId, tamanoId).isPresent();
     }
 
     /**
      * Agrega un tamaño a un producto/variante
      */
-    public ProductoVarianteTamanoDTO agregarTamano(Long productoId, Long tamañoId, Integer orden) {
+    public ProductoVarianteTamanoDTO agregarTamano(Long productoId, Long tamanoId, Integer orden) {
         Producto producto = productoRepository.findById(productoId)
                 .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado: " + productoId));
 
-        ProductoTamano tamaño = tamañoRepository.findById(tamañoId)
-                .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + tamañoId));
+        ProductoTamano tamano = tamanoRepository.findById(tamanoId)
+                .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + tamanoId));
 
         // Verificar que no exista ya
-        if (varianteTamanoRepository.findByProductoIdAndTamanoId(productoId, tamañoId).isPresent()) {
+        if (varianteTamanoRepository.findByProductoIdAndTamanoId(productoId, tamanoId).isPresent()) {
             throw new IllegalArgumentException("Este producto ya tiene este tamaño asignado");
         }
 
         ProductoVarianteTamano varianteTamano = ProductoVarianteTamano.builder()
                 .producto(producto)
-                .tamano(tamaño)
+                .tamano(tamano)
                 .orden(orden != null ? orden : 0)
                 .build();
 
@@ -108,17 +108,17 @@ public class ProductoVarianteTamanoService {
      * Elimina todos los tamaños de un producto (usar con cuidado)
      */
     public void eliminarTodosPorProducto(Long productoId) {
-        List<ProductoVarianteTamano> tamañosProducto = varianteTamanoRepository.findByProductoId(productoId);
-        varianteTamanoRepository.deleteAll(tamañosProducto);
+        List<ProductoVarianteTamano> tamanosProducto = varianteTamanoRepository.findByProductoId(productoId);
+        varianteTamanoRepository.deleteAll(tamanosProducto);
     }
 
     /**
      * Obtiene todos los productos que usan un tamaño específico
      */
     @Transactional(readOnly = true)
-    public List<ProductoVarianteTamanoDTO> obtenerProductosPorTamano(Long tamañoId) {
-        verificarTamanoExiste(tamañoId);
-        return varianteTamanoRepository.findByTamanoId(tamañoId)
+    public List<ProductoVarianteTamanoDTO> obtenerProductosPorTamano(Long tamanoId) {
+        verificarTamanoExiste(tamanoId);
+        return varianteTamanoRepository.findByTamanoId(tamanoId)
                 .stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
@@ -144,9 +144,9 @@ public class ProductoVarianteTamanoService {
         }
     }
 
-    private void verificarTamanoExiste(Long tamañoId) {
-        if (!tamañoRepository.existsById(tamañoId)) {
-            throw new EntityNotFoundException("Tamano no encontrado: " + tamañoId);
+    private void verificarTamanoExiste(Long tamanoId) {
+        if (!tamanoRepository.existsById(tamanoId)) {
+            throw new EntityNotFoundException("Tamano no encontrado: " + tamanoId);
         }
     }
 }

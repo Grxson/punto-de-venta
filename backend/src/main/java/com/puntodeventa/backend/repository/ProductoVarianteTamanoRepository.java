@@ -14,21 +14,21 @@ import java.util.Optional;
  */
 @Repository
 public interface ProductoVarianteTamanoRepository extends JpaRepository<ProductoVarianteTamano, Long> {
-    
+
     /**
      * Encuentra todos los tamaños de un producto/variante
      */
     @Query("SELECT pvt FROM ProductoVarianteTamano pvt WHERE pvt.producto.id = :productoId ORDER BY pvt.orden ASC")
     List<ProductoVarianteTamano> findByProductoId(@Param("productoId") Long productoId);
-    
+
     /**
      * Verifica si un producto tiene un tamaño específico
      */
-    Optional<ProductoVarianteTamano> findByProductoIdAndTamanoId(Long productoId, Long tamañoId);
-    
+    Optional<ProductoVarianteTamano> findByProductoIdAndTamanoId(Long productoId, Long tamanoId);
+
     /**
      * Encuentra productos que usan un tamaño específico
      */
-    @Query("SELECT pvt FROM ProductoVarianteTamano pvt WHERE pvt.tamaño.id = :tamañoId ORDER BY pvt.orden ASC")
-    List<ProductoVarianteTamano> findByTamanoId(@Param("tamañoId") Long tamañoId);
+    @Query("SELECT pvt FROM ProductoVarianteTamano pvt WHERE pvt.tamano.id = :tamanoId ORDER BY pvt.orden ASC")
+    List<ProductoVarianteTamano> findByTamanoId(@Param("tamanoId") Long tamanoId);
 }

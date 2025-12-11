@@ -20,131 +20,130 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class ProductoTamanoService {
-    
-    private final ProductoTamanoRepository tamañoRepository;
-    
+
+    private final ProductoTamanoRepository tamanoRepository;
+
     /**
      * Obtiene todos los tamaños activos
      */
     @Transactional(readOnly = true)
     public List<ProductoTamanoDTO> obtenerTodosActivos() {
-        return tamañoRepository.findAllActivos()
-            .stream()
-            .map(this::toDTO)
-            .collect(Collectors.toList());
+        return tamanoRepository.findAllActivos()
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
-    
+
     /**
      * Obtiene un tamaño por ID
      */
     @Transactional(readOnly = true)
     public ProductoTamanoDTO obtenerPorId(Long id) {
-        return tamañoRepository.findById(id)
-            .map(this::toDTO)
-            .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + id));
+        return tamanoRepository.findById(id)
+                .map(this::toDTO)
+                .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + id));
     }
-    
+
     /**
      * Obtiene un tamaño por nombre
      */
     @Transactional(readOnly = true)
     public ProductoTamanoDTO obtenerPorNombre(String nombre) {
-        return tamañoRepository.findByNombreIgnoreCase(nombre)
-            .map(this::toDTO)
-            .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + nombre));
+        return tamanoRepository.findByNombreIgnoreCase(nombre)
+                .map(this::toDTO)
+                .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + nombre));
     }
-    
+
     /**
      * Busca tamaños por nombre
      */
     @Transactional(readOnly = true)
     public List<ProductoTamanoDTO> buscar(String nombre) {
-        return tamañoRepository.buscarPorNombre(nombre)
-            .stream()
-            .map(this::toDTO)
-            .collect(Collectors.toList());
+        return tamanoRepository.buscarPorNombre(nombre)
+                .stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
-    
+
     /**
      * Crea un nuevo tamaño
      */
     public ProductoTamanoDTO crear(ProductoTamanoDTO dto) {
         // Verificar que no existe un tamaño con el mismo nombre
-        if (tamañoRepository.findByNombreIgnoreCase(dto.nombre()).isPresent()) {
+        if (tamanoRepository.findByNombreIgnoreCase(dto.nombre()).isPresent()) {
             throw new IllegalArgumentException("Ya existe un tamaño con el nombre: " + dto.nombre());
         }
-        
-        ProductoTamano tamaño = ProductoTamano.builder()
-            .nombre(dto.nombre())
-            .descripcion(dto.descripcion())
-            .precioExtra(dto.precioExtra() != null ? dto.precioExtra() : BigDecimal.ZERO)
-            .orden(dto.orden() != null ? dto.orden() : 0)
-            .activo(true)
-            .createdAt(LocalDateTime.now())
-            .build();
-        
-        ProductoTamano saved = tamañoRepository.save(tamaño);
+
+        ProductoTamano tamano = ProductoTamano.builder()
+                .nombre(dto.nombre())
+                .descripcion(dto.descripcion())
+                .precioExtra(dto.precioExtra() != null ? dto.precioExtra() : BigDecimal.ZERO)
+                .orden(dto.orden() != null ? dto.orden() : 0)
+                .activo(true)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        ProductoTamano saved = tamanoRepository.save(tamano);
         return toDTO(saved);
     }
-    
+
     /**
      * Actualiza un tamaño existente
      */
     public ProductoTamanoDTO actualizar(Long id, ProductoTamanoDTO dto) {
-        ProductoTamano tamaño = tamañoRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + id));
-        
+        ProductoTamano tamano = tamanoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + id));
+
         // Verificar que no existe otro tamaño con el mismo nombre
-        if (!tamaño.getNombre().equalsIgnoreCase(dto.nombre())) {
-            if (tamañoRepository.findByNombreIgnoreCase(dto.nombre()).isPresent()) {
+        if (!tamano.getNombre().equalsIgnoreCase(dto.nombre())) {
+            if (tamanoRepository.findByNombreIgnoreCase(dto.nombre()).isPresent()) {
                 throw new IllegalArgumentException("Ya existe un tamaño con el nombre: " + dto.nombre());
             }
         }
-        
-        tamaño.setNombre(dto.nombre());
-        tamaño.setDescripcion(dto.descripcion());
-        tamaño.setPrecioExtra(dto.precioExtra() != null ? dto.precioExtra() : BigDecimal.ZERO);
-        tamaño.setOrden(dto.orden() != null ? dto.orden() : 0);
-        tamaño.setActivo(dto.activo() != null ? dto.activo() : true);
-        tamaño.setUpdatedAt(LocalDateTime.now());
-        
-        ProductoTamano updated = tamañoRepository.save(tamaño);
+
+        tamano.setNombre(dto.nombre());
+        tamano.setDescripcion(dto.descripcion());
+        tamano.setPrecioExtra(dto.precioExtra() != null ? dto.precioExtra() : BigDecimal.ZERO);
+        tamano.setOrden(dto.orden() != null ? dto.orden() : 0);
+        tamano.setActivo(dto.activo() != null ? dto.activo() : true);
+        tamano.setUpdatedAt(LocalDateTime.now());
+
+        ProductoTamano updated = tamanoRepository.save(tamano);
         return toDTO(updated);
     }
-    
+
     /**
      * Desactiva un tamaño (soft delete)
      */
     public void desactivar(Long id) {
-        ProductoTamano tamaño = tamañoRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + id));
-        
-        tamaño.setActivo(false);
-        tamaño.setUpdatedAt(LocalDateTime.now());
-        tamañoRepository.save(tamaño);
+        ProductoTamano tamano = tamanoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + id));
+
+        tamano.setActivo(false);
+        tamano.setUpdatedAt(LocalDateTime.now());
+        tamanoRepository.save(tamano);
     }
-    
+
     /**
      * Elimina un tamaño (borrado físico)
      */
     public void eliminar(Long id) {
-        if (!tamañoRepository.existsById(id)) {
+        if (!tamanoRepository.existsById(id)) {
             throw new EntityNotFoundException("Tamano no encontrado: " + id);
         }
-        tamañoRepository.deleteById(id);
+        tamanoRepository.deleteById(id);
     }
-    
+
     /**
      * Convierte una entidad a DTO
      */
-    private ProductoTamanoDTO toDTO(ProductoTamano tamaño) {
+    private ProductoTamanoDTO toDTO(ProductoTamano tamano) {
         return new ProductoTamanoDTO(
-            tamaño.getId(),
-            tamaño.getNombre(),
-            tamaño.getDescripcion(),
-            tamaño.getPrecioExtra(),
-            tamaño.getOrden(),
-            tamaño.getActivo()
-        );
+                tamano.getId(),
+                tamano.getNombre(),
+                tamano.getDescripcion(),
+                tamano.getPrecioExtra(),
+                tamano.getOrden(),
+                tamano.getActivo());
     }
 }
