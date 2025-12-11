@@ -1,7 +1,7 @@
 package com.puntodeventa.backend.controller;
 
-import com.puntodeventa.backend.dto.ProductoTamañoDTO;
-import com.puntodeventa.backend.service.ProductoTamañoService;
+import com.puntodeventa.backend.dto.ProductoTamanoDTO;
+import com.puntodeventa.backend.service.ProductoTamanoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,15 +16,15 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/tamaños")
 @RequiredArgsConstructor
-public class ProductoTamañoController {
+public class ProductoTamanoController {
 
-    private final ProductoTamañoService tamañoService;
+    private final ProductoTamanoService tamañoService;
 
     /**
      * Obtener todos los tamaños activos
      */
     @GetMapping
-    public ResponseEntity<List<ProductoTamañoDTO>> obtenerTodos() {
+    public ResponseEntity<List<ProductoTamanoDTO>> obtenerTodos() {
         return ResponseEntity.ok(tamañoService.obtenerTodosActivos());
     }
 
@@ -32,7 +32,7 @@ public class ProductoTamañoController {
      * Obtener un tamaño específico por ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ProductoTamañoDTO> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<ProductoTamanoDTO> obtenerPorId(@PathVariable Long id) {
         return ResponseEntity.ok(tamañoService.obtenerPorId(id));
     }
 
@@ -40,7 +40,7 @@ public class ProductoTamañoController {
      * Buscar tamaños por nombre
      */
     @GetMapping("/buscar")
-    public ResponseEntity<List<ProductoTamañoDTO>> buscar(@RequestParam String nombre) {
+    public ResponseEntity<List<ProductoTamanoDTO>> buscar(@RequestParam String nombre) {
         return ResponseEntity.ok(tamañoService.buscar(nombre));
     }
 
@@ -48,7 +48,7 @@ public class ProductoTamañoController {
      * Crear un nuevo tamaño
      */
     @PostMapping
-    public ResponseEntity<ProductoTamañoDTO> crear(@RequestBody ProductoTamañoDTO dto) {
+    public ResponseEntity<ProductoTamanoDTO> crear(@RequestBody ProductoTamanoDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(tamañoService.crear(dto));
     }
@@ -57,9 +57,9 @@ public class ProductoTamañoController {
      * Actualizar un tamaño existente
      */
     @PutMapping("/{id}")
-    public ResponseEntity<ProductoTamañoDTO> actualizar(
+    public ResponseEntity<ProductoTamanoDTO> actualizar(
             @PathVariable Long id,
-            @RequestBody ProductoTamañoDTO dto) {
+            @RequestBody ProductoTamanoDTO dto) {
         return ResponseEntity.ok(tamañoService.actualizar(id, dto));
     }
 

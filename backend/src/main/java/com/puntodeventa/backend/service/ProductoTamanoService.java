@@ -1,9 +1,9 @@
 package com.puntodeventa.backend.service;
 
-import com.puntodeventa.backend.dto.ProductoTamañoDTO;
+import com.puntodeventa.backend.dto.ProductoTamanoDTO;
 import com.puntodeventa.backend.exception.EntityNotFoundException;
-import com.puntodeventa.backend.model.ProductoTamaño;
-import com.puntodeventa.backend.repository.ProductoTamañoRepository;
+import com.puntodeventa.backend.model.ProductoTamano;
+import com.puntodeventa.backend.repository.ProductoTamanoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,15 +19,15 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class ProductoTamañoService {
+public class ProductoTamanoService {
     
-    private final ProductoTamañoRepository tamañoRepository;
+    private final ProductoTamanoRepository tamañoRepository;
     
     /**
      * Obtiene todos los tamaños activos
      */
     @Transactional(readOnly = true)
-    public List<ProductoTamañoDTO> obtenerTodosActivos() {
+    public List<ProductoTamanoDTO> obtenerTodosActivos() {
         return tamañoRepository.findAllActivos()
             .stream()
             .map(this::toDTO)
@@ -38,27 +38,27 @@ public class ProductoTamañoService {
      * Obtiene un tamaño por ID
      */
     @Transactional(readOnly = true)
-    public ProductoTamañoDTO obtenerPorId(Long id) {
+    public ProductoTamanoDTO obtenerPorId(Long id) {
         return tamañoRepository.findById(id)
             .map(this::toDTO)
-            .orElseThrow(() -> new EntityNotFoundException("Tamaño no encontrado: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + id));
     }
     
     /**
      * Obtiene un tamaño por nombre
      */
     @Transactional(readOnly = true)
-    public ProductoTamañoDTO obtenerPorNombre(String nombre) {
+    public ProductoTamanoDTO obtenerPorNombre(String nombre) {
         return tamañoRepository.findByNombreIgnoreCase(nombre)
             .map(this::toDTO)
-            .orElseThrow(() -> new EntityNotFoundException("Tamaño no encontrado: " + nombre));
+            .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + nombre));
     }
     
     /**
      * Busca tamaños por nombre
      */
     @Transactional(readOnly = true)
-    public List<ProductoTamañoDTO> buscar(String nombre) {
+    public List<ProductoTamanoDTO> buscar(String nombre) {
         return tamañoRepository.buscarPorNombre(nombre)
             .stream()
             .map(this::toDTO)
@@ -68,13 +68,13 @@ public class ProductoTamañoService {
     /**
      * Crea un nuevo tamaño
      */
-    public ProductoTamañoDTO crear(ProductoTamañoDTO dto) {
+    public ProductoTamanoDTO crear(ProductoTamanoDTO dto) {
         // Verificar que no existe un tamaño con el mismo nombre
         if (tamañoRepository.findByNombreIgnoreCase(dto.nombre()).isPresent()) {
             throw new IllegalArgumentException("Ya existe un tamaño con el nombre: " + dto.nombre());
         }
         
-        ProductoTamaño tamaño = ProductoTamaño.builder()
+        ProductoTamano tamaño = ProductoTamano.builder()
             .nombre(dto.nombre())
             .descripcion(dto.descripcion())
             .precioExtra(dto.precioExtra() != null ? dto.precioExtra() : BigDecimal.ZERO)
@@ -83,16 +83,16 @@ public class ProductoTamañoService {
             .createdAt(LocalDateTime.now())
             .build();
         
-        ProductoTamaño saved = tamañoRepository.save(tamaño);
+        ProductoTamano saved = tamañoRepository.save(tamaño);
         return toDTO(saved);
     }
     
     /**
      * Actualiza un tamaño existente
      */
-    public ProductoTamañoDTO actualizar(Long id, ProductoTamañoDTO dto) {
-        ProductoTamaño tamaño = tamañoRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Tamaño no encontrado: " + id));
+    public ProductoTamanoDTO actualizar(Long id, ProductoTamanoDTO dto) {
+        ProductoTamano tamaño = tamañoRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + id));
         
         // Verificar que no existe otro tamaño con el mismo nombre
         if (!tamaño.getNombre().equalsIgnoreCase(dto.nombre())) {
@@ -108,7 +108,7 @@ public class ProductoTamañoService {
         tamaño.setActivo(dto.activo() != null ? dto.activo() : true);
         tamaño.setUpdatedAt(LocalDateTime.now());
         
-        ProductoTamaño updated = tamañoRepository.save(tamaño);
+        ProductoTamano updated = tamañoRepository.save(tamaño);
         return toDTO(updated);
     }
     
@@ -116,8 +116,8 @@ public class ProductoTamañoService {
      * Desactiva un tamaño (soft delete)
      */
     public void desactivar(Long id) {
-        ProductoTamaño tamaño = tamañoRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Tamaño no encontrado: " + id));
+        ProductoTamano tamaño = tamañoRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Tamano no encontrado: " + id));
         
         tamaño.setActivo(false);
         tamaño.setUpdatedAt(LocalDateTime.now());
@@ -129,7 +129,7 @@ public class ProductoTamañoService {
      */
     public void eliminar(Long id) {
         if (!tamañoRepository.existsById(id)) {
-            throw new EntityNotFoundException("Tamaño no encontrado: " + id);
+            throw new EntityNotFoundException("Tamano no encontrado: " + id);
         }
         tamañoRepository.deleteById(id);
     }
@@ -137,8 +137,8 @@ public class ProductoTamañoService {
     /**
      * Convierte una entidad a DTO
      */
-    private ProductoTamañoDTO toDTO(ProductoTamaño tamaño) {
-        return new ProductoTamañoDTO(
+    private ProductoTamanoDTO toDTO(ProductoTamano tamaño) {
+        return new ProductoTamanoDTO(
             tamaño.getId(),
             tamaño.getNombre(),
             tamaño.getDescripcion(),

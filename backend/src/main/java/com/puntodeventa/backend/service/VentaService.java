@@ -401,9 +401,9 @@ public class VentaService {
                 item.getSubtotal(),
                 item.getCostoEstimado(),
                 item.getNota(),
-                item.getTamaño() != null ? item.getTamaño().getId() : null,
-                item.getTamañoNombre(),
-                item.getPrecioExtraTamaño(),
+                item.getTamano() != null ? item.getTamano().getId() : null,
+                item.getTamanoNombre(),
+                item.getPrecioExtraTamano(),
                 null // atributosSeleccionados: cargar del servicio si es necesario
             ))
             .toList();

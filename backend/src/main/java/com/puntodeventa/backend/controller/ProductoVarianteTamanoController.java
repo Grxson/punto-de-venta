@@ -1,7 +1,7 @@
 package com.puntodeventa.backend.controller;
 
-import com.puntodeventa.backend.dto.ProductoVarianteTamañoDTO;
-import com.puntodeventa.backend.service.ProductoVarianteTamañoService;
+import com.puntodeventa.backend.dto.ProductoVarianteTamanoDTO;
+import com.puntodeventa.backend.service.ProductoVarianteTamanoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,39 +16,39 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/productos/{productoId}/tamaños")
 @RequiredArgsConstructor
-public class ProductoVarianteTamañoController {
+public class ProductoVarianteTamanoController {
 
-    private final ProductoVarianteTamañoService varianteTamañoService;
+    private final ProductoVarianteTamanoService varianteTamanoService;
 
     /**
      * Obtener todos los tamaños disponibles para un producto
      */
     @GetMapping
-    public ResponseEntity<List<ProductoVarianteTamañoDTO>> obtenerTamañosPorProducto(
+    public ResponseEntity<List<ProductoVarianteTamanoDTO>> obtenerTamanosPorProducto(
             @PathVariable Long productoId) {
-        return ResponseEntity.ok(varianteTamañoService.obtenerTamañosPorProducto(productoId));
+        return ResponseEntity.ok(varianteTamanoService.obtenerTamanosPorProducto(productoId));
     }
 
     /**
      * Agregar un tamaño a un producto
      */
     @PostMapping
-    public ResponseEntity<ProductoVarianteTamañoDTO> agregarTamaño(
+    public ResponseEntity<ProductoVarianteTamanoDTO> agregarTamano(
             @PathVariable Long productoId,
             @RequestParam Long tamañoId,
             @RequestParam(defaultValue = "0") Integer orden) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(varianteTamañoService.agregarTamaño(productoId, tamañoId, orden));
+                .body(varianteTamanoService.agregarTamano(productoId, tamañoId, orden));
     }
 
     /**
      * Eliminar un tamaño de un producto
      */
     @DeleteMapping("/{tamañoId}")
-    public ResponseEntity<Void> eliminarTamaño(
+    public ResponseEntity<Void> eliminarTamano(
             @PathVariable Long productoId,
             @PathVariable Long tamañoId) {
-        // Necesitamos el ID del registro ProductoVarianteTamaño, no los IDs de producto y tamaño
+        // Necesitamos el ID del registro ProductoVarianteTamano, no los IDs de producto y tamaño
         // Este endpoint necesita ajustarse al servicio
         return ResponseEntity.noContent().build();
     }
@@ -57,11 +57,11 @@ public class ProductoVarianteTamañoController {
      * Actualizar el orden de tamaños
      */
     @PutMapping("/{tamañoId}/orden")
-    public ResponseEntity<ProductoVarianteTamañoDTO> actualizarOrden(
+    public ResponseEntity<ProductoVarianteTamanoDTO> actualizarOrden(
             @PathVariable Long productoId,
             @PathVariable Long tamañoId,
             @RequestParam Integer orden) {
         return ResponseEntity.ok(
-                varianteTamañoService.actualizarOrden(tamañoId, orden));
+                varianteTamanoService.actualizarOrden(tamañoId, orden));
     }
 }

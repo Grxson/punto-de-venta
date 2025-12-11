@@ -76,7 +76,7 @@ public class VentaItem {
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tamaño_id")
-    private ProductoTamaño tamaño;
+    private ProductoTamano tamaño;
     
     /**
      * Nombre del tamaño al momento de la venta (denormalización para auditoría)
@@ -90,7 +90,7 @@ public class VentaItem {
     @PositiveOrZero(message = "El precio extra del tamaño debe ser positivo o cero")
     @Column(name = "precio_extra_tamaño", nullable = false, precision = 12, scale = 2)
     @Builder.Default
-    private BigDecimal precioExtraTamaño = BigDecimal.ZERO;
+    private BigDecimal precioExtraTamano = BigDecimal.ZERO;
     
     /**
      * Atributos seleccionados para este item (ej: ingredientes del jugo)
