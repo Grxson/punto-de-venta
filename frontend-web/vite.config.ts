@@ -3,27 +3,10 @@ import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// Plugin para deshabilitar minificación en chunks de Emotion
-const emotionPreservePlugin = {
-  name: 'emotion-preserve',
-  apply: 'build',
-  enforce: 'post',
-  generateBundle(options: any, bundle: any) {
-    // Buscar archivos de emotion y marcarlos como sin minificar
-    for (const [fileName, asset] of Object.entries(bundle)) {
-      if (fileName.includes('emotion') && typeof asset === 'object' && 'code' in asset) {
-        // Los archivos de emotion ya estarán compilados, pero evitamos rename de variables
-        asset.versionedName = fileName;
-      }
-    }
-  }
-}
-
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
-    emotionPreservePlugin,
     // PASO 2.3: Bundle analysis
     visualizer({
       open: false,
@@ -122,15 +105,15 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false, // Deshabilitar sourcemaps en producción
-    minify: 'esbuild', // CAMBIAR a esbuild - menos agresivo que terser
-    // Esbuild options (más conservador)
-    esbuild: {
-      drop: ['console', 'debugger'],
-      minifyIdentifiers: false, // No renombrar variables (evita conflictos con Emotion)
-      minifySyntax: true, // Solo minimizar sintaxis
-      minifyWhitespace: true, // Eliminar espacios en blanco
-    },
+    sourcemap: false,
+    minify: false, // DESHABILITAR minificación completamente
+    // Confiar en gzip del servidor para compresión
+    // esbuild: {
+    //   drop: ['console', 'debugger'],
+    //   minifyIdentifiers: false,
+    //   minifySyntax: true,
+    //   minifyWhitespace: true,
+    // },
     // Optimizar reportCompressedSize para builds más rápidos en dev
     reportCompressedSize: false,
     // Aumentar chunk size limit
@@ -138,28 +121,17 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Estrategia de splitting más agresiva
+          // ESTRATEGIA NUEVA: Unificar React + Emotion + MUI en un super-chunk
+          // Para evitar problemas de inicialización, deben cargarse JUNTOS
           
-          // React debe estar ANTES de MUI para evitar duplicación
-          if (id.includes('node_modules/react/') && !id.includes('node_modules/@')) {
-            return 'react-vendor';
-          }
-          if (id.includes('node_modules/react-dom/')) {
-            return 'react-vendor';
-          }
-          if (id.includes('node_modules/react-router-dom/')) {
-            return 'react-vendor';
+          // React + Emotion + MUI juntos (críticos, deben estar siempre disponibles)
+          if (id.includes('node_modules/react') || 
+              id.includes('node_modules/@emotion/') ||
+              id.includes('node_modules/@mui/')) {
+            return 'framework'; // Un solo chunk para todas las dependencias framework
           }
           
-          // Emotion (dependencia de MUI)
-          if (id.includes('node_modules/@emotion/')) {
-            return 'emotion';
-          }
-          
-          // Vendor libraries - DESPUÉS de React
-          if (id.includes('node_modules/@mui/')) {
-            return 'mui-chunk';
-          }
+          // Utilidades de manejo de datos/consultas
           if (id.includes('node_modules/date-fns/')) {
             return 'date-fns';
           }
@@ -201,15 +173,6 @@ export default defineConfig({
         entryFileNames: 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
-      },
-      // Asegurar que los chunks críticos se carguen primero
-      manualChunks: (id, api) => {
-        if (id.includes('node_modules/@emotion/')) {
-          return 'emotion';
-        }
-        if (id.includes('node_modules/react')) {
-          return 'react-vendor';
-        }
       },
     },
   },
