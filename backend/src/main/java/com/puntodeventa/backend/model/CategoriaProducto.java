@@ -36,7 +36,7 @@ public class CategoriaProducto {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    @Column(nullable = false, columnDefinition = "INTEGER")
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     @Builder.Default
     private Boolean activa = true;
 

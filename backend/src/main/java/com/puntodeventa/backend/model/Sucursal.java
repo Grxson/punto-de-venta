@@ -27,7 +27,7 @@ public class Sucursal {
     @Column(length = 100)
     private String email;
 
-    @Column(nullable = false, columnDefinition = "INTEGER")
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean activo = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -77,15 +77,31 @@ public class ProductoAtributoService {
         
         ProductoAtributo atributo = ProductoAtributo.builder()
             .producto(producto)
-            .nombre(dto.nombre())
-            .tipo(ProductoAtributo.TipoAtributo.valueOf(dto.tipo()))
-            .requerido(dto.requerido() != null ? dto.requerido() : false)
-            .orden(dto.orden() != null ? dto.orden() : 0)
+            .nombre(dto.getNombre())
+            .tipo(ProductoAtributo.TipoAtributo.valueOf(dto.getTipo()))
+            .requerido(dto.getRequerido() != null ? dto.getRequerido() : false)
+            .orden(dto.getOrden() != null ? dto.getOrden() : 0)
             .activo(true)
             .createdAt(LocalDateTime.now())
             .build();
         
         ProductoAtributo saved = atributoRepository.save(atributo);
+        
+        // Crear las opciones si existen
+        if (dto.getOpciones() != null && !dto.getOpciones().isEmpty()) {
+            for (ProductoAtributoOpcionDTO opcionDTO : dto.getOpciones()) {
+                ProductoAtributoOpcion opcion = ProductoAtributoOpcion.builder()
+                    .atributo(saved)
+                    .nombre(opcionDTO.nombre())
+                    .precioExtra(opcionDTO.precioExtra() != null ? opcionDTO.precioExtra() : BigDecimal.ZERO)
+                    .orden(opcionDTO.orden() != null ? opcionDTO.orden() : 0)
+                    .activo(true)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+                opcionRepository.save(opcion);
+            }
+        }
+        
         return atributoToDTO(saved);
     }
     
@@ -96,11 +112,11 @@ public class ProductoAtributoService {
         ProductoAtributo atributo = atributoRepository.findById(atributoId)
             .orElseThrow(() -> new EntityNotFoundException("Atributo no encontrado: " + atributoId));
         
-        atributo.setNombre(dto.nombre());
-        atributo.setTipo(ProductoAtributo.TipoAtributo.valueOf(dto.tipo()));
-        atributo.setRequerido(dto.requerido() != null ? dto.requerido() : false);
-        atributo.setOrden(dto.orden() != null ? dto.orden() : 0);
-        atributo.setActivo(dto.activo() != null ? dto.activo() : true);
+        atributo.setNombre(dto.getNombre());
+        atributo.setTipo(ProductoAtributo.TipoAtributo.valueOf(dto.getTipo()));
+        atributo.setRequerido(dto.getRequerido() != null ? dto.getRequerido() : false);
+        atributo.setOrden(dto.getOrden() != null ? dto.getOrden() : 0);
+        atributo.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
         atributo.setUpdatedAt(LocalDateTime.now());
         
         ProductoAtributo updated = atributoRepository.save(atributo);

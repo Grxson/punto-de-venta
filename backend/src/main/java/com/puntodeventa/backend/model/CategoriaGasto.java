@@ -39,7 +39,7 @@ public class CategoriaGasto {
     @Column(precision = 12, scale = 2)
     private BigDecimal presupuestoMensual; // Opcional: presupuesto mensual para esta categoría
 
-    @Column(nullable = false, columnDefinition = "INTEGER")
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     @Builder.Default
     private Boolean activo = true;
 
