@@ -5,11 +5,18 @@ FROM node:22-alpine AS builder
 # Set working directory
 WORKDIR /app
 
+# Install build essentials for native modules (rollup, etc.)
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies (usar --legacy-peer-deps para evitar conflictos de versiones)
-RUN npm install --legacy-peer-deps
+# Agregar --force para resolver conflictos de rollup en Alpine Linux
+RUN npm install --legacy-peer-deps --force
+
+# Rebuild native modules para Linux Alpine (rollup, etc.)
+RUN npm rebuild --verbose
 
 # Copy source code
 COPY . .
