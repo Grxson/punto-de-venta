@@ -77,7 +77,7 @@ public class VentaItem {
      * Referencia al tamaño seleccionado (nullable si el producto no tiene tamaños)
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tamano_id")
+    @JoinColumn(name = "tamaño_id")
     private ProductoTamano tamano;
 
     /**
