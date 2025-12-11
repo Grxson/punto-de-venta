@@ -84,9 +84,17 @@ export default defineConfig({
   },
   optimizeDeps: {
     // Pre-bundlear dependencias críticas para evitar problemas en el navegador
+    // SOLO React y DOM que son ABSOLUTAMENTE críticos
     include: [
       'react',
       'react-dom',
+    ],
+    // EXCLUIR librerías que tienen circular dependencies con React
+    // Estas se cargarán como chunks separados en runtime después de que React esté listo
+    exclude: [
+      'recharts',
+      'react-query',
+      '@tanstack/react-query',
       '@mui/material',
       '@mui/icons-material',
       '@emotion/react',
@@ -94,9 +102,6 @@ export default defineConfig({
       'react-hook-form',
       'react-router-dom',
     ],
-    // EXCLUIR recharts del pre-bundling para evitar circular dependency issues
-    // Recharts se cargará como chunk separado en runtime
-    exclude: ['recharts'],
     // Forzar re-bundlear ciertos módulos que pueden causar problemas
     esbuildOptions: {
       define: {
@@ -124,28 +129,42 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // ESTRATEGIA: Recharts DEBE ir en su propio chunk ANTES que framework
-          // Para evitar que se mezcle con React durante la inicialización
+          // CRÍTICO: Recharts Y react-query deben ir en chunks separados ANTES que framework
+          // Para evitar que se mezclen con React durante la inicialización
           if (id.includes('node_modules/recharts/')) {
             return 'recharts-vendor';
           }
           
-          // ESTRATEGIA NUEVA: Unificar React + Emotion + MUI en un super-chunk
-          // Para evitar problemas de inicialización, deben cargarse JUNTOS
+          if (id.includes('node_modules/@tanstack/react-query/') ||
+              id.includes('node_modules/react-query/')) {
+            return 'react-query-vendor';
+          }
           
-          // React + Emotion + MUI juntos (críticos, deben estar siempre disponibles)
-          if (id.includes('node_modules/react') || 
-              id.includes('node_modules/@emotion/') ||
+          // CRÍTICO: React debe estar SOLO, sin mezcla
+          if (id.includes('node_modules/react/') ||
+              id.includes('node_modules/react-dom/')) {
+            return 'react-vendor';
+          }
+          
+          // Emotion y MUI ahora sin React
+          if (id.includes('node_modules/@emotion/') ||
               id.includes('node_modules/@mui/')) {
-            return 'framework'; // Un solo chunk para todas las dependencias framework
+            return 'ui-vendors';
           }
           
           // Utilidades de manejo de datos/consultas
           if (id.includes('node_modules/date-fns/')) {
             return 'date-fns';
           }
-          if (id.includes('node_modules/@tanstack/')) {
-            return 'react-query';
+          
+          // Routing y hooks
+          if (id.includes('node_modules/react-router-dom/') ||
+              id.includes('node_modules/react-router/')) {
+            return 'react-router';
+          }
+          
+          if (id.includes('node_modules/react-hook-form/')) {
+            return 'react-hook-form';
           }
           
           // Rutas y features
