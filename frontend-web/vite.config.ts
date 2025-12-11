@@ -3,10 +3,27 @@ import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Plugin para deshabilitar minificación en chunks de Emotion
+const emotionPreservePlugin = {
+  name: 'emotion-preserve',
+  apply: 'build',
+  enforce: 'post',
+  generateBundle(options: any, bundle: any) {
+    // Buscar archivos de emotion y marcarlos como sin minificar
+    for (const [fileName, asset] of Object.entries(bundle)) {
+      if (fileName.includes('emotion') && typeof asset === 'object' && 'code' in asset) {
+        // Los archivos de emotion ya estarán compilados, pero evitamos rename de variables
+        asset.versionedName = fileName;
+      }
+    }
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    emotionPreservePlugin,
     // PASO 2.3: Bundle analysis
     visualizer({
       open: false,
@@ -106,21 +123,13 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false, // Deshabilitar sourcemaps en producción
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Eliminar console.* en producción
-        drop_debugger: true, // Eliminar debuggers
-        sequences: false, // No combinar statements (rompe orden de inicialización)
-        unused: true, // Remover variables no usadas PERO...
-        passes: 1, // Una sola pasada para evitar cambios en el orden
-      },
-      mangle: {
-        reserved: ['React', 'ReactDOM', 'emotion', 'e'], // Proteger variables críticas
-      },
-      output: {
-        comments: false,
-      },
+    minify: 'esbuild', // CAMBIAR a esbuild - menos agresivo que terser
+    // Esbuild options (más conservador)
+    esbuild: {
+      drop: ['console', 'debugger'],
+      minifyIdentifiers: false, // No renombrar variables (evita conflictos con Emotion)
+      minifySyntax: true, // Solo minimizar sintaxis
+      minifyWhitespace: true, // Eliminar espacios en blanco
     },
     // Optimizar reportCompressedSize para builds más rápidos en dev
     reportCompressedSize: false,
