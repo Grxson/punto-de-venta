@@ -76,8 +76,9 @@ export default defineConfig({
     global: 'globalThis',
   },
   resolve: {
+    dedupe: ['react', 'react-dom'],
     alias: {
-      // Asegurar que sockjs-client funcione correctamente
+      // Asegurar que no haya duplicados de react
     },
   },
   // OPTIMIZACIÓN PASO 2.2: Vite Config mejorado para máximo splitting
