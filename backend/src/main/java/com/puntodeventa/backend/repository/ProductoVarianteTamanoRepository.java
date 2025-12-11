@@ -24,11 +24,11 @@ public interface ProductoVarianteTamanoRepository extends JpaRepository<Producto
     /**
      * Verifica si un producto tiene un tamaño específico
      */
-    Optional<ProductoVarianteTamano> findByProductoIdAndTamanoId(Long productoId, Long tamañoId);
+    Optional<ProductoVarianteTamano> findByProductoIdAndTamanoId(Long productoId, Long tamanoId);
     
     /**
      * Encuentra productos que usan un tamaño específico
      */
-    @Query("SELECT pvt FROM ProductoVarianteTamano pvt WHERE pvt.tamaño.id = :tamañoId ORDER BY pvt.orden ASC")
-    List<ProductoVarianteTamano> findByTamanoId(@Param("tamañoId") Long tamañoId);
+    @Query("SELECT pvt FROM ProductoVarianteTamano pvt WHERE pvt.tamano.id = :tamanoId ORDER BY pvt.orden ASC")
+    List<ProductoVarianteTamano> findByTamanoId(@Param("tamanoId") Long tamanoId);
 }
