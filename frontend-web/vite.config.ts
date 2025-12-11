@@ -94,6 +94,9 @@ export default defineConfig({
       'react-hook-form',
       'react-router-dom',
     ],
+    // EXCLUIR recharts del pre-bundling para evitar circular dependency issues
+    // Recharts se cargará como chunk separado en runtime
+    exclude: ['recharts'],
     // Forzar re-bundlear ciertos módulos que pueden causar problemas
     esbuildOptions: {
       define: {
@@ -121,6 +124,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // ESTRATEGIA: Recharts DEBE ir en su propio chunk ANTES que framework
+          // Para evitar que se mezcle con React durante la inicialización
+          if (id.includes('node_modules/recharts/')) {
+            return 'recharts-vendor';
+          }
+          
           // ESTRATEGIA NUEVA: Unificar React + Emotion + MUI en un super-chunk
           // Para evitar problemas de inicialización, deben cargarse JUNTOS
           
@@ -134,9 +143,6 @@ export default defineConfig({
           // Utilidades de manejo de datos/consultas
           if (id.includes('node_modules/date-fns/')) {
             return 'date-fns';
-          }
-          if (id.includes('node_modules/recharts/')) {
-            return 'recharts';
           }
           if (id.includes('node_modules/@tanstack/')) {
             return 'react-query';
