@@ -121,16 +121,11 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // MANTENER SIMPLE: Solo separar por categorías GRANDES
-          // NO separar recharts - debe estar con el framework
+          // MANTENER EXTREMADAMENTE SIMPLE
+          // NO separar librerías que dependen de React (recharts, react-query, etc)
+          // Dejar que bundlen naturalmente para evitar problemas de contexto
           
-          // Utilidades de manejo de datos/consultas
-          if (id.includes('node_modules/date-fns/')) {
-            return 'date-fns';
-          }
-          if (id.includes('node_modules/@tanstack/')) {
-            return 'react-query';
-          }
+          // Solo separar por categorías de CÓDIGO (no dependencias)
           
           // Rutas y features
           if (id.includes('/pages/pos/')) {
