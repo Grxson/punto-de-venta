@@ -15,8 +15,8 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(
-    name = "producto_variante_tamaño",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"producto_id", "tamaño_id"})
+    name = "producto_variante_tamano",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"producto_id", "tamano_id"})
 )
 @Data
 @NoArgsConstructor
@@ -35,8 +35,8 @@ public class ProductoVarianteTamano {
     
     @NotNull(message = "El tamaño es obligatorio")
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tamaño_id", nullable = false)
-    private ProductoTamano tamaño;
+    @JoinColumn(name = "tamano_id", nullable = false)
+    private ProductoTamano tamano;
     
     @Column(nullable = false)
     @Builder.Default

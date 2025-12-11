@@ -75,20 +75,20 @@ public class VentaItem {
      * Referencia al tamaño seleccionado (nullable si el producto no tiene tamaños)
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tamaño_id")
-    private ProductoTamano tamaño;
+    @JoinColumn(name = "tamano_id")
+    private ProductoTamano tamano;
     
     /**
      * Nombre del tamaño al momento de la venta (denormalización para auditoría)
      */
-    @Column(name = "tamaño_nombre", length = 100)
-    private String tamañoNombre;
+    @Column(name = "tamano_nombre", length = 100)
+    private String tamanoNombre;
     
     /**
      * Precio extra del tamaño aplicado a este item
      */
     @PositiveOrZero(message = "El precio extra del tamaño debe ser positivo o cero")
-    @Column(name = "precio_extra_tamaño", nullable = false, precision = 12, scale = 2)
+    @Column(name = "precio_extra_tamano", nullable = false, precision = 12, scale = 2)
     @Builder.Default
     private BigDecimal precioExtraTamano = BigDecimal.ZERO;
     
