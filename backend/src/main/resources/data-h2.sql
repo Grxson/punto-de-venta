@@ -1,7 +1,8 @@
 -- Minimal seed data for H2 dev
 
 -- Sucursal
-INSERT INTO sucursales (id, nombre, direccion, activa) VALUES (1, 'Sucursal Principal', 'Centro', TRUE);
+INSERT INTO sucursales (id, nombre, direccion, telefono, email, activo, created_at, updated_at) 
+VALUES (1, 'Sucursal Principal', 'Centro', '555-0001', 'principal@punto.com', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Roles
 INSERT INTO roles (id, nombre, permisos_json) VALUES (1, 'admin', '{"all":true}');

@@ -3,7 +3,10 @@ package com.puntodeventa.backend.service;
 import com.puntodeventa.backend.dto.CategoriaGastoDTO;
 import com.puntodeventa.backend.exception.ResourceNotFoundException;
 import com.puntodeventa.backend.model.CategoriaGasto;
+import com.puntodeventa.backend.model.Sucursal;
 import com.puntodeventa.backend.repository.CategoriaGastoRepository;
+import com.puntodeventa.backend.repository.SucursalRepository;
+import com.puntodeventa.backend.context.SucursalContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -15,6 +18,7 @@ import java.util.List;
 
 /**
  * Servicio para gestión de categorías de gastos.
+ * Soporta segregación por sucursal mediante SucursalContext.
  */
 @Service
 @RequiredArgsConstructor
@@ -22,22 +26,22 @@ import java.util.List;
 public class CategoriaGastoService {
 
     private final CategoriaGastoRepository categoriaGastoRepository;
+    private final SucursalRepository sucursalRepository;
 
-    @Cacheable(value = "categorias-gastos", unless = "#result.isEmpty()")
     public List<CategoriaGastoDTO> obtenerTodas() {
-        return categoriaGastoRepository.findAll().stream()
+        Long sucursalId = SucursalContext.getSucursalId();
+        return categoriaGastoRepository.findBySucursalId(sucursalId).stream()
                 .map(this::toDTO)
                 .toList();
     }
 
-    @Cacheable(value = "categorias-gastos", key = "'activas'")
     public List<CategoriaGastoDTO> obtenerActivas() {
-        return categoriaGastoRepository.findByActivoTrue().stream()
+        Long sucursalId = SucursalContext.getSucursalId();
+        return categoriaGastoRepository.findBySucursalIdAndActivoTrue(sucursalId).stream()
                 .map(this::toDTO)
                 .toList();
     }
 
-    @Cacheable(value = "categorias-gastos", key = "#id")
     public CategoriaGastoDTO obtenerPorId(Long id) {
         CategoriaGasto categoria = categoriaGastoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría de gasto no encontrada con id: " + id));
@@ -47,7 +51,12 @@ public class CategoriaGastoService {
     @CacheEvict(value = "categorias-gastos", allEntries = true)
     @Transactional
     public CategoriaGastoDTO crear(CategoriaGastoDTO dto) {
+        Long sucursalId = SucursalContext.getSucursalId();
+        Sucursal sucursal = sucursalRepository.findById(sucursalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sucursal no encontrada"));
+        
         CategoriaGasto categoria = new CategoriaGasto();
+        categoria.setSucursal(sucursal);
         categoria.setNombre(dto.nombre());
         categoria.setDescripcion(dto.descripcion());
         categoria.setPresupuestoMensual(dto.presupuestoMensual());

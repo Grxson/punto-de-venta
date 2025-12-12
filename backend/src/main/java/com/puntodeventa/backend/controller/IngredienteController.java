@@ -17,7 +17,7 @@ import java.util.List;
  * Controlador REST para la gestión de ingredientes del inventario.
  */
 @RestController
-@RequestMapping("/api/inventario/ingredientes")
+@RequestMapping("/api/ingredientes")
 @RequiredArgsConstructor
 @Tag(name = "Inventario - Ingredientes", description = "Endpoints para gestión de ingredientes")
 public class IngredienteController {
