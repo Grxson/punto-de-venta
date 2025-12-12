@@ -54,11 +54,13 @@ public class Producto {
     @Column(length = 50)
     private String sku;
     
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    @Column(nullable = false)
+    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activo = true;
     
-    @Column(name = "disponible_en_menu", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    @Column(name = "disponible_en_menu", nullable = false)
+    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean disponibleEnMenu = true;
 

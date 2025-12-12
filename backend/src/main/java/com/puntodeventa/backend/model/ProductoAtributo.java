@@ -47,7 +47,8 @@ public class ProductoAtributo {
     @Enumerated(EnumType.STRING)
     private TipoAtributo tipo;
     
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Column(nullable = false)
+    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean requerido = false;
     
@@ -55,7 +56,8 @@ public class ProductoAtributo {
     @Builder.Default
     private Integer orden = 0;
     
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    @Column(nullable = false)
+    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activo = true;
     

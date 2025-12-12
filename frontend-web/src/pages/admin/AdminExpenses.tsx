@@ -42,6 +42,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
 import ExpandableExpenseRow from '../../components/expenses/ExpandableExpenseRow';
 import { useGroupExpensesByTime } from '../../hooks/useGroupExpensesByTime';
+import { useCategoriasGasto } from '../../hooks/useCategoriasGasto';
 import { gastosIndirectosService } from '../../services/gastos-indirectos.service';
 import { manoObraService } from '../../services/mano-obra.service';
 import type { DateRangeValue } from '../../types/dateRange.types';
@@ -125,6 +126,7 @@ interface GastoPendiente {
 
 export default function AdminExpenses() {
   const { usuario } = useAuth();
+  const { categorias: categoriasGastoPredefinidas } = useCategoriasGasto();
   
   // Estado de Tabs
   const [activeTab, setActiveTab] = useState(0);
@@ -242,11 +244,8 @@ export default function AdminExpenses() {
         setError(`Error al cargar gastos: ${gastosResponse.error}`);
       }
 
-      // Cargar categorías
-      const categoriasResponse = await apiService.get(`${API_ENDPOINTS.CATEGORIAS_GASTO}/activas`);
-      if (categoriasResponse.success && categoriasResponse.data) {
-        setCategorias(categoriasResponse.data);
-      }
+      // Cargar categorías desde JSON predefinidas
+      setCategorias(categoriasGastoPredefinidas as CategoriaGasto[]);
 
       // Cargar proveedores
       const proveedoresResponse = await apiService.get(`${API_ENDPOINTS.PROVEEDORES}/activos`);

@@ -14,6 +14,7 @@ import java.util.List;
 @Repository
 public interface IngredienteRepository extends JpaRepository<Ingrediente, Long> {
     
+    @Query("SELECT i FROM Ingrediente i WHERE i.activo = true")
     List<Ingrediente> findByActivoTrue();
     
     List<Ingrediente> findByCategoria(String categoria);

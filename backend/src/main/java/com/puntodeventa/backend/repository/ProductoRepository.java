@@ -15,8 +15,10 @@ import java.util.Optional;
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
+    @Query("SELECT p FROM Producto p WHERE p.activo = true")
     List<Producto> findByActivoTrue();
 
+    @Query("SELECT p FROM Producto p WHERE p.disponibleEnMenu = true")
     List<Producto> findByDisponibleEnMenuTrue();
 
     List<Producto> findByCategoriaId(Long categoriaId);
@@ -28,8 +30,10 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     List<Producto> findByProductoBaseIdIsNull();
 
+    @Query("SELECT p FROM Producto p WHERE p.productoBase.id IS NULL AND p.activo = true")
     List<Producto> findByProductoBaseIdIsNullAndActivoTrue();
 
+    @Query("SELECT p FROM Producto p WHERE p.productoBase.id IS NULL AND p.disponibleEnMenu = true")
     List<Producto> findByProductoBaseIdIsNullAndDisponibleEnMenuTrue();
 
     // Buscar por SKU
@@ -53,14 +57,16 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
      * @param sucursalId ID de la sucursal
      * @return Lista de productos activos
      */
-    List<Producto> findBySucursalIdAndActivoTrue(Long sucursalId);
+    @Query("SELECT p FROM Producto p WHERE p.sucursal.id = :sucursalId AND p.activo = true")
+    List<Producto> findBySucursalIdAndActivoTrue(@Param("sucursalId") Long sucursalId);
 
     /**
      * Obtener productos en menú de una sucursal.
      * @param sucursalId ID de la sucursal
      * @return Lista de productos en menú
      */
-    List<Producto> findBySucursalIdAndDisponibleEnMenuTrue(Long sucursalId);
+    @Query("SELECT p FROM Producto p WHERE p.sucursal.id = :sucursalId AND p.disponibleEnMenu = true")
+    List<Producto> findBySucursalIdAndDisponibleEnMenuTrue(@Param("sucursalId") Long sucursalId);
 
     /**
      * Buscar productos en una sucursal por nombre.
@@ -83,14 +89,16 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
      * @param sucursalId ID de la sucursal
      * @return Lista de productos base activos
      */
-    List<Producto> findBySucursalIdAndProductoBaseIdIsNullAndActivoTrue(Long sucursalId);
+    @Query("SELECT p FROM Producto p WHERE p.sucursal.id = :sucursalId AND p.productoBase.id IS NULL AND p.activo = true")
+    List<Producto> findBySucursalIdAndProductoBaseIdIsNullAndActivoTrue(@Param("sucursalId") Long sucursalId);
 
     /**
      * Obtener productos base en menú de una sucursal.
      * @param sucursalId ID de la sucursal
      * @return Lista de productos base en menú
      */
-    List<Producto> findBySucursalIdAndProductoBaseIdIsNullAndDisponibleEnMenuTrue(Long sucursalId);
+    @Query("SELECT p FROM Producto p WHERE p.sucursal.id = :sucursalId AND p.productoBase.id IS NULL AND p.disponibleEnMenu = true")
+    List<Producto> findBySucursalIdAndProductoBaseIdIsNullAndDisponibleEnMenuTrue(@Param("sucursalId") Long sucursalId);
 
     /**
      * OPTIMIZACIÓN PASO 1.5: Obtener variantes de un producto base sin N+1

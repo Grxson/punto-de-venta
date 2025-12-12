@@ -42,6 +42,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
 import ExpandableExpenseRow from '../../components/expenses/ExpandableExpenseRow';
 import { useGroupExpensesByTime } from '../../hooks/useGroupExpensesByTime';
+import { useCategoriasGasto } from '../../hooks/useCategoriasGasto';
 import type { DateRangeValue } from '../../types/dateRange.types';
 
 interface CategoriaGasto {
@@ -114,6 +115,7 @@ interface GastoPendiente {
 export default function PosExpenses() {
   const navigate = useNavigate();
   const { usuario } = useAuth();
+  const { categorias: categoriasGastoPredefinidas } = useCategoriasGasto();
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [categoriasGasto, setCategoriasGasto] = useState<CategoriaGasto[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
@@ -214,13 +216,10 @@ export default function PosExpenses() {
     setLoadingData(true);
     setError(null);
     try {
-      // Cargar categorías activas
-      const categoriasRes = await apiService.get(`${API_ENDPOINTS.CATEGORIAS_GASTO}/activas`);
-      if (categoriasRes.success) {
-        setCategoriasGasto(categoriasRes.data || []);
-      }
+      // ✅ Usar categorías predefinidas desde el JSON en lugar de la API
+      setCategoriasGasto(categoriasGastoPredefinidas as CategoriaGasto[]);
 
-      // Cargar métodos de pago activos
+      // Cargar métodos de pago activos desde la API
       const metodosPagoRes = await apiService.get(API_ENDPOINTS.PAYMENT_METHODS_ACTIVOS);
       if (metodosPagoRes.success) {
         setMetodosPago(metodosPagoRes.data || []);

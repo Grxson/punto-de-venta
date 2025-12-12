@@ -112,7 +112,8 @@ public class ProductoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
         
         // Validar segregación: el producto debe pertenecer a la sucursal del usuario
-        if (p.getSucursal() == null || !p.getSucursal().getId().equals(sucursalId)) {
+        // ✅ FLEXIBLE: Si no tiene sucursal asignada, permitir acceso (será asignada al actualizar)
+        if (p.getSucursal() != null && !p.getSucursal().getId().equals(sucursalId)) {
             throw new ResourceNotFoundException("Producto no encontrado en su sucursal");
         }
 
@@ -143,7 +144,8 @@ public class ProductoService {
         Producto productoBase = productoRepository.findById(productoBaseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + productoBaseId));
         
-        if (productoBase.getSucursal() == null || !productoBase.getSucursal().getId().equals(sucursalId)) {
+        // ✅ FLEXIBLE: Si no tiene sucursal asignada, permitir acceso
+        if (productoBase.getSucursal() != null && !productoBase.getSucursal().getId().equals(sucursalId)) {
             throw new ResourceNotFoundException("Producto no encontrado en su sucursal");
         }
 
@@ -176,7 +178,13 @@ public class ProductoService {
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
         
-        if (p.getSucursal() == null || !p.getSucursal().getId().equals(sucursalId)) {
+        // ✅ SEGREGACIÓN FLEXIBLE: Si el producto no tiene sucursal asignada, asignarle la actual
+        // Si ya tiene sucursal, validar que sea la misma
+        if (p.getSucursal() == null) {
+            Sucursal sucursal = sucursalRepository.findById(sucursalId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Sucursal no encontrada"));
+            p.setSucursal(sucursal);
+        } else if (!p.getSucursal().getId().equals(sucursalId)) {
             throw new ResourceNotFoundException("Producto no encontrado en su sucursal");
         }
 
@@ -209,7 +217,8 @@ public class ProductoService {
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
         
-        if (p.getSucursal() == null || !p.getSucursal().getId().equals(sucursalId)) {
+        // ✅ FLEXIBLE: Si no tiene sucursal, permitir eliminación. Si tiene, debe ser la misma
+        if (p.getSucursal() != null && !p.getSucursal().getId().equals(sucursalId)) {
             throw new ResourceNotFoundException("Producto no encontrado en su sucursal");
         }
 

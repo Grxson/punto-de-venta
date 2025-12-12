@@ -1,0 +1,67 @@
+{
+  "categorias": [
+    {
+      "id": 1,
+      "nombre": "Insumos",
+      "descripcion": "Ingredientes y materiales para producción",
+      "presupuestoMensual": null,
+      "activo": true
+    },
+    {
+      "id": 2,
+      "nombre": "Servicios",
+      "descripcion": "Servicios público (luz, agua, internet)",
+      "presupuestoMensual": null,
+      "activo": true
+    },
+    {
+      "id": 3,
+      "nombre": "Renta",
+      "descripcion": "Renta o alquiler del local",
+      "presupuestoMensual": null,
+      "activo": true
+    },
+    {
+      "id": 4,
+      "nombre": "Mantenimiento",
+      "descripcion": "Mantenimiento y reparaciones",
+      "presupuestoMensual": null,
+      "activo": true
+    },
+    {
+      "id": 5,
+      "nombre": "Nómina",
+      "descripcion": "Salarios y sueldos del personal",
+      "presupuestoMensual": null,
+      "activo": true
+    },
+    {
+      "id": 6,
+      "nombre": "Suministros",
+      "descripcion": "Suministros de oficina y operación",
+      "presupuestoMensual": null,
+      "activo": true
+    },
+    {
+      "id": 7,
+      "nombre": "Transporte",
+      "descripcion": "Gastos de transporte y combustible",
+      "presupuestoMensual": null,
+      "activo": true
+    },
+    {
+      "id": 8,
+      "nombre": "Publicidad",
+      "descripcion": "Gastos de publicidad y marketing",
+      "presupuestoMensual": null,
+      "activo": true
+    },
+    {
+      "id": 9,
+      "nombre": "Otros",
+      "descripcion": "Otros gastos misceláneos",
+      "presupuestoMensual": null,
+      "activo": true
+    }
+  ]
+}
