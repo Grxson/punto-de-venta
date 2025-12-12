@@ -10,6 +10,7 @@ const menuItems = [
       { text: 'Reportes', icon: <Assessment />, path: '/admin/reports' },
       { text: 'Inventario', icon: <Inventory />, path: '/admin/inventory' },
       { text: 'Categorías', icon: <Restaurant />, path: '/admin/categorias' },
+      { text: 'Recetas', icon: <Restaurant />, path: '/admin/recetas' },
       { text: 'Finanzas', icon: <AccountBalance />, path: '/admin/finances' },
       { text: 'Gastos', icon: <AttachMoney />, path: '/admin/expenses' },
       { text: 'Usuarios', icon: <Group />, path: '/admin/usuarios' },

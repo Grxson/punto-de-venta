@@ -35,6 +35,7 @@ const AdminFinances = lazy(() => import('./pages/admin/AdminFinances'));
 const AdminExpenses = lazy(() => import('./pages/admin/AdminExpenses'));
 const AdminSales = lazy(() => import('./pages/admin/AdminSales'));
 const AdminCategorias = lazy(() => import('./pages/admin/AdminCategorias'));
+const AdminRecipes = lazy(() => import('./pages/admin/AdminRecipes'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 
 /**
@@ -234,6 +235,7 @@ function AppRoutes() {
             <Route path="reports" element={<AdminReports />} />
             <Route path="inventory" element={<AdminInventory />} />
             <Route path="categorias" element={<AdminCategorias />} />
+            <Route path="recetas" element={<AdminRecipes />} />
             <Route path="finances" element={<AdminFinances />} />
             <Route path="expenses" element={<AdminExpenses />} />
             <Route path="sales" element={<AdminSales />} />

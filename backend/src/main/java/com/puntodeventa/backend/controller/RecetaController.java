@@ -19,12 +19,19 @@ import java.util.Map;
  * Controlador REST para la gestión de recetas (BOM).
  */
 @RestController
-@RequestMapping("/api/inventario/recetas")
+@RequestMapping("/api/recetas")
 @RequiredArgsConstructor
 @Tag(name = "Inventario - Recetas", description = "Endpoints para gestión de recetas (BOM)")
 public class RecetaController {
     
     private final RecetaService recetaService;
+    
+    @GetMapping
+    @Operation(summary = "Obtener todas las recetas")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'COCINA')")
+    public ResponseEntity<List<RecetaDTO>> obtenerTodas() {
+        return ResponseEntity.ok(recetaService.obtenerTodas());
+    }
     
     @GetMapping("/producto/{productoId}")
     @Operation(summary = "Obtener recetas de un producto")

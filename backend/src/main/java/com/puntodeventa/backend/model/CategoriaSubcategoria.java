@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.model;
 
+import com.puntodeventa.backend.config.BooleanToIntegerConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -53,8 +54,8 @@ public class CategoriaSubcategoria {
     @Builder.Default
     private Integer orden = 0;
 
-    @Column(nullable = false, columnDefinition = "INTEGER")
-    @ColumnDefault("1")
+    @Column(nullable = false)
+    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activa = true;
 

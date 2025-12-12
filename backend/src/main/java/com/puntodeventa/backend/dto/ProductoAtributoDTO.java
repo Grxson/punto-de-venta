@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonGetter;
 
 /**
  * DTO para ProductoAtributo
@@ -55,13 +56,28 @@ public class ProductoAtributoDTO {
         this.opciones = opciones;
     }
 
-    // Getters
-    public Long id() { return id; }
-    public Long productoId() { return productoId; }
-    public String nombre() { return nombre; }
-    public String tipo() { return tipo; }
-    public Boolean requerido() { return requerido; }
-    public Integer orden() { return orden; }
-    public Boolean activo() { return activo; }
-    public List<ProductoAtributoOpcionDTO> opciones() { return opciones; }
+    // Getters (compatible con Jackson)
+    @JsonGetter("id")
+    public Long getId() { return id; }
+    
+    @JsonGetter("productoId")
+    public Long getProductoId() { return productoId; }
+    
+    @JsonGetter("nombre")
+    public String getNombre() { return nombre; }
+    
+    @JsonGetter("tipo")
+    public String getTipo() { return tipo; }
+    
+    @JsonGetter("requerido")
+    public Boolean getRequerido() { return requerido; }
+    
+    @JsonGetter("orden")
+    public Integer getOrden() { return orden; }
+    
+    @JsonGetter("activo")
+    public Boolean getActivo() { return activo; }
+    
+    @JsonGetter("opciones")
+    public List<ProductoAtributoOpcionDTO> getOpciones() { return opciones; }
 }

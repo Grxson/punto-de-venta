@@ -14,7 +14,7 @@ import jakarta.persistence.Converter;
  * @version 1.0.0
  * @since Java 21
  */
-@Converter(autoApply = true)
+@Converter(autoApply = false)
 public class BooleanToIntegerConverter implements AttributeConverter<Boolean, Integer> {
 
     @Override

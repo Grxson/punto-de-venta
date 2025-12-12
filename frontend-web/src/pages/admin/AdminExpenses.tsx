@@ -27,6 +27,8 @@ import {
   Chip,
   Stack,
   Autocomplete,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import { Add, Delete, AttachMoney, Edit } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -40,8 +42,33 @@ import { useAuth } from '../../contexts/AuthContext';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
 import ExpandableExpenseRow from '../../components/expenses/ExpandableExpenseRow';
 import { useGroupExpensesByTime } from '../../hooks/useGroupExpensesByTime';
+import { useCategoriasGasto } from '../../hooks/useCategoriasGasto';
+import { gastosIndirectosService } from '../../services/gastos-indirectos.service';
+import { manoObraService } from '../../services/mano-obra.service';
 import type { DateRangeValue } from '../../types/dateRange.types';
 import { getTodayLocalDate, getDateWithOffset } from '../../utils/dateHelper';
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+  sx?: any;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, sx } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`tabpanel-${index}`}
+      aria-labelledby={`tab-${index}`}
+    >
+      {value === index && <Box sx={sx}>{children}</Box>}
+    </div>
+  );
+}
 
 interface CategoriaGasto {
   id: number;
@@ -99,6 +126,11 @@ interface GastoPendiente {
 
 export default function AdminExpenses() {
   const { usuario } = useAuth();
+  const { categorias: categoriasGastoPredefinidas } = useCategoriasGasto();
+  
+  // Estado de Tabs
+  const [activeTab, setActiveTab] = useState(0);
+  
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [categorias, setCategorias] = useState<CategoriaGasto[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
@@ -212,11 +244,8 @@ export default function AdminExpenses() {
         setError(`Error al cargar gastos: ${gastosResponse.error}`);
       }
 
-      // Cargar categorías
-      const categoriasResponse = await apiService.get(`${API_ENDPOINTS.CATEGORIAS_GASTO}/activas`);
-      if (categoriasResponse.success && categoriasResponse.data) {
-        setCategorias(categoriasResponse.data);
-      }
+      // Cargar categorías desde JSON predefinidas
+      setCategorias(categoriasGastoPredefinidas as CategoriaGasto[]);
 
       // Cargar proveedores
       const proveedoresResponse = await apiService.get(`${API_ENDPOINTS.PROVEEDORES}/activos`);
@@ -600,6 +629,417 @@ export default function AdminExpenses() {
   // Agrupar gastos filtrados por hora de registro
   const gastoGrouped = useGroupExpensesByTime(gastosFiltrados);
 
+  // ============ COMPONENTES TAB ============
+
+  // Componente Tab para Gastos Indirectos
+  function GastosIndirectosTab() {
+    const [gastosIndirectos, setGastosIndirectos] = useState<any[]>([]);
+    const [loadingIndirectos, setLoadingIndirectos] = useState(false);
+    const [openIndirectoDialog, setOpenIndirectoDialog] = useState(false);
+    const [editingIndirecto, setEditingIndirecto] = useState<any | null>(null);
+    const [nombreIndirecto, setNombreIndirecto] = useState<string>('');
+    const [descripcionIndirecto, setDescripcionIndirecto] = useState<string>('');
+    const [montoMensualIndirecto, setMontoMensualIndirecto] = useState<string>('');
+
+    useEffect(() => {
+      cargarGastosIndirectos();
+    }, []);
+
+    const cargarGastosIndirectos = async () => {
+      try {
+        setLoadingIndirectos(true);
+        const data = await gastosIndirectosService.obtenerActivos();
+        setGastosIndirectos(data);
+      } catch (error) {
+        console.error('Error cargando gastos indirectos:', error);
+        setError('Error cargando gastos indirectos');
+      } finally {
+        setLoadingIndirectos(false);
+      }
+    };
+
+    const handleGuardarIndirecto = async () => {
+      if (!nombreIndirecto.trim() || !montoMensualIndirecto) {
+        setError('Nombre y monto son requeridos');
+        return;
+      }
+
+      try {
+        setLoadingIndirectos(true);
+        const datos = {
+          nombre: nombreIndirecto,
+          descripcion: descripcionIndirecto,
+          montoMensual: parseFloat(montoMensualIndirecto),
+          montoSemanal: 0,
+          montoDiario: 0,
+          activo: true,
+        };
+
+        if (editingIndirecto) {
+          await gastosIndirectosService.actualizar(editingIndirecto.id, datos);
+        } else {
+          await gastosIndirectosService.crear(datos);
+        }
+
+        cargarGastosIndirectos();
+        setOpenIndirectoDialog(false);
+        setNombreIndirecto('');
+        setDescripcionIndirecto('');
+        setMontoMensualIndirecto('');
+        setEditingIndirecto(null);
+      } catch (error) {
+        console.error('Error guardando gasto indirecto:', error);
+        setError('Error guardando gasto indirecto');
+      } finally {
+        setLoadingIndirectos(false);
+      }
+    };
+
+    const handleDeleteIndirecto = async (id: number) => {
+      if (window.confirm('¿Estás seguro de eliminar este gasto indirecto?')) {
+        try {
+          setLoadingIndirectos(true);
+          await gastosIndirectosService.eliminar(id);
+          cargarGastosIndirectos();
+        } catch (error) {
+          console.error('Error eliminando gasto indirecto:', error);
+          setError('Error eliminando gasto indirecto');
+        } finally {
+          setLoadingIndirectos(false);
+        }
+      }
+    };
+
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => {
+              setEditingIndirecto(null);
+              setNombreIndirecto('');
+              setDescripcionIndirecto('');
+              setMontoMensualIndirecto('');
+              setOpenIndirectoDialog(true);
+            }}
+            sx={{ minHeight: '48px' }}
+          >
+            Agregar Gasto Indirecto
+          </Button>
+        </Box>
+
+        {/* Tabla de Gastos Indirectos */}
+        <Card>
+          <CardContent>
+            <TableContainer component={Paper} variant="outlined">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Nombre</TableCell>
+                    <TableCell>Descripción</TableCell>
+                    <TableCell align="right">Monto Mensual</TableCell>
+                    <TableCell align="center">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {gastosIndirectos.length > 0 ? (
+                    gastosIndirectos.map((gasto) => (
+                      <TableRow key={gasto.id}>
+                        <TableCell>{gasto.nombre}</TableCell>
+                        <TableCell>{gasto.descripcion || '-'}</TableCell>
+                        <TableCell align="right">${gasto.montoMensual?.toFixed(2) || '0.00'}</TableCell>
+                        <TableCell align="center">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => {
+                              setEditingIndirecto(gasto);
+                              setNombreIndirecto(gasto.nombre);
+                              setDescripcionIndirecto(gasto.descripcion || '');
+                              setMontoMensualIndirecto(gasto.montoMensual?.toString() || '');
+                              setOpenIndirectoDialog(true);
+                            }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDeleteIndirecto(gasto.id)}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        No hay gastos indirectos registrados
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+
+        {/* Dialog para crear/editar gasto indirecto */}
+        <Dialog open={openIndirectoDialog} onClose={() => setOpenIndirectoDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>
+            {editingIndirecto ? 'Editar Gasto Indirecto' : 'Agregar Gasto Indirecto'}
+          </DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField
+                fullWidth
+                label="Nombre *"
+                value={nombreIndirecto}
+                onChange={(e) => setNombreIndirecto(e.target.value)}
+                placeholder="Ej: Electricidad, Agua, Internet"
+              />
+              <TextField
+                fullWidth
+                label="Descripción"
+                value={descripcionIndirecto}
+                onChange={(e) => setDescripcionIndirecto(e.target.value)}
+                multiline
+                rows={2}
+              />
+              <TextField
+                fullWidth
+                label="Monto Mensual *"
+                type="number"
+                value={montoMensualIndirecto}
+                onChange={(e) => setMontoMensualIndirecto(e.target.value)}
+                inputProps={{ step: '0.01', min: '0' }}
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenIndirectoDialog(false)}>Cancelar</Button>
+            <Button
+              onClick={handleGuardarIndirecto}
+              variant="contained"
+              disabled={loadingIndirectos}
+            >
+              {loadingIndirectos ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    );
+  }
+
+  // Componente Tab para Mano de Obra
+  function ManoObraTab() {
+    const [manoObra, setManoObra] = useState<any[]>([]);
+    const [loadingMano, setLoadingMano] = useState(false);
+    const [openManoDialog, setOpenManoDialog] = useState(false);
+    const [editingMano, setEditingMano] = useState<any | null>(null);
+    const [puestoMano, setPuestoMano] = useState<string>('');
+    const [salarioMensualMano, setSalarioMensualMano] = useState<string>('');
+    const [periodMano, setPeriodMano] = useState<string>('MENSUAL');
+
+    useEffect(() => {
+      cargarManoObra();
+    }, []);
+
+    const cargarManoObra = async () => {
+      try {
+        setLoadingMano(true);
+        const data = await manoObraService.obtenerActivos();
+        setManoObra(data);
+      } catch (error) {
+        console.error('Error cargando mano de obra:', error);
+        setError('Error cargando mano de obra');
+      } finally {
+        setLoadingMano(false);
+      }
+    };
+
+    const handleGuardarMano = async () => {
+      if (!puestoMano.trim() || !salarioMensualMano) {
+        setError('Puesto y salario son requeridos');
+        return;
+      }
+
+      try {
+        setLoadingMano(true);
+        const datos = {
+          puesto: puestoMano,
+          salarioMensual: parseFloat(salarioMensualMano),
+          pagoPorTurno: 0,
+          periodo: periodMano,
+          activo: true,
+        };
+
+        if (editingMano) {
+          await manoObraService.actualizar(editingMano.id, datos);
+        } else {
+          await manoObraService.crear(datos);
+        }
+
+        cargarManoObra();
+        setOpenManoDialog(false);
+        setPuestoMano('');
+        setSalarioMensualMano('');
+        setPeriodMano('MENSUAL');
+        setEditingMano(null);
+      } catch (error) {
+        console.error('Error guardando mano de obra:', error);
+        setError('Error guardando mano de obra');
+      } finally {
+        setLoadingMano(false);
+      }
+    };
+
+    const handleDeleteMano = async (id: number) => {
+      if (window.confirm('¿Estás seguro de eliminar este registro de mano de obra?')) {
+        try {
+          setLoadingMano(true);
+          await manoObraService.eliminar(id);
+          cargarManoObra();
+        } catch (error) {
+          console.error('Error eliminando mano de obra:', error);
+          setError('Error eliminando mano de obra');
+        } finally {
+          setLoadingMano(false);
+        }
+      }
+    };
+
+    return (
+      <Box>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => {
+              setEditingMano(null);
+              setPuestoMano('');
+              setSalarioMensualMano('');
+              setPeriodMano('MENSUAL');
+              setOpenManoDialog(true);
+            }}
+            sx={{ minHeight: '48px' }}
+          >
+            Agregar Mano de Obra
+          </Button>
+        </Box>
+
+        {/* Tabla de Mano de Obra */}
+        <Card>
+          <CardContent>
+            <TableContainer component={Paper} variant="outlined">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Puesto</TableCell>
+                    <TableCell>Período</TableCell>
+                    <TableCell align="right">Salario Mensual</TableCell>
+                    <TableCell align="center">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {manoObra.length > 0 ? (
+                    manoObra.map((registro) => (
+                      <TableRow key={registro.id}>
+                        <TableCell>{registro.puesto}</TableCell>
+                        <TableCell>{registro.periodo}</TableCell>
+                        <TableCell align="right">${registro.salarioMensual?.toFixed(2) || '0.00'}</TableCell>
+                        <TableCell align="center">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => {
+                              setEditingMano(registro);
+                              setPuestoMano(registro.puesto);
+                              setSalarioMensualMano(registro.salarioMensual?.toString() || '');
+                              setPeriodMano(registro.periodo);
+                              setOpenManoDialog(true);
+                            }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDeleteMano(registro.id)}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        No hay registros de mano de obra
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </CardContent>
+        </Card>
+
+        {/* Dialog para crear/editar mano de obra */}
+        <Dialog open={openManoDialog} onClose={() => setOpenManoDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>
+            {editingMano ? 'Editar Mano de Obra' : 'Agregar Mano de Obra'}
+          </DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <TextField
+                fullWidth
+                label="Puesto *"
+                value={puestoMano}
+                onChange={(e) => setPuestoMano(e.target.value)}
+                placeholder="Ej: Cajero, Cocinero, Mesero"
+              />
+              <FormControl fullWidth>
+                <InputLabel>Período</InputLabel>
+                <Select
+                  value={periodMano}
+                  onChange={(e) => setPeriodMano(e.target.value)}
+                  label="Período"
+                >
+                  <MenuItem value="MENSUAL">Mensual</MenuItem>
+                  <MenuItem value="SEMANAL">Semanal</MenuItem>
+                  <MenuItem value="POR_TURNO">Por Turno</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField
+                fullWidth
+                label="Salario *"
+                type="number"
+                value={salarioMensualMano}
+                onChange={(e) => setSalarioMensualMano(e.target.value)}
+                inputProps={{ step: '0.01', min: '0' }}
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenManoDialog(false)}>Cancelar</Button>
+            <Button
+              onClick={handleGuardarMano}
+              variant="contained"
+              disabled={loadingMano}
+            >
+              {loadingMano ? 'Guardando...' : 'Guardar'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    );
+  }
+
+  // ============ FIN COMPONENTES TAB ============
+
   if (loadingData) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -611,17 +1051,31 @@ export default function AdminExpenses() {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
       <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4">Gastos</Typography>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => handleOpenDialog()}
-            sx={{ minHeight: '48px' }}
-          >
-            Registrar Gasto
-          </Button>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h4">Gestión de Gastos</Typography>
         </Box>
+
+        {/* Tabs Navigation */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+          <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} aria-label="Gastos tabs">
+            <Tab label="Gastos Operacionales" id="tab-0" />
+            <Tab label="Gastos Indirectos" id="tab-1" />
+            <Tab label="Mano de Obra" id="tab-2" />
+          </Tabs>
+        </Box>
+
+        {/* TAB 0: Gastos Operacionales */}
+        <TabPanel value={activeTab} index={0} sx={{ p: 0 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => handleOpenDialog()}
+              sx={{ minHeight: '48px' }}
+            >
+              Registrar Gasto
+            </Button>
+          </Box>
 
         {/* Filtro de fechas */}
         <DateRangeFilter 
@@ -1089,6 +1543,17 @@ export default function AdminExpenses() {
             </Button>
           </DialogActions>
         </Dialog>
+        </TabPanel>
+
+        {/* TAB 1: Gastos Indirectos */}
+        <TabPanel value={activeTab} index={1} sx={{ p: 0 }}>
+          <GastosIndirectosTab />
+        </TabPanel>
+
+        {/* TAB 2: Mano de Obra */}
+        <TabPanel value={activeTab} index={2} sx={{ p: 0 }}>
+          <ManoObraTab />
+        </TabPanel>
       </Box>
     </LocalizationProvider>
   );

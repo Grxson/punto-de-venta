@@ -35,7 +35,7 @@ echo "[start.sh] Usando perfil: $PROFILE"
 # Build si no hay JAR
 if ! compgen -G "$APP_JAR_PATTERN" > /dev/null; then
   echo "[start.sh] JAR no encontrado. Ejecutando build Maven (skipTests)..."
-  ./mvnw clean package -DskipTests
+  cd "$(dirname "$0")" && ./mvnw clean package -DskipTests
 else
   echo "[start.sh] JAR encontrado. No se reconstruye."
 fi
@@ -76,4 +76,9 @@ echo "[start.sh] Lanzando: java $SAFE_JAVA_OPTS -Dserver.port=$PORT -Dspring.pro
 exec java $SAFE_JAVA_OPTS \
      -Dserver.port="$PORT" \
      -Dspring.profiles.active="$PROFILE" \
+     -DDB_HOST="${DB_HOST:-localhost}" \
+     -DDB_PORT="${DB_PORT:-5432}" \
+     -DDB_NAME="${DB_NAME:-railway}" \
+     -DDB_USER="${DB_USER:-postgres}" \
+     -DDB_PASSWORD="${DB_PASSWORD:-}" \
      -jar "$JAR_FILE"

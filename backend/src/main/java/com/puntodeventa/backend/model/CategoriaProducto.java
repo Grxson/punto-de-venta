@@ -36,7 +36,8 @@ public class CategoriaProducto {
     @Column(columnDefinition = "TEXT")
     private String descripcion;
 
-    @Column(nullable = false, columnDefinition = "INTEGER")
+    @Column(nullable = false)
+    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activa = true;
 

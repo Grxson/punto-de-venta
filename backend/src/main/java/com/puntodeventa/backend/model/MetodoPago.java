@@ -27,11 +27,11 @@ public class MetodoPago {
     @Column(nullable = false, length = 100, unique = true)
     private String nombre;
     
-    @Column(name = "requiere_referencia", nullable = false, columnDefinition = "SMALLINT DEFAULT 0")
+    @Column(name = "requiere_referencia", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     @Convert(converter = BooleanToIntegerConverter.class)
     private Boolean requiereReferencia = false;
     
-    @Column(nullable = false, columnDefinition = "SMALLINT DEFAULT 1")
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     @Convert(converter = BooleanToIntegerConverter.class)
     private Boolean activo = true;
     

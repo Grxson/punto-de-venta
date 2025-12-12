@@ -25,7 +25,7 @@ public class Usuario {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false, columnDefinition = "SMALLINT DEFAULT 1")
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     @Convert(converter = BooleanToIntegerConverter.class)
     private Boolean activo = true;
 

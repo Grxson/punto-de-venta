@@ -47,7 +47,7 @@ public class ProductoAtributo {
     @Enumerated(EnumType.STRING)
     private TipoAtributo tipo;
     
-    @Column(nullable = false, columnDefinition = "SMALLINT DEFAULT 0")
+    @Column(nullable = false)
     @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean requerido = false;
@@ -56,7 +56,7 @@ public class ProductoAtributo {
     @Builder.Default
     private Integer orden = 0;
     
-    @Column(nullable = false, columnDefinition = "SMALLINT DEFAULT 1")
+    @Column(nullable = false)
     @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activo = true;
@@ -68,7 +68,7 @@ public class ProductoAtributo {
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private LocalDateTime updatedAt;
     
-    @OneToMany(mappedBy = "atributo", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "atributo", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductoAtributoOpcion> opciones;
     
     /**

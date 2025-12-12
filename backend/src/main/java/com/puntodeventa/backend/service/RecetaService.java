@@ -31,6 +31,15 @@ public class RecetaService {
     private final UnidadRepository unidadRepository;
     private final InventarioMapper mapper;
 
+    /**
+     * Obtener todas las recetas
+     */
+    public List<RecetaDTO> obtenerTodas() {
+        return recetaRepository.findAll().stream()
+                .map(mapper::toRecetaDTO)
+                .toList();
+    }
+
     @Cacheable(value = "recetas", key = "'producto-' + #productoId")
     public List<RecetaDTO> obtenerPorProducto(Long productoId) {
         return recetaRepository.findByProductoIdWithDetails(productoId).stream()

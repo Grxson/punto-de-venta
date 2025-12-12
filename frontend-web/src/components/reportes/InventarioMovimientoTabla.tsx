@@ -305,7 +305,7 @@ const FilaProducto = memo(
           }}
         >
           {primerMovimiento ? (
-            <CeldaNumerico valor={primerMovimiento.inicio} />
+            <ContenidoNumerico valor={primerMovimiento.inicio} />
           ) : (
             <span>0.00</span>
           )}
@@ -345,7 +345,22 @@ const FilaProducto = memo(
 FilaProducto.displayName = 'FilaProducto';
 
 /**
- * Celda numérica optimizada.
+ * Contenido numérico formateado (sin TableCell).
+ */
+interface ContenidoNumericoProps {
+  valor: number | { toNumber: () => number };
+}
+
+const ContenidoNumerico = memo(({ valor }: ContenidoNumericoProps) => {
+  const numero =
+    typeof valor === 'number' ? valor : valor?.toNumber?.() ?? 0;
+  return <span>{numero.toFixed(2)}</span>;
+});
+
+ContenidoNumerico.displayName = 'ContenidoNumerico';
+
+/**
+ * Celda numérica con TableCell (para uso fuera de TableCell).
  */
 interface CeldaNumericoProps {
   valor: number | { toNumber: () => number };
