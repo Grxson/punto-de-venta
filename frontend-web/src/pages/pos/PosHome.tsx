@@ -90,21 +90,6 @@ export default function PosHome() {
     ? subcategoriasData.data
     : [];
 
-  // Obtiene el nombre base sin el sufijo de variante (Chico/Mediano/Grande)
-  const obtenerNombreBase = (p: Producto): string => {
-    if (!p?.nombreVariante) return p?.nombre ?? '';
-    let nombre = (p?.nombre || '').trim();
-    const sufijos = ['Chico', 'Mediano', 'Grande'];
-    for (const sufijo of sufijos) {
-      const re = new RegExp(`\\s+${sufijo}$`, 'i');
-      if (re.test(nombre)) {
-        nombre = nombre.replace(re, '').trim();
-        break;
-      }
-    }
-    return nombre;
-  };
-
   useEffect(() => {
     // Detectar venta exitosa desde location.state o localStorage
     // SOLO ejecutar una vez al montar el componente
@@ -378,12 +363,9 @@ export default function PosHome() {
 
   const handleAgregarSinIngredientes = (variante: Producto) => {
     // Agregar el tamaño seleccionado sin ingredientes
-    // Limpiar nombreVariante removiendo guiones y espacios al inicio/final
-    const nombreVariante = (variante.nombreVariante || variante.nombre)
-      .trim()
-      .replace(/^[\s-]+|[\s-]+$/g, ''); // Remover - y espacios al inicio y final
-
-    const nombreCompleto = `${productoSeleccionado?.nombre} - ${nombreVariante}`.trim();
+    // El backend ya contiene el nombre completo del producto con su variante
+    // ej: "PAPAS A LA FRANCESA - Chica", así que usamos directamente variante.nombre
+    const nombreCompleto = variante.nombre.trim();
 
     const productoFinal: Producto = {
       ...variante,
@@ -425,14 +407,11 @@ export default function PosHome() {
         .filter((n: string) => Boolean(n))
         .join(',');
 
-      // Limpiar nombreVariante removiendo guiones y espacios al inicio/final
-      const nombreVariante = (tamañoSeleccionado?.nombreVariante || tamañoSeleccionado?.nombre || '')
-        .trim()
-        .replace(/^[\s-]+|[\s-]+$/g, ''); // Remover - y espacios al inicio y final
-
+      // El backend ya contiene el nombre completo del producto con su variante
+      // ej: "PAPAS A LA FRANCESA - Chica", así que usamos directamente tamañoSeleccionado.nombre
       const nombreCompleto = ingredientesNombres
-        ? `${productoSeleccionado?.nombre} C/${ingredientesNombres} - ${nombreVariante}`
-        : `${productoSeleccionado?.nombre} - ${nombreVariante}`;
+        ? `${tamañoSeleccionado?.nombre} C/${ingredientesNombres}`
+        : `${tamañoSeleccionado?.nombre}`;
 
       // Calcular precio total (tamaño + ingredientes)
       const precioIngredientes = Array.from(ingredientesSeleccionados)
@@ -833,9 +812,7 @@ export default function PosHome() {
                       }}
                     >
                       <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                        {item.producto.nombreVariante
-                          ? `${obtenerNombreLimpio(obtenerNombreBase(item.producto))} - ${limpiarNombreVariante(item.producto.nombreVariante)}`
-                          : obtenerNombreLimpio(item.producto.nombre)}
+                        {obtenerNombreLimpio(item.producto.nombre)}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifyContent: 'space-between' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1074,7 +1051,7 @@ export default function PosHome() {
         {pasoModal === 'ingredientes' && (
           <>
             <DialogTitle>
-              Complementos para {tamañoSeleccionado?.nombreVariante || tamañoSeleccionado?.nombre}
+              Complementos para {tamañoSeleccionado?.nombre}
             </DialogTitle>
             <DialogContent>
               {loadingAtributos ? (

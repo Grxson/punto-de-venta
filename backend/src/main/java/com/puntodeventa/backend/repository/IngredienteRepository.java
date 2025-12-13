@@ -13,18 +13,18 @@ import java.util.List;
  */
 @Repository
 public interface IngredienteRepository extends JpaRepository<Ingrediente, Long> {
-    
+
     @Query("SELECT i FROM Ingrediente i WHERE i.activo = true")
     List<Ingrediente> findByActivoTrue();
-    
+
     List<Ingrediente> findByCategoria(String categoria);
-    
+
     List<Ingrediente> findByNombreContainingIgnoreCase(String nombre);
-    
+
     @Query("SELECT DISTINCT i.categoria FROM Ingrediente i WHERE i.categoria IS NOT NULL ORDER BY i.categoria")
     List<String> findAllCategorias();
-    
-    // ✅ ARREGLO: Usar IS TRUE para PostgreSQL compatibility
-    @Query("SELECT i FROM Ingrediente i WHERE i.activo IS TRUE AND i.stockMinimo IS NOT NULL")
+
+    // ✅ ARREGLO: Usar = true en lugar de IS TRUE (activo se almacena como INTEGER)
+    @Query("SELECT i FROM Ingrediente i WHERE i.activo = true AND i.stockMinimo IS NOT NULL")
     List<Ingrediente> findIngredientesConStockMinimo();
 }

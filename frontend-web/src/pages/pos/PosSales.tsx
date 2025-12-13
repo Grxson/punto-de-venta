@@ -92,13 +92,13 @@ export default function PosSales() {
   const [error, setError] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState<number | null>(null);
   const [editando, setEditando] = useState<number | null>(null);
-  
+
   // Estado para el diálogo de cancelación
   const [dialogoCancelacion, setDialogoCancelacion] = useState(false);
   const [ventaSeleccionada, setVentaSeleccionada] = useState<Venta | null>(null);
   const [motivoCancelacion, setMotivoCancelacion] = useState('');
   const [errorMotivo, setErrorMotivo] = useState<string | null>(null);
-  
+
   // Estado para el diálogo de edición
   const [dialogoEdicion, setDialogoEdicion] = useState(false);
   const [itemsEditados, setItemsEditados] = useState<VentaItem[]>([]);
@@ -133,12 +133,12 @@ export default function PosSales() {
     const totalVenta = itemsEditados.reduce((sum, item) => sum + item.subtotal, 0);
     const totalPagosActuales = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
     const diferencia = totalVenta - totalPagosActuales;
-    
+
     // Solo actualizar si hay una diferencia significativa
     if (Math.abs(diferencia) > 0.01) {
       const ultimoPagoIndex = pagosEditados.length - 1;
       const nuevoMonto = Math.max(0, pagosEditados[ultimoPagoIndex].monto + diferencia);
-      
+
       // Actualizar solo si el monto cambió significativamente
       if (Math.abs(pagosEditados[ultimoPagoIndex].monto - nuevoMonto) > 0.01) {
         setPagosEditados(prevPagos => {
@@ -234,14 +234,14 @@ export default function PosSales() {
     setFechaEditada(venta.fecha);
     setEditandoFecha(false);
     setErrorEdicion(null);
-    
+
     // Cargar productos y métodos de pago
     try {
       const [productosRes, metodosRes] = await Promise.all([
         apiService.get(API_ENDPOINTS.PRODUCTS),
         apiService.get(API_ENDPOINTS.PAYMENT_METHODS_ACTIVOS),
       ]);
-      
+
       if (productosRes.success && productosRes.data) {
         // Cargar variantes para cada producto base
         const productosConVariantes = await Promise.all(
@@ -260,7 +260,7 @@ export default function PosSales() {
             return producto;
           })
         );
-        
+
         // Agregar productos de la venta que no estén en la lista (por si son variantes o productos eliminados)
         const productosIdsDisponibles = new Set(productosConVariantes.map(p => p.id));
         const productosFaltantes = venta.items
@@ -277,7 +277,7 @@ export default function PosSales() {
               ordenVariante: null,
             };
           });
-        
+
         setProductos([...productosConVariantes, ...productosFaltantes]);
       }
       if (metodosRes.success && metodosRes.data) {
@@ -286,7 +286,7 @@ export default function PosSales() {
     } catch (err) {
       console.error('Error al cargar datos:', err);
     }
-    
+
     setDialogoEdicion(true);
   };
 
@@ -303,11 +303,11 @@ export default function PosSales() {
 
   const handleAgregarItem = () => {
     if (productos.length === 0) return;
-    
+
     // Buscar el primer producto base activo
     const productoBase = productos.find(p => !p.productoBaseId && p.activo);
     if (!productoBase) return;
-    
+
     // Si tiene variantes, mostrar diálogo de selección
     if (productoBase.variantes && productoBase.variantes.length > 0) {
       setProductoSeleccionadoParaVariante(productoBase);
@@ -315,19 +315,12 @@ export default function PosSales() {
       setDialogoVariantes(true);
     } else {
       // Si no tiene variantes, agregar directamente
-      // Construir nombre completo: si es variante, incluir nombre base + variante
-      let nombreCompleto = productoBase.nombre;
-      if (productoBase.productoBaseId) {
-        const productoBasePadre = productos.find(p => p.id === productoBase.productoBaseId);
-        if (productoBasePadre) {
-          nombreCompleto = `${productoBasePadre.nombre} - ${productoBase.nombreVariante || productoBase.nombre}`;
-        }
-      }
-      
+      // El backend ya contiene el nombre completo del producto con su variante
+      // ej: "PAPAS A LA FRANCESA - Chica"
       const nuevoItem: VentaItem = {
         id: 0,
         productoId: productoBase.id,
-        productoNombre: nombreCompleto,
+        productoNombre: productoBase.nombre,
         cantidad: 1,
         precioUnitario: productoBase.precio,
         subtotal: productoBase.precio,
@@ -344,11 +337,11 @@ export default function PosSales() {
   const handleEliminarItem = (index: number) => {
     const itemAEliminar = itemsEditados[index];
     const montoARegresar = itemAEliminar.subtotal;
-    
+
     // Calcular el total actual de pagos
     const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
     const nuevoTotalVenta = calcularTotal() - montoARegresar;
-    
+
     // Si los pagos exceden el nuevo total, mostrar advertencia
     if (totalPagos > nuevoTotalVenta) {
       const exceso = totalPagos - nuevoTotalVenta;
@@ -364,7 +357,7 @@ export default function PosSales() {
         tipo: 'info',
       });
     }
-    
+
     setItemsEditados(itemsEditados.filter((_, i) => i !== index));
   };
 
@@ -379,20 +372,12 @@ export default function PosSales() {
           setDialogoVariantes(true);
         } else {
           // Si no tiene variantes, actualizar directamente
-          // Construir nombre completo: si es variante, incluir nombre base + variante
-          let nombreCompleto = producto.nombre;
-          if (producto.productoBaseId) {
-            const productoBase = productos.find(p => p.id === producto.productoBaseId);
-            if (productoBase) {
-              nombreCompleto = `${productoBase.nombre} - ${producto.nombreVariante || producto.nombre}`;
-            }
-          }
-          
+          // El backend ya contiene el nombre completo del producto con su variante
           const nuevosItems = [...itemsEditados];
           nuevosItems[index] = {
             ...nuevosItems[index],
             productoId: producto.id,
-            productoNombre: nombreCompleto,
+            productoNombre: producto.nombre,
             precioUnitario: producto.precio,
             subtotal: producto.precio * nuevosItems[index].cantidad,
           };
@@ -421,14 +406,13 @@ export default function PosSales() {
     const varianteExiste = productos.some(p => p.id === variante.id);
     if (!varianteExiste) {
       // Agregar la variante a la lista de productos
-      setProductos(prev => [...prev, {
-        ...variante,
-        nombre: `${productoSeleccionadoParaVariante?.nombre} - ${variante.nombreVariante || variante.nombre}`,
-      }]);
+      // El backend ya contiene el nombre completo del producto con su variante
+      setProductos(prev => [...prev, variante]);
     }
-    
-    const nombreVariante = `${productoSeleccionadoParaVariante?.nombre} - ${variante.nombreVariante || variante.nombre}`;
-    
+
+    // Usar directamente el nombre de la variante (backend ya contiene nombre completo)
+    const nombreVariante = variante.nombre;
+
     if (indiceItemParaVariante === null) {
       // Es un nuevo item
       const nuevoItem: VentaItem = {
@@ -462,7 +446,7 @@ export default function PosSales() {
         tipo: 'success',
       });
     }
-    
+
     setDialogoVariantes(false);
     setProductoSeleccionadoParaVariante(null);
     setIndiceItemParaVariante(null);
@@ -470,7 +454,7 @@ export default function PosSales() {
 
   const handleAgregarProductoBase = () => {
     if (!productoSeleccionadoParaVariante) return;
-    
+
     if (indiceItemParaVariante === null) {
       // Es un nuevo item
       const nuevoItem: VentaItem = {
@@ -504,7 +488,7 @@ export default function PosSales() {
         tipo: 'success',
       });
     }
-    
+
     setDialogoVariantes(false);
     setProductoSeleccionadoParaVariante(null);
     setIndiceItemParaVariante(null);
@@ -636,7 +620,7 @@ export default function PosSales() {
     if (!usuario) {
       return false;
     }
-    
+
     // No se puede cancelar si ya está cancelada
     if (venta.estado === 'CANCELADA') {
       return false;
@@ -646,7 +630,7 @@ export default function PosSales() {
     const fechaVenta = new Date(venta.fecha);
     const ahora = new Date();
     const horasDiferencia = (ahora.getTime() - fechaVenta.getTime()) / (1000 * 60 * 60);
-    
+
     return horasDiferencia <= 24;
   };
 
@@ -764,19 +748,19 @@ export default function PosSales() {
                               ))}
                               {venta.items.length > 2 && (
                                 <>
-                                  <Typography 
-                                    ref={(el) => { 
+                                  <Typography
+                                    ref={(el) => {
                                       if (el) {
                                         tooltipRefs.current[venta.id] = el;
                                       } else {
                                         delete tooltipRefs.current[venta.id];
                                       }
                                     }}
-                                    variant="caption" 
-                                    color="primary" 
+                                    variant="caption"
+                                    color="primary"
                                     onClick={() => setTooltipOpen(prev => ({ ...prev, [venta.id]: !prev[venta.id] }))}
-                                    sx={{ 
-                                      fontStyle: 'italic', 
+                                    sx={{
+                                      fontStyle: 'italic',
                                       cursor: 'pointer',
                                       textDecoration: 'underline',
                                       '&:hover': { color: 'primary.dark' }
@@ -982,7 +966,7 @@ export default function PosSales() {
             </Typography>
           )}
         </DialogTitle>
-        
+
         <DialogContent sx={{ flex: 1, overflow: 'auto', px: 2 }}>
           {errorEdicion && (
             <Alert severity="error" sx={{ mb: 2 }} onClose={() => setErrorEdicion(null)}>
@@ -1010,10 +994,8 @@ export default function PosSales() {
                               if (!selected) return 'Seleccionar producto';
                               const prodEncontrado = productos.find(p => p.id === selected);
                               if (prodEncontrado) {
-                                const nombreCompleto = prodEncontrado.productoBaseId 
-                                  ? `${productos.find(p => p.id === prodEncontrado.productoBaseId)?.nombre || ''} - ${prodEncontrado.nombreVariante || prodEncontrado.nombre}`
-                                  : prodEncontrado.nombre;
-                                return nombreCompleto;
+                                // El backend ya contiene el nombre completo del producto con su variante
+                                return prodEncontrado.nombre;
                               }
                               // Si no se encuentra, usar el nombre guardado en el item
                               return limpiarNombreProducto(item.productoNombre) || 'Producto desconocido';
@@ -1024,11 +1006,9 @@ export default function PosSales() {
                             {productos
                               .filter((prod) => !prod.productoBaseId || prod.activo) // Solo productos base o variantes activas
                               .map((prod) => {
-                                // Si es una variante, mostrar el nombre completo
-                                const nombreCompleto = prod.productoBaseId 
-                                  ? `${productos.find(p => p.id === prod.productoBaseId)?.nombre || ''} - ${prod.nombreVariante || prod.nombre}`
-                                  : prod.nombre;
-                                
+                                // El backend ya contiene el nombre completo del producto con su variante
+                                const nombreCompleto = prod.nombre;
+
                                 return (
                                   <MenuItem key={prod.id} value={prod.id} sx={{ minHeight: '48px' }}>
                                     <Box>
@@ -1040,9 +1020,9 @@ export default function PosSales() {
                                           ${prod.precio.toFixed(2)}
                                         </Typography>
                                         {prod.variantes && prod.variantes.length > 0 && (
-                                          <Chip 
-                                            label={`${prod.variantes.length} variantes`} 
-                                            size="small" 
+                                          <Chip
+                                            label={`${prod.variantes.length} variantes`}
+                                            size="small"
                                           />
                                         )}
                                       </Box>
@@ -1072,7 +1052,7 @@ export default function PosSales() {
                             })()}
                           </Select>
                         </FormControl>
-                        
+
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                           <Typography variant="body1" sx={{ minWidth: '80px' }}>
                             Cantidad:
@@ -1098,7 +1078,7 @@ export default function PosSales() {
                           </Box>
                         </Box>
                       </Box>
-                      
+
                       <IconButton
                         color="error"
                         onClick={() => handleEliminarItem(index)}
@@ -1107,7 +1087,7 @@ export default function PosSales() {
                         <Delete />
                       </IconButton>
                     </Box>
-                    
+
                     <Divider sx={{ my: 1 }} />
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="body2" color="text.secondary">
@@ -1121,7 +1101,7 @@ export default function PosSales() {
                 </Card>
               );
             })}
-            
+
             <Button
               variant="outlined"
               startIcon={<Add />}
@@ -1150,7 +1130,7 @@ export default function PosSales() {
             {/* Lista de pagos existentes - Compacta */}
             {pagosEditados.map((pago, index) => {
               const metodo = metodosPago.find(m => m.id === pago.metodoPagoId);
-              
+
               return (
                 <Card key={index} variant="outlined" sx={{ mb: 1.5, borderRadius: 2 }}>
                   <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
@@ -1174,7 +1154,7 @@ export default function PosSales() {
                             ))}
                           </Select>
                         </FormControl>
-                        
+
                         {/* Campo de monto - Grande y visible con botón de auto-completar */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="body2" color="text.secondary" sx={{ minWidth: '50px' }}>
@@ -1206,7 +1186,7 @@ export default function PosSales() {
                             $
                           </Typography>
                         </Box>
-                        
+
                         {/* Campo de referencia - Solo si es necesario */}
                         {metodo?.requiereReferencia && (
                           <TextField
@@ -1288,7 +1268,7 @@ export default function PosSales() {
                   const totalVenta = calcularTotal();
                   const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
                   const restante = Math.max(0, totalVenta - totalPagos);
-                  
+
                   const nuevoPago: Pago = {
                     id: 0,
                     metodoPagoId: metodosPago[0]?.id || 0,
@@ -1331,7 +1311,7 @@ export default function PosSales() {
                 const totalVenta = calcularTotal();
                 const totalPagos = pagosEditados.reduce((sum, p) => sum + p.monto, 0);
                 const diferencia = totalPagos - totalVenta;
-                
+
                 if (diferencia < 0) {
                   return (
                     <Alert severity="warning" sx={{ mt: 1, backgroundColor: 'rgba(255,255,255,0.2)' }}>
@@ -1355,7 +1335,7 @@ export default function PosSales() {
             </CardContent>
           </Card>
         </DialogContent>
-        
+
         <DialogActions sx={{ px: 3, pb: 2, gap: 2 }}>
           <Button
             onClick={handleCerrarDialogoEdicion}
@@ -1397,7 +1377,7 @@ export default function PosSales() {
             {productoSeleccionadoParaVariante?.variantes?.map((variante: any, index: number) => (
               <div key={variante.id}>
                 <ListItem disablePadding>
-                  <ListItemButton 
+                  <ListItemButton
                     onClick={() => handleSeleccionarVariante(variante)}
                     sx={{ minHeight: '64px' }}
                   >
@@ -1435,7 +1415,7 @@ export default function PosSales() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button 
+          <Button
             onClick={() => {
               setDialogoVariantes(false);
               setProductoSeleccionadoParaVariante(null);
