@@ -421,13 +421,12 @@ export default function PosSales() {
     const varianteExiste = productos.some(p => p.id === variante.id);
     if (!varianteExiste) {
       // Agregar la variante a la lista de productos
-      setProductos(prev => [...prev, {
-        ...variante,
-        nombre: `${productoSeleccionadoParaVariante?.nombre} - ${variante.nombreVariante || variante.nombre}`,
-      }]);
+      // El backend ya contiene el nombre completo del producto con su variante
+      setProductos(prev => [...prev, variante]);
     }
     
-    const nombreVariante = `${productoSeleccionadoParaVariante?.nombre} - ${variante.nombreVariante || variante.nombre}`;
+    // Usar directamente el nombre de la variante (backend ya contiene nombre completo)
+    const nombreVariante = variante.nombre;
     
     if (indiceItemParaVariante === null) {
       // Es un nuevo item
