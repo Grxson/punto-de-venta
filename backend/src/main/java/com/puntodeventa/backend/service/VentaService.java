@@ -271,7 +271,7 @@ public class VentaService {
     private Long seleccionarCajaActiva(Long sucursalId) {
         // Intentar por sucursal y activa
         try {
-            var query = new StringBuilder("select id from cajas where activa = true");
+            var query = new StringBuilder("select id from cajas where activa = 1");
             if (sucursalId != null) {
                 query.append(" and sucursal_id = :suc");
             }
@@ -286,7 +286,7 @@ public class VentaService {
 
         // Cualquiera activa
         try {
-            var res = entityManager.createNativeQuery("select id from cajas where activa = true order by id limit 1")
+            var res = entityManager.createNativeQuery("select id from cajas where activa = 1 order by id limit 1")
                 .getResultList();
             if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
         } catch (Exception ignored) {}
@@ -310,7 +310,7 @@ public class VentaService {
     private Long seleccionarTurnoActivo(Long sucursalId, Long cajaId) {
         // Intentar activo por caja
         try {
-            var sb = new StringBuilder("select id from turnos where activo = true");
+            var sb = new StringBuilder("select id from turnos where activo = 1");
             if (cajaId != null) sb.append(" and caja_id = :caja");
             if (sucursalId != null) sb.append(" and sucursal_id = :suc");
             sb.append(" order by fecha_apertura desc limit 1");
@@ -323,7 +323,7 @@ public class VentaService {
 
         // Activo cualquiera
         try {
-            var res = entityManager.createNativeQuery("select id from turnos where activo = true order by fecha_apertura desc limit 1")
+            var res = entityManager.createNativeQuery("select id from turnos where activo = 1 order by fecha_apertura desc limit 1")
                 .getResultList();
             if (!res.isEmpty()) return ((Number) res.getFirst()).longValue();
         } catch (Exception ignored) {}
