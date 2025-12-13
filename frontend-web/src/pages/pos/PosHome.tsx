@@ -378,12 +378,9 @@ export default function PosHome() {
 
   const handleAgregarSinIngredientes = (variante: Producto) => {
     // Agregar el tamaño seleccionado sin ingredientes
-    // Limpiar nombreVariante removiendo guiones y espacios al inicio/final
-    const nombreVariante = (variante.nombreVariante || variante.nombre)
-      .trim()
-      .replace(/^[\s-]+|[\s-]+$/g, ''); // Remover - y espacios al inicio y final
-
-    const nombreCompleto = `${productoSeleccionado?.nombre} - ${nombreVariante}`.trim();
+    // El backend ya contiene el nombre completo del producto con su variante
+    // ej: "PAPAS A LA FRANCESA - Chica", así que usamos directamente variante.nombre
+    const nombreCompleto = variante.nombre.trim();
 
     const productoFinal: Producto = {
       ...variante,
@@ -425,14 +422,11 @@ export default function PosHome() {
         .filter((n: string) => Boolean(n))
         .join(',');
 
-      // Limpiar nombreVariante removiendo guiones y espacios al inicio/final
-      const nombreVariante = (tamañoSeleccionado?.nombreVariante || tamañoSeleccionado?.nombre || '')
-        .trim()
-        .replace(/^[\s-]+|[\s-]+$/g, ''); // Remover - y espacios al inicio y final
-
+      // El backend ya contiene el nombre completo del producto con su variante
+      // ej: "PAPAS A LA FRANCESA - Chica", así que usamos directamente tamañoSeleccionado.nombre
       const nombreCompleto = ingredientesNombres
-        ? `${productoSeleccionado?.nombre} C/${ingredientesNombres} - ${nombreVariante}`
-        : `${productoSeleccionado?.nombre} - ${nombreVariante}`;
+        ? `${tamañoSeleccionado?.nombre} C/${ingredientesNombres}`
+        : `${tamañoSeleccionado?.nombre}`;
 
       // Calcular precio total (tamaño + ingredientes)
       const precioIngredientes = Array.from(ingredientesSeleccionados)
