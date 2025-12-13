@@ -13,23 +13,23 @@ import java.util.Optional;
  */
 @Repository
 public interface ProductoTamanoRepository extends JpaRepository<ProductoTamano, Long> {
-    
+
     /**
      * Encuentra un tamaño por nombre
      */
     Optional<ProductoTamano> findByNombreIgnoreCase(String nombre);
-    
+
     /**
      * Encuentra todos los tamaños activos ordenados por orden
-     * ✅ ARREGLO: Usar IS TRUE para PostgreSQL compatibility
+     * ✅ ARREGLO: Usar = true en lugar de IS TRUE (activo se almacena como INTEGER)
      */
-    @Query("SELECT pt FROM ProductoTamano pt WHERE pt.activo IS TRUE ORDER BY pt.orden ASC")
+    @Query("SELECT pt FROM ProductoTamano pt WHERE pt.activo = true ORDER BY pt.orden ASC")
     List<ProductoTamano> findAllActivos();
-    
+
     /**
      * Busca tamaños por nombre (case-insensitive)
-     * ✅ ARREGLO: Usar IS TRUE para PostgreSQL compatibility
+     * ✅ ARREGLO: Usar = true en lugar de IS TRUE (activo se almacena como INTEGER)
      */
-    @Query("SELECT pt FROM ProductoTamano pt WHERE LOWER(pt.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')) AND pt.activo IS TRUE ORDER BY pt.orden ASC")
+    @Query("SELECT pt FROM ProductoTamano pt WHERE LOWER(pt.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')) AND pt.activo = true ORDER BY pt.orden ASC")
     List<ProductoTamano> buscarPorNombre(String nombre);
 }
