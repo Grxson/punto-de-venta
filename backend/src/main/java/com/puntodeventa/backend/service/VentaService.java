@@ -98,7 +98,8 @@ public class VentaService {
         // ✅ SEGREGACIÓN: Auto-obtener sucursal del usuario actual
         Long sucursalId = SucursalContext.getSucursalId();
 
-        LocalDateTime ahora = LocalDateTime.now();
+        // Usar zona horaria de México (UTC-6) para timestamps correctos
+        LocalDateTime ahora = LocalDateTime.now(java.time.ZoneId.of("America/Mexico_City"));
 
         // 1. Crear la venta principal
         Venta venta = Venta.builder()

@@ -94,11 +94,20 @@ export default function DailyStatsPanel() {
       const date = String(hoy.getDate()).padStart(2, '0');
       const fechaHoy = `${year}-${month}-${date}`; // YYYY-MM-DD en zona horaria local
 
-      // Convertir a UTC para las queries
-      const inicioDia = new Date(year, hoy.getMonth(), hoy.getDate(), 0, 0, 0, 0);
-      const finDia = new Date(year, hoy.getMonth(), hoy.getDate(), 23, 59, 59, 999);
-      const inicioDiaISO = inicioDia.toISOString();
-      const finDiaISO = finDia.toISOString();
+      // Crear fechas de inicio y fin del día en UTC, considerando la zona horaria del navegador
+      // Para ello, creamos las fechas locales y luego las ajustamos a UTC
+      const offsetMs = hoy.getTimezoneOffset() * 60 * 1000; // Offset en ms (negativo para zonas horarias positivas)
+      
+      // Inicio del día en UTC (00:00 local = X horas en UTC)
+      const inicioDiaLocal = new Date(year, hoy.getMonth(), hoy.getDate(), 0, 0, 0, 0);
+      const inicioDiaUTC = new Date(inicioDiaLocal.getTime() + offsetMs);
+      
+      // Fin del día en UTC (23:59:59 local = X horas en UTC)
+      const finDiaLocal = new Date(year, hoy.getMonth(), hoy.getDate(), 23, 59, 59, 999);
+      const finDiaUTC = new Date(finDiaLocal.getTime() + offsetMs);
+      
+      const inicioDiaISO = inicioDiaUTC.toISOString();
+      const finDiaISO = finDiaUTC.toISOString();
 
       const desgloseResponse = await apiService.get(
         `${API_ENDPOINTS.SALES}/resumen/metodos-pago?desde=${inicioDiaISO}&hasta=${finDiaISO}`
