@@ -12,6 +12,7 @@ import {
 import { ArrowBack, Payment } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 
@@ -26,6 +27,7 @@ interface MetodoPago {
 export default function PosPayment() {
   const navigate = useNavigate();
   const { cart, total, clearCart } = useCart();
+  const { sucursal } = useAuth();
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
   const [metodoSeleccionado, setMetodoSeleccionado] = useState<MetodoPago | null>(null);
   const [loading, setLoading] = useState(false);
@@ -106,7 +108,7 @@ export default function PosPayment() {
 
       // Crear venta
       const ventaRequest = {
-        sucursalId: 1, // TODO: Obtener de usuario o contexto
+        sucursalId: sucursal?.id || 1, // Usar sucursal del contexto (del JWT)
         items,
         pagos,
         canal: 'POS',
