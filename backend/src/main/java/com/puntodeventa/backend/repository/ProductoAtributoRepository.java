@@ -13,24 +13,24 @@ import java.util.List;
  */
 @Repository
 public interface ProductoAtributoRepository extends JpaRepository<ProductoAtributo, Long> {
-    
+
     /**
      * Encuentra todos los atributos activos de un producto
-     * ✅ ARREGLO: Usar IS TRUE para PostgreSQL compatibility
+     * ✅ ARREGLO: Usar = true en lugar de IS TRUE (activo se almacena como INTEGER)
      */
-    @Query("SELECT DISTINCT pa FROM ProductoAtributo pa LEFT JOIN FETCH pa.opciones WHERE pa.producto.id = :productoId AND pa.activo IS TRUE ORDER BY pa.orden ASC")
+    @Query("SELECT DISTINCT pa FROM ProductoAtributo pa LEFT JOIN FETCH pa.opciones WHERE pa.producto.id = :productoId AND pa.activo = true ORDER BY pa.orden ASC")
     List<ProductoAtributo> findByProductoIdActivos(@Param("productoId") Long productoId);
-    
+
     /**
      * Encuentra todos los atributos de un producto (incluyendo inactivos)
      */
     @Query("SELECT DISTINCT pa FROM ProductoAtributo pa LEFT JOIN FETCH pa.opciones WHERE pa.producto.id = :productoId ORDER BY pa.orden ASC")
     List<ProductoAtributo> findByProductoId(@Param("productoId") Long productoId);
-    
+
     /**
      * Busca atributos por nombre
-     * ✅ ARREGLO: Usar IS TRUE para PostgreSQL compatibility
+     * ✅ ARREGLO: Usar = true en lugar de IS TRUE (activo se almacena como INTEGER)
      */
-    @Query("SELECT DISTINCT pa FROM ProductoAtributo pa LEFT JOIN FETCH pa.opciones WHERE pa.producto.id = :productoId AND LOWER(pa.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')) AND pa.activo IS TRUE")
+    @Query("SELECT DISTINCT pa FROM ProductoAtributo pa LEFT JOIN FETCH pa.opciones WHERE pa.producto.id = :productoId AND LOWER(pa.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')) AND pa.activo = true")
     List<ProductoAtributo> buscarPorNombre(@Param("productoId") Long productoId, @Param("nombre") String nombre);
 }
