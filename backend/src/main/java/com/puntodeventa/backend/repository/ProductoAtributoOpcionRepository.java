@@ -13,24 +13,24 @@ import java.util.List;
  */
 @Repository
 public interface ProductoAtributoOpcionRepository extends JpaRepository<ProductoAtributoOpcion, Long> {
-    
+
     /**
      * Encuentra todas las opciones activas de un atributo
-     * ✅ ARREGLO: Usar IS TRUE para PostgreSQL compatibility
+     * ✅ ARREGLO: Usar = true en lugar de IS TRUE (activo se almacena como INTEGER)
      */
-    @Query("SELECT pao FROM ProductoAtributoOpcion pao WHERE pao.atributo.id = :atributoId AND pao.activo IS TRUE ORDER BY pao.orden ASC")
+    @Query("SELECT pao FROM ProductoAtributoOpcion pao WHERE pao.atributo.id = :atributoId AND pao.activo = true ORDER BY pao.orden ASC")
     List<ProductoAtributoOpcion> findByAtributoIdActivas(@Param("atributoId") Long atributoId);
-    
+
     /**
      * Encuentra todas las opciones de un atributo (incluyendo inactivas)
      */
     @Query("SELECT pao FROM ProductoAtributoOpcion pao WHERE pao.atributo.id = :atributoId ORDER BY pao.orden ASC")
     List<ProductoAtributoOpcion> findByAtributoId(@Param("atributoId") Long atributoId);
-    
+
     /**
      * Busca opciones por nombre
-     * ✅ ARREGLO: Usar IS TRUE para PostgreSQL compatibility
+     * ✅ ARREGLO: Usar = true en lugar de IS TRUE (activo se almacena como INTEGER)
      */
-    @Query("SELECT pao FROM ProductoAtributoOpcion pao WHERE pao.atributo.id = :atributoId AND LOWER(pao.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')) AND pao.activo IS TRUE")
+    @Query("SELECT pao FROM ProductoAtributoOpcion pao WHERE pao.atributo.id = :atributoId AND LOWER(pao.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')) AND pao.activo = true")
     List<ProductoAtributoOpcion> buscarPorNombre(@Param("atributoId") Long atributoId, @Param("nombre") String nombre);
 }

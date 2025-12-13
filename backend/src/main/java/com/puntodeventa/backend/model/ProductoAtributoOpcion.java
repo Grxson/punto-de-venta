@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,6 +34,7 @@ public class ProductoAtributoOpcion {
     @NotNull(message = "El atributo es obligatorio")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "atributo_id", nullable = false)
+    @JsonIgnore
     private ProductoAtributo atributo;
 
     @NotBlank(message = "El nombre de la opción es obligatorio")
