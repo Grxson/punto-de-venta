@@ -197,11 +197,11 @@ export default function PosPayment() {
           <Typography variant="h6" gutterBottom>
             Resumen de la Venta
           </Typography>
-          
+
           {/* Lista de productos */}
-          <Box sx={{ 
-            mb: 2, 
-            maxHeight: '300px', 
+          <Box sx={{
+            mb: 2,
+            maxHeight: '300px',
             overflowY: 'auto',
             pr: 1, // Padding derecho para separar del scrollbar
             '&::-webkit-scrollbar': {
@@ -240,7 +240,7 @@ export default function PosPayment() {
               );
             })}
           </Box>
-          
+
           <Divider sx={{ my: 1 }} />
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
             <Typography variant="body1">Total de productos:</Typography>
@@ -263,10 +263,10 @@ export default function PosPayment() {
           <Typography variant="h6" gutterBottom>
             Selecciona el método de pago
           </Typography>
-          
+
           <Alert severity="info" sx={{ mb: 2 }}>
-            {metodoSeleccionado 
-              ? '¡Haz doble clic en el método seleccionado para confirmar el pago!' 
+            {metodoSeleccionado
+              ? '¡Haz doble clic en el método seleccionado para confirmar el pago!'
               : 'Haz clic para seleccionar un método de pago'}
           </Alert>
 
@@ -295,8 +295,8 @@ export default function PosPayment() {
                   fullWidth
                   onClick={() => handleMetodoClick(metodo)}
                   disabled={loading || isProcessing}
-                  sx={{ 
-                    minHeight: '80px', 
+                  sx={{
+                    minHeight: '80px',
                     fontSize: '16px',
                     position: 'relative',
                     ...(metodoSeleccionado?.id === metodo.id && {
