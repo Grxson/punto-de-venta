@@ -156,6 +156,13 @@ export default function AdminSales() {
     loadVentas();
   }, []);
 
+  // Recargar ventas cuando cambia el rango de fechas
+  useEffect(() => {
+    if (dateRange.desde && dateRange.hasta) {
+      loadVentas();
+    }
+  }, [dateRange.desde, dateRange.hasta]);
+
   // Auto-actualizar el monto del último pago cuando cambia el total de la venta
   useEffect(() => {
     if (!dialogoEdicion || pagosEditados.length === 0 || itemsEditados.length === 0) {
