@@ -315,19 +315,12 @@ export default function PosSales() {
       setDialogoVariantes(true);
     } else {
       // Si no tiene variantes, agregar directamente
-      // Construir nombre completo: si es variante, incluir nombre base + variante
-      let nombreCompleto = productoBase.nombre;
-      if (productoBase.productoBaseId) {
-        const productoBasePadre = productos.find(p => p.id === productoBase.productoBaseId);
-        if (productoBasePadre) {
-          nombreCompleto = `${productoBasePadre.nombre} - ${productoBase.nombreVariante || productoBase.nombre}`;
-        }
-      }
-      
+      // El backend ya contiene el nombre completo del producto con su variante
+      // ej: "PAPAS A LA FRANCESA - Chica"
       const nuevoItem: VentaItem = {
         id: 0,
         productoId: productoBase.id,
-        productoNombre: nombreCompleto,
+        productoNombre: productoBase.nombre,
         cantidad: 1,
         precioUnitario: productoBase.precio,
         subtotal: productoBase.precio,
@@ -379,20 +372,12 @@ export default function PosSales() {
           setDialogoVariantes(true);
         } else {
           // Si no tiene variantes, actualizar directamente
-          // Construir nombre completo: si es variante, incluir nombre base + variante
-          let nombreCompleto = producto.nombre;
-          if (producto.productoBaseId) {
-            const productoBase = productos.find(p => p.id === producto.productoBaseId);
-            if (productoBase) {
-              nombreCompleto = `${productoBase.nombre} - ${producto.nombreVariante || producto.nombre}`;
-            }
-          }
-          
+          // El backend ya contiene el nombre completo del producto con su variante
           const nuevosItems = [...itemsEditados];
           nuevosItems[index] = {
             ...nuevosItems[index],
             productoId: producto.id,
-            productoNombre: nombreCompleto,
+            productoNombre: producto.nombre,
             precioUnitario: producto.precio,
             subtotal: producto.precio * nuevosItems[index].cantidad,
           };
@@ -1009,10 +994,8 @@ export default function PosSales() {
                               if (!selected) return 'Seleccionar producto';
                               const prodEncontrado = productos.find(p => p.id === selected);
                               if (prodEncontrado) {
-                                const nombreCompleto = prodEncontrado.productoBaseId 
-                                  ? `${productos.find(p => p.id === prodEncontrado.productoBaseId)?.nombre || ''} - ${prodEncontrado.nombreVariante || prodEncontrado.nombre}`
-                                  : prodEncontrado.nombre;
-                                return nombreCompleto;
+                                // El backend ya contiene el nombre completo del producto con su variante
+                                return prodEncontrado.nombre;
                               }
                               // Si no se encuentra, usar el nombre guardado en el item
                               return limpiarNombreProducto(item.productoNombre) || 'Producto desconocido';
@@ -1023,10 +1006,8 @@ export default function PosSales() {
                             {productos
                               .filter((prod) => !prod.productoBaseId || prod.activo) // Solo productos base o variantes activas
                               .map((prod) => {
-                                // Si es una variante, mostrar el nombre completo
-                                const nombreCompleto = prod.productoBaseId 
-                                  ? `${productos.find(p => p.id === prod.productoBaseId)?.nombre || ''} - ${prod.nombreVariante || prod.nombre}`
-                                  : prod.nombre;
+                                // El backend ya contiene el nombre completo del producto con su variante
+                                const nombreCompleto = prod.nombre;
                                 
                                 return (
                                   <MenuItem key={prod.id} value={prod.id} sx={{ minHeight: '48px' }}>
