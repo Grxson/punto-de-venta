@@ -12,6 +12,7 @@ import {
 import { ArrowBack, Payment } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 
@@ -26,6 +27,7 @@ interface MetodoPago {
 export default function PosPayment() {
   const navigate = useNavigate();
   const { cart, total, clearCart } = useCart();
+  const { sucursal } = useAuth();
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
   const [metodoSeleccionado, setMetodoSeleccionado] = useState<MetodoPago | null>(null);
   const [loading, setLoading] = useState(false);
@@ -106,7 +108,7 @@ export default function PosPayment() {
 
       // Crear venta
       const ventaRequest = {
-        sucursalId: 1, // TODO: Obtener de usuario o contexto
+        sucursalId: sucursal?.id || 1, // Usar sucursal del contexto (del JWT)
         items,
         pagos,
         canal: 'POS',
@@ -195,11 +197,11 @@ export default function PosPayment() {
           <Typography variant="h6" gutterBottom>
             Resumen de la Venta
           </Typography>
-          
+
           {/* Lista de productos */}
-          <Box sx={{ 
-            mb: 2, 
-            maxHeight: '300px', 
+          <Box sx={{
+            mb: 2,
+            maxHeight: '300px',
             overflowY: 'auto',
             pr: 1, // Padding derecho para separar del scrollbar
             '&::-webkit-scrollbar': {
@@ -238,7 +240,7 @@ export default function PosPayment() {
               );
             })}
           </Box>
-          
+
           <Divider sx={{ my: 1 }} />
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
             <Typography variant="body1">Total de productos:</Typography>
@@ -261,10 +263,10 @@ export default function PosPayment() {
           <Typography variant="h6" gutterBottom>
             Selecciona el método de pago
           </Typography>
-          
+
           <Alert severity="info" sx={{ mb: 2 }}>
-            {metodoSeleccionado 
-              ? '¡Haz doble clic en el método seleccionado para confirmar el pago!' 
+            {metodoSeleccionado
+              ? '¡Haz doble clic en el método seleccionado para confirmar el pago!'
               : 'Haz clic para seleccionar un método de pago'}
           </Alert>
 
@@ -293,8 +295,8 @@ export default function PosPayment() {
                   fullWidth
                   onClick={() => handleMetodoClick(metodo)}
                   disabled={loading || isProcessing}
-                  sx={{ 
-                    minHeight: '80px', 
+                  sx={{
+                    minHeight: '80px',
                     fontSize: '16px',
                     position: 'relative',
                     ...(metodoSeleccionado?.id === metodo.id && {
