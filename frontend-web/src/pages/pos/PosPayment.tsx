@@ -14,7 +14,6 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
-import { limpiarNombreVariante } from '../../utils/stringFormatters';
 
 interface MetodoPago {
   id: number;
@@ -34,21 +33,6 @@ export default function PosPayment() {
   const [error, setError] = useState<string | null>(null);
   const [clickTimers, setClickTimers] = useState<Record<number, ReturnType<typeof setTimeout> | null>>({});
   const [isProcessing, setIsProcessing] = useState(false); // Prevenir pagos duplicados
-
-  // Obtiene el nombre base sin el sufijo de variante (Chico/Mediano/Grande)
-  const obtenerNombreBase = (p: any): string => {
-    if (!p?.nombreVariante) return p?.nombre ?? '';
-    let nombre = (p?.nombre || '').trim();
-    const sufijos = ['Chico', 'Mediano', 'Grande'];
-    for (const sufijo of sufijos) {
-      const re = new RegExp(`\\s+${sufijo}$`, 'i');
-      if (re.test(nombre)) {
-        nombre = nombre.replace(re, '').trim();
-        break;
-      }
-    }
-    return nombre;
-  };
 
   useEffect(() => {
     loadMetodosPago();
@@ -240,9 +224,7 @@ export default function PosPayment() {
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="body1" fontWeight="medium">
-                        {item.producto.nombreVariante
-                          ? `${obtenerNombreBase(item.producto)} - ${limpiarNombreVariante(item.producto.nombreVariante)}`
-                          : item.producto.nombre}
+                        {item.producto.nombre}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         {item.cantidad} x ${unitPrice.toFixed(2)}
