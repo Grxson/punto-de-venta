@@ -795,7 +795,18 @@ public class VentaService {
      */
     public List<DesglosePagoDTO> obtenerDesglosePorMetodoPago(LocalDateTime inicio, LocalDateTime fin) {
         Long sucursalId = SucursalContext.getSucursalId();
+        
+        // ✅ LOG: Debugging de fechas recibidas
+        log.debug("[VentaService] obtenerDesglosePorMetodoPago - Sucursal: {}, Inicio: {}, Fin: {}", 
+                     sucursalId, inicio, fin);
+        
         List<Object[]> resultados = ventaRepository.sumByMetodoPago(sucursalId, inicio, fin);
+        
+        log.debug("[VentaService] Desglose por método de pago - Resultados encontrados: {}", resultados.size());
+        if (resultados.isEmpty()) {
+            log.warn("[VentaService] ⚠️ NO SE ENCONTRARON VENTAS en el rango [{}, {}] para sucursal {}", 
+                        inicio, fin, sucursalId);
+        }
 
         return resultados.stream()
                 .map(row -> new DesglosePagoDTO(

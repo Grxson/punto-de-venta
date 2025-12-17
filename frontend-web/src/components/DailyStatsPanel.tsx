@@ -9,7 +9,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { TrendingUp, TrendingDown, ExpandMore, NorthWest } from '@mui/icons-material';
-import { format } from 'date-fns';
+import { format, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import apiService from '../services/api.service';
 import { API_ENDPOINTS } from '../config/api.config';
@@ -84,46 +84,67 @@ export default function DailyStatsPanel() {
           ticketPromedio: parseFloat(data.ticketPromedio) || 0,
           margenPorcentaje: parseFloat(data.margenPorcentaje) || 0,
         });
+      } else {
+        console.warn('[DailyStatsPanel] Stats response sin success o data:', response);
       }
 
-      // Cargar desglose de pagos por método
-      // Obtener la fecha local del usuario (no UTC)
+      // ✅ CORRECCIÓN: Usar date-fns para manejo correcto de zonas horarias
       const hoy = new Date();
-      const year = hoy.getFullYear();
-      const month = String(hoy.getMonth() + 1).padStart(2, '0');
-      const date = String(hoy.getDate()).padStart(2, '0');
-      const fechaHoy = `${year}-${month}-${date}`; // YYYY-MM-DD en zona horaria local
+      const inicioDiaLocal = startOfDay(hoy); // Inicio del día en zona horaria local (00:00:00)
+      const finDiaLocal = endOfDay(hoy);     // Fin del día en zona horaria local (23:59:59)
+      
+      // Convertir a ISO (esto automáticamente ajusta a UTC basado en la zona horaria del navegador)
+      const inicioDiaISO = inicioDiaLocal.toISOString();
+      const finDiaISO = finDiaLocal.toISOString();
 
-      // Crear fechas de inicio y fin del día en UTC, considerando la zona horaria del navegador
-      // Para ello, creamos las fechas locales y luego las ajustamos a UTC
-      const offsetMs = hoy.getTimezoneOffset() * 60 * 1000; // Offset en ms (negativo para zonas horarias positivas)
-      
-      // Inicio del día en UTC (00:00 local = X horas en UTC)
-      const inicioDiaLocal = new Date(year, hoy.getMonth(), hoy.getDate(), 0, 0, 0, 0);
-      const inicioDiaUTC = new Date(inicioDiaLocal.getTime() + offsetMs);
-      
-      // Fin del día en UTC (23:59:59 local = X horas en UTC)
-      const finDiaLocal = new Date(year, hoy.getMonth(), hoy.getDate(), 23, 59, 59, 999);
-      const finDiaUTC = new Date(finDiaLocal.getTime() + offsetMs);
-      
-      const inicioDiaISO = inicioDiaUTC.toISOString();
-      const finDiaISO = finDiaUTC.toISOString();
+      console.log('[DailyStatsPanel] Dates correctas (date-fns):', { 
+        inicioDiaISO, 
+        finDiaISO,
+        horaLocalInicio: format(inicioDiaLocal, 'HH:mm:ss'),
+        horaLocalFin: format(finDiaLocal, 'HH:mm:ss'),
+      });
 
       const desgloseResponse = await apiService.get(
         `${API_ENDPOINTS.SALES}/resumen/metodos-pago?desde=${inicioDiaISO}&hasta=${finDiaISO}`
       );
 
-      if (desgloseResponse.success && desgloseResponse.data) {
-        setDesglosePagos(desgloseResponse.data.map((item: any) => ({
-          metodoPago: item.metodoPago,
-          total: parseFloat(item.total) || 0,
-        })));
+      console.log('[DailyStatsPanel] Respuesta desglose:', desgloseResponse);
+
+      if (desgloseResponse.success && Array.isArray(desgloseResponse.data)) {
+        const datosValidos = desgloseResponse.data
+          .filter((item: any) => {
+            // Validar que item tenga estructuras esperadas
+            const tieneMetodoPago = item && typeof item.metodoPago === 'string' && item.metodoPago.trim();
+            const tieneTotal = item && (typeof item.total === 'number' || typeof item.total === 'string');
+            return tieneMetodoPago && tieneTotal;
+          })
+          .map((item: any) => {
+            const total = typeof item.total === 'string' ? parseFloat(item.total) : Number(item.total);
+            return {
+              metodoPago: item.metodoPago.trim(),
+              total: isNaN(total) ? 0 : total,
+            };
+          });
+
+        console.log('[DailyStatsPanel] Desglose procesado:', datosValidos);
+        setDesglosePagos(datosValidos);
+
+        if (datosValidos.length === 0 && Array.isArray(desgloseResponse.data) && desgloseResponse.data.length > 0) {
+          console.warn('[DailyStatsPanel] Desglose recibido pero sin datos válidos:', desgloseResponse.data);
+        }
+      } else if (!desgloseResponse.success) {
+        console.warn('[DailyStatsPanel] Desglose response sin success:', desgloseResponse);
+        setDesglosePagos([]);
+      } else if (!Array.isArray(desgloseResponse.data)) {
+        console.error('[DailyStatsPanel] Desglose data no es array:', typeof desgloseResponse.data, desgloseResponse.data);
+        setDesglosePagos([]);
       }
 
       if (!response.success) {
         setError('Error al cargar estadísticas');
       }
     } catch (err: any) {
+      console.error('[DailyStatsPanel] Error en loadStats:', err);
       setError(err.message || 'Error de conexión');
     } finally {
       setLoading(false);
@@ -136,13 +157,15 @@ export default function DailyStatsPanel() {
 
   // Ordenar métodos de pago: Transferencia, Tarjeta, Efectivo (y luego cualquiera extra)
   const ordenMetodos = ['Transferencia', 'Tarjeta', 'Efectivo'];
-  const desgloseOrdenado = [...desglosePagos].sort((a, b) => {
-    const ai = ordenMetodos.indexOf(a.metodoPago);
-    const bi = ordenMetodos.indexOf(b.metodoPago);
-    const av = ai === -1 ? Number.MAX_SAFE_INTEGER : ai;
-    const bv = bi === -1 ? Number.MAX_SAFE_INTEGER : bi;
-    return av === bv ? a.metodoPago.localeCompare(b.metodoPago) : av - bv;
-  });
+  const desgloseOrdenado = desglosePagos && desglosePagos.length > 0
+    ? [...desglosePagos].sort((a, b) => {
+        const ai = ordenMetodos.indexOf(a.metodoPago);
+        const bi = ordenMetodos.indexOf(b.metodoPago);
+        const av = ai === -1 ? Number.MAX_SAFE_INTEGER : ai;
+        const bv = bi === -1 ? Number.MAX_SAFE_INTEGER : bi;
+        return av === bv ? a.metodoPago.localeCompare(b.metodoPago) : av - bv;
+      })
+    : [];
 
   return (
     <Box
