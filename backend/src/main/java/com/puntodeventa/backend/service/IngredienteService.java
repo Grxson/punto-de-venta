@@ -30,14 +30,14 @@ public class IngredienteService {
 
     @Cacheable(value = "ingredientes", unless = "#result.isEmpty()")
     public List<IngredienteDTO> obtenerTodos() {
-        return ingredienteRepository.findAll().stream()
+        return ingredienteRepository.findAllActivosOrdenado().stream()
                 .map(mapper::toIngredienteDTO)
                 .toList();
     }
 
     @Cacheable(value = "ingredientes", key = "'activos'")
     public List<IngredienteDTO> obtenerActivos() {
-        return ingredienteRepository.findByActivoTrue().stream()
+        return ingredienteRepository.findAllActivosOrdenado().stream()
                 .map(mapper::toIngredienteDTO)
                 .toList();
     }

@@ -28,6 +28,10 @@ public interface CategoriaGastoRepository extends JpaRepository<CategoriaGasto, 
 
     @Query("SELECT c FROM CategoriaGasto c WHERE c.nombre = :nombre AND c.sucursal.id = :sucursalId")
     Optional<CategoriaGasto> findByNombreAndSucursalId(@Param("nombre") String nombre, @Param("sucursalId") Long sucursalId);
+
+    // Buscar categoría por nombre sin filtro de sucursal (para categorías globales)
+    @Query("SELECT c FROM CategoriaGasto c WHERE c.nombre = :nombre")
+    Optional<CategoriaGasto> findByNombre(@Param("nombre") String nombre);
 }
 
 

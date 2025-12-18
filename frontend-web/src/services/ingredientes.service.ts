@@ -9,6 +9,11 @@ export interface Ingrediente {
   unidadNombre?: string;
   sucursalId?: number;
   activo: boolean;
+  // Vinculación con gasto
+  gastoId?: number;
+  unidadGastoId?: number;
+  factorConversion?: number;
+  costoTotalGasto?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -81,6 +86,11 @@ export const ingredientesService = {
       costoUnitarioBase: datos.precioUnitario,
       unidadBaseId: datos.unidadId,
       activo: datos.activo,
+      // VINCULACIÓN CON GASTO (AHORA INCLUIDA)
+      gastoId: datos.gastoId || null,
+      unidadGastoId: datos.unidadGastoId || null,
+      factorConversion: datos.factorConversion || 1,
+      costoTotalGasto: datos.costoTotalGasto || null,
     };
     const response = await apiService.post<Ingrediente>(endpoint, ingredienteDTO);
     if (response.error) {
@@ -101,6 +111,11 @@ export const ingredientesService = {
     if (datos.precioUnitario !== undefined) ingredienteDTO.costoUnitarioBase = datos.precioUnitario;
     if (datos.unidadId !== undefined) ingredienteDTO.unidadBaseId = datos.unidadId;
     if (datos.activo !== undefined) ingredienteDTO.activo = datos.activo;
+    // VINCULACIÓN CON GASTO (AHORA INCLUIDA)
+    if (datos.gastoId !== undefined) ingredienteDTO.gastoId = datos.gastoId;
+    if (datos.unidadGastoId !== undefined) ingredienteDTO.unidadGastoId = datos.unidadGastoId;
+    if (datos.factorConversion !== undefined) ingredienteDTO.factorConversion = datos.factorConversion;
+    if (datos.costoTotalGasto !== undefined) ingredienteDTO.costoTotalGasto = datos.costoTotalGasto;
 
     const response = await apiService.put<Ingrediente>(endpoint, ingredienteDTO);
     if (response.error) {

@@ -188,6 +188,11 @@ export default function AdminIngredientes() {
         unidadId: Number(unidadBaseId),
         sku: sku.trim() || undefined,
         activo,
+        // Vinculación con gasto (AHORA INCLUIDA)
+        gastoId: gastoSeleccionado?.id,
+        unidadGastoId: unidadGastoId || undefined,
+        factorConversion: factorConversion ? Number(factorConversion) : 1,
+        costoTotalGasto: gastoSeleccionado?.monto,
       };
 
       if (editingIngrediente) {
@@ -482,11 +487,16 @@ export default function AdminIngredientes() {
 
             <Autocomplete
               options={gastosMateriaPrima}
-              getOptionLabel={(option) => `${option.referencia || 'Sin referencia'} - $${option.monto.toFixed(2)}`}
+              getOptionLabel={(option) => {
+                // Mostrar referencia O nota (lo que esté disponible) para mejor UX
+                const descripcion = option.referencia || option.nota || 'Sin descripción';
+                return `${descripcion} - $${option.monto.toFixed(2)}`;
+              }}
               value={gastoSeleccionado}
               onChange={(e, newValue) => setGastoSeleccionado(newValue)}
               onInputChange={(e, value) => {
-                if (value && value.length > 2) {
+                if (value && value.length > 0) {
+                  // Búsqueda en tiempo real sin límite mínimo de caracteres
                   buscarGastos(value);
                 }
               }}
@@ -507,7 +517,7 @@ export default function AdminIngredientes() {
                     <Typography variant="caption" color="textSecondary">
                       Descripción del Gasto
                     </Typography>
-                    <Typography variant="body1">{gastoSeleccionado.referencia || 'Sin descripción'}</Typography>
+                    <Typography variant="body1">{gastoSeleccionado.referencia || gastoSeleccionado.nota || 'Sin descripción'}</Typography>
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <Typography variant="caption" color="textSecondary">

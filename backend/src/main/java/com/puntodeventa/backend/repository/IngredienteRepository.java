@@ -27,4 +27,11 @@ public interface IngredienteRepository extends JpaRepository<Ingrediente, Long> 
     // ✅ ARREGLO: Usar = true en lugar de IS TRUE (activo se almacena como INTEGER)
     @Query("SELECT i FROM Ingrediente i WHERE i.activo = true AND i.stockMinimo IS NOT NULL")
     List<Ingrediente> findIngredientesConStockMinimo();
+
+    // === QUERIES SIMPLES - RELACIONES CARGADAS BAJO DEMANDA ===
+    @Query("SELECT i FROM Ingrediente i ORDER BY i.id")
+    List<Ingrediente> findAllOrdenado();
+
+    @Query("SELECT i FROM Ingrediente i WHERE i.activo = true ORDER BY i.id")
+    List<Ingrediente> findAllActivosOrdenado();
 }

@@ -46,7 +46,7 @@ public class Ingrediente {
     private BigDecimal costoTotalGasto;
     
     // CONVERSIÓN DE UNIDADES
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "unidad_gasto_id")
     private Unidad unidadGasto;
     
@@ -56,7 +56,7 @@ public class Ingrediente {
     
     // RESULTADO FINAL
     @NotNull(message = "La unidad base es obligatoria")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "unidad_base_id", nullable = false)
     private Unidad unidadBase;
     
@@ -69,7 +69,7 @@ public class Ingrediente {
     @Column(name = "stock_minimo", precision = 12, scale = 3)
     private BigDecimal stockMinimo;
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "proveedor_id")
     private Proveedor proveedor;
     
