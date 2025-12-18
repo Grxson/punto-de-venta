@@ -4,16 +4,24 @@ export interface Ingrediente {
   id: number;
   nombre: string;
   descripcion?: string;
-  precioUnitario?: number;
-  unidadId?: number;
-  unidadNombre?: string;
+  // Nombres del DTO del backend
+  costoUnitarioBase?: number;
+  unidadBaseId?: number;
+  unidadBaseNombre?: string;
+  unidadBaseAbreviatura?: string;
   sucursalId?: number;
   activo: boolean;
   // Vinculación con gasto
   gastoId?: number;
-  unidadGastoId?: number;
-  factorConversion?: number;
   costoTotalGasto?: number;
+  unidadGastoId?: number;
+  unidadGastoNombre?: string;
+  unidadGastoAbreviatura?: string;
+  factorConversion?: number;
+  // Legacy (para compatibilidad con componentes)
+  precioUnitario?: number;
+  unidadId?: number;
+  unidadNombre?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -83,8 +91,8 @@ export const ingredientesService = {
     const ingredienteDTO = {
       nombre: datos.nombre,
       descripcion: datos.descripcion,
-      costoUnitarioBase: datos.precioUnitario,
-      unidadBaseId: datos.unidadId,
+      costoUnitarioBase: datos.costoUnitarioBase,
+      unidadBaseId: datos.unidadBaseId,
       activo: datos.activo,
       // VINCULACIÓN CON GASTO (AHORA INCLUIDA)
       gastoId: datos.gastoId || null,
@@ -108,8 +116,8 @@ export const ingredientesService = {
     const ingredienteDTO: any = {};
     if (datos.nombre !== undefined) ingredienteDTO.nombre = datos.nombre;
     if (datos.descripcion !== undefined) ingredienteDTO.descripcion = datos.descripcion;
-    if (datos.precioUnitario !== undefined) ingredienteDTO.costoUnitarioBase = datos.precioUnitario;
-    if (datos.unidadId !== undefined) ingredienteDTO.unidadBaseId = datos.unidadId;
+    if (datos.costoUnitarioBase !== undefined) ingredienteDTO.costoUnitarioBase = datos.costoUnitarioBase;
+    if (datos.unidadBaseId !== undefined) ingredienteDTO.unidadBaseId = datos.unidadBaseId;
     if (datos.activo !== undefined) ingredienteDTO.activo = datos.activo;
     // VINCULACIÓN CON GASTO (AHORA INCLUIDA)
     if (datos.gastoId !== undefined) ingredienteDTO.gastoId = datos.gastoId;

@@ -122,12 +122,24 @@ export default function AdminIngredientes() {
       setNombre(ingrediente.nombre);
       setDescripcion(ingrediente.descripcion || '');
       setSku(ingrediente.sku || '');
-      setUnidadBaseId(ingrediente.unidadId || '');
-      setCostoUnitarioBase(Number(ingrediente.precioUnitario) || 0);
+      // Usar nombres correctos del DTO: unidadBaseId y costoUnitarioBase
+      setUnidadBaseId(ingrediente.unidadBaseId || '');
+      setCostoUnitarioBase(Number(ingrediente.costoUnitarioBase) || 0);
       setStockMinimo(0);
-      setGastoSeleccionado(null);
-      setFactorConversion('');
-      setUnidadGastoId(null);
+      // Cargar datos de vinculación con gasto si existen
+      if (ingrediente.gastoId) {
+        setGastoSeleccionado({
+          id: ingrediente.gastoId,
+          monto: ingrediente.costoTotalGasto || 0,
+          nota: ingrediente.unidadGastoNombre || '',
+        } as any);
+        setUnidadGastoId(ingrediente.unidadGastoId || null);
+        setFactorConversion(ingrediente.factorConversion?.toString() || '');
+      } else {
+        setGastoSeleccionado(null);
+        setFactorConversion('');
+        setUnidadGastoId(null);
+      }
       setActivo(ingrediente.activo ?? true);
     } else {
       setEditingIngrediente(null);
@@ -184,11 +196,11 @@ export default function AdminIngredientes() {
       const ingredienteData: Omit<Ingrediente, 'id' | 'createdAt' | 'updatedAt'> = {
         nombre: nombre.trim(),
         descripcion: descripcion.trim() || undefined,
-        precioUnitario: costoUnitarioBase,
-        unidadId: Number(unidadBaseId),
+        costoUnitarioBase: costoUnitarioBase,
+        unidadBaseId: Number(unidadBaseId),
         sku: sku.trim() || undefined,
         activo,
-        // Vinculación con gasto (AHORA INCLUIDA)
+        // Vinculación con gasto (INCLUIDA)
         gastoId: gastoSeleccionado?.id,
         unidadGastoId: unidadGastoId || undefined,
         factorConversion: factorConversion ? Number(factorConversion) : 1,
@@ -322,13 +334,13 @@ export default function AdminIngredientes() {
                       <TableCell sx={{ fontWeight: 500 }}>{ingrediente.nombre}</TableCell>
                       <TableCell>{ingrediente.descripcion || '-'}</TableCell>
                       <TableCell align="right">
-                        {ingrediente.precioUnitario
-                          ? `$${ingrediente.precioUnitario.toFixed(2)}`
+                        {ingrediente.costoUnitarioBase
+                          ? `$${ingrediente.costoUnitarioBase.toFixed(2)}`
                           : '-'}
                       </TableCell>
                       <TableCell align="center">
                         <Chip
-                          label={getUnidadNombre(ingrediente.unidadId)}
+                          label={getUnidadNombre(ingrediente.unidadBaseId)}
                           size="small"
                           variant="outlined"
                         />
