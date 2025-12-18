@@ -614,18 +614,26 @@ public class VentaService {
             throw new IllegalArgumentException("No se puede editar una venta cancelada");
         }
 
-        // Validar restricción temporal: solo editar ventas del día actual o recientes
-        // (últimas 24 horas)
+        // Obtener usuario actual y hora actual para auditoría
+        Usuario usuarioActual = obtenerUsuarioActual();
         LocalDateTime ahora = LocalDateTime.now();
-        LocalDateTime limiteEdicion = ahora.minusHours(24);
-        if (venta.getFecha().isBefore(limiteEdicion)) {
-            throw new IllegalArgumentException(
-                    "No se pueden editar ventas con más de 24 horas de antigüedad. " +
-                            "Fecha de la venta: " + venta.getFecha() + ". Contacte al administrador.");
+        
+        // Validar restricción temporal: solo editar ventas del día actual o recientes
+        // (últimas 24 horas) - EXCEPTO para ADMIN que puede editar cualquier venta
+        boolean esAdmin = usuarioActual.getRol() != null && 
+                          usuarioActual.getRol().getNombre().equalsIgnoreCase("ADMIN");
+        
+        if (!esAdmin) {
+            LocalDateTime limiteEdicion = ahora.minusHours(24);
+            if (venta.getFecha().isBefore(limiteEdicion)) {
+                throw new IllegalArgumentException(
+                        "No se pueden editar ventas con más de 24 horas de antigüedad. " +
+                                "Fecha de la venta: " + venta.getFecha() + ". Contacte al administrador.");
+            }
         }
 
         // Obtener usuario actual para auditoría
-        Usuario usuarioEdicion = obtenerUsuarioActual();
+        Usuario usuarioEdicion = usuarioActual;
 
         // 1. Revertir movimientos de inventario anteriores
         revertirMovimientosInventario(venta);
