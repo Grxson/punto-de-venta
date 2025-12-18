@@ -21,6 +21,7 @@ import {
   IconButton,
   Chip,
   TablePagination,
+  Autocomplete,
 } from '@mui/material';
 import { Add, Edit, Delete, Close } from '@mui/icons-material';
 import { recetasService } from '../../services/recetas.service';
@@ -89,7 +90,8 @@ export default function AdminRecipes() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Form fields
-  const [selectedProducto, setSelectedProducto] = useState<number | ''>('');
+  const [selectedProducto, setSelectedProducto] = useState<Producto | null>(null);
+  const [productoSearchInput, setProductoSearchInput] = useState<string>('');
   const [nuevoIngrediente, setNuevoIngrediente] = useState<RecetaIngrediente | null>(null);
   const [recetaIngredientes, setRecetaIngredientes] = useState<RecetaIngrediente[]>([]);
   const [costoIndirecto, setCostoIndirecto] = useState<number>(0);
@@ -115,7 +117,9 @@ export default function AdminRecipes() {
 
       // Cargar productos
       const productosResponse = await productosService.listar({ activo: true });
-      const productosData = productosResponse.data || [];
+      const productosData = (productosResponse?.data || productosResponse || []).filter(
+        (p: any) => p && p.id
+      );
       setProductos(Array.isArray(productosData) ? productosData : []);
 
       // Cargar ingredientes
@@ -138,7 +142,9 @@ export default function AdminRecipes() {
   const handleOpenDialog = (receta?: Receta) => {
     if (receta) {
       setEditingReceta(receta);
-      setSelectedProducto(receta.productoId);
+      const productoSeleccionado = productos.find((p) => p.id === receta.productoId) || null;
+      setSelectedProducto(productoSeleccionado);
+      setProductoSearchInput(receta.productoNombre);
       setRecetaIngredientes([...receta.ingredientes]);
       setCostoIndirecto(receta.costoIndirecto || 0);
       setManoObra(receta.manoObra || 0);
@@ -149,7 +155,8 @@ export default function AdminRecipes() {
       setPorcentajeUtilidad(receta.porcentajeUtilidadDeseado || 40);
     } else {
       setEditingReceta(null);
-      setSelectedProducto('');
+      setSelectedProducto(null);
+      setProductoSearchInput('');
       setRecetaIngredientes([]);
       setCostoIndirecto(0);
       setManoObra(0);
@@ -165,7 +172,8 @@ export default function AdminRecipes() {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingReceta(null);
-    setSelectedProducto('');
+    setSelectedProducto(null);
+    setProductoSearchInput('');
     setRecetaIngredientes([]);
     setNuevoIngrediente(null);
     setCostoIndirecto(0);
@@ -213,8 +221,8 @@ export default function AdminRecipes() {
       const costoDirectoCalculado = 0; // Se calcula en backend basado en ingredientes
 
       const recetaData: Receta = {
-        productoId: selectedProducto as number,
-        productoNombre: productos.find((p) => p.id === selectedProducto)?.nombre || '',
+        productoId: selectedProducto!.id,
+        productoNombre: selectedProducto!.nombre,
         ingredientes: recetaIngredientes,
         costoDirecto: costoDirectoCalculado,
         costoIndirecto,
@@ -229,7 +237,7 @@ export default function AdminRecipes() {
       };
 
       if (editingReceta) {
-        await recetasService.actualizar(selectedProducto as number, recetaData);
+        await recetasService.actualizar(selectedProducto!.id, recetaData);
       } else {
         await recetasService.crear(recetaData);
       }
@@ -405,25 +413,38 @@ export default function AdminRecipes() {
               📋 Información General
             </Typography>
 
-            <TextField
-              select
-              label="Producto"
+            <Autocomplete
+              options={productos}
+              getOptionLabel={(option) => option.nombre}
               value={selectedProducto}
-              onChange={(e) => setSelectedProducto(Number(e.target.value) || '')}
-              fullWidth
-              margin="normal"
+              onChange={(event, newValue) => {
+                setSelectedProducto(newValue);
+                if (newValue) {
+                  setProductoSearchInput(newValue.nombre);
+                }
+              }}
+              inputValue={productoSearchInput}
+              onInputChange={(event, newInputValue) => {
+                setProductoSearchInput(newInputValue);
+              }}
               disabled={!!editingReceta}
-              variant="outlined"
-              SelectProps={{ native: true }}
-              InputLabelProps={{ shrink: true }}
-            >
-              <option value="">-- Seleccionar producto --</option>
-              {productos.map((prod) => (
-                <option key={prod.id} value={prod.id}>
-                  {prod.nombre}
-                </option>
-              ))}
-            </TextField>
+              fullWidth
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Buscar Producto"
+                  margin="normal"
+                  placeholder="Escribe para buscar..."
+                />
+              )}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              filterOptions={(options, state) => {
+                const inputValue = state.inputValue.toLowerCase();
+                return options.filter((option) =>
+                  option.nombre.toLowerCase().includes(inputValue)
+                );
+              }}
+            />
 
             <TextField
               label="Descripción"

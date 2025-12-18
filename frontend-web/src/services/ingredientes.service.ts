@@ -74,7 +74,15 @@ export const ingredientesService = {
    */
   async crear(datos: Omit<Ingrediente, 'id' | 'createdAt' | 'updatedAt'>): Promise<Ingrediente> {
     const endpoint = `${BASE_URL}`;
-    const response = await apiService.post<Ingrediente>(endpoint, datos);
+    // Mapear nombres del frontend a nombres del backend DTO
+    const ingredienteDTO = {
+      nombre: datos.nombre,
+      descripcion: datos.descripcion,
+      costoUnitarioBase: datos.precioUnitario,
+      unidadBaseId: datos.unidadId,
+      activo: datos.activo,
+    };
+    const response = await apiService.post<Ingrediente>(endpoint, ingredienteDTO);
     if (response.error) {
       throw new Error(response.error);
     }
@@ -86,7 +94,15 @@ export const ingredientesService = {
    */
   async actualizar(id: number, datos: Partial<Ingrediente>): Promise<Ingrediente> {
     const endpoint = `${BASE_URL}/${id}`;
-    const response = await apiService.put<Ingrediente>(endpoint, datos);
+    // Mapear nombres del frontend a nombres del backend DTO
+    const ingredienteDTO: any = {};
+    if (datos.nombre !== undefined) ingredienteDTO.nombre = datos.nombre;
+    if (datos.descripcion !== undefined) ingredienteDTO.descripcion = datos.descripcion;
+    if (datos.precioUnitario !== undefined) ingredienteDTO.costoUnitarioBase = datos.precioUnitario;
+    if (datos.unidadId !== undefined) ingredienteDTO.unidadBaseId = datos.unidadId;
+    if (datos.activo !== undefined) ingredienteDTO.activo = datos.activo;
+
+    const response = await apiService.put<Ingrediente>(endpoint, ingredienteDTO);
     if (response.error) {
       throw new Error(response.error);
     }

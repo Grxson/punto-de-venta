@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repositorio para la entidad CategoriaGasto.
@@ -24,6 +25,9 @@ public interface CategoriaGastoRepository extends JpaRepository<CategoriaGasto, 
     List<CategoriaGasto> findBySucursalIdAndActivoTrue(@Param("sucursalId") Long sucursalId);
     
     List<CategoriaGasto> findBySucursalId(Long sucursalId);
+
+    @Query("SELECT c FROM CategoriaGasto c WHERE c.nombre = :nombre AND c.sucursal.id = :sucursalId")
+    Optional<CategoriaGasto> findByNombreAndSucursalId(@Param("nombre") String nombre, @Param("sucursalId") Long sucursalId);
 }
 
 

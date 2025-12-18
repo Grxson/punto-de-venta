@@ -31,9 +31,30 @@ public class Ingrediente {
     @Column(nullable = false, length = 200)
     private String nombre;
     
+    @Column(length = 500)
+    private String descripcion;
+    
     @Column(length = 100)
     private String categoria;
     
+    // VINCULACIÓN A GASTO
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "gasto_id")
+    private Gasto gasto;
+    
+    @Column(name = "costo_total_gasto", precision = 14, scale = 6)
+    private BigDecimal costoTotalGasto;
+    
+    // CONVERSIÓN DE UNIDADES
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unidad_gasto_id")
+    private Unidad unidadGasto;
+    
+    @Column(name = "factor_conversion", columnDefinition = "INTEGER DEFAULT 1")
+    @Builder.Default
+    private Integer factorConversion = 1;
+    
+    // RESULTADO FINAL
     @NotNull(message = "La unidad base es obligatoria")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unidad_base_id", nullable = false)

@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 
 /**
  * DTO para Ingrediente.
+ * Permite vincular ingredientes con gastos de "Materia Prima" para calcular costos unitarios automáticamente.
  */
 public record IngredienteDTO(
     Long id,
@@ -15,8 +16,22 @@ public record IngredienteDTO(
     @NotBlank(message = "El nombre del ingrediente es obligatorio")
     String nombre,
     
+    String descripcion,
     String categoria,
     
+    // VINCULACIÓN A GASTO
+    Long gastoId,                          // ID del gasto original
+    BigDecimal costoTotalGasto,           // Costo total del gasto
+    
+    // CONVERSIÓN DE UNIDADES
+    Long unidadGastoId,                   // Unidad original del gasto
+    String unidadGastoNombre,
+    String unidadGastoAbreviatura,
+    
+    @PositiveOrZero(message = "El factor de conversión debe ser positivo o cero")
+    Integer factorConversion,             // Cuántas unidades finales por unidad de gasto
+    
+    // RESULTADO FINAL
     @NotNull(message = "La unidad base es obligatoria")
     Long unidadBaseId,
     
@@ -25,7 +40,7 @@ public record IngredienteDTO(
     
     @NotNull(message = "El costo unitario base es obligatorio")
     @PositiveOrZero(message = "El costo unitario base debe ser positivo o cero")
-    BigDecimal costoUnitarioBase,
+    BigDecimal costoUnitarioBase,         // Calculado = costoTotalGasto / factorConversion
     
     @PositiveOrZero(message = "El stock mínimo debe ser positivo o cero")
     BigDecimal stockMinimo,

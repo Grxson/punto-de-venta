@@ -65,7 +65,17 @@ public class InventarioMapper {
         return new IngredienteDTO(
             ingrediente.getId(),
             ingrediente.getNombre(),
+            ingrediente.getDescripcion(),
             ingrediente.getCategoria(),
+            // VINCULACIÓN A GASTO
+            ingrediente.getGasto() != null ? ingrediente.getGasto().getId() : null,
+            ingrediente.getCostoTotalGasto(),
+            // CONVERSIÓN DE UNIDADES
+            ingrediente.getUnidadGasto() != null ? ingrediente.getUnidadGasto().getId() : null,
+            ingrediente.getUnidadGasto() != null ? ingrediente.getUnidadGasto().getNombre() : null,
+            ingrediente.getUnidadGasto() != null ? ingrediente.getUnidadGasto().getAbreviatura() : null,
+            ingrediente.getFactorConversion(),
+            // RESULTADO FINAL
             ingrediente.getUnidadBase() != null ? ingrediente.getUnidadBase().getId() : null,
             ingrediente.getUnidadBase() != null ? ingrediente.getUnidadBase().getNombre() : null,
             ingrediente.getUnidadBase() != null ? ingrediente.getUnidadBase().getAbreviatura() : null,

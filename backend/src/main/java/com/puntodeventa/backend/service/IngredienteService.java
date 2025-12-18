@@ -3,18 +3,15 @@ package com.puntodeventa.backend.service;
 import com.puntodeventa.backend.dto.IngredienteDTO;
 import com.puntodeventa.backend.exception.ResourceNotFoundException;
 import com.puntodeventa.backend.mapper.InventarioMapper;
-import com.puntodeventa.backend.model.Ingrediente;
-import com.puntodeventa.backend.model.Proveedor;
-import com.puntodeventa.backend.model.Unidad;
-import com.puntodeventa.backend.repository.IngredienteRepository;
-import com.puntodeventa.backend.repository.ProveedorRepository;
-import com.puntodeventa.backend.repository.UnidadRepository;
+import com.puntodeventa.backend.model.*;
+import com.puntodeventa.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -28,6 +25,7 @@ public class IngredienteService {
     private final IngredienteRepository ingredienteRepository;
     private final UnidadRepository unidadRepository;
     private final ProveedorRepository proveedorRepository;
+    private final GastoRepository gastoRepository;
     private final InventarioMapper mapper;
 
     @Cacheable(value = "ingredientes", unless = "#result.isEmpty()")
@@ -83,15 +81,40 @@ public class IngredienteService {
 
         Ingrediente ingrediente = Ingrediente.builder()
                 .nombre(dto.nombre())
+                .descripcion(dto.descripcion())
                 .categoria(dto.categoria())
                 .unidadBase(unidadBase)
-                .costoUnitarioBase(dto.costoUnitarioBase())
                 .stockMinimo(dto.stockMinimo())
                 .proveedor(proveedor)
                 .sku(dto.sku())
                 .activo(dto.activo() != null ? dto.activo() : true)
                 .build();
 
+        // LÓGICA DE VINCULACIÓN CON GASTO
+        BigDecimal costoUnitarioCalculado = dto.costoUnitarioBase();
+        
+        if (dto.gastoId() != null) {
+            Gasto gasto = gastoRepository.findById(dto.gastoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Gasto no encontrado con id: " + dto.gastoId()));
+            
+            ingrediente.setGasto(gasto);
+            ingrediente.setCostoTotalGasto(gasto.getMonto());
+            
+            if (dto.unidadGastoId() != null) {
+                Unidad unidadGasto = unidadRepository.findById(dto.unidadGastoId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Unidad de gasto no encontrada con id: " + dto.unidadGastoId()));
+                ingrediente.setUnidadGasto(unidadGasto);
+            }
+            
+            if (dto.factorConversion() != null && dto.factorConversion() > 0) {
+                ingrediente.setFactorConversion(dto.factorConversion());
+                // CÁLCULO AUTOMÁTICO: costo por unidad = costo total gasto / factor de conversión
+                costoUnitarioCalculado = gasto.getMonto()
+                        .divide(new BigDecimal(dto.factorConversion()), 6, BigDecimal.ROUND_HALF_UP);
+            }
+        }
+        
+        ingrediente.setCostoUnitarioBase(costoUnitarioCalculado);
         ingrediente = ingredienteRepository.save(ingrediente);
         return mapper.toIngredienteDTO(ingrediente);
     }
@@ -114,14 +137,45 @@ public class IngredienteService {
         }
 
         ingrediente.setNombre(dto.nombre());
+        ingrediente.setDescripcion(dto.descripcion());
         ingrediente.setCategoria(dto.categoria());
         ingrediente.setUnidadBase(unidadBase);
-        ingrediente.setCostoUnitarioBase(dto.costoUnitarioBase());
         ingrediente.setStockMinimo(dto.stockMinimo());
         ingrediente.setProveedor(proveedor);
         ingrediente.setSku(dto.sku());
         ingrediente.setActivo(dto.activo() != null ? dto.activo() : true);
 
+        // LÓGICA DE VINCULACIÓN CON GASTO
+        BigDecimal costoUnitarioCalculado = dto.costoUnitarioBase();
+        
+        if (dto.gastoId() != null) {
+            Gasto gasto = gastoRepository.findById(dto.gastoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Gasto no encontrado con id: " + dto.gastoId()));
+            
+            ingrediente.setGasto(gasto);
+            ingrediente.setCostoTotalGasto(gasto.getMonto());
+            
+            if (dto.unidadGastoId() != null) {
+                Unidad unidadGasto = unidadRepository.findById(dto.unidadGastoId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Unidad de gasto no encontrada con id: " + dto.unidadGastoId()));
+                ingrediente.setUnidadGasto(unidadGasto);
+            }
+            
+            if (dto.factorConversion() != null && dto.factorConversion() > 0) {
+                ingrediente.setFactorConversion(dto.factorConversion());
+                // CÁLCULO AUTOMÁTICO: costo por unidad = costo total gasto / factor de conversión
+                costoUnitarioCalculado = gasto.getMonto()
+                        .divide(new BigDecimal(dto.factorConversion()), 6, BigDecimal.ROUND_HALF_UP);
+            }
+        } else {
+            // Si no hay gasto vinculado, limpiar los campos de vinculación
+            ingrediente.setGasto(null);
+            ingrediente.setCostoTotalGasto(null);
+            ingrediente.setUnidadGasto(null);
+            ingrediente.setFactorConversion(1);
+        }
+        
+        ingrediente.setCostoUnitarioBase(costoUnitarioCalculado);
         ingrediente = ingredienteRepository.save(ingrediente);
         return mapper.toIngredienteDTO(ingrediente);
     }

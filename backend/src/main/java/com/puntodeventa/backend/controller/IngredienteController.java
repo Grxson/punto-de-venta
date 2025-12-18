@@ -1,7 +1,9 @@
 package com.puntodeventa.backend.controller;
 
 import com.puntodeventa.backend.dto.IngredienteDTO;
+import com.puntodeventa.backend.dto.UnidadDTO;
 import com.puntodeventa.backend.service.IngredienteService;
+import com.puntodeventa.backend.service.UnidadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -23,6 +25,7 @@ import java.util.List;
 public class IngredienteController {
     
     private final IngredienteService ingredienteService;
+    private final UnidadService unidadService;
     
     @GetMapping
     @Operation(summary = "Obtener todos los ingredientes")
@@ -36,6 +39,13 @@ public class IngredienteController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
     public ResponseEntity<List<IngredienteDTO>> obtenerActivos() {
         return ResponseEntity.ok(ingredienteService.obtenerActivos());
+    }
+    
+    @GetMapping("/unidades")
+    @Operation(summary = "Obtener todas las unidades de medida disponibles")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
+    public ResponseEntity<List<UnidadDTO>> obtenerUnidades() {
+        return ResponseEntity.ok(unidadService.obtenerTodas());
     }
     
     @GetMapping("/{id}")

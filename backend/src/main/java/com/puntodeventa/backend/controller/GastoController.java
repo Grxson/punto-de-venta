@@ -60,6 +60,14 @@ public class GastoController {
         return ResponseEntity.ok(gastoService.obtenerPorRangoFechas(desde, hasta));
     }
     
+    @GetMapping("/buscar-insumos")
+    @Operation(summary = "Buscar gastos de insumos/ingredientes por descripción")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
+    public ResponseEntity<List<GastoDTO>> buscarInsumosParaIngredientes(
+            @RequestParam(required = false) String busqueda) {
+        return ResponseEntity.ok(gastoService.buscarGastosInsumos(busqueda));
+    }
+    
     @PostMapping
     @Operation(summary = "Registrar nuevo gasto")
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE', 'CAJERO')")

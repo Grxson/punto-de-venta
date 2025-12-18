@@ -239,6 +239,28 @@ public class GastoService {
         return toDTO(actualizado);
     }
 
+    public List<GastoDTO> buscarGastosInsumos(String busqueda) {
+        Long sucursalId = SucursalContext.getSucursalId();
+        
+        // Obtener categoría "Insumos" por nombre (categoría predeterminada para ingredientes)
+        CategoriaGasto categoria = categoriaGastoRepository.findByNombreAndSucursalId("Insumos", sucursalId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Categoría 'Insumos' no encontrada. Verifica que exista en las categorías de gastos."));
+
+        // Buscar gastos por categoría "Insumos" y descripción (referencia o nota)
+        List<Gasto> gastos;
+        if (busqueda != null && !busqueda.isBlank()) {
+            String searchPattern = "%" + busqueda.toLowerCase() + "%";
+            gastos = gastoRepository.findByCategoriaGastoAndBusqueda(categoria.getId(), searchPattern);
+        } else {
+            gastos = gastoRepository.findByCategoriaGastoId(categoria.getId());
+        }
+
+        return gastos.stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
     private GastoDTO toDTO(Gasto gasto) {
         return new GastoDTO(
                 gasto.getId(),

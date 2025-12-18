@@ -66,4 +66,9 @@ public interface GastoRepository extends JpaRepository<Gasto, Long> {
             @Param("sucursalId") Long sucursalId,
             @Param("fechaInicio") LocalDateTime fechaInicio,
             @Param("fechaFin") LocalDateTime fechaFin);
+
+    // ==================== MÉTODOS PARA BÚSQUEDA DE GASTOS POR CATEGORÍA
+
+    @Query("SELECT g FROM Gasto g WHERE g.categoriaGasto.id = :categoriaId AND (LOWER(g.referencia) LIKE LOWER(:searchPattern) OR LOWER(g.nota) LIKE LOWER(:searchPattern)) ORDER BY g.fecha DESC")
+    List<Gasto> findByCategoriaGastoAndBusqueda(@Param("categoriaId") Long categoriaId, @Param("searchPattern") String searchPattern);
 }
