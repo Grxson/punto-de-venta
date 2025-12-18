@@ -20,8 +20,8 @@ import java.util.concurrent.ConcurrentMap;
  * Filtro de Rate Limiting para protección contra abuse.
  * 
  * Límites configurables:
- * - Global: 1000 solicitudes por minuto
- * - Por usuario: 100 solicitudes por minuto
+ * - Global: 2000 solicitudes por minuto
+ * - Por usuario: 500 solicitudes por minuto
  * 
  * Utiliza Bucket4j para control de tasa de solicitudes.
  * 
@@ -32,14 +32,14 @@ import java.util.concurrent.ConcurrentMap;
 public class RateLimitFilter extends OncePerRequestFilter {
 
 	/**
-	 * Bandwidth global: 1000 solicitudes por minuto
+	 * Bandwidth global: 2000 solicitudes por minuto
 	 */
-	private static final Bandwidth GLOBAL_LIMIT = Bandwidth.classic(1000, Refill.intervally(1000, Duration.ofMinutes(1)));
+	private static final Bandwidth GLOBAL_LIMIT = Bandwidth.classic(2000, Refill.intervally(2000, Duration.ofMinutes(1)));
 
 	/**
-	 * Bandwidth por usuario: 100 solicitudes por minuto
+	 * Bandwidth por usuario: 500 solicitudes por minuto
 	 */
-	private static final Bandwidth USER_LIMIT = Bandwidth.classic(100, Refill.intervally(100, Duration.ofMinutes(1)));
+	private static final Bandwidth USER_LIMIT = Bandwidth.classic(500, Refill.intervally(500, Duration.ofMinutes(1)));
 
 	/**
 	 * Bucket global compartido por todos los usuarios
