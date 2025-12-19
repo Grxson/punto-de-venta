@@ -22,38 +22,48 @@ import java.util.List;
 @Tag(name = "Mano de Obra", description = "Endpoints para gestión de mano de obra y sueldos")
 @PreAuthorize("isAuthenticated()")
 public class ManoObraController {
-    
+
     private final ManoObraService manoObraService;
-    
+
     @GetMapping
     @Operation(summary = "Obtener toda la mano de obra de la sucursal actual")
     public ResponseEntity<List<ManoObraDTO>> obtenerTodos() {
         log.info("Obteniendo toda la mano de obra");
         return ResponseEntity.ok(manoObraService.obtenerPorSucursal());
     }
-    
+
     @GetMapping("/activos")
     @Operation(summary = "Obtener mano de obra activa")
     public ResponseEntity<List<ManoObraDTO>> obtenerActivos() {
         log.info("Obteniendo mano de obra activa");
         return ResponseEntity.ok(manoObraService.obtenerActivos());
     }
-    
+
     @GetMapping("/{id}")
     @Operation(summary = "Obtener un registro de mano de obra por ID")
     public ResponseEntity<ManoObraDTO> obtenerPorId(@PathVariable Long id) {
         log.info("Obteniendo mano de obra: {}", id);
         return ResponseEntity.ok(manoObraService.obtenerPorId(id));
     }
-    
+
     @PostMapping
     @Operation(summary = "Crear un nuevo registro de mano de obra")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     public ResponseEntity<ManoObraDTO> crear(@RequestBody ManoObraDTO dto) {
         log.info("Creando mano de obra: {}", dto.getPuesto());
-        return ResponseEntity.ok(manoObraService.crear(dto));
+        try {
+            ManoObraDTO resultado = manoObraService.crear(dto);
+            log.info("Mano de obra creada exitosamente: {}", resultado.getId());
+            return ResponseEntity.ok(resultado);
+        } catch (IllegalArgumentException e) {
+            log.warn("Validación fallida: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("Error al crear mano de obra", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
-    
+
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar un registro de mano de obra")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -61,7 +71,7 @@ public class ManoObraController {
         log.info("Actualizando mano de obra: {}", id);
         return ResponseEntity.ok(manoObraService.actualizar(id, dto));
     }
-    
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar (desactivar) un registro de mano de obra")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")

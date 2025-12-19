@@ -22,38 +22,48 @@ import java.util.List;
 @Tag(name = "Gastos Indirectos", description = "Endpoints para gestión de gastos indirectos")
 @PreAuthorize("isAuthenticated()")
 public class GastoIndirectoController {
-    
+
     private final GastoIndirectoService gastoIndirectoService;
-    
+
     @GetMapping
     @Operation(summary = "Obtener todos los gastos indirectos de la sucursal actual")
     public ResponseEntity<List<GastoIndirectoDTO>> obtenerTodos() {
         log.info("Obteniendo todos los gastos indirectos");
         return ResponseEntity.ok(gastoIndirectoService.obtenerPorSucursal());
     }
-    
+
     @GetMapping("/activos")
     @Operation(summary = "Obtener gastos indirectos activos")
     public ResponseEntity<List<GastoIndirectoDTO>> obtenerActivos() {
         log.info("Obteniendo gastos indirectos activos");
         return ResponseEntity.ok(gastoIndirectoService.obtenerActivos());
     }
-    
+
     @GetMapping("/{id}")
     @Operation(summary = "Obtener un gasto indirecto por ID")
     public ResponseEntity<GastoIndirectoDTO> obtenerPorId(@PathVariable Long id) {
         log.info("Obteniendo gasto indirecto: {}", id);
         return ResponseEntity.ok(gastoIndirectoService.obtenerPorId(id));
     }
-    
+
     @PostMapping
     @Operation(summary = "Crear un nuevo gasto indirecto")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
     public ResponseEntity<GastoIndirectoDTO> crear(@RequestBody GastoIndirectoDTO dto) {
         log.info("Creando gasto indirecto: {}", dto.getNombre());
-        return ResponseEntity.ok(gastoIndirectoService.crear(dto));
+        try {
+            GastoIndirectoDTO resultado = gastoIndirectoService.crear(dto);
+            log.info("Gasto indirecto creado exitosamente: {}", resultado.getId());
+            return ResponseEntity.ok(resultado);
+        } catch (IllegalArgumentException e) {
+            log.warn("Validación fallida: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            log.error("Error al crear gasto indirecto", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
-    
+
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar un gasto indirecto")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -61,7 +71,7 @@ public class GastoIndirectoController {
         log.info("Actualizando gasto indirecto: {}", id);
         return ResponseEntity.ok(gastoIndirectoService.actualizar(id, dto));
     }
-    
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar (desactivar) un gasto indirecto")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
