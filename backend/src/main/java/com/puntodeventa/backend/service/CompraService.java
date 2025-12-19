@@ -122,7 +122,7 @@ public class CompraService {
         BigDecimal montoTotal = BigDecimal.ZERO;
 
         LocalDateTime ahora = LocalDateTime.now(ZoneId.of("America/Mexico_City"));
-        
+
         // Crear compra principal CON MONTO TEMPORAL (será actualizado después)
         Compra compra = Compra.builder()
                 .sucursal(sucursal)
