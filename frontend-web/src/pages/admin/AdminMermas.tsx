@@ -64,9 +64,27 @@ interface Unidad {
   abreviatura: string;
 }
 
+interface Producto {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  receta?: RecetaItem[];
+}
+
+interface RecetaItem {
+  ingredienteId: number;
+  ingredienteNombre: string;
+  cantidad: number;
+  unidadId: number;
+  unidadNombre: string;
+  unidadAbreviatura: string;
+  costoUnitario: number;
+}
+
 export default function AdminMermas() {
   const [mermas, setMermas] = useState<Merma[]>([]);
   const [ingredientes, setIngredientes] = useState<Ingrediente[]>([]);
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
@@ -84,7 +102,9 @@ export default function AdminMermas() {
   const [dialogDelete, setDialogDelete] = useState(false);
 
   // Form fields
+  const [tipoMerma, setTipoMerma] = useState<'ingrediente' | 'producto'>('ingrediente');
   const [ingredienteSeleccionado, setIngredienteSeleccionado] = useState<Ingrediente | null>(null);
+  const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
   const [cantidad, setCantidad] = useState<number>(0);
   const [unidadId, setUnidadId] = useState<number>(0);
   const [motivo, setMotivo] = useState<string>('');
@@ -99,9 +119,10 @@ export default function AdminMermas() {
       setLoadingData(true);
       setError(null);
 
-      // Cargar mermas, ingredientes y unidades
-      const [mermasRes, ingredientesRes, unidadesRes] = await Promise.all([
+      // Cargar mermas, ingredientes, productos y unidades
+      const [mermasRes, ingredientesRes, productosRes, unidadesRes] = await Promise.all([
         apiService.get('/inventario/mermas'),
+        apiService.get(API_ENDPOINTS.PRODUCTS),
         apiService.get(API_ENDPOINTS.PRODUCTS),
         apiService.get('/inventario/unidades'),
       ]);
@@ -111,6 +132,9 @@ export default function AdminMermas() {
       }
       if (ingredientesRes.success && Array.isArray(ingredientesRes.data)) {
         setIngredientes(ingredientesRes.data);
+      }
+      if (productosRes.success && Array.isArray(productosRes.data)) {
+        setProductos(productosRes.data);
       }
       if (unidadesRes.success && Array.isArray(unidadesRes.data)) {
         setUnidades(unidadesRes.data);
@@ -131,7 +155,9 @@ export default function AdminMermas() {
   }, [mermas, searchText]);
 
   const handleOpenDialog = () => {
+    setTipoMerma('ingrediente');
     setIngredienteSeleccionado(null);
+    setProductoSeleccionado(null);
     setCantidad(0);
     setUnidadId(0);
     setMotivo('');
@@ -144,39 +170,91 @@ export default function AdminMermas() {
   };
 
   const handleGuardarMerma = async () => {
-    if (!ingredienteSeleccionado || cantidad <= 0 || !motivo.trim() || unidadId <= 0) {
-      setError('Completa todos los campos requeridos');
-      return;
+    if (tipoMerma === 'ingrediente') {
+      // Validar merma de ingrediente
+      if (!ingredienteSeleccionado || cantidad <= 0 || !motivo.trim() || unidadId <= 0) {
+        setError('Completa todos los campos requeridos');
+        return;
+      }
+    } else {
+      // Validar merma de producto
+      if (!productoSeleccionado || cantidad <= 0 || !motivo.trim()) {
+        setError('Completa todos los campos requeridos');
+        return;
+      }
     }
 
     try {
       setLoading(true);
       setError(null);
 
-      const costoTotal = cantidad * costoUnitario;
+      if (tipoMerma === 'ingrediente') {
+        // Guardar merma de ingrediente individual
+        const costoTotal = cantidad * costoUnitario;
+        const mermaData = {
+          ingredienteId: ingredienteSeleccionado!.id,
+          cantidad,
+          unidadId,
+          motivo: motivo.trim(),
+          fecha: new Date().toISOString(),
+          costoUnitario,
+          costoTotal,
+        };
 
-      const mermaData = {
-        ingredienteId: ingredienteSeleccionado.id,
-        cantidad,
-        unidadId,
-        motivo: motivo.trim(),
-        fecha: new Date().toISOString(),
-        costoUnitario,
-        costoTotal,
-      };
+        const response = await apiService.post('/inventario/mermas', mermaData);
 
-      const response = await apiService.post('/inventario/mermas', mermaData);
+        if (response.success) {
+          setSnackbar({
+            open: true,
+            message: '✓ Merma de ingrediente registrada exitosamente',
+            tipo: 'success',
+          });
+          handleCloseDialog();
+          await loadData();
+        } else {
+          setError(response.error || 'Error al guardar la merma');
+        }
+      } else {
+        // Guardar merma de producto completo (con todos sus ingredientes)
+        const producto = productoSeleccionado!;
+        const mermaProductoData = {
+          productoId: producto.id,
+          cantidad,
+          motivo: motivo.trim(),
+          fecha: new Date().toISOString(),
+        };
 
-      if (response.success) {
+        // Crear una merma por cada ingrediente de la receta
+        if (producto.receta && Array.isArray(producto.receta)) {
+          for (const ingredienteReceta of producto.receta) {
+            const cantidadIngrediente = cantidad * ingredienteReceta.cantidad;
+            const costoTotalIngrediente = cantidadIngrediente * ingredienteReceta.costoUnitario;
+
+            const mermaPorIngrediente = {
+              ingredienteId: ingredienteReceta.ingredienteId,
+              cantidad: cantidadIngrediente,
+              unidadId: ingredienteReceta.unidadId,
+              motivo: `${motivo.trim()} (Producto: ${producto.nombre})`,
+              fecha: new Date().toISOString(),
+              costoUnitario: ingredienteReceta.costoUnitario,
+              costoTotal: costoTotalIngrediente,
+            };
+
+            const response = await apiService.post('/inventario/mermas', mermaPorIngrediente);
+            if (!response.success) {
+              setError(`Error al guardar merma para ${ingredienteReceta.ingredienteNombre}`);
+              return;
+            }
+          }
+        }
+
         setSnackbar({
           open: true,
-          message: '✓ Merma registrada exitosamente',
+          message: `✓ Merma de producto "${producto.nombre}" registrada exitosamente (${cantidad} unidad(es) con todos sus ingredientes)`,
           tipo: 'success',
         });
         handleCloseDialog();
         await loadData();
-      } else {
-        setError(response.error || 'Error al guardar la merma');
       }
     } catch (err: any) {
       console.error('Error al guardar merma:', err);
@@ -327,71 +405,157 @@ export default function AdminMermas() {
         <DialogTitle sx={{ fontWeight: 'bold', fontSize: '1.2rem' }}>Registrar Nueva Merma</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {/* Seleccionar ingrediente */}
-            <Autocomplete
-              options={ingredientes}
-              getOptionLabel={(option) => option.nombre}
-              value={ingredienteSeleccionado}
-              onChange={(event, newValue) => {
-                setIngredienteSeleccionado(newValue);
-                if (newValue) {
-                  setCostoUnitario(newValue.costoUnitarioBase);
-                  setUnidadId(newValue.unidadBaseId);
-                }
-              }}
-              renderInput={(params) => <TextField {...params} label="Ingrediente *" placeholder="Buscar ingrediente..." />}
-              disabled={loading}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-            />
-
-            {/* Cantidad */}
-            <TextField
-              label="Cantidad *"
-              type="number"
-              value={cantidad}
-              onChange={(e) => setCantidad(parseFloat(e.target.value) || 0)}
-              inputProps={{ step: '0.01', min: '0' }}
-              disabled={loading}
-              fullWidth
-            />
-
-            {/* Unidad */}
-            <FormControl fullWidth disabled={loading}>
-              <InputLabel>Unidad *</InputLabel>
+            {/* Seleccionar tipo de merma */}
+            <FormControl fullWidth>
+              <InputLabel>Tipo de Merma *</InputLabel>
               <Select
-                value={unidadId}
-                onChange={(e) => setUnidadId(e.target.value as number)}
-                label="Unidad *"
+                value={tipoMerma}
+                onChange={(e) => {
+                  setTipoMerma(e.target.value as 'ingrediente' | 'producto');
+                  setIngredienteSeleccionado(null);
+                  setProductoSeleccionado(null);
+                  setCantidad(0);
+                  setUnidadId(0);
+                  setCostoUnitario(0);
+                }}
+                label="Tipo de Merma *"
+                disabled={loading}
               >
-                {unidades.map((unidad) => (
-                  <MenuItem key={unidad.id} value={unidad.id}>
-                    {unidad.nombre} ({unidad.abreviatura})
-                  </MenuItem>
-                ))}
+                <MenuItem value="ingrediente">Ingrediente Individual</MenuItem>
+                <MenuItem value="producto">Producto Completo (con Receta)</MenuItem>
               </Select>
             </FormControl>
 
-            {/* Costo Unitario */}
-            <TextField
-              label="Costo Unitario ($) *"
-              type="number"
-              value={costoUnitario}
-              onChange={(e) => setCostoUnitario(parseFloat(e.target.value) || 0)}
-              inputProps={{ step: '0.01', min: '0' }}
-              disabled={loading}
-              fullWidth
-            />
+            {tipoMerma === 'ingrediente' ? (
+              <>
+                {/* Seleccionar ingrediente */}
+                <Autocomplete
+                  options={ingredientes}
+                  getOptionLabel={(option) => option.nombre}
+                  value={ingredienteSeleccionado}
+                  onChange={(event, newValue) => {
+                    setIngredienteSeleccionado(newValue);
+                    if (newValue) {
+                      setCostoUnitario(newValue.costoUnitarioBase);
+                      setUnidadId(newValue.unidadBaseId);
+                    }
+                  }}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Ingrediente *" placeholder="Buscar ingrediente..." />
+                  )}
+                  disabled={loading}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
 
-            {/* Costo Total (readonly) */}
-            {cantidad > 0 && costoUnitario > 0 && (
-              <Box sx={{ p: 1.5, backgroundColor: 'warning.light', borderRadius: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Costo Total:
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                  ${(cantidad * costoUnitario).toFixed(2)}
-                </Typography>
-              </Box>
+                {/* Cantidad */}
+                <TextField
+                  label="Cantidad *"
+                  type="number"
+                  value={cantidad}
+                  onChange={(e) => setCantidad(parseFloat(e.target.value) || 0)}
+                  inputProps={{ step: '0.01', min: '0' }}
+                  disabled={loading}
+                  fullWidth
+                />
+
+                {/* Unidad */}
+                <FormControl fullWidth disabled={loading} variant="outlined">
+                  <InputLabel id="unidad-label">Unidad *</InputLabel>
+                  <Select
+                    labelId="unidad-label"
+                    value={unidadId}
+                    onChange={(e) => setUnidadId(e.target.value as number)}
+                    label="Unidad *"
+                  >
+                    {unidades.map((unidad) => (
+                      <MenuItem key={unidad.id} value={unidad.id}>
+                        {unidad.nombre} ({unidad.abreviatura})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                {/* Costo Unitario */}
+                <TextField
+                  label="Costo Unitario ($) *"
+                  type="number"
+                  value={costoUnitario}
+                  onChange={(e) => setCostoUnitario(parseFloat(e.target.value) || 0)}
+                  inputProps={{ step: '0.01', min: '0' }}
+                  disabled={loading}
+                  fullWidth
+                />
+
+                {/* Costo Total (readonly) */}
+                {cantidad > 0 && costoUnitario > 0 && (
+                  <Box sx={{ p: 1.5, backgroundColor: 'warning.light', borderRadius: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Costo Total:
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                      ${(cantidad * costoUnitario).toFixed(2)}
+                    </Typography>
+                  </Box>
+                )}
+              </>
+            ) : (
+              <>
+                {/* Seleccionar producto */}
+                <Autocomplete
+                  options={productos}
+                  getOptionLabel={(option) => option.nombre}
+                  value={productoSeleccionado}
+                  onChange={(event, newValue) => {
+                    setProductoSeleccionado(newValue);
+                    setCantidad(0);
+                  }}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Producto *" placeholder="Buscar producto..." />
+                  )}
+                  disabled={loading}
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
+                />
+
+                {/* Cantidad de unidades del producto */}
+                <TextField
+                  label="Cantidad (Unidades) *"
+                  type="number"
+                  value={cantidad}
+                  onChange={(e) => setCantidad(parseInt(e.target.value) || 0)}
+                  inputProps={{ step: '1', min: '0' }}
+                  disabled={loading}
+                  fullWidth
+                />
+
+                {/* Resumen de ingredientes */}
+                {productoSeleccionado && productoSeleccionado.receta && Array.isArray(productoSeleccionado.receta) && (
+                  <Box sx={{ p: 1.5, backgroundColor: 'info.light', borderRadius: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      📋 Ingredientes a Descontar:
+                    </Typography>
+                    <Box sx={{ pl: 1 }}>
+                      {productoSeleccionado.receta.map((item, idx) => (
+                        <Typography key={idx} variant="caption" display="block" sx={{ mb: 0.5 }}>
+                          • {item.ingredienteNombre}: {cantidad > 0 ? (cantidad * item.cantidad).toFixed(2) : item.cantidad.toFixed(2)} {item.unidadAbreviatura}
+                        </Typography>
+                      ))}
+                    </Box>
+                    {cantidad > 0 && (
+                      <>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mt: 1, mb: 0.5 }}>
+                          Costo Total Estimado:
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'error.main' }}>
+                          ${(
+                            cantidad *
+                            productoSeleccionado.receta.reduce((sum, item) => sum + item.cantidad * item.costoUnitario, 0)
+                          ).toFixed(2)}
+                        </Typography>
+                      </>
+                    )}
+                  </Box>
+                )}
+              </>
             )}
 
             <Divider />
@@ -403,7 +567,7 @@ export default function AdminMermas() {
               onChange={(e) => setMotivo(e.target.value)}
               multiline
               rows={3}
-              placeholder="Describe por qué se registra esta merma (ej: Producto vencido, rotura de empaque, etc.)"
+              placeholder="Describe por qué se registra esta merma (ej: Producto vencido, rotura de empaque, derrame, etc.)"
               disabled={loading}
               fullWidth
             />
@@ -416,7 +580,13 @@ export default function AdminMermas() {
           <Button
             onClick={handleGuardarMerma}
             variant="contained"
-            disabled={!ingredienteSeleccionado || cantidad <= 0 || !motivo.trim() || !unidadId || loading}
+            disabled={
+              !motivo.trim() ||
+              loading ||
+              (tipoMerma === 'ingrediente' &&
+                (!ingredienteSeleccionado || cantidad <= 0 || unidadId <= 0)) ||
+              (tipoMerma === 'producto' && (!productoSeleccionado || cantidad <= 0))
+            }
           >
             {loading ? <CircularProgress size={24} /> : 'Guardar Merma'}
           </Button>
