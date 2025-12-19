@@ -45,7 +45,7 @@ public class ManoObra {
     @Column(length = 20)
     private String periodo; // MENSUAL, SEMANAL, POR_TURNO
     
-    @Column(nullable = false)
+    @Column(name = "activo", nullable = false, columnDefinition = "SMALLINT")
     private Boolean activo = true;
     
     @Column(name = "created_at", nullable = false, updatable = false)

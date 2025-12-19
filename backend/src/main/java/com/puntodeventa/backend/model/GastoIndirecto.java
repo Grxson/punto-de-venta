@@ -44,7 +44,7 @@ public class GastoIndirecto {
     @Column(name = "monto_diario", precision = 12, scale = 2)
     private BigDecimal montoDiario;
     
-    @Column(nullable = false)
+    @Column(name = "activo", nullable = false, columnDefinition = "SMALLINT")
     private Boolean activo = true;
     
     @Column(name = "created_at", nullable = false, updatable = false)
