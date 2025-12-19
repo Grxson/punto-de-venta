@@ -619,56 +619,102 @@ TOTAL GASTOS DEL DÍA                        $1,733.37
 
 ---
 
-## ❌ PENDIENTES CRÍTICOS (BLOQUEADORES)
+## ✅ COMPLETADOS RECIENTEMENTE (19 de Diciembre)
 
-### 1. 🔴 SISTEMA DE COMPRAS
-**Prioridad**: 🔴 CRÍTICA  
-**Impacto**: Bloqueador fundamental
+### 1. ✅ SISTEMA DE COMPRAS - PARTE 1: FORMULARIO & CREACIÓN DE INGREDIENTES
+**Estado**: IMPLEMENTADO  
+**Commit**: `235f1ba`  
+**Fecha**: 19 de Diciembre 2025
 
-**¿Qué es?**  
-Módulo para registrar compra de ingredientes a proveedores. Actualmente NO existe.
+**¿Qué se hizo?**  
+Implementado flujo inteligente de compras con **creación de ingredientes sobre la marcha**:
 
-**Por qué falta:**
-- No hay endpoints backend
-- No hay UI frontend
-- Impedimento para gestionar entrada de stock
-
-**Qué se necesita:**
-
-**Backend** (`backend/src/main/java/com/puntodeventa/backend/`)
+**Backend** ✅
 ```
 ✅ Modelos: Compra.java, CompraItem.java (YA EN BD)
-❌ Repository: CompraRepository.java
-❌ Service: CompraService.java
-❌ Controller: CompraController.java
-❌ DTO: CompraDTO, CompraItemDTO
+✅ Repository: CompraRepository.java (YA EXISTE)
+✅ Service: CompraService.java (YA EXISTE)
+✅ Controller: CompraController.java (YA EXISTE)
+✅ DTO: CompraDTO, CompraItemDTO (YA EXISTEN)
+✅ POST /api/ingredientes soporta crear nuevos ingredientes
 ```
 
-**Frontend** (`frontend-web/src/components/admin/`)
+**Frontend** ✅
 ```
-❌ AdminCompras.tsx - Listado de compras
-❌ CompraForm.tsx - Crear/editar compra
-❌ SeleccionarIngredientes.tsx - Modal para elegir ingredientes
-```
-
-**Endpoints esperados:**
-```
-GET    /api/compras                    - Listar todas las compras
-GET    /api/compras/{id}               - Obtener compra por ID
-POST   /api/compras                    - Crear nueva compra
-PUT    /api/compras/{id}               - Actualizar compra
-DELETE /api/compras/{id}               - Eliminar compra
-GET    /api/compras/proveedor/{id}     - Compras de un proveedor
+✅ AdminCompras.tsx - Listado de compras
+✅ CompraForm.tsx - Crear/editar compra con ProveedorAutoComplete
+✅ SeleccionarIngredientes.tsx - Modal INTELIGENTE para crear ingredientes
+   ├─ Autocomplete busca ingredientes existentes
+   ├─ Si NO existe → botón "+ Crear: 'Naranja Fresca'"
+   ├─ Dialog para crear con: nombre, unidad, factor (opcional)
+   └─ Auto-selecciona el ingrediente creado
+✅ Frontend build: 27.86s (50.64 kB chunk para AdminCompras)
 ```
 
-**Flujo esperado:**
-1. Usuario selecciona proveedor
-2. Elige ingredientes y cantidades
-3. Sistema calcula total (cantidad × precio_unitario)
-4. Registra en BD: `compras` + `compras_items`
-5. Automáticamente actualiza stock de ingredientes
+**Endpoints utilizados:**
+```
+✅ GET    /api/compras                    - Listar compras (ya existe)
+✅ GET    /api/compras/{id}               - Obtener compra (ya existe)
+✅ POST   /api/compras                    - Crear compra (ya existe)
+✅ PUT    /api/compras/{id}               - Actualizar compra (ya existe)
+✅ DELETE /api/compras/{id}               - Eliminar compra (ya existe)
+✅ GET    /api/ingredientes/unidades      - Listar unidades
+✅ POST   /api/ingredientes               - Crear ingrediente (usado por modal)
+```
+
+**Flujo de uso:**
+```
+1. Usuario abre Nueva Compra
+2. Selecciona Proveedor (con ProveedorAutoComplete) ✅
+3. Elige Fecha
+4. Click "Agregar Ingrediente":
+   ├─ Si existe "Naranja" → selecciona
+   ├─ Si NO existe "Naranja Fresca":
+   │  ├─ Escribe el nombre
+   │  ├─ Botón: "+ Crear: 'Naranja Fresca'"
+   │  ├─ Dialog abre:
+   │  │  ├─ Nombre: Naranja Fresca (prefijado)
+   │  │  ├─ Unidad: kg
+   │  │  ├─ Factor: 1 kg = 500 ml (opcional)
+   │  │  └─ [Crear Ingrediente]
+   │  └─ Crea ingrediente en la BD ✅
+   │     └─ Lo selecciona automáticamente ✅
+   │
+   └─ Completa cantidad y precio:
+      ├─ Cantidad: 100 kg
+      ├─ Precio unitario: $9.00/kg
+      └─ [Agregar]
+5. Confirmar compra
+```
+
+**Archivos modificados:**
+- `frontend-web/src/pages/admin/components/SeleccionarIngredientes.tsx` (Reescrito)
+- `frontend-web/src/pages/admin/components/CompraForm.tsx` (Ya existía)
+- Nuevo archivo: `NUEVO-FLUJO-COMPRAS-INTELIGENTE.md` (Documentación)
+
+**Validaciones implementadas:**
+- ✅ Nombre de ingrediente requerido
+- ✅ Unidad de medida requerida
+- ✅ Factor de conversión opcional
+- ✅ No duplica ingredientes si ya existen
+- ✅ Auto-búsqueda case-insensitive
+
+**Ventajas:**
+- ✅ No es necesario pre-crear todos los ingredientes
+- ✅ Menos pasos para el usuario (workflow continuo)
+- ✅ Menos errores por typos (factor conversión)
+- ✅ Datos históricos de precios por compra
+- ✅ Totalmente alinhado con diagrama de PENDIENTES
+
+**Próximas fases del sistema de compras:**
+- 📋 **FASE 1 ✅**: Crear compra + ingredientes sobre la marcha
+- 🔄 **FASE 2 ⏳**: Recibir compra (marcar como recibida)
+- 📊 **FASE 3 ⏳**: Reportes de compras (historial de precios)
+- 🔗 **FASE 4 ⏳**: Vincular automáticamente a gastos (categoría "Compras")
 
 ---
+
+## ❌ PENDIENTES CRÍTICOS (BLOQUEADORES)
 
 ### 2. 🔴 DESCUENTOS EN VENTAS
 **Prioridad**: 🔴 CRÍTICA  
