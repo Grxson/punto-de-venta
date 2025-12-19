@@ -106,11 +106,33 @@ productos.get(productos.size() - 1)
 ## Flujos de trabajo para desarrolladores
 ### Backend (Java + Spring Boot)
 - **EJECUTAR EL PROYECTO**: `cd backend && ./start.sh` (script oficial que gestiona perfiles, build y variables de entorno)
-- Compilar: `./mvnw clean compile`
-- Crear package: `./mvnw clean package`
 - La API estará disponible en `http://localhost:8080`
 - Documentación Swagger: `http://localhost:8080/swagger-ui.html`
 - Consola H2 (desarrollo): `http://localhost:8080/h2-console`
+
+#### 🔄 Comandos DESPUÉS de modificar código del Backend
+
+**Cuando Copilot modifique archivos del backend (.java)**, se ejecutarán automáticamente EN ORDEN:
+
+1. **Limpiar y compilar** (verifica sintaxis y dependencias):
+   ```bash
+   cd backend && ./mvnw clean compile
+   ```
+
+2. **Compilar y empaquetar** (crea JAR para ejecutar):
+   ```bash
+   cd backend && ./mvnw clean package -DskipTests
+   ```
+
+3. **Luego TÚ ejecutas** (para iniciar el servidor):
+   ```bash
+   cd backend && ./start.sh
+   ```
+
+**Notas**:
+- `-DskipTests`: Salta tests automáticos (más rápido en desarrollo)
+- Si necesitas ejecutar tests: `./mvnw clean package` (sin el flag)
+- Si solo necesitas verificar compilación: `./mvnw clean compile`
 
 **⚠️ IMPORTANTE - Errores de ejecución:**
 - Si hay errores al ejecutar el backend, **SIEMPRE revisar y arreglar en `start.sh`** o en los archivos de configuración que referencia
@@ -210,6 +232,38 @@ El proyecto utiliza una estrategia de branching profesional para mantener el có
 - Propón mejoras cuando el rendimiento pueda verse afectado.
 - No generes código si no está relacionado con el contexto del proyecto Punto de Venta.
 - Sugerir actualizaciones a las instrucciones si se identifican áreas de mejora.
+
+## 📋 Referencia Rápida: Comandos Maven del Backend
+
+**Para Verificar Cambios**:
+```bash
+cd backend && ./mvnw clean compile
+# Limpiar build previo y compilar archivos .java
+# Toma: ~20-30 segundos
+# Uso: Verificar que no hay errores de sintaxis o dependencias
+```
+
+**Para Empaquetar (SIN Tests)**:
+```bash
+cd backend && ./mvnw clean package -DskipTests
+# Limpiar, compilar y crear JAR ejecutable (sin ejecutar tests)
+# Toma: ~30-45 segundos
+# Uso: DESPUÉS de que compiló sin errores, para crear .jar para ./start.sh
+```
+
+**Para Empaquetar (CON Tests)**:
+```bash
+cd backend && ./mvnw clean package
+# Limpiar, compilar, ejecutar tests y crear JAR
+# Toma: ~60-90 segundos (dependiendo de cantidad de tests)
+# Uso: Antes de mergear a develop/main para validar calidad
+```
+
+**Información Útil**:
+- Copilot ejecuta automáticamente: `compile` → `package -DskipTests`
+- Tú ejecutas después: `./start.sh` (que usa el JAR generado)
+- Si hay error en `compile`, no continúa a `package`
+- Si hay error en `package`, el .jar no se genera y ./start.sh fallará
 
 ## ⚡ Optimización de Componentes para Respuestas Rápidas
 
