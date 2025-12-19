@@ -17,14 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -89,31 +87,20 @@ public class UsuarioServicio {
      */
     public LoginResponse login(LoginRequest request) {
         try {
-            log.info("Intentando login para usuario: {}", request.username());
-            
-            Authentication authentication = authenticationManager.authenticate(
+            authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())
             );
-            
-            log.info("Autenticación exitosa para: {}", request.username());
 
             Usuario usuario = usuarioRepository.findByUsername(request.username())
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
-            log.info("Usuario encontrado: {} - Activo: {} - Rol: {}", 
-                usuario.getUsername(), usuario.getActivo(), usuario.getRol().getNombre());
-
-            // VALIDACIÓN: Asegurar que el usuario tiene sucursal asignada
             if (usuario.getSucursal() == null) {
-                log.error("❌ Usuario {} no tiene sucursal asignada", usuario.getUsername());
                 throw new IllegalStateException("El usuario debe tener una sucursal asignada antes de iniciar sesión");
             }
 
-            // Actualizar último acceso
             usuario.setUltimoAcceso(LocalDateTime.now());
             usuarioRepository.save(usuario);
 
-            // Generar token JWT con sucursal_id del usuario
             Long sucursalId = usuario.getSucursal().getId();
             String token = jwtUtil.generateToken(
                 usuario.getUsername(), 
@@ -121,18 +108,49 @@ public class UsuarioServicio {
                 usuario.getRol().getNombre(),
                 sucursalId
             );
-            
-            log.info("✅ Token generado exitosamente para {} con sucursal_id={}", usuario.getUsername(), sucursalId);
 
             UsuarioDTO usuarioDTO = mapearADTO(usuario);
             return new LoginResponse(token, usuarioDTO, "Login exitoso");
 
         } catch (AuthenticationException e) {
-            log.error("Error de autenticación para usuario: {} - {}", request.username(), e.getMessage());
             throw new IllegalArgumentException("Username o contraseña inválidos");
-        } catch (Exception e) {
-            log.error("Error inesperado durante login para usuario: {} - {}", request.username(), e.getMessage(), e);
+        } catch (IllegalStateException e) {
             throw new RuntimeException("Error en el proceso de login: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Renovar token JWT - Se llama cuando el token está a punto de expirar o ya expiró
+     */
+    public LoginResponse refreshToken(String expiredToken) {
+        try {
+            Long usuarioId = jwtUtil.extractUsuarioId(expiredToken);
+            Usuario usuario = usuarioRepository.findById(usuarioId)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+            
+            if (!usuario.getActivo()) {
+                throw new IllegalStateException("El usuario está inactivo y no puede renovar su sesión");
+            }
+            
+            if (usuario.getSucursal() == null) {
+                throw new IllegalStateException("El usuario no tiene sucursal asignada");
+            }
+            
+            Long sucursalId = usuario.getSucursal().getId();
+            String nuevoToken = jwtUtil.generateToken(
+                usuario.getUsername(), 
+                usuario.getId(), 
+                usuario.getRol().getNombre(),
+                sucursalId
+            );
+            
+            UsuarioDTO usuarioDTO = mapearADTO(usuario);
+            return new LoginResponse(nuevoToken, usuarioDTO, "Token renovado exitosamente");
+            
+        } catch (EntityNotFoundException e) {
+            throw e;
+        } catch (IllegalStateException e) {
+            throw new RuntimeException("Error al renovar token: " + e.getMessage(), e);
         }
     }
 
@@ -149,24 +167,12 @@ public class UsuarioServicio {
      * Obtener todos los usuarios por sucursal
      */
     public List<UsuarioDTO> obtenerUsuariosPorSucursal(Long sucursalId, Boolean activo) {
-        log.info("Obteniendo usuarios para sucursal {} con filtro activo: {}", sucursalId, activo);
-        
         try {
-            List<Usuario> usuarios;
-            
-            // Si activo es null, obtener todos; si es un valor específico, filtrar
-            if (activo == null) {
-                usuarios = usuarioRepository.findBySucursalId(sucursalId);
-                log.info("Obteniendo todos los usuarios de la sucursal: {} registros encontrados", usuarios.size());
-            } else {
-                usuarios = usuarioRepository.findBySucursalIdAndActivo(sucursalId, activo);
-                log.info("Obteniendo usuarios {} de la sucursal: {} registros encontrados", 
-                    activo ? "activos" : "inactivos", usuarios.size());
-            }
-            
+            List<Usuario> usuarios = activo == null
+                ? usuarioRepository.findBySucursalId(sucursalId)
+                : usuarioRepository.findBySucursalIdAndActivo(sucursalId, activo);
             return usuarios.stream().map(this::mapearADTO).toList();
         } catch (Exception e) {
-            log.error("Error al obtener usuarios de la sucursal {}: {}", sucursalId, e.getMessage(), e);
             throw new RuntimeException("Error al obtener usuarios de la sucursal: " + e.getMessage(), e);
         }
     }
@@ -176,31 +182,19 @@ public class UsuarioServicio {
      */
     @Transactional
     public UsuarioDTO actualizarUsuario(Long id, EditarUsuarioRequest request) {
-        log.info("Iniciando actualización de usuario ID: {}", id);
-        
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
-        log.debug("Usuario encontrado: {} ({})", usuario.getUsername(), usuario.getId());
-
-        // Validar que el email no esté duplicado (solo si cambió)
         if (!usuario.getEmail().equals(request.email())) {
-            // Buscar si existe otro usuario con ese email
-            Optional<Usuario> existente = usuarioRepository.findByEmail(request.email());
-            if (existente.isPresent() && !existente.get().getId().equals(id)) {
-                throw new IllegalArgumentException("El email ya existe: " + request.email());
-            }
-            log.debug("Email será actualizado de {} a {}", usuario.getEmail(), request.email());
+            usuarioRepository.findByEmail(request.email())
+                .filter(u -> !u.getId().equals(id))
+                .ifPresent(u -> { throw new IllegalArgumentException("El email ya existe"); });
         }
 
-        // Validar que el username no esté duplicado (solo si cambió)
         if (!usuario.getUsername().equals(request.username())) {
-            // Buscar si existe otro usuario con ese username
-            Optional<Usuario> existente = usuarioRepository.findByUsername(request.username());
-            if (existente.isPresent() && !existente.get().getId().equals(id)) {
-                throw new IllegalArgumentException("El username ya existe: " + request.username());
-            }
-            log.debug("Username será actualizado de {} a {}", usuario.getUsername(), request.username());
+            usuarioRepository.findByUsername(request.username())
+                .filter(u -> !u.getId().equals(id))
+                .ifPresent(u -> { throw new IllegalArgumentException("El username ya existe"); });
         }
 
         usuario.setNombre(request.nombre());
@@ -208,30 +202,18 @@ public class UsuarioServicio {
         usuario.setEmail(request.email());
         usuario.setUsername(request.username());
 
-        // Actualizar password solo si se proporciona y no está vacío
-        if (request.password() != null && !request.password().isBlank()) {
-            usuario.setPassword(passwordEncoder.encode(request.password()));
-            log.debug("Password actualizado para usuario: {}", usuario.getUsername());
+        String password = request.password();
+        if (password != null && !password.isBlank()) {
+            usuario.setPassword(passwordEncoder.encode(password));
         }
 
-        // Actualizar rol
-        Rol rol = rolRepository.findById(request.rolId())
-            .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
-        usuario.setRol(rol);
-        log.debug("Rol actualizado a: {}", rol.getNombre());
-
-        // Actualizar sucursal
-        Sucursal sucursal = sucursalRepository.findById(request.sucursalId())
-            .orElseThrow(() -> new EntityNotFoundException("Sucursal no encontrada"));
-        usuario.setSucursal(sucursal);
-        log.debug("Sucursal actualizada a: {}", sucursal.getNombre());
+        usuario.setRol(rolRepository.findById(request.rolId())
+            .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado")));
+        usuario.setSucursal(sucursalRepository.findById(request.sucursalId())
+            .orElseThrow(() -> new EntityNotFoundException("Sucursal no encontrada")));
 
         usuario.setUpdatedAt(LocalDateTime.now());
-        Usuario usuarioActualizado = usuarioRepository.save(usuario);
-        
-        log.info("✅ Usuario actualizado exitosamente: {} ({})", usuarioActualizado.getUsername(), usuarioActualizado.getId());
-
-        return mapearADTO(usuarioActualizado);
+        return mapearADTO(usuarioRepository.save(usuario));
     }
 
     /**
@@ -239,23 +221,14 @@ public class UsuarioServicio {
      */
     @Transactional
     public void desactivarUsuario(Long id) {
-        log.info("Iniciando desactivación de usuario ID: {}", id);
-        
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
-        log.info("Usuario encontrado: {} ({}), Estado actual: {}", usuario.getUsername(), usuario.getId(), usuario.getActivo());
-
-        // Prevenir auto-desactivación
-        if (usuario.getId().equals(id) && usuario.getActivo()) {
+        if (usuario.getActivo()) {
             usuario.setActivo(false);
             usuario.setUpdatedAt(LocalDateTime.now());
             usuarioRepository.save(usuario);
-            usuarioRepository.flush(); // Forzar flush a la BD inmediatamente
-            
-            log.info("✅ Usuario desactivado exitosamente: {} ({})", usuario.getUsername(), usuario.getId());
-        } else {
-            log.warn("El usuario ya estaba desactivado o no se pudo cambiar el estado");
+            usuarioRepository.flush();
         }
     }
 
@@ -296,35 +269,29 @@ public class UsuarioServicio {
      * Mapear Usuario a UsuarioDTO
      */
     private UsuarioDTO mapearADTO(Usuario usuario) {
-        UsuarioDTO dto = new UsuarioDTO();
-        dto.setId(usuario.getId());
-        dto.setNombre(usuario.getNombre());
-        dto.setApellido(usuario.getApellido());
-        dto.setEmail(usuario.getEmail());
-        dto.setUsername(usuario.getUsername());
-        dto.setActivo(usuario.getActivo());
-        
-        // Mapear sucursal si existe
-        if (usuario.getSucursal() != null) {
-            dto.setSucursalId(usuario.getSucursal().getId());
-        }
-        
-        dto.setUltimoAcceso(usuario.getUltimoAcceso());
-        dto.setCreatedAt(usuario.getCreatedAt());
-        dto.setUpdatedAt(usuario.getUpdatedAt());
-        
-        // Mapear rol si existe
+        UsuarioDTO.RolDTO rolDTO = null;
         if (usuario.getRol() != null) {
-            UsuarioDTO.RolDTO rolDTO = UsuarioDTO.RolDTO.builder()
+            rolDTO = UsuarioDTO.RolDTO.builder()
                 .id(usuario.getRol().getId())
                 .nombre(usuario.getRol().getNombre())
                 .descripcion(usuario.getRol().getDescripcion())
                 .activo(usuario.getRol().getActivo())
                 .build();
-            dto.setRol(rolDTO);
-            dto.setRolNombre(usuario.getRol().getNombre());
         }
-        
-        return dto;
+
+        return UsuarioDTO.builder()
+            .id(usuario.getId())
+            .nombre(usuario.getNombre())
+            .apellido(usuario.getApellido())
+            .email(usuario.getEmail())
+            .username(usuario.getUsername())
+            .activo(usuario.getActivo())
+            .rol(rolDTO)
+            .rolNombre(usuario.getRol() != null ? usuario.getRol().getNombre() : null)
+            .sucursalId(usuario.getSucursal() != null ? usuario.getSucursal().getId() : null)
+            .ultimoAcceso(usuario.getUltimoAcceso())
+            .createdAt(usuario.getCreatedAt())
+            .updatedAt(usuario.getUpdatedAt())
+            .build();
     }
 }

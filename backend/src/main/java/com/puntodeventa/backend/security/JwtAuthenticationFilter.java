@@ -26,6 +26,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
 
+            // Si es llamada a /api/auth/refresh-token, permitir pasar aunque el token esté expirado
+            if (request.getRequestURI().contains("/api/auth/refresh-token")) {
+                // El controlador manejará el token expirado
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             if (jwt != null && jwtUtil.isTokenValid(jwt)) {
                 String username = jwtUtil.extractUsername(jwt);
                 String rol = jwtUtil.extractRol(jwt);

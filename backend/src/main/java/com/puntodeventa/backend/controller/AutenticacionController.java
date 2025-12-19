@@ -27,6 +27,18 @@ public class AutenticacionController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/refresh-token")
+    @Operation(summary = "Renovar token JWT", description = "Genera un nuevo token JWT usando el token actual")
+    public ResponseEntity<LoginResponse> refreshToken(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body(new LoginResponse(null, null, "Token no proporcionado en Authorization header"));
+        }
+        
+        String token = authHeader.substring(7);
+        LoginResponse response = usuarioServicio.refreshToken(token);
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/registro")
     @Operation(summary = "Registrar nuevo usuario", description = "Crea un nuevo usuario en el sistema")
     public ResponseEntity<UsuarioDTO> registrar(@Valid @RequestBody CrearUsuarioRequest request) {

@@ -65,14 +65,40 @@ public class JwtUtil {
 
     /**
      * Obtener el usuarioId del token
+     * Funciona incluso con tokens expirados (para refresh token)
      */
     public Long extractUsuarioId(String token) {
-        return ((Number) Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .get("usuarioId")).longValue();
+        try {
+            // Primero intentar con verificación normal (token válido)
+            return ((Number) Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .get("usuarioId")).longValue();
+        } catch (ExpiredJwtException e) {
+            // Si está expirado, extraer sin verificación de expiration
+            // pero manteniendo verificación de firma
+            return ((Number) e.getClaims().get("usuarioId")).longValue();
+        }
+    }
+    
+    /**
+     * Extraer username del token incluso si está expirado
+     * Usado para refresh token
+     */
+    public String extractUsernameFromExpiredToken(String token) {
+        try {
+            return Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .getSubject();
+        } catch (ExpiredJwtException e) {
+            // Extraer del token expirado
+            return e.getClaims().getSubject();
+        }
     }
 
     /**
