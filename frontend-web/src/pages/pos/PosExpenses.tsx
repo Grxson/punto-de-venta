@@ -27,7 +27,6 @@ import {
   FormControl,
   InputLabel,
   Select,
-  Autocomplete,
 } from '@mui/material';
 import { ArrowBack, AttachMoney, Add, Edit, Delete } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -43,6 +42,7 @@ import DateRangeFilter from '../../components/common/DateRangeFilter';
 import ExpandableExpenseRow from '../../components/expenses/ExpandableExpenseRow';
 import { useGroupExpensesByTime } from '../../hooks/useGroupExpensesByTime';
 import { useCategoriasGasto } from '../../hooks/useCategoriasGasto';
+import ProveedorAutoComplete, { Proveedor } from '../admin/components/ProveedorAutoComplete';
 import type { DateRangeValue } from '../../types/dateRange.types';
 
 interface CategoriaGasto {
@@ -778,44 +778,14 @@ export default function PosExpenses() {
                         size="small"
                       />
 
-                      <Autocomplete
-                        freeSolo={false}
-                        options={proveedores}
-                        getOptionLabel={(prov) => (typeof prov === 'string' ? prov : prov.nombre || '')}
+                      <ProveedorAutoComplete
                         value={proveedores.find(p => p.id === proveedorId) || null}
-                        onChange={(event, newValue) => {
-                          if (newValue && typeof newValue !== 'string') {
-                            setProveedorId(newValue.id);
-                          } else {
-                            setProveedorId('');
-                          }
+                        onChange={(proveedor) => {
+                          setProveedorId(proveedor?.id || '');
                         }}
-                        inputValue={proveedorSearchText}
-                        onInputChange={(event, value) => {
-                          setProveedorSearchText(value);
-                        }}
-                        noOptionsText={
-                          <Button
-                            fullWidth
-                            variant="text"
-                            size="small"
-                            onClick={() => {
-                              setNewProveedorName(proveedorSearchText);
-                              setOpenNewProveedorDialog(true);
-                            }}
-                            disabled={!proveedorSearchText.trim()}
-                          >
-                            + Crear Nuevo: "{proveedorSearchText}"
-                          </Button>
-                        }
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Proveedor"
-                            placeholder="Buscar o crear proveedor"
-                            size="small"
-                          />
-                        )}
+                        label="Proveedor"
+                        fullWidth
+                        size="small"
                       />
                     </Box>
 

@@ -18,9 +18,13 @@ import {
   Alert,
   Autocomplete,
   TablePagination,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { Add, Delete } from '@mui/icons-material';
-import { ingredientesService, Ingrediente } from '../../../services/ingredientes.service';
+import { ingredientesService, Ingrediente, Unidad } from '../../../services/ingredientes.service';
 
 interface IngredienteSeleccionado {
   ingredienteId: number;
@@ -53,6 +57,7 @@ export default function SeleccionarIngredientes({
   const [ingredientesSeleccionados, setIngredientesSeleccionados] = useState<IngredienteSeleccionado[]>(
     ingredientesIniciales
   );
+  const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -62,11 +67,22 @@ export default function SeleccionarIngredientes({
   const [ingredienteSeleccionado, setIngredienteSeleccionado] = useState<Ingrediente | null>(null);
   const [cantidad, setCantidad] = useState<number>(1);
   const [precioUnitario, setPrecioUnitario] = useState<number>(0);
+  const [inputValue, setInputValue] = useState<string>('');
+
+  // Dialog para crear nuevo ingrediente
+  const [abrirDialogCrear, setAbrirDialogCrear] = useState(false);
+  const [nuevoIngrediente, setNuevoIngrediente] = useState({
+    nombre: '',
+    unidadId: 0,
+    factorConversion: '',
+  });
+  const [loadingCrear, setLoadingCrear] = useState(false);
 
   // Cargar ingredientes disponibles
   useEffect(() => {
     if (open) {
       cargarIngredientes();
+      cargarUnidades();
     }
   }, [open]);
 
@@ -80,6 +96,19 @@ export default function SeleccionarIngredientes({
       setError('Error al cargar ingredientes: ' + (err instanceof Error ? err.message : 'Error desconocido'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cargarUnidades = async () => {
+    try {
+      const data = await ingredientesService.obtenerUnidades();
+      setUnidades(data);
+      // Seleccionar la primera unidad por defecto
+      if (data.length > 0) {
+        setNuevoIngrediente((prev) => ({ ...prev, unidadId: data[0].id }));
+      }
+    } catch (err) {
+      console.error('Error al cargar unidades:', err);
     }
   };
 
@@ -119,6 +148,46 @@ export default function SeleccionarIngredientes({
     setIngredienteSeleccionado(null);
     setCantidad(1);
     setPrecioUnitario(0);
+    setInputValue('');
+  };
+
+  /**
+   * Crear un nuevo ingrediente sobre la marcha
+   */
+  const handleCrearIngrediente = async () => {
+    if (!nuevoIngrediente.nombre.trim() || !nuevoIngrediente.unidadId) {
+      setError('Completa nombre y unidad del ingrediente');
+      return;
+    }
+
+    setLoadingCrear(true);
+    setError(null);
+
+    try {
+      const ingredienteCreado = await ingredientesService.crear({
+        nombre: nuevoIngrediente.nombre.trim(),
+        unidadBaseId: nuevoIngrediente.unidadId,
+        factorConversion: nuevoIngrediente.factorConversion
+          ? parseFloat(nuevoIngrediente.factorConversion)
+          : undefined,
+        activo: true,
+      });
+
+      // Agregar a la lista de disponibles
+      setIngredientesDisponibles([...ingredientesDisponibles, ingredienteCreado]);
+
+      // Seleccionar automáticamente el ingrediente creado
+      setIngredienteSeleccionado(ingredienteCreado);
+      setInputValue(ingredienteCreado.nombre);
+
+      // Cerrar dialog
+      setAbrirDialogCrear(false);
+      setNuevoIngrediente({ nombre: '', unidadId: unidades[0]?.id || 0, factorConversion: '' });
+    } catch (err) {
+      setError('Error al crear ingrediente: ' + (err instanceof Error ? err.message : 'Error desconocido'));
+    } finally {
+      setLoadingCrear(false);
+    }
   };
 
   /**
@@ -197,11 +266,43 @@ export default function SeleccionarIngredientes({
                 options={ingredientesDisponibles}
                 getOptionLabel={(option) => option.nombre}
                 value={ingredienteSeleccionado}
-                onChange={(event, newValue) => setIngredienteSeleccionado(newValue)}
+                inputValue={inputValue}
+                onInputChange={(event, value) => setInputValue(value)}
+                onChange={(event, newValue) => {
+                  setIngredienteSeleccionado(newValue);
+                  if (newValue) {
+                    setInputValue(newValue.nombre);
+                  }
+                }}
                 renderInput={(params) => (
                   <TextField {...params} label="Ingrediente" size="small" sx={{ mb: 2 }} />
                 )}
-                noOptionsText="No hay ingredientes disponibles"
+                noOptionsText={
+                  inputValue && inputValue.length > 0 ? (
+                    <Box sx={{ p: 1 }}>
+                      <Box sx={{ fontSize: '0.875rem', color: '#666', mb: 1 }}>
+                        No se encontró "{inputValue}"
+                      </Box>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={() => {
+                          setNuevoIngrediente((prev) => ({
+                            ...prev,
+                            nombre: inputValue,
+                          }));
+                          setAbrirDialogCrear(true);
+                        }}
+                        fullWidth
+                      >
+                        Crear: "{inputValue}"
+                      </Button>
+                    </Box>
+                  ) : (
+                    'No hay ingredientes disponibles'
+                  )
+                }
               />
 
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 1, alignItems: 'flex-end' }}>
@@ -356,6 +457,71 @@ export default function SeleccionarIngredientes({
           Confirmar Selección
         </Button>
       </DialogActions>
+
+      {/* Dialog para crear nuevo ingrediente */}
+      <Dialog open={abrirDialogCrear} onClose={() => setAbrirDialogCrear(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Crear Nuevo Ingrediente</DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+          <TextField
+            fullWidth
+            label="Nombre del Ingrediente"
+            value={nuevoIngrediente.nombre}
+            onChange={(e) =>
+              setNuevoIngrediente((prev) => ({ ...prev, nombre: e.target.value }))
+            }
+            margin="dense"
+            sx={{ mb: 2 }}
+          />
+
+          <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
+            <InputLabel>Unidad de Medida</InputLabel>
+            <Select
+              value={nuevoIngrediente.unidadId}
+              label="Unidad de Medida"
+              onChange={(e) =>
+                setNuevoIngrediente((prev) => ({ ...prev, unidadId: e.target.value as number }))
+              }
+            >
+              {unidades.map((u) => (
+                <MenuItem key={u.id} value={u.id}>
+                  {u.nombre} ({u.abreviatura})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <TextField
+            fullWidth
+            label="Factor de Conversión (Opcional)"
+            placeholder="Ej: 1 kg = 500 ml"
+            value={nuevoIngrediente.factorConversion}
+            onChange={(e) =>
+              setNuevoIngrediente((prev) => ({ ...prev, factorConversion: e.target.value }))
+            }
+            margin="dense"
+            helperText="Información referencial para cálculos (opcional)"
+          />
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setAbrirDialogCrear(false)}
+            variant="outlined"
+            disabled={loadingCrear}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleCrearIngrediente}
+            variant="contained"
+            disabled={loadingCrear || !nuevoIngrediente.nombre.trim()}
+          >
+            {loadingCrear ? <CircularProgress size={20} /> : 'Crear Ingrediente'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }

@@ -3,7 +3,6 @@ import {
   Box,
   Button,
   TextField,
-  Autocomplete,
   Table,
   TableBody,
   TableCell,
@@ -22,15 +21,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { comprasService, CompraDetalle, CrearCompraRequest, ActualizarCompraRequest, IngredienteSeleccionado } from '../../../services/compras.service';
 import { usuariosService } from '../../../services/usuarios.service';
+import ProveedorAutoComplete, { Proveedor } from './ProveedorAutoComplete';
 import SeleccionarIngredientes from './SeleccionarIngredientes';
-
-interface Proveedor {
-  id: number;
-  nombre: string;
-  ruc?: string;
-  telefono?: string;
-  email?: string;
-}
 
 interface CompraFormProps {
   compraId?: number;
@@ -66,14 +58,8 @@ export default function CompraForm({ compraId, onGuardado, onCancelado }: Compra
    */
   const cargarProveedores = async () => {
     try {
-      // Usar endpoint de categorías como fallback si no existe endpoint específico de proveedores
-      // const data = await proveedoresService.obtenerActivos();
-      // Por ahora usamos datos simulados
-      const data: Proveedor[] = [
-        { id: 1, nombre: 'Proveedor A', ruc: '123456789', telefono: '1234567', email: 'a@prov.com' },
-        { id: 2, nombre: 'Proveedor B', ruc: '987654321', telefono: '7654321', email: 'b@prov.com' },
-      ];
-      setProveedores(data);
+      // Ya no es necesario cargar aquí, ProveedorAutoComplete se encarga
+      // Mantener compatible con el estado por si se necesita
     } catch (err) {
       console.error('Error cargando proveedores:', err);
       setError('No se pudieron cargar los proveedores');
@@ -185,15 +171,13 @@ export default function CompraForm({ compraId, onGuardado, onCancelado }: Compra
 
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
-                  <Autocomplete
-                    options={proveedores}
-                    getOptionLabel={(option) => option.nombre}
+                  <ProveedorAutoComplete
                     value={proveedorSeleccionado}
-                    onChange={(event, newValue) => setProveedorSeleccionado(newValue)}
-                    renderInput={(params) => (
-                      <TextField {...params} label="Proveedor *" required fullWidth />
-                    )}
-                    noOptionsText="No hay proveedores disponibles"
+                    onChange={setProveedorSeleccionado}
+                    label="Proveedor *"
+                    required
+                    fullWidth
+                    size="small"
                   />
                 </Grid>
 
