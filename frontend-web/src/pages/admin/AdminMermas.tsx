@@ -101,9 +101,9 @@ export default function AdminMermas() {
 
       // Cargar mermas, ingredientes y unidades
       const [mermasRes, ingredientesRes, unidadesRes] = await Promise.all([
-        apiService.get('/api/inventario/mermas'),
-        apiService.get(API_ENDPOINTS.INGREDIENTS),
-        apiService.get('/api/unidades'),
+        apiService.get('/inventario/mermas'),
+        apiService.get(API_ENDPOINTS.PRODUCTS),
+        apiService.get('/unidades'),
       ]);
 
       if (mermasRes.success && Array.isArray(mermasRes.data)) {
@@ -165,7 +165,7 @@ export default function AdminMermas() {
         costoTotal,
       };
 
-      const response = await apiService.post('/api/inventario/mermas', mermaData);
+      const response = await apiService.post('/inventario/mermas', mermaData);
 
       if (response.success) {
         setSnackbar({
@@ -191,7 +191,7 @@ export default function AdminMermas() {
       setLoading(true);
       setError(null);
 
-      const response = await apiService.delete(`/api/inventario/mermas/${mermaId}`);
+      const response = await apiService.delete(`/inventario/mermas/${mermaId}`);
 
       if (response.success) {
         setSnackbar({
