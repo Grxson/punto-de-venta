@@ -182,6 +182,14 @@ export default function AdminMermas() {
         setError('Completa todos los campos requeridos');
         return;
       }
+
+      // Validar que el producto tenga receta
+      if (!productoSeleccionado.receta || !Array.isArray(productoSeleccionado.receta) || productoSeleccionado.receta.length === 0) {
+        setError(
+          `El producto "${productoSeleccionado.nombre}" no tiene una receta configurada. Por favor, configura la receta del producto antes de registrar una merma.`
+        );
+        return;
+      }
     }
 
     try {
@@ -190,6 +198,12 @@ export default function AdminMermas() {
 
       if (tipoMerma === 'ingrediente') {
         // Guardar merma de ingrediente individual
+        console.log('📝 Guardando merma de ingrediente:', {
+          ingrediente: ingredienteSeleccionado?.nombre,
+          cantidad,
+          unidad: unidadId,
+        });
+
         const costoTotal = cantidad * costoUnitario;
         const mermaData = {
           ingredienteId: ingredienteSeleccionado!.id,
@@ -201,7 +215,10 @@ export default function AdminMermas() {
           costoTotal,
         };
 
+        console.log('📤 Enviando POST a /inventario/mermas:', mermaData);
         const response = await apiService.post('/inventario/mermas', mermaData);
+
+        console.log('📥 Respuesta del servidor:', response);
 
         if (response.success) {
           setSnackbar({
@@ -212,53 +229,64 @@ export default function AdminMermas() {
           handleCloseDialog();
           await loadData();
         } else {
+          console.error('❌ Error en respuesta:', response.error);
           setError(response.error || 'Error al guardar la merma');
         }
       } else {
         // Guardar merma de producto completo (con todos sus ingredientes)
         const producto = productoSeleccionado!;
-        const mermaProductoData = {
-          productoId: producto.id,
+
+        console.log('📝 Guardando merma de producto:', {
+          producto: producto.nombre,
           cantidad,
-          motivo: motivo.trim(),
-          fecha: new Date().toISOString(),
-        };
+          recetaItems: producto.receta?.length,
+        });
+
+        let muermasGuardadas = 0;
 
         // Crear una merma por cada ingrediente de la receta
-        if (producto.receta && Array.isArray(producto.receta)) {
-          for (const ingredienteReceta of producto.receta) {
-            const cantidadIngrediente = cantidad * ingredienteReceta.cantidad;
-            const costoTotalIngrediente = cantidadIngrediente * ingredienteReceta.costoUnitario;
+        for (const ingredienteReceta of producto.receta!) {
+          const cantidadIngrediente = cantidad * ingredienteReceta.cantidad;
+          const costoTotalIngrediente = cantidadIngrediente * ingredienteReceta.costoUnitario;
 
-            const mermaPorIngrediente = {
-              ingredienteId: ingredienteReceta.ingredienteId,
-              cantidad: cantidadIngrediente,
-              unidadId: ingredienteReceta.unidadId,
-              motivo: `${motivo.trim()} (Producto: ${producto.nombre})`,
-              fecha: new Date().toISOString(),
-              costoUnitario: ingredienteReceta.costoUnitario,
-              costoTotal: costoTotalIngrediente,
-            };
+          const mermaPorIngrediente = {
+            ingredienteId: ingredienteReceta.ingredienteId,
+            cantidad: cantidadIngrediente,
+            unidadId: ingredienteReceta.unidadId,
+            motivo: `${motivo.trim()} (Producto: ${producto.nombre})`,
+            fecha: new Date().toISOString(),
+            costoUnitario: ingredienteReceta.costoUnitario,
+            costoTotal: costoTotalIngrediente,
+          };
 
-            const response = await apiService.post('/inventario/mermas', mermaPorIngrediente);
-            if (!response.success) {
-              setError(`Error al guardar merma para ${ingredienteReceta.ingredienteNombre}`);
-              return;
-            }
+          console.log(`📤 Enviando merma ${muermasGuardadas + 1}/${producto.receta!.length}: ${ingredienteReceta.ingredienteNombre}`, mermaPorIngrediente);
+
+          const response = await apiService.post('/inventario/mermas', mermaPorIngrediente);
+
+          console.log(`📥 Respuesta merma ${muermasGuardadas + 1}:`, response);
+
+          if (!response.success) {
+            console.error(`❌ Error al guardar merma para ${ingredienteReceta.ingredienteNombre}:`, response.error);
+            setError(`Error al guardar merma para ${ingredienteReceta.ingredienteNombre}: ${response.error || 'Error desconocido'}`);
+            return;
           }
+
+          muermasGuardadas++;
         }
+
+        console.log(`✅ Se guardaron ${muermasGuardadas} mermas exitosamente`);
 
         setSnackbar({
           open: true,
-          message: `✓ Merma de producto "${producto.nombre}" registrada exitosamente (${cantidad} unidad(es) con todos sus ingredientes)`,
+          message: `✓ Merma de producto "${producto.nombre}" registrada exitosamente (${cantidad} unidad(es) con todos sus ingredientes - ${muermasGuardadas} movimientos creados)`,
           tipo: 'success',
         });
         handleCloseDialog();
         await loadData();
       }
     } catch (err: any) {
-      console.error('Error al guardar merma:', err);
-      setError(err.message || 'Error al guardar la merma');
+      console.error('❌ Error al guardar merma:', err);
+      setError(err.message || 'Error al guardar la merma. Verifica la consola para más detalles.');
     } finally {
       setLoading(false);
     }
