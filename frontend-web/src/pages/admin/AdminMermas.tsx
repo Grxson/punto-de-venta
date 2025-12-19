@@ -86,7 +86,7 @@ export default function AdminMermas() {
   // Form fields
   const [ingredienteSeleccionado, setIngredienteSeleccionado] = useState<Ingrediente | null>(null);
   const [cantidad, setCantidad] = useState<number>(0);
-  const [unidadId, setUnidadId] = useState<number | ''>('');
+  const [unidadId, setUnidadId] = useState<number>(0);
   const [motivo, setMotivo] = useState<string>('');
   const [costoUnitario, setCostoUnitario] = useState<number>(0);
 
@@ -133,7 +133,7 @@ export default function AdminMermas() {
   const handleOpenDialog = () => {
     setIngredienteSeleccionado(null);
     setCantidad(0);
-    setUnidadId('');
+    setUnidadId(0);
     setMotivo('');
     setCostoUnitario(0);
     setOpenDialog(true);
@@ -144,7 +144,7 @@ export default function AdminMermas() {
   };
 
   const handleGuardarMerma = async () => {
-    if (!ingredienteSeleccionado || cantidad <= 0 || !motivo.trim() || !unidadId) {
+    if (!ingredienteSeleccionado || cantidad <= 0 || !motivo.trim() || unidadId <= 0) {
       setError('Completa todos los campos requeridos');
       return;
     }
