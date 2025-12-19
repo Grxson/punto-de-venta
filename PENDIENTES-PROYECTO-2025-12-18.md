@@ -10,6 +10,8 @@
 
 El sistema **Punto de Venta** tiene implementadas las funcionalidades core (inventario, ventas, gastos, reportes). Sin embargo, faltan componentes críticos para una operación de negocio real: **Sistema de Compras**, **Descuentos en Ventas** y interfaces frontend para **Recetas, Movimientos e Inventario Detallado**.
 
+## Imagen de refcerencia a recetas y a como se generaria el producto
+![alt text](image.png)
 ---
 
 ## � FLUJO REAL Y SIMPLE: COMPRAS → VENTAS → MERMAS → CORTE DE CAJA
