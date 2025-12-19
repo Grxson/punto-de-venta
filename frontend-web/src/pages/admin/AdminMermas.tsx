@@ -103,7 +103,7 @@ export default function AdminMermas() {
       const [mermasRes, ingredientesRes, unidadesRes] = await Promise.all([
         apiService.get('/inventario/mermas'),
         apiService.get(API_ENDPOINTS.PRODUCTS),
-        apiService.get('/unidades'),
+        apiService.get('/inventario/unidades'),
       ]);
 
       if (mermasRes.success && Array.isArray(mermasRes.data)) {
