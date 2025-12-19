@@ -215,17 +215,17 @@ public class VentaService {
         }
 
         venta.setSubtotal(subtotal);
-        
+
         // Aplicar descuento y calcular total
         BigDecimal descuentoAplicado = request.descuento() != null ? request.descuento() : BigDecimal.ZERO;
         venta.setDescuento(descuentoAplicado);
-        
+
         // Total = Subtotal - Descuento + Impuestos
         BigDecimal totalConDescuento = subtotal.subtract(descuentoAplicado);
         venta.setTotal(totalConDescuento.compareTo(BigDecimal.ZERO) > 0 ? totalConDescuento : BigDecimal.ZERO);
-        
-        log.info("💰 Venta: Subtotal=${}, Descuento=${}, Total=${}", 
-            subtotal, descuentoAplicado, venta.getTotal());
+
+        log.info("💰 Venta: Subtotal=${}, Descuento=${}, Total=${}",
+                subtotal, descuentoAplicado, venta.getTotal());
 
         // 4. Procesar pagos y validar que cubran el total
         BigDecimal totalPagos = BigDecimal.ZERO;
@@ -627,12 +627,12 @@ public class VentaService {
         // Obtener usuario actual y hora actual para auditoría
         Usuario usuarioActual = obtenerUsuarioActual();
         LocalDateTime ahora = LocalDateTime.now();
-        
+
         // Validar restricción temporal: solo editar ventas del día actual o recientes
         // (últimas 24 horas) - EXCEPTO para ADMIN que puede editar cualquier venta
-        boolean esAdmin = usuarioActual.getRol() != null && 
-                          usuarioActual.getRol().getNombre().equalsIgnoreCase("ADMIN");
-        
+        boolean esAdmin = usuarioActual.getRol() != null &&
+                usuarioActual.getRol().getNombre().equalsIgnoreCase("ADMIN");
+
         if (!esAdmin) {
             LocalDateTime limiteEdicion = ahora.minusHours(24);
             if (venta.getFecha().isBefore(limiteEdicion)) {
@@ -717,17 +717,17 @@ public class VentaService {
         }
 
         venta.setSubtotal(subtotal);
-        
+
         // Aplicar descuento y calcular total
         BigDecimal descuentoAplicado = request.descuento() != null ? request.descuento() : BigDecimal.ZERO;
         venta.setDescuento(descuentoAplicado);
-        
+
         // Total = Subtotal - Descuento + Impuestos
         BigDecimal totalConDescuento = subtotal.subtract(descuentoAplicado);
         venta.setTotal(totalConDescuento.compareTo(BigDecimal.ZERO) > 0 ? totalConDescuento : BigDecimal.ZERO);
-        
-        log.info("💰 Venta actualizada: Subtotal=${}, Descuento=${}, Total=${}", 
-            subtotal, descuentoAplicado, venta.getTotal());
+
+        log.info("💰 Venta actualizada: Subtotal=${}, Descuento=${}, Total=${}",
+                subtotal, descuentoAplicado, venta.getTotal());
 
         // 5. Procesar nuevos pagos y validar que cubran el total
         BigDecimal totalPagos = BigDecimal.ZERO;
@@ -823,17 +823,17 @@ public class VentaService {
      */
     public List<DesglosePagoDTO> obtenerDesglosePorMetodoPago(LocalDateTime inicio, LocalDateTime fin) {
         Long sucursalId = SucursalContext.getSucursalId();
-        
+
         // ✅ LOG: Debugging de fechas recibidas
-        log.debug("[VentaService] obtenerDesglosePorMetodoPago - Sucursal: {}, Inicio: {}, Fin: {}", 
-                     sucursalId, inicio, fin);
-        
+        log.debug("[VentaService] obtenerDesglosePorMetodoPago - Sucursal: {}, Inicio: {}, Fin: {}",
+                sucursalId, inicio, fin);
+
         List<Object[]> resultados = ventaRepository.sumByMetodoPago(sucursalId, inicio, fin);
-        
+
         log.debug("[VentaService] Desglose por método de pago - Resultados encontrados: {}", resultados.size());
         if (resultados.isEmpty()) {
-            log.warn("[VentaService] ⚠️ NO SE ENCONTRARON VENTAS en el rango [{}, {}] para sucursal {}", 
-                        inicio, fin, sucursalId);
+            log.warn("[VentaService] ⚠️ NO SE ENCONTRARON VENTAS en el rango [{}, {}] para sucursal {}",
+                    inicio, fin, sucursalId);
         }
 
         return resultados.stream()

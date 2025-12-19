@@ -1,6 +1,6 @@
                                                                                                       import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Typography, Button, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
-import { Dashboard, Assessment, Inventory, AccountBalance, AttachMoney, PointOfSale, Menu as MenuIcon, Logout, Group, Restaurant, Blender, ShoppingCart } from '@mui/icons-material';
+import { Dashboard, Assessment, Inventory, AccountBalance, AttachMoney, PointOfSale, Menu as MenuIcon, Logout, Group, Restaurant, Blender, ShoppingCart, DeleteOutline } from '@mui/icons-material';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -13,6 +13,7 @@ const menuItems = [
       { text: 'Ingredientes', icon: <Blender />, path: '/admin/ingredientes' },
       { text: 'Recetas', icon: <Restaurant />, path: '/admin/recetas' },
       { text: 'Compras', icon: <ShoppingCart />, path: '/admin/compras' },
+      { text: 'Mermas', icon: <DeleteOutline />, path: '/admin/mermas' },
       { text: 'Finanzas', icon: <AccountBalance />, path: '/admin/finances' },
       { text: 'Gastos', icon: <AttachMoney />, path: '/admin/expenses' },
       { text: 'Usuarios', icon: <Group />, path: '/admin/usuarios' },

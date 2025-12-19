@@ -11,23 +11,17 @@ import java.util.List;
  * DTO para actualizar una venta existente (PUT).
  */
 public record ActualizarVentaRequest(
-    Long sucursalId,
-    
-    @NotEmpty(message = "La venta debe tener al menos un item")
-    @Valid
-    List<VentaItemDTO> items,
-    
-    @NotEmpty(message = "La venta debe tener al menos un pago")
-    @Valid
-    List<PagoDTO> pagos,
-    
-    @PositiveOrZero(message = "El descuento debe ser positivo o cero")
-    BigDecimal descuento,
-    
-    String nota,
-    String fecha,
-    String canal
-) {
+        Long sucursalId,
+
+        @NotEmpty(message = "La venta debe tener al menos un item") @Valid List<VentaItemDTO> items,
+
+        @NotEmpty(message = "La venta debe tener al menos un pago") @Valid List<PagoDTO> pagos,
+
+        @PositiveOrZero(message = "El descuento debe ser positivo o cero") BigDecimal descuento,
+
+        String nota,
+        String fecha,
+        String canal) {
     // Constructor compacto para valores por defecto
     public ActualizarVentaRequest {
         if (canal == null || canal.isBlank()) {
