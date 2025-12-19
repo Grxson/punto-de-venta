@@ -74,7 +74,11 @@ export default function SeleccionarIngredientes({
   const [nuevoIngrediente, setNuevoIngrediente] = useState({
     nombre: '',
     unidadId: 0,
-    factorConversion: '',
+    costoUnitarioBase: '',
+    // Factor de conversión flexible: X unidad = Y rendimiento
+    factorCantidadEntrada: '',   // Ej: 0.5, 1, 2, 100 (cantidad de entrada)
+    factorCantidadSalida: '',    // Ej: 250, 500, 1000, 10 (cantidad de rendimiento)
+    factorUnidadSalidaId: 0,     // Unidad del rendimiento (ml, piezas, rebanadas, etc.)
   });
   const [loadingCrear, setLoadingCrear] = useState(false);
 
@@ -155,8 +159,8 @@ export default function SeleccionarIngredientes({
    * Crear un nuevo ingrediente sobre la marcha
    */
   const handleCrearIngrediente = async () => {
-    if (!nuevoIngrediente.nombre.trim() || !nuevoIngrediente.unidadId) {
-      setError('Completa nombre y unidad del ingrediente');
+    if (!nuevoIngrediente.nombre.trim() || !nuevoIngrediente.unidadId || !nuevoIngrediente.costoUnitarioBase.trim()) {
+      setError('Completa nombre, unidad y costo unitario del ingrediente');
       return;
     }
 
@@ -164,12 +168,29 @@ export default function SeleccionarIngredientes({
     setError(null);
 
     try {
+      // Construir el factor de conversión en formato legible y flexible
+      let factorConversionText = '';
+      if (nuevoIngrediente.factorCantidadEntrada.trim() && nuevoIngrediente.factorCantidadSalida.trim()) {
+        const unidadEntrada = unidades.find(u => u.id === nuevoIngrediente.unidadId);
+        const unidadSalida = unidades.find(u => u.id === nuevoIngrediente.factorUnidadSalidaId);
+        
+        if (unidadEntrada && unidadSalida) {
+          // Formato: "0.5 kg = 250 ml"
+          factorConversionText = `${nuevoIngrediente.factorCantidadEntrada} ${unidadEntrada.abreviatura} = ${nuevoIngrediente.factorCantidadSalida} ${unidadSalida.abreviatura}`;
+        } else if (unidadEntrada) {
+          // Formato: "0.5 kg = 250 (sin unidad de salida)"
+          factorConversionText = `${nuevoIngrediente.factorCantidadEntrada} ${unidadEntrada.abreviatura} = ${nuevoIngrediente.factorCantidadSalida}`;
+        } else {
+          // Formato: "0.5 = 250 (sin unidades)"
+          factorConversionText = `${nuevoIngrediente.factorCantidadEntrada} = ${nuevoIngrediente.factorCantidadSalida}`;
+        }
+      }
+
       const ingredienteCreado = await ingredientesService.crear({
         nombre: nuevoIngrediente.nombre.trim(),
         unidadBaseId: nuevoIngrediente.unidadId,
-        factorConversion: nuevoIngrediente.factorConversion
-          ? parseFloat(nuevoIngrediente.factorConversion)
-          : undefined,
+        costoUnitarioBase: parseFloat(nuevoIngrediente.costoUnitarioBase),
+        factorConversion: factorConversionText || undefined,
         activo: true,
       });
 
@@ -182,9 +203,32 @@ export default function SeleccionarIngredientes({
 
       // Cerrar dialog
       setAbrirDialogCrear(false);
-      setNuevoIngrediente({ nombre: '', unidadId: unidades[0]?.id || 0, factorConversion: '' });
+      setNuevoIngrediente({ nombre: '', unidadId: unidades[0]?.id || 0, costoUnitarioBase: '', factorCantidadEntrada: '', factorCantidadSalida: '', factorUnidadSalidaId: 0 });
     } catch (err) {
-      setError('Error al crear ingrediente: ' + (err instanceof Error ? err.message : 'Error desconocido'));
+      // Intentar extraer detalles del error
+      let mensajeError = 'Error al crear ingrediente';
+      
+      if (err instanceof Error) {
+        mensajeError = err.message;
+        
+        // Si es un error de validación, intentar extraer los detalles
+        try {
+          const errorData = JSON.parse(err.message);
+          if (errorData.validationErrors) {
+            const detalles = Object.entries(errorData.validationErrors)
+              .map(([campo, msg]) => `${campo}: ${msg}`)
+              .join(', ');
+            mensajeError = `Validación: ${detalles}`;
+          } else if (errorData.message) {
+            mensajeError = errorData.message;
+          }
+        } catch {
+          // No es JSON, usar el mensaje tal cual
+        }
+      }
+      
+      setError(mensajeError);
+      console.error('Error detallado:', err);
     } finally {
       setLoadingCrear(false);
     }
@@ -460,52 +504,319 @@ export default function SeleccionarIngredientes({
 
       {/* Dialog para crear nuevo ingrediente */}
       <Dialog open={abrirDialogCrear} onClose={() => setAbrirDialogCrear(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Crear Nuevo Ingrediente</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'bold', fontSize: '1.2rem' }}>
+          Crear Nuevo Ingrediente (Materia Prima)
+        </DialogTitle>
+
         <DialogContent sx={{ pt: 3 }}>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
-          <TextField
-            fullWidth
-            label="Nombre del Ingrediente"
-            value={nuevoIngrediente.nombre}
-            onChange={(e) =>
-              setNuevoIngrediente((prev) => ({ ...prev, nombre: e.target.value }))
-            }
-            margin="dense"
-            sx={{ mb: 2 }}
-          />
-
-          <FormControl fullWidth margin="dense" sx={{ mb: 2 }}>
-            <InputLabel>Unidad de Medida</InputLabel>
-            <Select
-              value={nuevoIngrediente.unidadId}
-              label="Unidad de Medida"
+          {/* SECCIÓN 1: NOMBRE */}
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Box sx={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#333' }}>
+                1. ¿Qué compras? (Nombre de la Materia Prima)
+              </Box>
+              <Box sx={{ ml: 1, fontSize: '0.8rem', color: '#999' }}>
+                ℹ️ Requerido
+              </Box>
+            </Box>
+            <TextField
+              fullWidth
+              placeholder="Ejemplo: Naranja Fresca, Jugo Concentrado, Vaso 16oz"
+              value={nuevoIngrediente.nombre}
               onChange={(e) =>
-                setNuevoIngrediente((prev) => ({ ...prev, unidadId: e.target.value as number }))
+                setNuevoIngrediente((prev) => ({ ...prev, nombre: e.target.value }))
               }
-            >
-              {unidades.map((u) => (
-                <MenuItem key={u.id} value={u.id}>
-                  {u.nombre} ({u.abreviatura})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              size="small"
+              sx={{ mb: 1 }}
+            />
+            <Box sx={{ fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>
+              💡 Este es el nombre de la materia prima que compras al proveedor
+            </Box>
+          </Box>
 
-          <TextField
-            fullWidth
-            label="Factor de Conversión (Opcional)"
-            placeholder="Ej: 1 kg = 500 ml"
-            value={nuevoIngrediente.factorConversion}
-            onChange={(e) =>
-              setNuevoIngrediente((prev) => ({ ...prev, factorConversion: e.target.value }))
-            }
-            margin="dense"
-            helperText="Información referencial para cálculos (opcional)"
-          />
+          {/* SECCIÓN 2: UNIDAD DE COMPRA */}
+          <Box sx={{ mb: 3, p: 2, backgroundColor: '#f0f7ff', borderRadius: 1, border: '1px solid #cce0ff' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+              <Box sx={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#003d99' }}>
+                2. ¿En qué unidad compras? (Unidad Base)
+              </Box>
+              <Box sx={{ ml: 1, fontSize: '0.8rem', color: '#0066cc' }}>
+                ℹ️ Requerido - Crítico
+              </Box>
+            </Box>
+            <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+              <InputLabel>Selecciona la unidad de compra</InputLabel>
+              <Select
+                value={nuevoIngrediente.unidadId}
+                label="Selecciona la unidad de compra"
+                onChange={(e) =>
+                  setNuevoIngrediente((prev) => ({ ...prev, unidadId: e.target.value as number }))
+                }
+              >
+                {unidades.map((u) => (
+                  <MenuItem key={u.id} value={u.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <span>{u.nombre}</span>
+                      <Box sx={{ fontSize: '0.85rem', color: '#999' }}>
+                        ({u.abreviatura})
+                      </Box>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Box sx={{ fontSize: '0.8rem', color: '#003d99', fontStyle: 'italic' }}>
+              📦 Esta unidad es la que usarás para:
+              <ul style={{ margin: '0.5rem 0', paddingLeft: '1.2rem' }}>
+                <li>Registrar compras: "Compré 100 kg"</li>
+                <li>Ver stock: "Quedan 30 kg"</li>
+                <li>Crear recetas: "Usa 0.5 kg por unidad"</li>
+              </ul>
+            </Box>
+          </Box>
+
+          {/* SECCIÓN 2.5: COSTO UNITARIO BASE */}
+          <Box sx={{ mb: 3, p: 2, backgroundColor: '#f0f7ff', borderRadius: 1, border: '1px solid #cce0ff' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+              <Box sx={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#003d99' }}>
+                2.5. ¿Cuánto cuesta? (Costo por Unidad Base)
+              </Box>
+              <Box sx={{ ml: 1, fontSize: '0.8rem', color: '#0066cc' }}>
+                ℹ️ Requerido
+              </Box>
+            </Box>
+            <TextField
+              fullWidth
+              type="number"
+              inputProps={{ step: '0.01', min: '0' }}
+              placeholder="Ejemplo: 25.50, 100.00, etc"
+              value={nuevoIngrediente.costoUnitarioBase}
+              onChange={(e) =>
+                setNuevoIngrediente((prev) => ({ ...prev, costoUnitarioBase: e.target.value }))
+              }
+              size="small"
+              sx={{ mb: 1 }}
+            />
+            <Box sx={{ fontSize: '0.8rem', color: '#003d99', fontStyle: 'italic' }}>
+              💰 Este es el costo de 1 unidad (ej: 1 kg cuesta $25.50)
+              <ul style={{ margin: '0.5rem 0', paddingLeft: '1.2rem' }}>
+                <li>"1 kg Harina" = $25.50</li>
+                <li>"1 litro Aceite" = $45.00</li>
+                <li>"1 paquete Vasos" = $12.00</li>
+              </ul>
+            </Box>
+          </Box>
+
+          {/* SECCIÓN 3: FACTOR DE CONVERSIÓN - FLEXIBLE */}
+          <Box sx={{ mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+              <Box sx={{ fontWeight: 'bold', fontSize: '0.95rem', color: '#333' }}>
+                3. ¿Cuánto rinde? (Factor de Conversión)
+              </Box>
+              <Box sx={{ ml: 1, fontSize: '0.8rem', color: '#999' }}>
+                ℹ️ Opcional - Flexible para cualquier cantidad
+              </Box>
+            </Box>
+
+            {/* Grid principal: ENTRADA (Izquierda) vs SALIDA (Derecha) */}
+            <Box sx={{ mb: 2 }}>
+              {/* ENTRADA: Cantidad + Unidad de lo que compras */}
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ fontSize: '0.8rem', fontWeight: '600', color: '#333', mb: 1 }}>
+                  📥 Cantidad que COMPRAS:
+                </Box>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                  <TextField
+                    type="number"
+                    inputProps={{ step: '0.01', min: '0.01' }}
+                    placeholder="Ejemplo: 0.5, 1, 2"
+                    value={nuevoIngrediente.factorCantidadEntrada}
+                    onChange={(e) =>
+                      setNuevoIngrediente((prev) => ({ ...prev, factorCantidadEntrada: e.target.value }))
+                    }
+                    size="small"
+                    label="Cantidad"
+                  />
+                  <FormControl size="small" fullWidth>
+                    <InputLabel>Unidad</InputLabel>
+                    <Select
+                      value={nuevoIngrediente.unidadId}
+                      label="Unidad"
+                      onChange={(e) =>
+                        setNuevoIngrediente((prev) => ({ ...prev, unidadId: e.target.value as number }))
+                      }
+                    >
+                      {unidades.map((u) => (
+                        <MenuItem key={u.id} value={u.id}>
+                          {u.nombre} ({u.abreviatura})
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+              </Box>
+
+              {/* SALIDA: Cantidad + Unidad del rendimiento */}
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ fontSize: '0.8rem', fontWeight: '600', color: '#333', mb: 1 }}>
+                  📤 Cantidad que RINDE:
+                </Box>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                  <TextField
+                    type="number"
+                    inputProps={{ step: '0.01', min: '0.01' }}
+                    placeholder="Ejemplo: 250, 500, 1000"
+                    value={nuevoIngrediente.factorCantidadSalida}
+                    onChange={(e) =>
+                      setNuevoIngrediente((prev) => ({ ...prev, factorCantidadSalida: e.target.value }))
+                    }
+                    size="small"
+                    label="Cantidad"
+                  />
+                  <FormControl size="small" fullWidth>
+                    <InputLabel>Unidad de salida</InputLabel>
+                    <Select
+                      value={nuevoIngrediente.factorUnidadSalidaId}
+                      label="Unidad de salida"
+                      onChange={(e) =>
+                        setNuevoIngrediente((prev) => ({ ...prev, factorUnidadSalidaId: e.target.value as number }))
+                      }
+                    >
+                      <MenuItem value={0}>
+                        <Box sx={{ color: '#999' }}>-- Sin especificar --</Box>
+                      </MenuItem>
+                      {unidades.map((u) => (
+                        <MenuItem key={u.id} value={u.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <span>{u.nombre}</span>
+                            <Box sx={{ fontSize: '0.85rem', color: '#999' }}>
+                              ({u.abreviatura})
+                            </Box>
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Previsualización del factor - DINÁMICA Y FLEXIBLE */}
+            {nuevoIngrediente.factorCantidadEntrada.trim() && nuevoIngrediente.factorCantidadSalida.trim() && (
+              <Box sx={{ 
+                p: 1.5, 
+                backgroundColor: '#f0f7ff', 
+                borderRadius: 1, 
+                border: '1px solid #cce0ff',
+                mb: 2
+              }}>
+                <Box sx={{ fontSize: '0.85rem', color: '#003d99', fontWeight: '600' }}>
+                  ✅ Factor de Conversión:
+                  <Box sx={{ 
+                    mt: 0.5, 
+                    fontSize: '0.95rem',
+                    fontFamily: 'monospace',
+                    color: '#0066cc',
+                    fontWeight: 'bold'
+                  }}>
+                    {nuevoIngrediente.factorCantidadEntrada} {unidades.find(u => u.id === nuevoIngrediente.unidadId)?.abreviatura || '?'} = {nuevoIngrediente.factorCantidadSalida} {unidades.find(u => u.id === nuevoIngrediente.factorUnidadSalidaId)?.abreviatura || 'unidades'}
+                  </Box>
+                </Box>
+              </Box>
+            )}
+
+            <Box sx={{ fontSize: '0.8rem', color: '#666', fontStyle: 'italic' }}>
+              📊 Ejemplos reales:
+              <ul style={{ margin: '0.5rem 0', paddingLeft: '1.2rem' }}>
+                <li>Jugo: "0.5 kg Naranja" = "250 ml" (medio kilo rinde 250)</li>
+                <li>Rebanadas: "100 gramos Embutido" = "10 rebanadas" (100g dan 10)</li>
+                <li>Porciones: "1 kg Harina" = "40 panes" (1kg para 40 panes)</li>
+                <li>Flexible: "2 kg Naranja" = "1000 ml" (2 kilos rinden 1 litro)</li>
+              </ul>
+              <Box sx={{ mt: 1, color: '#0066cc', fontWeight: '500' }}>
+                ✅ Usarás esto en RECETAS para calcular costos exactos sin importar la cantidad
+              </Box>
+            </Box>
+          </Box>
+
+          {/* EJEMPLO VISUAL */}
+          <Box sx={{ 
+            p: 2, 
+            backgroundColor: '#f5f5f5', 
+            borderRadius: 1, 
+            border: '1px dashed #ccc',
+            mb: 2
+          }}>
+            <Box sx={{ fontWeight: 'bold', fontSize: '0.9rem', mb: 1.5, color: '#333' }}>
+              📝 Ejemplos Reales (Diversos Productos):
+            </Box>
+            
+            {/* Ejemplo 1: Naranja */}
+            <Box sx={{ mb: 2, pb: 2, borderBottom: '1px dashed #ddd' }}>
+              <Box sx={{ fontSize: '0.85rem', fontWeight: '600', color: '#0066cc', mb: 0.5 }}>
+                🍊 Naranja:
+              </Box>
+              <Box sx={{ fontSize: '0.8rem', color: '#333', ml: 1 }}>
+                1. Nombre: Naranja Fresca
+              </Box>
+              <Box sx={{ fontSize: '0.8rem', color: '#333', ml: 1 }}>
+                2. Unidad Base: kg
+              </Box>
+              <Box sx={{ fontSize: '0.8rem', color: '#333', ml: 1 }}>
+                2.5. Costo: $25.50/kg
+              </Box>
+              <Box sx={{ fontSize: '0.8rem', color: '#333', ml: 1, fontFamily: 'monospace' }}>
+                3. Factor: <strong>0.5 kg = 250 ml</strong> (media pesa rinde 250ml)
+              </Box>
+            </Box>
+
+            {/* Ejemplo 2: Embutido */}
+            <Box sx={{ mb: 2, pb: 2, borderBottom: '1px dashed #ddd' }}>
+              <Box sx={{ fontSize: '0.85rem', fontWeight: '600', color: '#0066cc', mb: 0.5 }}>
+                🥓 Embutido/Jamón:
+              </Box>
+              <Box sx={{ fontSize: '0.8rem', color: '#333', ml: 1 }}>
+                1. Nombre: Jamón Serrano
+              </Box>
+              <Box sx={{ fontSize: '0.8rem', color: '#333', ml: 1 }}>
+                2. Unidad Base: gramo
+              </Box>
+              <Box sx={{ fontSize: '0.8rem', color: '#333', ml: 1 }}>
+                2.5. Costo: $0.80/gramo
+              </Box>
+              <Box sx={{ fontSize: '0.8rem', color: '#333', ml: 1, fontFamily: 'monospace' }}>
+                3. Factor: <strong>100 g = 15 rebanadas</strong> (100 gramos dan 15 rebanadas)
+              </Box>
+            </Box>
+
+            {/* Ejemplo 3: Harina */}
+            <Box sx={{ mb: 0 }}>
+              <Box sx={{ fontSize: '0.85rem', fontWeight: '600', color: '#0066cc', mb: 0.5 }}>
+                🥖 Harina:
+              </Box>
+              <Box sx={{ fontSize: '0.8rem', color: '#333', ml: 1 }}>
+                1. Nombre: Harina Blanca
+              </Box>
+              <Box sx={{ fontSize: '0.8rem', color: '#333', ml: 1 }}>
+                2. Unidad Base: kg
+              </Box>
+              <Box sx={{ fontSize: '0.8rem', color: '#333', ml: 1 }}>
+                2.5. Costo: $15.00/kg
+              </Box>
+              <Box sx={{ fontSize: '0.8rem', color: '#333', ml: 1, fontFamily: 'monospace' }}>
+                3. Factor: <strong>1 kg = 40 panes</strong> (1 kilo rinde 40 panes)
+              </Box>
+            </Box>
+
+            <Box sx={{ fontSize: '0.8rem', color: '#0066cc', fontWeight: '500', mt: 1.5, pt: 1.5, borderTop: '1px solid #ddd' }}>
+              💡 <strong>Ventaja:</strong> Cada ingrediente puede tener su propia conversión, sin limitarte a "1" como cantidad fija
+            </Box>
+          </Box>
         </DialogContent>
 
-        <DialogActions sx={{ p: 2 }}>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid #eee' }}>
           <Button
             onClick={() => setAbrirDialogCrear(false)}
             variant="outlined"
@@ -516,7 +827,7 @@ export default function SeleccionarIngredientes({
           <Button
             onClick={handleCrearIngrediente}
             variant="contained"
-            disabled={loadingCrear || !nuevoIngrediente.nombre.trim()}
+            disabled={loadingCrear || !nuevoIngrediente.nombre.trim() || !nuevoIngrediente.unidadId || !nuevoIngrediente.costoUnitarioBase.trim()}
           >
             {loadingCrear ? <CircularProgress size={20} /> : 'Crear Ingrediente'}
           </Button>

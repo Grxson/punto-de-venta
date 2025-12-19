@@ -208,6 +208,7 @@ export default function AdminDashboard() {
   const topProductosData = topProductos
     .filter(p => p && p.nombre)
     .map(p => ({
+      id: p.productoId,
       name: p.nombre.length > 12 ? p.nombre.substring(0, 12) + '.' : p.nombre,
       value: p.unidadesVendidas,
       ingreso: p.ingresoTotal
@@ -462,7 +463,7 @@ export default function AdminDashboard() {
               ) : topProductosData.length > 0 ? (
                 <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                   {topProductosData.map((producto, index) => (
-                    <Fade key={producto.name} in={!loading} timeout={900 + index * 100}>
+                    <Fade key={producto.id} in={!loading} timeout={900 + index * 100}>
                       <Box
                         sx={{
                           p: 1.5,

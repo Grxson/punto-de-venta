@@ -19,10 +19,20 @@ import {
 import { Add, Delete } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { comprasService, CompraDetalle, CrearCompraRequest, ActualizarCompraRequest, IngredienteSeleccionado } from '../../../services/compras.service';
+import { comprasService, CompraDetalle, CrearCompraRequest, ActualizarCompraRequest } from '../../../services/compras.service';
 import { usuariosService } from '../../../services/usuarios.service';
 import ProveedorAutoComplete, { Proveedor } from './ProveedorAutoComplete';
 import SeleccionarIngredientes from './SeleccionarIngredientes';
+
+interface IngredienteSeleccionado {
+  ingredienteId: number;
+  ingredienteNombre: string;
+  unidadId: number;
+  unidadNombre: string;
+  unidadAbreviatura: string;
+  cantidad: number;
+  precioUnitario: number;
+}
 
 interface CompraFormProps {
   compraId?: number;
@@ -76,7 +86,7 @@ export default function CompraForm({ compraId, onGuardado, onCancelado }: Compra
     try {
       const compra = await comprasService.obtener(compraId);
       setFecha(format(new Date(compra.fecha), 'yyyy-MM-dd'));
-      setObservaciones(compra.observaciones || '');
+      setObservaciones(compra.notas || '');
 
       const proveedor = proveedores.find((p) => p.id === compra.proveedorId);
       setProveedorSeleccionado(proveedor || null);

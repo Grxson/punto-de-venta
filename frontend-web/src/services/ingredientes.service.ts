@@ -102,6 +102,13 @@ export const ingredientesService = {
     };
     const response = await apiService.post<Ingrediente>(endpoint, ingredienteDTO);
     if (response.error) {
+      // Si hay validationErrors, incluirlos en el mensaje
+      if (response.data?.validationErrors) {
+        const detalles = Object.entries(response.data.validationErrors)
+          .map(([campo, msg]: [string, any]) => `${campo}: ${msg}`)
+          .join('; ');
+        throw new Error(JSON.stringify({ message: detalles, validationErrors: response.data.validationErrors }));
+      }
       throw new Error(response.error);
     }
     return response.data!;
