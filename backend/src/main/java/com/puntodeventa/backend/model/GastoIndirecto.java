@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.type.NumericBooleanConverter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -44,7 +45,8 @@ public class GastoIndirecto {
     @Column(name = "monto_diario", precision = 12, scale = 2)
     private BigDecimal montoDiario;
     
-    @Column(name = "activo", nullable = false, columnDefinition = "SMALLINT")
+    @Column(name = "activo", nullable = false)
+    @Convert(converter = NumericBooleanConverter.class)
     private Boolean activo = true;
     
     @Column(name = "created_at", nullable = false, updatable = false)

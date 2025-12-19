@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.type.NumericBooleanConverter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -45,7 +46,8 @@ public class ManoObra {
     @Column(length = 20)
     private String periodo; // MENSUAL, SEMANAL, POR_TURNO
     
-    @Column(name = "activo", nullable = false, columnDefinition = "SMALLINT")
+    @Column(name = "activo", nullable = false)
+    @Convert(converter = NumericBooleanConverter.class)
     private Boolean activo = true;
     
     @Column(name = "created_at", nullable = false, updatable = false)
