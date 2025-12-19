@@ -406,9 +406,10 @@ export default function AdminMermas() {
         <DialogContent sx={{ pt: 2 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {/* Seleccionar tipo de merma */}
-            <FormControl fullWidth>
-              <InputLabel>Tipo de Merma *</InputLabel>
+            <FormControl fullWidth variant="outlined">
+              <InputLabel id="tipo-merma-label">Tipo de Merma *</InputLabel>
               <Select
+                labelId="tipo-merma-label"
                 value={tipoMerma}
                 onChange={(e) => {
                   setTipoMerma(e.target.value as 'ingrediente' | 'producto');
