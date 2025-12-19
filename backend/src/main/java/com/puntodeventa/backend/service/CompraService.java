@@ -355,6 +355,32 @@ public class CompraService {
     }
 
     /**
+     * Eliminar compra definitivamente (DELETE sin soft-delete).
+     * ✅ Solo se pueden eliminar compras en estado PENDIENTE
+     * ✅ Eliminación física (sin recuperación)
+     */
+    @Transactional
+    public void eliminarCompra(Long id) {
+        Long sucursalId = SucursalContext.getSucursalId();
+        log.info("🗑️ Eliminando compra ID: {} (ELIMINACIÓN DEFINITIVA)", id);
+
+        Compra compra = compraRepository.findByIdWithItems(id, sucursalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Compra no encontrada"));
+
+        if (!"pendiente".equals(compra.getEstado())) {
+            throw new IllegalStateException("Solo se pueden eliminar compras en estado PENDIENTE");
+        }
+
+        // Eliminar items primero (por integridad referencial)
+        compraItemRepository.deleteByCompraId(id);
+        
+        // Eliminar compra
+        compraRepository.deleteById(id);
+
+        log.info("✅ Compra eliminada definitivamente");
+    }
+
+    /**
      * Obtener preferencias de usuario (últimas compras para agilizar entrada).
      */
     public List<CompraDTO> obtenerUltimosProveedores(int limite) {

@@ -157,16 +157,17 @@ public class CompraController {
     }
 
     /**
-     * Cancelar compra pendiente.
+     * Eliminar compra definitivamente (DELETE sin soft-delete).
+     * ✅ Solo se pueden eliminar compras en estado PENDIENTE
      */
     @DeleteMapping("/{id}")
-    @Operation(summary = "Cancelar compra", description = "Cancela una compra en estado PENDIENTE")
-    public ResponseEntity<Void> cancelarCompra(
+    @Operation(summary = "Eliminar compra", description = "Elimina una compra definitivamente (solo si está PENDIENTE). Esta acción no se puede deshacer.")
+    public ResponseEntity<Void> eliminarCompra(
             @Parameter(description = "ID de la compra") @PathVariable Long id) {
 
-        log.info("📦 Cancelando compra ID: {}", id);
-        compraService.cancelarCompra(id);
-        log.info("✅ Compra cancelada");
+        log.info("🗑️ Eliminando compra ID: {} (ELIMINACIÓN DEFINITIVA)", id);
+        compraService.eliminarCompra(id);
+        log.info("✅ Compra eliminada definitivamente");
 
         return ResponseEntity.noContent().build();
     }

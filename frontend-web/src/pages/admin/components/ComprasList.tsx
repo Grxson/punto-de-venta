@@ -17,8 +17,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  IconButton,
+  Menu,
+  MenuItem,
 } from '@mui/material';
-import { Edit, Delete, Visibility } from '@mui/icons-material';
+import { Edit, Delete, Visibility, MoreVert, Add } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { comprasService, CompraListado } from '../../../services/compras.service';
@@ -47,6 +50,11 @@ export default function ComprasList({ onEditar, onCrear, refreshTrigger = 0 }: C
 
   const [compraAEliminar, setCompraAEliminar] = useState<number | null>(null);
   const [modalConfirmacion, setModalConfirmacion] = useState(false);
+
+  const [menuAnchor, setMenuAnchor] = useState<{
+    element: HTMLElement | null;
+    compraId: number;
+  }>({ element: null, compraId: 0 });
 
   // Cargar compras cuando cambia la página o el trigger
   useEffect(() => {
@@ -200,38 +208,51 @@ export default function ComprasList({ onEditar, onCrear, refreshTrigger = 0 }: C
                       />
                     </TableCell>
                     <TableCell align="center">
-                      <Button
+                      <IconButton
                         size="small"
-                        startIcon={<Visibility />}
-                        onClick={() => verDetalles(compra.id)}
-                        title="Ver detalles"
+                        onClick={(e) => setMenuAnchor({ element: e.currentTarget, compraId: compra.id })}
                       >
-                        Ver
-                      </Button>
-                      {compra.estado === 'pendiente' && (
-                        <>
-                          <Button
-                            size="small"
-                            startIcon={<Edit />}
-                            onClick={() => onEditar(compra.id)}
-                            title="Editar"
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            size="small"
-                            color="error"
-                            startIcon={<Delete />}
-                            onClick={() => {
-                              setCompraAEliminar(compra.id);
-                              setModalConfirmacion(true);
-                            }}
-                            title="Eliminar"
-                          >
-                            Eliminar
-                          </Button>
-                        </>
-                      )}
+                        <MoreVert />
+                      </IconButton>
+                      <Menu
+                        anchorEl={menuAnchor.compraId === compra.id ? menuAnchor.element : null}
+                        open={menuAnchor.compraId === compra.id && Boolean(menuAnchor.element)}
+                        onClose={() => setMenuAnchor({ element: null, compraId: 0 })}
+                      >
+                        <MenuItem 
+                          onClick={() => {
+                            verDetalles(compra.id);
+                            setMenuAnchor({ element: null, compraId: 0 });
+                          }}
+                        >
+                          <Visibility fontSize="small" style={{ marginRight: '8px' }} />
+                          Ver Detalles
+                        </MenuItem>
+                        {compra.estado === 'pendiente' && (
+                          <>
+                            <MenuItem 
+                              onClick={() => {
+                                onEditar(compra.id);
+                                setMenuAnchor({ element: null, compraId: 0 });
+                              }}
+                            >
+                              <Edit fontSize="small" style={{ marginRight: '8px' }} />
+                              Editar
+                            </MenuItem>
+                            <MenuItem 
+                              onClick={() => {
+                                setCompraAEliminar(compra.id);
+                                setModalConfirmacion(true);
+                                setMenuAnchor({ element: null, compraId: 0 });
+                              }}
+                              sx={{ color: 'error.main' }}
+                            >
+                              <Delete fontSize="small" style={{ marginRight: '8px' }} />
+                              Eliminar
+                            </MenuItem>
+                          </>
+                        )}
+                      </Menu>
                     </TableCell>
                   </TableRow>
                 ))}
