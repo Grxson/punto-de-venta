@@ -215,7 +215,17 @@ public class VentaService {
         }
 
         venta.setSubtotal(subtotal);
-        venta.setTotal(subtotal); // Por ahora sin impuestos ni descuentos
+        
+        // Aplicar descuento y calcular total
+        BigDecimal descuentoAplicado = request.descuento() != null ? request.descuento() : BigDecimal.ZERO;
+        venta.setDescuento(descuentoAplicado);
+        
+        // Total = Subtotal - Descuento + Impuestos
+        BigDecimal totalConDescuento = subtotal.subtract(descuentoAplicado);
+        venta.setTotal(totalConDescuento.compareTo(BigDecimal.ZERO) > 0 ? totalConDescuento : BigDecimal.ZERO);
+        
+        log.info("💰 Venta: Subtotal=${}, Descuento=${}, Total=${}", 
+            subtotal, descuentoAplicado, venta.getTotal());
 
         // 4. Procesar pagos y validar que cubran el total
         BigDecimal totalPagos = BigDecimal.ZERO;
@@ -707,7 +717,17 @@ public class VentaService {
         }
 
         venta.setSubtotal(subtotal);
-        venta.setTotal(subtotal); // Por ahora sin impuestos ni descuentos
+        
+        // Aplicar descuento y calcular total
+        BigDecimal descuentoAplicado = request.descuento() != null ? request.descuento() : BigDecimal.ZERO;
+        venta.setDescuento(descuentoAplicado);
+        
+        // Total = Subtotal - Descuento + Impuestos
+        BigDecimal totalConDescuento = subtotal.subtract(descuentoAplicado);
+        venta.setTotal(totalConDescuento.compareTo(BigDecimal.ZERO) > 0 ? totalConDescuento : BigDecimal.ZERO);
+        
+        log.info("💰 Venta actualizada: Subtotal=${}, Descuento=${}, Total=${}", 
+            subtotal, descuentoAplicado, venta.getTotal());
 
         // 5. Procesar nuevos pagos y validar que cubran el total
         BigDecimal totalPagos = BigDecimal.ZERO;

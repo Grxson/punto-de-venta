@@ -3,7 +3,9 @@ package com.puntodeventa.backend.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -22,6 +24,9 @@ public record CrearVentaRequest(
     @Valid
     List<PagoDTO> pagos,
     
+    @PositiveOrZero(message = "El descuento debe ser positivo o cero")
+    BigDecimal descuento,
+    
     String nota,
     String canal
 ) {
@@ -29,6 +34,9 @@ public record CrearVentaRequest(
     public CrearVentaRequest {
         if (canal == null || canal.isBlank()) {
             canal = "POS";
+        }
+        if (descuento == null) {
+            descuento = BigDecimal.ZERO;
         }
     }
 }

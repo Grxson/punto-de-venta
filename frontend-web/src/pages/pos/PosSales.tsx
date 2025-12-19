@@ -103,6 +103,7 @@ export default function PosSales() {
   const [dialogoEdicion, setDialogoEdicion] = useState(false);
   const [itemsEditados, setItemsEditados] = useState<VentaItem[]>([]);
   const [pagosEditados, setPagosEditados] = useState<Pago[]>([]);
+  const [descuentoEditado, setDescuentoEditado] = useState(0);
   const [notaEditada, setNotaEditada] = useState('');
   const [fechaEditada, setFechaEditada] = useState<string>('');
   const [editandoFecha, setEditandoFecha] = useState(false);
@@ -230,6 +231,7 @@ export default function PosSales() {
     setVentaSeleccionada(venta);
     setItemsEditados([...venta.items]);
     setPagosEditados([...venta.pagos]);
+    setDescuentoEditado(venta.descuento || 0);
     setNotaEditada(venta.nota || '');
     setFechaEditada(venta.fecha);
     setEditandoFecha(false);
@@ -295,6 +297,7 @@ export default function PosSales() {
     setVentaSeleccionada(null);
     setItemsEditados([]);
     setPagosEditados([]);
+    setDescuentoEditado(0);
     setNotaEditada('');
     setFechaEditada('');
     setEditandoFecha(false);
@@ -548,7 +551,9 @@ export default function PosSales() {
   };
 
   const calcularTotal = () => {
-    return itemsEditados.reduce((sum, item) => sum + item.subtotal, 0);
+    const subtotal = itemsEditados.reduce((sum, item) => sum + item.subtotal, 0);
+    const descuento = Math.max(0, Math.min(descuentoEditado, subtotal)); // No permitir descuento > subtotal
+    return Math.max(0, subtotal - descuento); // No permitir total negativo
   };
 
   const handleGuardarEdicion = async () => {
@@ -590,6 +595,7 @@ export default function PosSales() {
           monto: pago.monto,
           referencia: pago.referencia || null,
         })),
+        descuento: descuentoEditado,
         nota: notaEditada,
         fecha: fechaEditada,
         canal: ventaSeleccionada.canal,
@@ -1292,9 +1298,69 @@ export default function PosSales() {
             )}
           </Box>
 
+          {/* Campo de Descuento */}
+          <Card sx={{ mb: 2, backgroundColor: 'warning.light', borderColor: 'warning.main', borderWidth: 2 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bold' }}>
+                    Descuento (opcional)
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Importe a descontar del subtotal
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <TextField
+                    type="number"
+                    value={descuentoEditado}
+                    onChange={(e) => {
+                      const nuevoDescuento = Math.max(0, parseFloat(e.target.value) || 0);
+                      const subtotal = itemsEditados.reduce((sum, item) => sum + item.subtotal, 0);
+                      // No permitir descuento mayor que subtotal
+                      setDescuentoEditado(Math.min(nuevoDescuento, subtotal));
+                    }}
+                    inputProps={{ step: '0.01', min: '0' }}
+                    sx={{
+                      width: '140px',
+                      '& .MuiInputBase-root': {
+                        minHeight: '52px',
+                        fontSize: '20px',
+                        fontWeight: 'bold',
+                      },
+                      '& .MuiOutlinedInput-input': {
+                        textAlign: 'right',
+                        padding: '14px',
+                      },
+                    }}
+                    placeholder="0.00"
+                  />
+                  <Typography variant="h6" color="text.secondary" sx={{ minWidth: '20px' }}>
+                    $
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+
           {/* Resumen total - Mejorado */}
           <Card sx={{ backgroundColor: 'primary.main', color: 'white', mb: 2 }}>
             <CardContent>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="body2">Subtotal:</Typography>
+                <Typography variant="body2" fontWeight="bold">
+                  ${itemsEditados.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2)}
+                </Typography>
+              </Box>
+              {descuentoEditado > 0 && (
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1, color: 'warning.light' }}>
+                  <Typography variant="body2">- Descuento:</Typography>
+                  <Typography variant="body2" fontWeight="bold">
+                    -${descuentoEditado.toFixed(2)}
+                  </Typography>
+                </Box>
+              )}
+              <Divider sx={{ my: 1, borderColor: 'rgba(255,255,255,0.3)' }} />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="h6">Total Venta:</Typography>
                 <Typography variant="h5" fontWeight="bold">

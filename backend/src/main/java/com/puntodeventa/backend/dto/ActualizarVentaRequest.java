@@ -2,7 +2,9 @@ package com.puntodeventa.backend.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.PositiveOrZero;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -19,6 +21,9 @@ public record ActualizarVentaRequest(
     @Valid
     List<PagoDTO> pagos,
     
+    @PositiveOrZero(message = "El descuento debe ser positivo o cero")
+    BigDecimal descuento,
+    
     String nota,
     String fecha,
     String canal
@@ -28,6 +33,8 @@ public record ActualizarVentaRequest(
         if (canal == null || canal.isBlank()) {
             canal = "POS";
         }
+        if (descuento == null) {
+            descuento = BigDecimal.ZERO;
+        }
     }
 }
-
