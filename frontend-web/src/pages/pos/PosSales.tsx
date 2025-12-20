@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -33,6 +33,7 @@ import {
   ListItemText,
   ClickAwayListener,
   Popper,
+  TablePagination,
 } from '@mui/material';
 import { Cancel, Refresh, ArrowBack, Edit, Add, Delete, Remove } from '@mui/icons-material';
 import { format } from 'date-fns';
@@ -43,6 +44,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSalesCache } from '../../hooks/useSalesCache';
 import { useNavigate } from 'react-router-dom';
 import { limpiarNombreProducto } from '../../utils/stringFormatters';
 
@@ -87,11 +89,16 @@ interface Venta {
 export default function PosSales() {
   const navigate = useNavigate();
   const { usuario } = useAuth();
+  const { invalidateCache } = useSalesCache();
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState<number | null>(null);
   const [editando, setEditando] = useState<number | null>(null);
+
+  // ✨ PAGINACIÓN LOCAL (solo visualización)
+  const [page, setPage] = useState(0); // 0-indexed para TablePagination
+  const [rowsPerPage, setRowsPerPage] = useState(25); // 25 filas por defecto
 
   // Estado para el diálogo de cancelación
   const [dialogoCancelacion, setDialogoCancelacion] = useState(false);
@@ -158,6 +165,7 @@ export default function PosSales() {
     try {
       setLoading(true);
       setError(null);
+      // ✅ Cargar TODAS las ventas SIN paginación backend
       const response = await apiService.get(API_ENDPOINTS.SALES);
       if (response.success && response.data) {
         // Filtrar solo ventas recientes (últimas 24 horas) para empleados
@@ -168,6 +176,8 @@ export default function PosSales() {
           return horasDiferencia <= 24;
         });
         setVentas(ventasRecientes);
+        // Reiniciar a página 0 cuando se carguen nuevos datos
+        setPage(0);
       } else {
         setError(response.error || 'Error al cargar ventas');
       }
@@ -215,6 +225,7 @@ export default function PosSales() {
           tipo: 'success',
         });
         handleCerrarDialogoCancelacion();
+        invalidateCache(); // ✅ Invalidar caché de ventas
         await loadVentas(); // Recargar lista
       } else {
         setErrorMotivo(response.error || 'Error al cancelar la venta');
@@ -604,6 +615,7 @@ export default function PosSales() {
           tipo: 'success',
         });
         handleCerrarDialogoEdicion();
+        invalidateCache(); // ✅ Invalidar caché de ventas
         await loadVentas();
       } else {
         setErrorEdicion(response.error || 'Error al actualizar la venta');
@@ -645,6 +657,13 @@ export default function PosSales() {
     if (estado === 'PENDIENTE') return 'warning';
     return 'default';
   };
+
+  // ✨ Paginar localmente las ventas
+  const ventasMostradas = useMemo(() => {
+    const inicio = page * rowsPerPage;
+    const fin = inicio + rowsPerPage;
+    return ventas.slice(inicio, fin);
+  }, [ventas, page, rowsPerPage]);
 
   if (loading) {
     return (
@@ -703,7 +722,7 @@ export default function PosSales() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {ventas.length === 0 ? (
+                {ventasMostradas.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} align="center">
                       <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
@@ -712,7 +731,7 @@ export default function PosSales() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  ventas.map((venta) => (
+                  ventasMostradas.map((venta) => (
                     <TableRow key={venta.id}>
                       <TableCell>#{venta.id}</TableCell>
                       <TableCell>
@@ -849,6 +868,27 @@ export default function PosSales() {
             </Table>
           </TableContainer>
         </CardContent>
+
+        {/* ✨ PAGINADOR: Solo mostrar si hay muchas ventas */}
+        {ventas.length > 15 && (
+          <TablePagination
+            component="div"
+            count={ventas.length}
+            page={page}
+            onPageChange={(e, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => {
+              setRowsPerPage(parseInt(e.target.value, 10));
+              setPage(0); // Reiniciar a página 0
+            }}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            labelRowsPerPage="Filas por página:"
+            labelDisplayedRows={({ from, to, count }) =>
+              `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+            }
+            sx={{ borderTop: '1px solid #e0e0e0' }}
+          />
+        )}
       </Card>
 
       {/* Diálogo de cancelación */}

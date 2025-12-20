@@ -39,16 +39,23 @@ public class EstadisticasService {
     public ResumenVentasDiaDTO resumenDia(LocalDate fecha) {
         LocalDateTime inicio = fecha.atStartOfDay();
         LocalDateTime fin = fecha.atTime(LocalTime.MAX);
+        System.out.println("📊 [EstadisticasService] resumenDia: fecha=" + fecha +
+                ", inicio=" + inicio + ", fin=" + fin);
         return resumenRango(inicio, fin, fecha);
     }
 
     public ResumenVentasDiaDTO resumenRango(LocalDateTime desde, LocalDateTime hasta, LocalDate fechaRepresentativa) {
+        System.out.println("📊 [EstadisticasService] resumenRango: desde=" + desde +
+                ", hasta=" + hasta + ", fechaRepresentativa=" + fechaRepresentativa);
         // ✅ SEGREGACIÓN: Obtener resumen solo de la sucursal del usuario
         Long sucursalId = SucursalContext.getSucursalId();
 
         ResumenVentasAggregate agg = ventaRepository.aggregateResumenBySucursal(sucursalId, desde, hasta);
         BigDecimal totalVentas = agg.totalVentas();
         BigDecimal totalCostosProductos = agg.totalCostos();
+
+        System.out.println("  ↳ Aggregate: cantidadVentas=" + agg.cantidadVentas() +
+                ", totalVentas=" + totalVentas + ", totalCostos=" + totalCostosProductos);
 
         // ✅ SEGREGACIÓN: Sumar SOLO gastos OPERACIONALES de la sucursal actual
         BigDecimal totalGastos = gastoRepository.sumMontoByTipoGastoAndSucursalAndFechaBetween("Operacional",

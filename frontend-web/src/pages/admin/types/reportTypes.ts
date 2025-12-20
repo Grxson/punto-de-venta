@@ -6,6 +6,7 @@ export interface ResumenVentas {
   fecha: string;
   totalVentas: number;
   totalCostos: number;
+  totalGastos?: number;
   margenBruto: number;
   cantidadVentas: number;
   itemsVendidos: number;

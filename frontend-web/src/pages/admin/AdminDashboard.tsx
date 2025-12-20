@@ -34,6 +34,7 @@ import { es } from 'date-fns/locale';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useDashboard } from '../../contexts/DashboardContext';
+import { getTodayLocalDate, toLocalISOString } from '../../utils/dateHelper';
 
 interface DailyStats {
   fecha: string;
@@ -165,15 +166,18 @@ export default function AdminDashboard() {
       }
       setError(null);
 
+      // ✅ Enviar la fecha del cliente (zona horaria local) para evitar problemas de offset
+      const fechaHoy = getTodayLocalDate();
+      
       const [statsResponse, topProductosResponse] = await Promise.all([
-        apiService.get(API_ENDPOINTS.STATS_DAILY),
-        apiService.get(`${API_ENDPOINTS.STATS_PRODUCTS_DAY}?fecha=${new Date().toISOString().split('T')[0]}&limite=5`)
+        apiService.get(`${API_ENDPOINTS.STATS_DAILY}?fecha=${fechaHoy}`),
+        apiService.get(`${API_ENDPOINTS.STATS_PRODUCTS_DAY}?fecha=${fechaHoy}&limite=5`)
       ]);
 
       if (statsResponse.success && statsResponse.data) {
         const data = statsResponse.data;
         setStats({
-          fecha: data.fecha || new Date().toISOString().split('T')[0],
+          fecha: fechaHoy,  // ✅ Usar fecha del cliente, no data.fecha
           totalVentas: parseFloat(data.totalVentas) || 0,
           totalCostos: parseFloat(data.totalCostos) || 0,
           totalGastos: parseFloat(data.totalGastos) || 0,
@@ -239,7 +243,7 @@ export default function AdminDashboard() {
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
                 <Typography variant="body2" sx={{ color: '#666', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  📅 {format(new Date(stats?.fecha || new Date()), "EEEE, dd 'de' MMMM", { locale: es })}
+                  📅 {format(stats?.fecha ? new Date(stats.fecha + 'T00:00:00') : new Date(), "EEEE, dd 'de' MMMM", { locale: es })}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, p: 1, borderRadius: 1, background: '#f0f0f0' }}>
                   <Typography variant="body2" sx={{ color: '#666', fontWeight: 500, fontFamily: 'monospace' }}>

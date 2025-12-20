@@ -25,13 +25,17 @@ public class EstadisticasController {
     }
 
     @GetMapping("/ventas/dia")
-    @Operation(summary = "Resumen de ventas del día", description = "Si no se proporciona fecha, usa fecha actual")
+    @Operation(summary = "Resumen de ventas del día", description = "Parámetro 'fecha' es opcional. Si no se envía, usa la fecha del servidor (puede tener offset si zona horaria es diferente).")
     public ResponseEntity<ResumenVentasDiaDTO> resumenDia(
-            @RequestParam(name = "fecha", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-            LocalDate fecha
-    ) {
+            @RequestParam(name = "fecha", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
+        // ⚠️ Si el cliente NO envía fecha, usar fecha del servidor (pero con aviso en
+        // logs)
         LocalDate f = fecha != null ? fecha : LocalDate.now();
+        if (fecha == null) {
+            org.slf4j.LoggerFactory.getLogger(this.getClass())
+                    .warn("⚠️ ENDPOINT /api/estadisticas/ventas/dia LLAMADO SIN PARÁMETRO 'fecha'. " +
+                            "Usando LocalDate.now() del servidor. ESTO PUEDE CAUSAR OFFSET DE FECHA.");
+        }
         return ResponseEntity.ok(estadisticasService.resumenDia(f));
     }
 
@@ -39,8 +43,7 @@ public class EstadisticasController {
     @Operation(summary = "Resumen de ventas en rango")
     public ResponseEntity<ResumenVentasDiaDTO> resumenRango(
             @RequestParam("desde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
-            @RequestParam("hasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta
-    ) {
+            @RequestParam("hasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta) {
         return ResponseEntity.ok(estadisticasService.resumenRango(desde, hasta, null));
     }
 
@@ -48,8 +51,7 @@ public class EstadisticasController {
     @Operation(summary = "Rendimiento de productos en un día", description = "Top N productos ordenados por ingreso")
     public ResponseEntity<List<ProductoRendimientoDTO>> rendimientoProductosDia(
             @RequestParam(name = "fecha", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
-            @RequestParam(name = "limite", defaultValue = "10") int limite
-    ) {
+            @RequestParam(name = "limite", defaultValue = "10") int limite) {
         LocalDate f = fecha != null ? fecha : LocalDate.now();
         return ResponseEntity.ok(estadisticasService.rendimientoProductosDia(f, limite));
     }
@@ -59,8 +61,7 @@ public class EstadisticasController {
     public ResponseEntity<List<ProductoRendimientoDTO>> rendimientoProductosRango(
             @RequestParam("desde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
             @RequestParam("hasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta,
-            @RequestParam(name = "limite", defaultValue = "10") int limite
-    ) {
+            @RequestParam(name = "limite", defaultValue = "10") int limite) {
         return ResponseEntity.ok(estadisticasService.rendimientoProductosRango(desde, hasta, limite));
     }
 }
