@@ -9,21 +9,23 @@ import java.math.BigDecimal;
  * DTO para CompraItem - Legible y validado.
  */
 public record CompraItemDTO(
-        Long id,
+                Long id,
 
-        @NotNull(message = "El ID del ingrediente es obligatorio") Long ingredienteId,
+                @NotNull(message = "El ID del ingrediente es obligatorio") Long ingredienteId,
 
-        String ingredienteNombre,
+                String ingredienteNombre,
 
-        @NotNull(message = "La cantidad es obligatoria") @Positive(message = "La cantidad debe ser > 0") BigDecimal cantidad,
+                @NotNull(message = "La cantidad es obligatoria") @Positive(message = "La cantidad debe ser > 0") BigDecimal cantidad,
 
-        @NotNull(message = "La unidad es obligatoria") Long unidadId,
+                @NotNull(message = "La unidad es obligatoria") Long unidadId,
 
-        String unidadNombre,
+                String unidadNombre,
 
-        @NotNull(message = "El precio unitario es obligatorio") @PositiveOrZero(message = "El precio unitario debe ser >= 0") BigDecimal precioUnitario,
+                @NotNull(message = "El precio total es obligatorio") @PositiveOrZero(message = "El precio total debe ser >= 0") BigDecimal precioTotal,
 
-        BigDecimal subtotal,
+                BigDecimal precioUnitario,
 
-        @PositiveOrZero(message = "La cantidad recibida debe ser >= 0") BigDecimal cantidadRecibida) {
+                BigDecimal subtotal,
+
+                @PositiveOrZero(message = "La cantidad recibida debe ser >= 0") BigDecimal cantidadRecibida) {
 }

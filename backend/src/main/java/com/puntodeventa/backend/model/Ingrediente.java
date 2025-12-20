@@ -1,4 +1,5 @@
 package com.puntodeventa.backend.model;
+
 import com.puntodeventa.backend.config.BooleanToIntegerConverter;
 
 import jakarta.persistence.*;
@@ -22,60 +23,59 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class Ingrediente {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @NotBlank(message = "El nombre del ingrediente es obligatorio")
     @Column(nullable = false, length = 200)
     private String nombre;
-    
+
     @Column(length = 500)
     private String descripcion;
-    
+
     @Column(length = 100)
     private String categoria;
-    
+
     // VINCULACIÓN A GASTO
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "gasto_id")
     private Gasto gasto;
-    
+
     @Column(name = "costo_total_gasto", precision = 14, scale = 6)
     private BigDecimal costoTotalGasto;
-    
+
     // CONVERSIÓN DE UNIDADES
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "unidad_gasto_id")
     private Unidad unidadGasto;
-    
-    @Column(name = "factor_conversion", columnDefinition = "INTEGER DEFAULT 1")
-    @Builder.Default
-    private Integer factorConversion = 1;
-    
+
+    @Column(name = "factor_conversion", length = 100)
+    private String factorConversion;
+
     // RESULTADO FINAL
     @NotNull(message = "La unidad base es obligatoria")
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "unidad_base_id", nullable = false)
     private Unidad unidadBase;
-    
+
     @NotNull(message = "El costo unitario base es obligatorio")
     @PositiveOrZero(message = "El costo unitario base debe ser positivo o cero")
     @Column(name = "costo_unitario_base", nullable = false, precision = 14, scale = 6)
     private BigDecimal costoUnitarioBase;
-    
+
     @PositiveOrZero(message = "El stock mínimo debe ser positivo o cero")
     @Column(name = "stock_minimo", precision = 12, scale = 3)
     private BigDecimal stockMinimo;
-    
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "proveedor_id")
     private Proveedor proveedor;
-    
+
     @Column(length = 50)
     private String sku;
-    
+
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default

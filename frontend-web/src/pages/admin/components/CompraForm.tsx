@@ -31,7 +31,7 @@ interface IngredienteSeleccionado {
   unidadNombre: string;
   unidadAbreviatura: string;
   cantidad: number;
-  precioUnitario: number;
+  precioTotal: number;
 }
 
 interface CompraFormProps {
@@ -99,7 +99,7 @@ export default function CompraForm({ compraId, onGuardado, onCancelado }: Compra
         unidadNombre: item.unidadNombre,
         unidadAbreviatura: item.unidadAbreviatura,
         cantidad: item.cantidad,
-        precioUnitario: item.precioUnitario,
+        precioTotal: item.precioTotal,
       }));
       setIngredientes(ingredientesConverted);
     } catch (err) {
@@ -137,7 +137,7 @@ export default function CompraForm({ compraId, onGuardado, onCancelado }: Compra
           ingredienteId: i.ingredienteId,
           cantidad: i.cantidad,
           unidadId: i.unidadId,
-          precioUnitario: i.precioUnitario,
+          precioTotal: i.precioTotal,
         })),
         observaciones,
       };
@@ -160,7 +160,7 @@ export default function CompraForm({ compraId, onGuardado, onCancelado }: Compra
     }
   };
 
-  const totalCompra = ingredientes.reduce((sum, item) => sum + item.cantidad * item.precioUnitario, 0);
+  const totalCompra = ingredientes.reduce((sum, item) => sum + item.precioTotal, 0);
   const esEdicion = !!compraId;
 
   return (
@@ -242,8 +242,8 @@ export default function CompraForm({ compraId, onGuardado, onCancelado }: Compra
                           <TableCell>Ingrediente</TableCell>
                           <TableCell align="right">Cantidad</TableCell>
                           <TableCell align="center">Unidad</TableCell>
+                          <TableCell align="right">Precio Total</TableCell>
                           <TableCell align="right">Precio Unit.</TableCell>
-                          <TableCell align="right">Subtotal</TableCell>
                           <TableCell align="center" width={50}>
                             Acción
                           </TableCell>
@@ -255,9 +255,9 @@ export default function CompraForm({ compraId, onGuardado, onCancelado }: Compra
                             <TableCell>{item.ingredienteNombre}</TableCell>
                             <TableCell align="right">{item.cantidad.toFixed(2)}</TableCell>
                             <TableCell align="center">{item.unidadAbreviatura}</TableCell>
-                            <TableCell align="right">${item.precioUnitario.toFixed(2)}</TableCell>
+                            <TableCell align="right">${item.precioTotal.toFixed(2)}</TableCell>
                             <TableCell align="right">
-                              ${(item.cantidad * item.precioUnitario).toFixed(2)}
+                              ${(item.cantidad > 0 ? (item.precioTotal / item.cantidad) : 0).toFixed(2)}
                             </TableCell>
                             <TableCell align="center">
                               <Button

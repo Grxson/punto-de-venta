@@ -10,11 +10,11 @@ import java.math.BigDecimal;
  * Reutilizable en crear y actualizar.
  */
 public record CompraItemRequest(
-        @NotNull(message = "El ID del ingrediente es obligatorio") Long ingredienteId,
+                @NotNull(message = "El ID del ingrediente es obligatorio") Long ingredienteId,
 
-        @NotNull(message = "La cantidad es obligatoria") @Positive(message = "La cantidad debe ser > 0") BigDecimal cantidad,
+                @NotNull(message = "La cantidad es obligatoria") @Positive(message = "La cantidad debe ser > 0") BigDecimal cantidad,
 
-        @NotNull(message = "La unidad es obligatoria") Long unidadId,
+                @NotNull(message = "La unidad es obligatoria") Long unidadId,
 
-        @NotNull(message = "El precio unitario es obligatorio") @PositiveOrZero(message = "El precio unitario debe ser >= 0") BigDecimal precioUnitario) {
+                @NotNull(message = "El precio total es obligatorio") @PositiveOrZero(message = "El precio total debe ser >= 0") BigDecimal precioTotal) {
 }

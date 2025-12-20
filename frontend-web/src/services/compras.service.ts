@@ -39,6 +39,7 @@ export interface CompraItem {
   unidadId: number;
   unidadNombre: string;
   unidadAbreviatura: string;
+  precioTotal: number;
   precioUnitario: number;
   subtotal: number;
   cantidadRecibida?: number;
@@ -54,7 +55,7 @@ export interface CrearCompraRequest {
     ingredienteId: number;
     cantidad: number;
     unidadId: number;
-    precioUnitario: number;
+    precioTotal: number;
   }[];
   observaciones?: string;
 }
@@ -69,7 +70,7 @@ export interface ActualizarCompraRequest {
     ingredienteId: number;
     cantidad: number;
     unidadId: number;
-    precioUnitario: number;
+    precioTotal: number;
   }[];
   observaciones?: string;
 }

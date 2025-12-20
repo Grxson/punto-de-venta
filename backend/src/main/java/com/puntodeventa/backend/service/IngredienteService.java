@@ -92,28 +92,28 @@ public class IngredienteService {
 
         // LÓGICA DE VINCULACIÓN CON GASTO
         BigDecimal costoUnitarioCalculado = dto.costoUnitarioBase();
-        
+
+        // Guardar factor de conversión como string (flexible: "1 kg = 500 ml", "0.5 kg
+        // = 250 ml", etc.)
+        if (dto.factorConversion() != null && !dto.factorConversion().trim().isEmpty()) {
+            ingrediente.setFactorConversion(dto.factorConversion());
+        }
+
         if (dto.gastoId() != null) {
             Gasto gasto = gastoRepository.findById(dto.gastoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Gasto no encontrado con id: " + dto.gastoId()));
-            
+
             ingrediente.setGasto(gasto);
             ingrediente.setCostoTotalGasto(gasto.getMonto());
-            
+
             if (dto.unidadGastoId() != null) {
                 Unidad unidadGasto = unidadRepository.findById(dto.unidadGastoId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Unidad de gasto no encontrada con id: " + dto.unidadGastoId()));
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Unidad de gasto no encontrada con id: " + dto.unidadGastoId()));
                 ingrediente.setUnidadGasto(unidadGasto);
             }
-            
-            if (dto.factorConversion() != null && dto.factorConversion() > 0) {
-                ingrediente.setFactorConversion(dto.factorConversion());
-                // CÁLCULO AUTOMÁTICO: costo por unidad = costo total gasto / factor de conversión
-                costoUnitarioCalculado = gasto.getMonto()
-                        .divide(new BigDecimal(dto.factorConversion()), 6, BigDecimal.ROUND_HALF_UP);
-            }
         }
-        
+
         ingrediente.setCostoUnitarioBase(costoUnitarioCalculado);
         ingrediente = ingredienteRepository.save(ingrediente);
         return mapper.toIngredienteDTO(ingrediente);
@@ -147,34 +147,33 @@ public class IngredienteService {
 
         // LÓGICA DE VINCULACIÓN CON GASTO
         BigDecimal costoUnitarioCalculado = dto.costoUnitarioBase();
-        
+
+        // Guardar factor de conversión como string (flexible)
+        if (dto.factorConversion() != null && !dto.factorConversion().trim().isEmpty()) {
+            ingrediente.setFactorConversion(dto.factorConversion());
+        }
+
         if (dto.gastoId() != null) {
             Gasto gasto = gastoRepository.findById(dto.gastoId())
                     .orElseThrow(() -> new ResourceNotFoundException("Gasto no encontrado con id: " + dto.gastoId()));
-            
+
             ingrediente.setGasto(gasto);
             ingrediente.setCostoTotalGasto(gasto.getMonto());
-            
+
             if (dto.unidadGastoId() != null) {
                 Unidad unidadGasto = unidadRepository.findById(dto.unidadGastoId())
-                        .orElseThrow(() -> new ResourceNotFoundException("Unidad de gasto no encontrada con id: " + dto.unidadGastoId()));
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Unidad de gasto no encontrada con id: " + dto.unidadGastoId()));
                 ingrediente.setUnidadGasto(unidadGasto);
-            }
-            
-            if (dto.factorConversion() != null && dto.factorConversion() > 0) {
-                ingrediente.setFactorConversion(dto.factorConversion());
-                // CÁLCULO AUTOMÁTICO: costo por unidad = costo total gasto / factor de conversión
-                costoUnitarioCalculado = gasto.getMonto()
-                        .divide(new BigDecimal(dto.factorConversion()), 6, BigDecimal.ROUND_HALF_UP);
             }
         } else {
             // Si no hay gasto vinculado, limpiar los campos de vinculación
             ingrediente.setGasto(null);
             ingrediente.setCostoTotalGasto(null);
             ingrediente.setUnidadGasto(null);
-            ingrediente.setFactorConversion(1);
+            ingrediente.setFactorConversion(null);
         }
-        
+
         ingrediente.setCostoUnitarioBase(costoUnitarioCalculado);
         ingrediente = ingredienteRepository.save(ingrediente);
         return mapper.toIngredienteDTO(ingrediente);

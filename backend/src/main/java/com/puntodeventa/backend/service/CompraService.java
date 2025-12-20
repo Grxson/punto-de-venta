@@ -157,7 +157,7 @@ public class CompraService {
                                         .ingrediente(ingrediente)
                                         .cantidad(itemReq.cantidad())
                                         .unidad(unidad)
-                                        .precioUnitario(itemReq.precioUnitario())
+                                        .precioTotal(itemReq.precioTotal())
                                         .cantidadRecibida(BigDecimal.ZERO)
                                         .build();
 
@@ -166,10 +166,10 @@ public class CompraService {
 
                         montoTotal = montoTotal.add(item.getSubtotal());
 
-                        log.debug("  ✅ Item agregado: {} x {} @ ${}",
+                        log.debug("  ✅ Item agregado: {} x {} @ ${} (total)",
                                         ingrediente.getNombre(),
                                         itemReq.cantidad(),
-                                        itemReq.precioUnitario());
+                                        itemReq.precioTotal());
                 }
 
                 // 6. Actualizar monto total
@@ -310,7 +310,7 @@ public class CompraService {
                                         .ingrediente(ingrediente)
                                         .cantidad(itemReq.cantidad())
                                         .unidad(unidad)
-                                        .precioUnitario(itemReq.precioUnitario())
+                                        .precioTotal(itemReq.precioTotal())
                                         .cantidadRecibida(BigDecimal.ZERO)
                                         .build();
 
@@ -447,6 +447,7 @@ public class CompraService {
                                 item.getCantidad(),
                                 item.getUnidad().getId(),
                                 item.getUnidad().getNombre(),
+                                item.getPrecioTotal(),
                                 item.getPrecioUnitario(),
                                 item.getSubtotal(),
                                 item.getCantidadRecibida());

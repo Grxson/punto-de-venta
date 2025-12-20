@@ -51,10 +51,15 @@ public class CompraItem implements Serializable {
     @JoinColumn(name = "unidad_id", nullable = false)
     private Unidad unidad;
 
-    @NotNull(message = "El precio unitario es obligatorio")
-    @PositiveOrZero(message = "El precio unitario debe ser >= 0")
+    @NotNull(message = "El precio total es obligatorio")
+    @PositiveOrZero(message = "El precio total debe ser >= 0")
     @Column(nullable = false, precision = 14, scale = 6)
-    private BigDecimal precioUnitario;
+    private BigDecimal precioTotal;
+
+    @PositiveOrZero(message = "El precio unitario debe ser >= 0")
+    @Column(nullable = false, precision = 14, scale = 6, insertable = false, updatable = false)
+    @Builder.Default
+    private BigDecimal precioUnitario = BigDecimal.ZERO;
 
     @Column(precision = 14, scale = 2)
     private BigDecimal subtotal;
@@ -67,9 +72,14 @@ public class CompraItem implements Serializable {
 
     @PrePersist
     @PreUpdate
-    protected void calcularSubtotal() {
-        if (this.cantidad != null && this.precioUnitario != null) {
-            this.subtotal = this.cantidad.multiply(this.precioUnitario);
+    protected void calcularDerivados() {
+        // Calcular precioUnitario = precioTotal ÷ cantidad
+        if (this.cantidad != null && this.precioTotal != null && this.cantidad.compareTo(BigDecimal.ZERO) > 0) {
+            this.precioUnitario = this.precioTotal.divide(this.cantidad, 6, java.math.RoundingMode.HALF_UP);
+        }
+        // Subtotal = precioTotal (ya que precioTotal es el total de la compra)
+        if (this.precioTotal != null) {
+            this.subtotal = this.precioTotal;
         }
     }
 }

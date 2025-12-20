@@ -17,7 +17,7 @@ export interface Ingrediente {
   unidadGastoId?: number;
   unidadGastoNombre?: string;
   unidadGastoAbreviatura?: string;
-  factorConversion?: number;
+  factorConversion?: string;
   // Legacy (para compatibilidad con componentes)
   precioUnitario?: number;
   unidadId?: number;
@@ -97,7 +97,7 @@ export const ingredientesService = {
       // VINCULACIÓN CON GASTO (AHORA INCLUIDA)
       gastoId: datos.gastoId || null,
       unidadGastoId: datos.unidadGastoId || null,
-      factorConversion: datos.factorConversion || 1,
+      ...(datos.factorConversion ? { factorConversion: datos.factorConversion } : {}),
       costoTotalGasto: datos.costoTotalGasto || null,
     };
     const response = await apiService.post<Ingrediente>(endpoint, ingredienteDTO);

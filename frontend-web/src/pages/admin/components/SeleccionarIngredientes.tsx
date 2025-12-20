@@ -33,7 +33,7 @@ interface IngredienteSeleccionado {
   unidadNombre: string;
   unidadAbreviatura: string;
   cantidad: number;
-  precioUnitario: number;
+  precioTotal: number;
 }
 
 interface SeleccionarIngredientesProps {
@@ -66,7 +66,7 @@ export default function SeleccionarIngredientes({
   // Ingrediente para agregar
   const [ingredienteSeleccionado, setIngredienteSeleccionado] = useState<Ingrediente | null>(null);
   const [cantidad, setCantidad] = useState<number>(1);
-  const [precioUnitario, setPrecioUnitario] = useState<number>(0);
+  const [precioTotal, setPrecioTotal] = useState<number>(0);
   const [inputValue, setInputValue] = useState<string>('');
 
   // Dialog para crear nuevo ingrediente
@@ -120,7 +120,7 @@ export default function SeleccionarIngredientes({
    * Agregar ingrediente a la lista de seleccionados
    */
   const agregarIngrediente = () => {
-    if (!ingredienteSeleccionado || cantidad <= 0 || precioUnitario < 0) {
+    if (!ingredienteSeleccionado || cantidad <= 0 || precioTotal < 0) {
       setError('Completa todos los campos correctamente');
       return;
     }
@@ -142,7 +142,7 @@ export default function SeleccionarIngredientes({
       unidadNombre: ingredienteSeleccionado.unidadBaseNombre || 'unidad',
       unidadAbreviatura: ingredienteSeleccionado.unidadBaseAbreviatura || '',
       cantidad,
-      precioUnitario,
+      precioTotal,
     };
 
     setIngredientesSeleccionados([...ingredientesSeleccionados, nuevoIngrediente]);
@@ -151,7 +151,7 @@ export default function SeleccionarIngredientes({
     // Limpiar formulario
     setIngredienteSeleccionado(null);
     setCantidad(1);
-    setPrecioUnitario(0);
+    setPrecioTotal(0);
     setInputValue('');
   };
 
@@ -190,7 +190,7 @@ export default function SeleccionarIngredientes({
         nombre: nuevoIngrediente.nombre.trim(),
         unidadBaseId: nuevoIngrediente.unidadId,
         costoUnitarioBase: parseFloat(nuevoIngrediente.costoUnitarioBase),
-        factorConversion: factorConversionText || undefined,
+        ...(factorConversionText ? { factorConversion: factorConversionText } : {}),
         activo: true,
       });
 
@@ -255,12 +255,12 @@ export default function SeleccionarIngredientes({
   };
 
   /**
-   * Actualizar precio unitario
+   * Actualizar precio total
    */
   const actualizarPrecio = (ingredienteId: number, nuevoPrecio: number) => {
     setIngredientesSeleccionados(
       ingredientesSeleccionados.map((i) =>
-        i.ingredienteId === ingredienteId ? { ...i, precioUnitario: nuevoPrecio } : i
+        i.ingredienteId === ingredienteId ? { ...i, precioTotal: nuevoPrecio } : i
       )
     );
   };
@@ -287,7 +287,7 @@ export default function SeleccionarIngredientes({
   };
 
   const totalSubtotal = ingredientesSeleccionados.reduce(
-    (sum, item) => sum + item.cantidad * item.precioUnitario,
+    (sum, item) => sum + item.precioTotal,
     0
   );
 
@@ -359,16 +359,17 @@ export default function SeleccionarIngredientes({
                   inputProps={{ step: '0.01', min: '0' }}
                 />
                 <TextField
-                  label="Precio Unitario"
+                  label="Precio Total"
                   type="number"
                   size="small"
-                  value={precioUnitario}
-                  onChange={(e) => setPrecioUnitario(parseFloat(e.target.value) || 0)}
+                  value={precioTotal}
+                  onChange={(e) => setPrecioTotal(parseFloat(e.target.value) || 0)}
                   inputProps={{ step: '0.01', min: '0' }}
                   InputProps={{ startAdornment: '$' }}
+                  fullWidth
                 />
                 <Box sx={{ fontSize: '0.875rem' }}>
-                  <strong>Subtotal:</strong> ${(cantidad * precioUnitario).toFixed(2)}
+                  <strong>Precio Unitario (calculado):</strong> ${(cantidad > 0 ? precioTotal / cantidad : 0).toFixed(2)}
                 </Box>
                 <Button
                   variant="contained"
@@ -428,7 +429,7 @@ export default function SeleccionarIngredientes({
                             <TextField
                               type="number"
                               size="small"
-                              value={item.precioUnitario}
+                              value={item.precioTotal}
                               onChange={(e) =>
                                 actualizarPrecio(item.ingredienteId, parseFloat(e.target.value) || 0)
                               }
@@ -438,7 +439,7 @@ export default function SeleccionarIngredientes({
                             />
                           </TableCell>
                           <TableCell align="right">
-                            ${(item.cantidad * item.precioUnitario).toFixed(2)}
+                            ${item.precioTotal.toFixed(2)}
                           </TableCell>
                           <TableCell align="center">
                             <Button
