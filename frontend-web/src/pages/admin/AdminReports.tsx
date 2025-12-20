@@ -150,6 +150,24 @@ export default function AdminReports() {
       if (resumenResponse.success && resumenResponse.data) {
         setGastosDia(parseFloat(resumenResponse.data.totalGastos) || 0);
       }
+
+      // ✨ Cargar gastos detallados para mostrar en GeneralCutTab
+      const gastosResponse = await apiService.get(
+        `${API_ENDPOINTS.GASTOS}/rango?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
+      );
+
+      if (gastosResponse.success && gastosResponse.data) {
+        // Convertir GastoDTO a GastoDetallado con estructura esperada
+        const gastosFormateados = gastosResponse.data.map((gasto: any) => ({
+          id: gasto.id,
+          monto: parseFloat(gasto.monto) || 0,
+          categoriaGastoNombre: gasto.categoriaGastoNombre || 'Sin categoría',
+          proveedorNombre: gasto.proveedorNombre || 'Sin proveedor',
+          nota: gasto.nota || '',
+          fecha: gasto.fecha,
+        }));
+        setGastosDetallados(gastosFormateados);
+      }
     } catch (err: any) {
       setError(err.message || 'Error al cargar reportes');
     } finally {
@@ -721,7 +739,7 @@ export default function AdminReports() {
                               Gastos
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600, color: '#ff6b6b' }}>
-                              -${gastosDia.toFixed(2)}
+                              ${gastosDia.toFixed(2)}
                             </Typography>
                           </Box>
                           {/* Fila de Resultado Neto */}
