@@ -154,7 +154,7 @@ function NestedGastoRow({ gastosPorCategoria }: NestedGastoRowProps) {
           Gastos
         </Typography>
         <Typography variant="body2" sx={{ fontWeight: 700, color: '#856404' }}>
-          -$0.00
+          $0.00
         </Typography>
       </Box>
     );
@@ -188,7 +188,7 @@ function NestedGastoRow({ gastosPorCategoria }: NestedGastoRowProps) {
           </span>
         </Typography>
         <Typography variant="body2" sx={{ fontWeight: 700, color: '#856404' }}>
-          -${totalGastosGenerales.toFixed(2)}
+          ${totalGastosGenerales.toFixed(2)}
         </Typography>
       </Box>
 
@@ -223,7 +223,7 @@ function NestedGastoRow({ gastosPorCategoria }: NestedGastoRowProps) {
                   </span>
                 </Typography>
                 <Typography variant="caption" sx={{ fontWeight: 600, color: '#856404' }}>
-                  -${categoria.totalGastos.toFixed(2)}
+                  ${categoria.totalGastos.toFixed(2)}
                 </Typography>
               </Box>
 
@@ -273,7 +273,7 @@ function NestedGastoRow({ gastosPorCategoria }: NestedGastoRowProps) {
                             variant="caption"
                             sx={{ fontWeight: 500, color: '#856404', fontSize: '0.75rem' }}
                           >
-                            -${proveedor.monto.toFixed(2)}
+                            ${proveedor.monto.toFixed(2)}
                           </Typography>
                         </Box>
 
@@ -319,7 +319,7 @@ function NestedGastoRow({ gastosPorCategoria }: NestedGastoRowProps) {
                                         {gasto.nota || 'Sin descripción'}
                                       </Typography>
                                       <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 600, color: '#d32f2f' }}>
-                                        -${gasto.monto.toFixed(2)}
+                                        ${gasto.monto.toFixed(2)}
                                       </Typography>
                                     </Box>
                                     <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#666', display: 'block', mt: 0.25 }}>

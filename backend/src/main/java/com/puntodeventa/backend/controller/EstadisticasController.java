@@ -44,7 +44,13 @@ public class EstadisticasController {
     public ResponseEntity<ResumenVentasDiaDTO> resumenRango(
             @RequestParam("desde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
             @RequestParam("hasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta) {
-        return ResponseEntity.ok(estadisticasService.resumenRango(desde, hasta, null));
+        // Log detallado para debugging de filtros de fecha
+        org.slf4j.LoggerFactory.getLogger(this.getClass()).info(
+                "📊 [EstadisticasController.resumenRango] desde={}, hasta={}", desde, hasta);
+
+        // Extraer la fecha representativa desde el parámetro "desde"
+        LocalDate fechaRepresentativa = desde.toLocalDate();
+        return ResponseEntity.ok(estadisticasService.resumenRango(desde, hasta, fechaRepresentativa));
     }
 
     @GetMapping("/productos/dia")
