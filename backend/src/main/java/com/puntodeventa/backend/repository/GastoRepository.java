@@ -78,8 +78,24 @@ public interface GastoRepository extends JpaRepository<Gasto, Long> {
          * @param fechaFin    Fecha de fin
          * @return Suma total de TODOS los gastos o 0 si no hay resultados
          */
-        @Query("SELECT COALESCE(SUM(g.monto), 0) FROM Gasto g WHERE g.sucursal.id = :sucursalId AND CAST(g.fecha AS DATE) >= CAST(:fechaInicio AS DATE) AND CAST(g.fecha AS DATE) <= CAST(:fechaFin AS DATE)")
+        @Query("SELECT COALESCE(SUM(g.monto), 0) FROM Gasto g WHERE g.sucursal.id = :sucursalId AND g.fecha >= :fechaInicio AND g.fecha <= :fechaFin")
         java.math.BigDecimal sumMontoByAllTypesAndSucursalAndFechaBetween(
+                        @Param("sucursalId") Long sucursalId,
+                        @Param("fechaInicio") LocalDateTime fechaInicio,
+                        @Param("fechaFin") LocalDateTime fechaFin);
+
+        /**
+         * Obtener SUMA SOLO DE GASTOS OPERACIONALES por sucursal y rango de fechas.
+         * ✅ Usado en DailyStatsPanel: Solo muestra gastos OPERACIONALES, no
+         * administrativos
+         * 
+         * @param sucursalId  ID de la sucursal
+         * @param fechaInicio Fecha de inicio
+         * @param fechaFin    Fecha de fin
+         * @return Suma total de gastos operacionales o 0 si no hay resultados
+         */
+        @Query("SELECT COALESCE(SUM(g.monto), 0) FROM Gasto g WHERE g.tipoGasto = 'Operacional' AND g.sucursal.id = :sucursalId AND g.fecha >= :fechaInicio AND g.fecha <= :fechaFin")
+        java.math.BigDecimal sumMontoByOperacionalAndSucursalAndFechaBetween(
                         @Param("sucursalId") Long sucursalId,
                         @Param("fechaInicio") LocalDateTime fechaInicio,
                         @Param("fechaFin") LocalDateTime fechaFin);

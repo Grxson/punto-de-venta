@@ -59,11 +59,11 @@ public class EstadisticasService {
                 log.info("  ↳ Aggregate: cantidadVentas={}, totalVentas={}, totalCostos={}",
                                 agg.cantidadVentas(), totalVentas, totalCostosProductos);
 
-                // ✅ SEGREGACIÓN: Sumar TODOS LOS GASTOS (sin importar tipo) de la sucursal
-                // actual
-                // Se incluyen todos los tipos: Operacional, Administrativo, etc.
-                // Esto alinea con la fórmula: Flujo neto = Ingresos - Gastos
-                BigDecimal totalGastos = gastoRepository.sumMontoByAllTypesAndSucursalAndFechaBetween(
+                // ✅ SEGREGACIÓN: Sumar SOLO GASTOS OPERACIONALES de la sucursal actual
+                // El panel de resumen del día muestra SOLO gastos operacionales, no
+                // administrativos
+                // Esto alinea con la fórmula: Neto = Efectivo - Gastos Operacionales
+                BigDecimal totalGastos = gastoRepository.sumMontoByOperacionalAndSucursalAndFechaBetween(
                                 sucursalId, desde, hasta);
 
                 log.info("  ↳ Gastos query result: {} | sucursalId={} | desde={} | hasta={}",
