@@ -33,6 +33,8 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
+  TablePagination,
+  Pagination,
 } from '@mui/material';
 import { Cancel, Refresh, Edit, Add, Delete, Remove, ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { format } from 'date-fns';
@@ -43,6 +45,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSalesCache } from '../../hooks/useSalesCache';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
 import type { DateRangeValue } from '../../types/dateRange.types';
 import { limpiarNombreProducto, limpiarNombreVariante } from '../../utils/stringFormatters';
@@ -87,11 +90,16 @@ interface Venta {
 
 export default function AdminSales() {
   const { usuario } = useAuth();
+  const { allSales, loading: cacheLoading, invalidateCache } = useSalesCache();
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelando, setCancelando] = useState<number | null>(null);
   const [editando, setEditando] = useState<number | null>(null);
+
+  // ✨ PAGINACIÓN LOCAL (solo visualización)
+  const [page, setPage] = useState(0); // 0-indexed para TablePagination
+  const [rowsPerPage, setRowsPerPage] = useState(25); // 25 filas por defecto
 
   // Función auxiliar para obtener la fecha local en formato YYYY-MM-DD
   const obtenerFechaLocal = (fecha: Date = new Date()): string => {
@@ -197,11 +205,14 @@ export default function AdminSales() {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiService.get(API_ENDPOINTS.SALES);
-      if (response.success && response.data) {
-        setVentas(response.data);
+      // ✅ Cargar TODAS las ventas SIN paginación backend
+      const ventasData = await apiService.get(API_ENDPOINTS.SALES);
+      if (ventasData.success && ventasData.data) {
+        setVentas(ventasData.data);
+        // Reiniciar a página 0 cuando se carguen nuevos datos
+        setPage(0);
       } else {
-        setError(response.error || 'Error al cargar ventas');
+        setError(ventasData.error || 'Error al cargar ventas');
       }
     } catch (err: any) {
       setError(err.message || 'Error de conexión');
@@ -244,6 +255,13 @@ export default function AdminSales() {
     console.log('Ventas filtradas:', filtradas.length);
     return filtradas;
   }, [ventas, dateRange]);
+
+  // ✨ Paginar localmente las ventas filtradas
+  const ventasMostradas = useMemo(() => {
+    const inicio = page * rowsPerPage;
+    const fin = inicio + rowsPerPage;
+    return ventasFiltradas.slice(inicio, fin);
+  }, [ventasFiltradas, page, rowsPerPage]);
 
   const handleDateRangeChange = (range: DateRangeValue) => {
     setDateRange(range);
@@ -303,6 +321,7 @@ export default function AdminSales() {
           tipo: 'success',
         });
         handleCerrarDialogoCancelacion();
+        invalidateCache(); // ✅ Invalidar caché de ventas
         await loadVentas(); // Recargar lista
       } else {
         setErrorMotivo(response.error || 'Error al cancelar la venta');
@@ -342,6 +361,7 @@ export default function AdminSales() {
           tipo: 'success',
         });
         handleCerrarDialogoEliminacion();
+        invalidateCache(); // ✅ Invalidar caché de ventas
         await loadVentas(); // Recargar lista
       } else {
         setSnackbar({
@@ -742,6 +762,7 @@ export default function AdminSales() {
             tipo: 'success',
           });
           handleCerrarDialogoEdicion();
+          invalidateCache(); // ✅ Invalidar caché de ventas
           await loadVentas();
         } else {
           setErrorEdicion(fechaResponse.error || 'Error al actualizar la fecha');
@@ -794,6 +815,7 @@ export default function AdminSales() {
             tipo: 'success',
           });
           handleCerrarDialogoEdicion();
+          invalidateCache(); // ✅ Invalidar caché de ventas
           await loadVentas();
         } else {
           setErrorEdicion(response.error || 'Error al actualizar la venta');
@@ -883,7 +905,7 @@ export default function AdminSales() {
           Mostrando {ventasFiltradas.length} de {ventas.length} ventas
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Total: ${ventasFiltradas.reduce((sum, v) => sum + v.total, 0).toFixed(2)}
+          Total: ${ventasFiltradas.filter(v => v.estado !== 'cancelada').reduce((sum, v) => sum + v.total, 0).toFixed(2)}
         </Typography>
       </Box>
 
@@ -902,7 +924,7 @@ export default function AdminSales() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {ventasFiltradas.length === 0 ? (
+            {ventasMostradas.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} align="center">
                   <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
@@ -911,7 +933,7 @@ export default function AdminSales() {
                 </TableCell>
               </TableRow>
             ) : (
-              ventasFiltradas.map((venta) => (
+              ventasMostradas.map((venta) => (
                 <TableRow key={venta.id}>
                   <TableCell>#{venta.id}</TableCell>
                   <TableCell>
@@ -1065,6 +1087,27 @@ export default function AdminSales() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* ✨ PAGINADOR: Solo mostrar si hay muchas ventas */}
+      {ventasFiltradas.length > 15 && (
+        <TablePagination
+          component="div"
+          count={ventasFiltradas.length}
+          page={page}
+          onPageChange={(e, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10));
+            setPage(0); // Reiniciar a página 0
+          }}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          labelRowsPerPage="Filas por página:"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+          }
+          sx={{ mt: 2 }}
+        />
+      )}
 
       {/* Diálogo de cancelación */}
       <Dialog

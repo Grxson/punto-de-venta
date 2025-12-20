@@ -44,11 +44,26 @@ public class VentaService {
     /**
      * ✅ SEGREGACIÓN: Obtener solo ventas de la sucursal del usuario actual
      */
-    public List<VentaDTO> obtenerTodas() {
+    public List<VentaDTO> obtenerTodas(int page, int size) {
         Long sucursalId = SucursalContext.getSucursalId();
+        // ✅ OPTIMIZACIÓN: Con paginación, el frontend puede cargar todas las ventas
+        // incrementalmente
+        // Traer las últimas N ventas (page 0 = más recientes, ordenadas por fecha
+        // descendente)
         return ventaRepository.findBySucursalId(sucursalId).stream()
+                .sorted((v1, v2) -> v2.getFecha().compareTo(v1.getFecha()))
+                .skip((long) page * size)
+                .limit(size)
                 .map(this::toDTO)
                 .toList();
+    }
+
+    /**
+     * ⚠️ DEPRECADO: Mantener solo para compatibilidad backward
+     */
+    @Deprecated(forRemoval = true)
+    public List<VentaDTO> obtenerTodas() {
+        return obtenerTodas(0, 100);
     }
 
     public VentaDTO obtenerPorId(Long id) {

@@ -37,7 +37,7 @@ import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
 import type { DateRangeValue } from '../../types/dateRange.types';
-import { getTodayLocalDate, getDateWithOffset } from '../../utils/dateHelper';
+import { getTodayLocalDate, getDateWithOffset, toLocalISOString } from '../../utils/dateHelper';
 import { limpiarNombreProducto, truncarTexto } from '../../utils/stringFormatters';
 import type { ResumenVentas, ProductoRendimiento, VentaDetalle, GastoDetallado } from './types/reportTypes';
 import { GeneralCutTab } from './components';
@@ -89,13 +89,11 @@ export default function AdminReports() {
         return;
       }
 
-      // Crear fechas en zona horaria local
-      const desde = new Date(dateRange.desde + 'T00:00:00');
-      const hasta = new Date(dateRange.hasta + 'T23:59:59');
-
-      // Formatear fechas para el backend (ISO 8601: yyyy-MM-ddTHH:mm:ss)
-      const desdeISO = desde.toISOString().split('.')[0]; // yyyy-MM-ddTHH:mm:ss
-      const hastaISO = hasta.toISOString().split('.')[0]; // yyyy-MM-ddTHH:mm:ss
+      // ✅ CRÍTICO: Convertir fechas a formato local (NO UTC)
+      // El backend espera: yyyy-MM-ddTHH:mm:ss en zona horaria LOCAL
+      // NO usar toISOString() que convierte a UTC y causa offset de 1 día
+      const desdeISO = toLocalISOString(dateRange.desde, '00:00:00');
+      const hastaISO = toLocalISOString(dateRange.hasta, '23:59:59');
 
       // Cargar resumen de ventas
       const resumenResponse = await apiService.get(
@@ -108,6 +106,7 @@ export default function AdminReports() {
           fecha: data.fecha || dateRange.desde,
           totalVentas: parseFloat(data.totalVentas) || 0,
           totalCostos: parseFloat(data.totalCostos) || 0,
+          totalGastos: parseFloat(data.totalGastos) || 0,
           margenBruto: parseFloat(data.margenBruto) || 0,
           cantidadVentas: data.cantidadVentas || 0,
           itemsVendidos: data.itemsVendidos || 0,
@@ -146,36 +145,10 @@ export default function AdminReports() {
         setVentas(ventasResponse.data);
       }
 
-      // Cargar gastos del rango de fechas usando los mismos filtros
-      try {
-        const gastosResponse = await apiService.get(
-          `${API_ENDPOINTS.GASTOS}?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
-        );
-        if (gastosResponse.success && Array.isArray(gastosResponse.data)) {
-          // Filtrar gastos por el rango exacto seleccionado
-          const gastosFiltrados = gastosResponse.data.filter((g: any) => {
-            const fechaGasto = g.fecha ? new Date(g.fecha) : null;
-            return fechaGasto && fechaGasto >= desde && fechaGasto <= hasta;
-          });
-          
-          // ✨ MAPEAR Y GUARDAR GASTOS DETALLADOS
-          const gastosDetallados = gastosFiltrados.map((g: any) => ({
-            id: g.id,
-            monto: parseFloat(g.monto) || 0,
-            categoriaGastoNombre: g.categoriaGastoNombre || 'Sin categoría',
-            proveedorNombre: g.proveedorNombre || 'Sin proveedor',
-            nota: g.nota || '',
-            fecha: g.fecha || '',
-          }));
-          
-          setGastosDetallados(gastosDetallados);
-          const totalGastos = gastosDetallados.reduce((sum: number, gasto) => sum + gasto.monto, 0);
-          setGastosDia(totalGastos);
-        }
-      } catch (err) {
-        // Si el endpoint de gastos falla, simplemente no mostrar gastos
-        setGastosDia(0);
-        setGastosDetallados([]);
+      // ✅ Los gastos ya vienen en el resumen desde el backend
+      // No es necesario cargar gastos por separado
+      if (resumenResponse.success && resumenResponse.data) {
+        setGastosDia(parseFloat(resumenResponse.data.totalGastos) || 0);
       }
     } catch (err: any) {
       setError(err.message || 'Error al cargar reportes');
@@ -348,7 +321,7 @@ export default function AdminReports() {
                       Gastos
                     </Typography>
                     <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                      ${resumen.totalCostos.toFixed(2)}
+                      ${(resumen?.totalGastos || 0).toFixed(2)}
                     </Typography>
                   </CardContent>
                 </Card>
@@ -357,21 +330,21 @@ export default function AdminReports() {
                 <Card>
                   <CardContent>
                     <Typography variant="body2" color="text.secondary">
-                      Utilidad
+                      Utilidad Neta
                     </Typography>
                     <Typography
                       variant="h4"
                       sx={{
                         fontWeight: 'bold',
-                        color: resumen.margenBruto >= 0 ? 'success.main' : 'error.main',
+                        color: ((resumen?.totalVentas || 0) - (resumen?.totalGastos || 0)) >= 0 ? 'success.main' : 'error.main',
                       }}
                     >
-                      ${resumen.margenBruto.toFixed(2)}
+                      ${((resumen?.totalVentas || 0) - (resumen?.totalGastos || 0)).toFixed(2)}
                     </Typography>
                     <Chip
-                      label={`${resumen.margenPorcentaje.toFixed(2)}%`}
+                      label={`${(((resumen?.totalVentas || 0) - (resumen?.totalGastos || 0)) / (resumen?.totalVentas || 1) * 100).toFixed(2)}%`}
                       size="small"
-                      color={resumen.margenPorcentaje >= 0 ? 'success' : 'error'}
+                      color={((resumen?.totalVentas || 0) - (resumen?.totalGastos || 0)) >= 0 ? 'success' : 'error'}
                       sx={{ mt: 1 }}
                     />
                   </CardContent>
@@ -698,13 +671,13 @@ export default function AdminReports() {
                               Venta Total
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600, color: '#2e7d32' }}>
-                              ${ventas.reduce((sum, v) => sum + v.total, 0).toFixed(2)}
+                              ${ventas.filter(v => v.estado !== 'cancelada').reduce((sum, v) => sum + v.total, 0).toFixed(2)}
                             </Typography>
                           </Box>
                         {/* Tabla de métodos de pago */}
                         <Box sx={{ mb: 3 }}>
                           {(() => {
-                            const metodosPago = ventas.reduce((acc, venta) => {
+                            const metodosPago = ventas.filter(v => v.estado !== 'cancelada').reduce((acc, venta) => {
                               venta.pagos.forEach((pago) => {
                                 const metodo = pago.metodoPagoNombre;
                                 acc[metodo] = (acc[metodo] || 0) + pago.monto;

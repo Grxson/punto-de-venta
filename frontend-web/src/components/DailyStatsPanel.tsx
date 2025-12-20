@@ -14,6 +14,7 @@ import { es } from 'date-fns/locale';
 import apiService from '../services/api.service';
 import { API_ENDPOINTS } from '../config/api.config';
 import { websocketService } from '../services/websocket.service';
+import { getTodayLocalDate, toLocalISOString } from '../utils/dateHelper';
 
 interface DailyStats {
   fecha: string;
@@ -69,8 +70,11 @@ export default function DailyStatsPanel() {
     try {
       setError(null);
 
+      // ✅ Enviar la fecha del cliente para evitar problemas de zona horaria
+      const fechaHoy = getTodayLocalDate();
+
       // Cargar estadísticas del día
-      const response = await apiService.get(API_ENDPOINTS.STATS_DAILY);
+      const response = await apiService.get(`${API_ENDPOINTS.STATS_DAILY}?fecha=${fechaHoy}`);
       if (response.success && response.data) {
         const data = response.data;
         setStats({
@@ -88,16 +92,17 @@ export default function DailyStatsPanel() {
         console.warn('[DailyStatsPanel] Stats response sin success o data:', response);
       }
 
-      // ✅ CORRECCIÓN: Usar date-fns para manejo correcto de zonas horarias
+      // ✅ CORRECCIÓN: Usar toLocalISOString para evitar conversión a UTC
       const hoy = new Date();
       const inicioDiaLocal = startOfDay(hoy); // Inicio del día en zona horaria local (00:00:00)
       const finDiaLocal = endOfDay(hoy);     // Fin del día en zona horaria local (23:59:59)
       
-      // Convertir a ISO (esto automáticamente ajusta a UTC basado en la zona horaria del navegador)
-      const inicioDiaISO = inicioDiaLocal.toISOString();
-      const finDiaISO = finDiaLocal.toISOString();
+      // ✅ Convertir a formato local ISO SIN conversión a UTC
+      const fechaStr = getTodayLocalDate(); // "2025-12-19"
+      const inicioDiaISO = toLocalISOString(fechaStr, '00:00:00');
+      const finDiaISO = toLocalISOString(fechaStr, '23:59:59');
 
-      console.log('[DailyStatsPanel] Dates correctas (date-fns):', { 
+      console.log('[DailyStatsPanel] Dates correctas (zone local):', { 
         inicioDiaISO, 
         finDiaISO,
         horaLocalInicio: format(inicioDiaLocal, 'HH:mm:ss'),
