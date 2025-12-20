@@ -124,6 +124,24 @@ interface GastoPendiente {
   tipoGasto: string;
 }
 
+// Función helper: obtener color por tipo de gasto
+function getColorByTipoGasto(tipoGasto?: string): string {
+  const tipo = tipoGasto?.toLowerCase() || 'operacional';
+  switch (tipo) {
+    case 'operacional':
+      return '#4CAF50'; // Verde
+    case 'administrativo':
+      return '#FF9800'; // Naranja
+    case 'mantenimiento':
+      return '#2196F3'; // Azul
+    case 'utilities':
+    case 'servicios':
+      return '#9C27B0'; // Púrpura
+    default:
+      return '#757575'; // Gris
+  }
+}
+
 export default function AdminExpenses() {
   const { usuario } = useAuth();
   const { categorias: categoriasGastoPredefinidas } = useCategoriasGasto();
@@ -392,13 +410,13 @@ export default function AdminExpenses() {
     };
 
     setGastosPendientes([...gastosPendientes, nuevoGasto]);
-    // Limpiar campos por-gasto para el siguiente, PERO MANTENER categoría en "Insumos" y tipo en "Operacional"
+    // Limpiar solo monto y nota para el siguiente gasto
+    // MANTENER: categoría en "Insumos", tipo de gasto y proveedor (para ingresar múltiples gastos del mismo tipo/proveedor)
     const insumosCategory = categorias.find(c => c.nombre === 'Insumos');
     setCategoriaId(insumosCategory?.id || categorias[0]?.id || '');
-    setProveedorId('');
+    // ✅ Mantener proveedorId y tipoGasto igual - solo limpiar monto y nota
     setMonto('');
     setNota('');
-    setTipoGasto('Operacional');
     setError(null); // Limpiar errores previos
   };
 
@@ -1440,13 +1458,27 @@ export default function AdminExpenses() {
               {/* Tabla de gastos pendientes (solo en modo nuevo) */}
               {!editingGasto && gastosPendientes.length > 0 && (
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                    Gastos a Registrar ({gastosPendientes.length})
-                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 2, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                      Gastos a Registrar ({gastosPendientes.length})
+                    </Typography>
+                    {/* Leyenda de colores */}
+                    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', fontSize: '0.85rem' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#4CAF50' }} />
+                        <span>Operacional</span>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#FF9800' }} />
+                        <span>Administrativo</span>
+                      </Box>
+                    </Box>
+                  </Box>
                   <TableContainer component={Paper} variant="outlined">
                     <Table size="small">
                       <TableHead>
                         <TableRow sx={{ bgcolor: 'action.hover' }}>
+                          <TableCell width={40} align="center">Tipo</TableCell>
                           <TableCell>Categoría</TableCell>
                           <TableCell align="right">Monto</TableCell>
                           <TableCell>Proveedor</TableCell>
@@ -1458,8 +1490,21 @@ export default function AdminExpenses() {
                         {gastosPendientes.map((gasto) => {
                           const categoria = categorias.find(c => c.id === gasto.categoriaGastoId);
                           const proveedor = gasto.proveedorId ? proveedores.find(p => p.id === gasto.proveedorId) : null;
+                          const colorTipo = getColorByTipoGasto(gasto.tipoGasto);
                           return (
                             <TableRow key={gasto.tempId}>
+                              <TableCell align="center" sx={{ p: 1 }}>
+                                <Box
+                                  sx={{
+                                    width: 12,
+                                    height: 12,
+                                    borderRadius: '50%',
+                                    backgroundColor: colorTipo,
+                                    mx: 'auto',
+                                    title: gasto.tipoGasto || 'Operacional'
+                                  }}
+                                />
+                              </TableCell>
                               <TableCell>{categoria?.nombre || '-'}</TableCell>
                               <TableCell align="right" sx={{ fontWeight: 'bold' }}>
                                 ${gasto.monto.toFixed(2)}
