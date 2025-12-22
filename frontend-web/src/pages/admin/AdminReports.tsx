@@ -17,7 +17,9 @@ import {
   Tabs,
   Tab,
   Button,
+  Tooltip,
 } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import {
   BarChart,
   Bar,
@@ -27,7 +29,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Legend,
   ResponsiveContainer,
 } from 'recharts';
@@ -42,6 +44,7 @@ import { limpiarNombreProducto, truncarTexto } from '../../utils/stringFormatter
 import type { ResumenVentas, ProductoRendimiento, VentaDetalle, GastoDetallado } from './types/reportTypes';
 import { GeneralCutTab } from './components';
 import { InventarioMovimientoTab } from './tabs/InventarioMovimientoTab';
+import { useReportsCache } from './hooks/useReportsCache';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
@@ -55,11 +58,14 @@ export default function AdminReports() {
   const [resumen, setResumen] = useState<ResumenVentas | null>(null);
   const [productosTop, setProductosTop] = useState<ProductoRendimiento[]>([]);
   const [ventas, setVentas] = useState<VentaDetalle[]>([]);
-  const [gastosDia, setGastosDia] = useState<number>(0); // Gastos del día seleccionado
-  const [gastosDetallados, setGastosDetallados] = useState<GastoDetallado[]>([]); // ✨ Nuevo: gastos por categoría
+  const [gastosDia, setGastosDia] = useState<number>(0);
+  const [gastosDetallados, setGastosDetallados] = useState<GastoDetallado[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState(0);
+  
+  // 🔄 Cache hooks
+  const cache = useReportsCache();
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
@@ -90,38 +96,101 @@ export default function AdminReports() {
       }
 
       // ✅ CRÍTICO: Convertir fechas a formato local (NO UTC)
-      // El backend espera: yyyy-MM-ddTHH:mm:ss en zona horaria LOCAL
-      // NO usar toISOString() que convierte a UTC y causa offset de 1 día
       const desdeISO = toLocalISOString(dateRange.desde, '00:00:00');
       const hastaISO = toLocalISOString(dateRange.hasta, '23:59:59');
+      const desdeDate = dateRange.desde;
+      const hastaDate = dateRange.hasta;
 
-      // Cargar resumen de ventas
-      const resumenResponse = await apiService.get(
-        `${API_ENDPOINTS.STATS_SALES_RANGE}?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
-      );
+      console.log(`📊 [AdminReports] Cargando reportes: ${desdeDate} - ${hastaDate}`);
 
-      if (resumenResponse.success && resumenResponse.data) {
-        const data = resumenResponse.data;
-        setResumen({
-          fecha: data.fecha || dateRange.desde,
-          totalVentas: parseFloat(data.totalVentas) || 0,
-          totalCostos: parseFloat(data.totalCostos) || 0,
-          totalGastos: parseFloat(data.totalGastos) || 0,
-          margenBruto: parseFloat(data.margenBruto) || 0,
-          cantidadVentas: data.cantidadVentas || 0,
-          itemsVendidos: data.itemsVendidos || 0,
-          ticketPromedio: parseFloat(data.ticketPromedio) || 0,
-          margenPorcentaje: parseFloat(data.margenPorcentaje) || 0,
+      // 🔄 PASO 1: Verificar cache para resumen y productos (más lentos)
+      let resumenData = cache.getFromCache('resumen', desdeDate, hastaDate);
+      let productosData = cache.getFromCache('productos', desdeDate, hastaDate);
+      let gastosData = cache.getFromCache('gastos', desdeDate, hastaDate);
+      let ventasData = cache.getFromCache('ventas', desdeDate, hastaDate);
+
+      // 🔄 PASO 2: Hacer peticiones paralelas solo de lo que NO está en cache
+      const peticiones: Promise<any>[] = [];
+      const tiposACargar: ('resumen' | 'productos' | 'gastos' | 'ventas')[] = [];
+
+      if (!resumenData) {
+        tiposACargar.push('resumen');
+        peticiones.push(
+          apiService.get(
+            `${API_ENDPOINTS.STATS_SALES_RANGE}?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
+          )
+        );
+      }
+
+      if (!productosData) {
+        tiposACargar.push('productos');
+        peticiones.push(
+          apiService.get(
+            `${API_ENDPOINTS.STATS_PRODUCTS_RANGE}?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}&limite=10`
+          )
+        );
+      }
+
+      if (!gastosData) {
+        tiposACargar.push('gastos');
+        peticiones.push(
+          apiService.get(
+            `${API_ENDPOINTS.GASTOS}/rango?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
+          )
+        );
+      }
+
+      if (!ventasData) {
+        tiposACargar.push('ventas');
+        peticiones.push(
+          apiService.get(
+            `${API_ENDPOINTS.SALES}/rango?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
+          )
+        );
+      }
+
+      // 🔄 PASO 3: Ejecutar todas las peticiones paralelas
+      if (peticiones.length > 0) {
+        const resultados = await Promise.all(peticiones);
+
+        // 🔄 PASO 4: Procesar resultados y guardar en cache
+        resultados.forEach((response, index) => {
+          const tipo = tiposACargar[index];
+
+          if (tipo === 'resumen' && response.success) {
+            resumenData = response.data;
+            cache.setInCache('resumen', desdeDate, hastaDate, resumenData);
+          } else if (tipo === 'productos' && response.success) {
+            productosData = response.data;
+            cache.setInCache('productos', desdeDate, hastaDate, productosData);
+          } else if (tipo === 'gastos' && response.success) {
+            gastosData = response.data;
+            cache.setInCache('gastos', desdeDate, hastaDate, gastosData);
+          } else if (tipo === 'ventas' && response.success) {
+            ventasData = response.data;
+            cache.setInCache('ventas', desdeDate, hastaDate, ventasData);
+          }
         });
       }
 
-      // Cargar productos más vendidos
-      const productosResponse = await apiService.get(
-        `${API_ENDPOINTS.STATS_PRODUCTS_RANGE}?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}&limite=10`
-      );
+      // 🔄 PASO 5: Procesar y establecer estados
+      if (resumenData) {
+        setResumen({
+          fecha: resumenData.fecha || dateRange.desde,
+          totalVentas: parseFloat(resumenData.totalVentas) || 0,
+          totalCostos: parseFloat(resumenData.totalCostos) || 0,
+          totalGastos: parseFloat(resumenData.totalGastos) || 0,
+          margenBruto: parseFloat(resumenData.margenBruto) || 0,
+          cantidadVentas: resumenData.cantidadVentas || 0,
+          itemsVendidos: resumenData.itemsVendidos || 0,
+          ticketPromedio: parseFloat(resumenData.ticketPromedio) || 0,
+          margenPorcentaje: parseFloat(resumenData.margenPorcentaje) || 0,
+        });
+        setGastosDia(parseFloat(resumenData.totalGastos) || 0);
+      }
 
-      if (productosResponse.success && productosResponse.data) {
-        const productos = productosResponse.data.map((p: any) => ({
+      if (productosData) {
+        const productos = productosData.map((p: any) => ({
           productoId: p.productoId,
           nombre: limpiarNombreProducto(p.nombre),
           precio: parseFloat(p.precio) || 0,
@@ -136,29 +205,12 @@ export default function AdminReports() {
         setProductosTop(productos);
       }
 
-      // Cargar ventas detalladas para corte de caja
-      const ventasResponse = await apiService.get(
-        `${API_ENDPOINTS.SALES}/rango?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
-      );
-
-      if (ventasResponse.success && ventasResponse.data) {
-        setVentas(ventasResponse.data);
+      if (ventasData) {
+        setVentas(ventasData);
       }
 
-      // ✅ Los gastos ya vienen en el resumen desde el backend
-      // No es necesario cargar gastos por separado
-      if (resumenResponse.success && resumenResponse.data) {
-        setGastosDia(parseFloat(resumenResponse.data.totalGastos) || 0);
-      }
-
-      // ✨ Cargar gastos detallados para mostrar en GeneralCutTab
-      const gastosResponse = await apiService.get(
-        `${API_ENDPOINTS.GASTOS}/rango?desde=${encodeURIComponent(desdeISO)}&hasta=${encodeURIComponent(hastaISO)}`
-      );
-
-      if (gastosResponse.success && gastosResponse.data) {
-        // Convertir GastoDTO a GastoDetallado con estructura esperada
-        const gastosFormateados = gastosResponse.data.map((gasto: any) => ({
+      if (gastosData) {
+        const gastosFormateados = gastosData.map((gasto: any) => ({
           id: gasto.id,
           monto: parseFloat(gasto.monto) || 0,
           categoriaGastoNombre: gasto.categoriaGastoNombre || 'Sin categoría',
@@ -168,8 +220,11 @@ export default function AdminReports() {
         }));
         setGastosDetallados(gastosFormateados);
       }
+
+      console.log(`✅ [AdminReports] Reportes cargados (${peticiones.length} peticiones paralelas)`);
     } catch (err: any) {
       setError(err.message || 'Error al cargar reportes');
+      console.error('❌ [AdminReports] Error:', err);
     } finally {
       setLoading(false);
     }
@@ -178,6 +233,15 @@ export default function AdminReports() {
   const handleDateRangeChange = (range: DateRangeValue) => {
     setDateRange(range);
     setDiaSeleccionado(0); // Resetear el día cuando cambia manualmente el rango
+  };
+
+  /**
+   * 🔄 Refrescar datos manualmente (invalida cache)
+   */
+  const handleRefreshData = () => {
+    console.log('🔄 [AdminReports] Refrescando datos manualmente...');
+    cache.clearAll(); // Limpia TODO el cache
+    loadData();
   };
 
   // Datos para gráficas
@@ -226,13 +290,17 @@ export default function AdminReports() {
       <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
           <Typography variant="h4">Reportes y Estadísticas</Typography>
-          <Button 
-            variant="contained" 
-            size="small"
-            onClick={() => loadData()}
-          >
-            🔄 Refrescar
-          </Button>
+          <Tooltip title="Refrescar datos (invalida cache)">
+            <Button 
+              variant="contained" 
+              size="small"
+              startIcon={<RefreshIcon />}
+              onClick={handleRefreshData}
+              disabled={loading}
+            >
+              {loading ? 'Cargando...' : 'Refrescar'}
+            </Button>
+          </Tooltip>
         </Box>
 
         {error && (
@@ -408,7 +476,7 @@ export default function AdminReports() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis />
-                        <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+                        <RechartsTooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
                         <Legend />
                         <Bar dataKey="valor" fill="#1976d2" />
                       </BarChart>
@@ -439,7 +507,7 @@ export default function AdminReports() {
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
+                        <RechartsTooltip formatter={(value: number) => `$${value.toFixed(2)}`} />
                       </PieChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -501,7 +569,7 @@ export default function AdminReports() {
                               style: { textAnchor: 'middle', fontSize: 12 },
                             }}
                           />
-                          <Tooltip
+                          <RechartsTooltip
                             formatter={(value: number, name: string) => {
                               if (name === 'ventas') {
                                 return [`${value} unidades`, 'Unidades Vendidas'];
