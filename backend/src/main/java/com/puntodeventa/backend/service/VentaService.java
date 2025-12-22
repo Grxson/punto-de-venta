@@ -37,6 +37,7 @@ public class VentaService {
     private final IngredienteRepository ingredienteRepository;
     private final UsuarioRepository usuarioRepository;
     private final WebSocketNotificationService notificationService;
+    private final EstadisticasService estadisticasService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -277,6 +278,9 @@ public class VentaService {
 
         // 5. Guardar la venta
         Venta ventaGuardada = ventaRepository.save(venta);
+
+        // ✅ INVALIDAR CACHES DE REPORTES (después de guardar exitosamente)
+        estadisticasService.invalidarCachesReportes();
 
         // 6. Descontar inventario automáticamente (consumo por recetas)
         // COMENTADO TEMPORALMENTE: No implementado aún en H2

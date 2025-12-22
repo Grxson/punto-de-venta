@@ -30,6 +30,7 @@ public class GastoService {
     private final MetodoPagoRepository metodoPagoRepository;
     private final UsuarioRepository usuarioRepository;
     private final WebSocketNotificationService notificationService;
+    private final EstadisticasService estadisticasService;
 
     public List<GastoDTO> obtenerTodos() {
         Long sucursalId = SucursalContext.getSucursalId();
@@ -125,6 +126,9 @@ public class GastoService {
 
         Gasto guardado = gastoRepository.save(gasto);
         GastoDTO gastoDTO = toDTO(guardado);
+
+        // ✅ INVALIDAR CACHES DE REPORTES (después de guardar exitosamente)
+        estadisticasService.invalidarCachesReportes();
 
         // Notificar creación de gasto en tiempo real (después del commit)
         // Usar TransactionSynchronizationManager para enviar después del commit

@@ -9,6 +9,8 @@ import com.puntodeventa.backend.repository.VentaRepository;
 import com.puntodeventa.backend.repository.VentaItemRepository;
 import com.puntodeventa.backend.repository.GastoRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,7 +54,9 @@ public class EstadisticasService {
         /**
          * ✅ DailyStatsPanel: Resumen de rango de fechas con SOLO GASTOS OPERACIONALES
          * Excluye gastos administrativos, nómina, etc.
+         * CACHEADO: TTL 5 minutos (CACHE_DYNAMIC_MINUTES)
          */
+        @Cacheable(value = "resumen-ventas", key = "#sucursalId + '_' + #desde.toLocalDate() + '_' + #hasta.toLocalDate()", unless = "#result == null")
         public ResumenVentasDiaDTO resumenRangoConGastosOperacionales(LocalDateTime desde, LocalDateTime hasta,
                         LocalDate fechaRepresentativa) {
                 log.info("📊 [EstadisticasService] resumenRangoConGastosOperacionales: desde={}, hasta={}",
@@ -182,9 +186,14 @@ public class EstadisticasService {
 
         public List<ProductoRendimientoDTO> rendimientoProductosRango(LocalDateTime desde, LocalDateTime hasta,
                         int limite) {
-                // ✅ SEGREGACIÓN: Obtener rendimiento de productos solo de la sucursal del
-                // usuario
+                // CACHEADO: TTL 10 minutos (CACHE_SEMI_STATIC_MINUTES)
                 Long sucursalId = SucursalContext.getSucursalId();
+                return rendimientoProductosRangoInternal(desde, hasta, limite, sucursalId);
+        }
+
+        @Cacheable(value = "productos-top", key = "#sucursalId + '_' + #desde.toLocalDate() + '_' + #hasta.toLocalDate() + '_' + #limite", unless = "#result == null || #result.isEmpty()")
+        public List<ProductoRendimientoDTO> rendimientoProductosRangoInternal(LocalDateTime desde, LocalDateTime hasta,
+                        int limite, Long sucursalId) {
 
                 List<ProductoRendimientoAggregate> agregados = ventaItemRepository.topProductos(desde, hasta,
                                 sucursalId,
@@ -213,5 +222,15 @@ public class EstadisticasService {
                                         a.costoTotal().setScale(4, RoundingMode.HALF_UP),
                                         margenBrutoTotal.setScale(2, RoundingMode.HALF_UP));
                 }).toList();
+        }
+
+        /**
+         * ✅ INVALIDAR CACHES DE REPORTES
+         * Se llama automáticamente cuando se crea una venta o gasto
+         * para asegurar que los datos cacheados se actualizan
+         */
+        @CacheEvict(value = { "resumen-ventas", "productos-top" }, allEntries = true)
+        public void invalidarCachesReportes() {
+                log.info("🔄 Invalidando caches de reportes (resumen-ventas y productos-top)");
         }
 }
