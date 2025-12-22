@@ -244,18 +244,25 @@ export default function AdminExpenses() {
       
       if (gastosResponse.success && gastosResponse.data) {
         console.log('✅ [loadData] Gastos cargados correctamente. Total:', gastosResponse.data.length);
-        console.log('📋 [loadData] Gastos recibidos:', gastosResponse.data.map((g: any) => ({ 
+        
+        // Mapear datos para asegurar que categoriaGastoNombre esté presente
+        const gastosMapeados = gastosResponse.data.map((g: any) => ({
+          ...g,
+          categoriaGastoNombre: g.categoriaGastoNombre || g.categoriaGasto?.nombre || '-'
+        }));
+        
+        console.log('📋 [loadData] Gastos recibidos:', gastosMapeados.map((g: any) => ({ 
           id: g.id, 
           monto: g.monto, 
           fecha: g.fecha,
           tipoGasto: g.tipoGasto,
-          categoriaGasto: g.categoriaGasto?.nombre,
+          categoriaGastoNombre: g.categoriaGastoNombre,
           updatedAt: g.updatedAt
         })));
         
         // Log antes de actualizar estado
         console.log('💾 [loadData] Actualizando estado de gastos...');
-        setGastos(gastosResponse.data);
+        setGastos(gastosMapeados);
         console.log('✅ [loadData] Estado de gastos actualizado');
       } else {
         console.error('❌ [loadData] Error al cargar gastos:', gastosResponse.error);
