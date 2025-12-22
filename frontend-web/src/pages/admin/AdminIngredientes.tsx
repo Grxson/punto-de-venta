@@ -335,7 +335,7 @@ export default function AdminIngredientes() {
                       <TableCell>{ingrediente.descripcion || '-'}</TableCell>
                       <TableCell align="right">
                         {ingrediente.costoUnitarioBase
-                          ? `$${ingrediente.costoUnitarioBase.toFixed(2)}`
+                          ? `$${ingrediente.costoUnitarioBase.toFixed(6)}`
                           : '-'}
                       </TableCell>
                       <TableCell align="center">
