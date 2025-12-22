@@ -90,7 +90,7 @@ interface Venta {
 
 export default function AdminSales() {
   const { usuario } = useAuth();
-  const { allSales, loading: cacheLoading, invalidateCache } = useSalesCache();
+  const { allSales, loading: cacheLoading, invalidateCache, loadAllSales } = useSalesCache();
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -205,14 +205,16 @@ export default function AdminSales() {
     try {
       setLoading(true);
       setError(null);
-      // ✅ Cargar TODAS las ventas SIN paginación backend
-      const ventasData = await apiService.get(API_ENDPOINTS.SALES);
-      if (ventasData.success && ventasData.data) {
-        setVentas(ventasData.data);
+
+      // Usar el hook useSalesCache que ya tiene caching automático
+      await loadAllSales();
+
+      if (allSales && allSales.length > 0) {
+        setVentas(allSales);
         // Reiniciar a página 0 cuando se carguen nuevos datos
         setPage(0);
       } else {
-        setError(ventasData.error || 'Error al cargar ventas');
+        setError('Error al cargar ventas');
       }
     } catch (err: any) {
       setError(err.message || 'Error de conexión');

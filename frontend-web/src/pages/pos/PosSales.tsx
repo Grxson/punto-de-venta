@@ -89,7 +89,7 @@ interface Venta {
 export default function PosSales() {
   const navigate = useNavigate();
   const { usuario } = useAuth();
-  const { invalidateCache } = useSalesCache();
+  const { allSales, loading: cacheLoading, invalidateCache, loadAllSales } = useSalesCache();
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -166,12 +166,14 @@ export default function PosSales() {
     try {
       setLoading(true);
       setError(null);
-      // ✅ Cargar TODAS las ventas SIN paginación backend
-      const response = await apiService.get(API_ENDPOINTS.SALES);
-      if (response.success && response.data) {
+
+      // Usar el hook useSalesCache que ya tiene caching automático
+      await loadAllSales();
+
+      if (allSales && allSales.length > 0) {
         // Filtrar solo ventas recientes (últimas 24 horas) para empleados
         const ahora = new Date();
-        const ventasRecientes = response.data.filter((venta: Venta) => {
+        const ventasRecientes = allSales.filter((venta: Venta) => {
           const fechaVenta = new Date(venta.fecha);
           const horasDiferencia = (ahora.getTime() - fechaVenta.getTime()) / (1000 * 60 * 60);
           return horasDiferencia <= 24;
@@ -180,7 +182,7 @@ export default function PosSales() {
         // Reiniciar a página 0 cuando se carguen nuevos datos
         setPage(0);
       } else {
-        setError(response.error || 'Error al cargar ventas');
+        setError('Error al cargar ventas');
       }
     } catch (err: any) {
       setError(err.message || 'Error de conexión');
@@ -342,7 +344,7 @@ export default function PosSales() {
       setItemsEditados([...itemsEditados, nuevoItem]);
       setSnackbar({
         open: true,
-        message: `✓ Producto "${nombreCompleto}" agregado`,
+        message: `✓ Producto "${productoBase.nombre}" agregado`,
         tipo: 'success',
       });
     }
@@ -398,7 +400,7 @@ export default function PosSales() {
           setItemsEditados(nuevosItems);
           setSnackbar({
             open: true,
-            message: `✓ Producto cambiado a "${nombreCompleto}"`,
+            message: `✓ Producto cambiado a "${producto.nombre}"`,
             tipo: 'success',
           });
         }
