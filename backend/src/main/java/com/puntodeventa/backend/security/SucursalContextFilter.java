@@ -54,7 +54,8 @@ public class SucursalContextFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        // Permitir acceso público a recursos estáticos, dashboard de monitoreo y WebSocket
+        // Permitir acceso público a recursos estáticos, dashboard de monitoreo y
+        // WebSocket
         return path.startsWith("/monitoring") ||
                 path.startsWith("/api/monitoring") ||
                 path.startsWith("/static/") ||
