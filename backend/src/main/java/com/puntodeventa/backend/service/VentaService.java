@@ -67,8 +67,16 @@ public class VentaService {
     }
 
     public VentaDTO obtenerPorId(Long id) {
+        // ✅ SEGREGACIÓN: Validar que la venta pertenece a la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+
         Venta venta = ventaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con ID: " + id));
+
+        // Validar que pertenece a la sucursal del usuario
+        if (venta.getSucursal() == null || !venta.getSucursal().getId().equals(sucursalId)) {
+            throw new ResourceNotFoundException("Venta no encontrada en su sucursal");
+        }
         return toDTO(venta);
     }
 
@@ -505,8 +513,11 @@ public class VentaService {
      * @throws IllegalArgumentException  si la venta ya está cancelada o es muy
      *                                   antigua
      */
-    @Transactional
+    @Transactional // Permite escritura (sobrescribe readOnly=true de la clase)
     public VentaDTO cancelarVenta(Long ventaId, String motivo) {
+        // ✅ SEGREGACIÓN: Validar que la venta pertenece a la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+
         if (motivo == null || motivo.trim().isEmpty()) {
             throw new IllegalArgumentException("El motivo de cancelación es obligatorio");
         }
@@ -514,6 +525,11 @@ public class VentaService {
         // Buscar la venta
         Venta venta = ventaRepository.findById(ventaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con ID: " + ventaId));
+
+        // Validar que pertenece a la sucursal del usuario
+        if (venta.getSucursal() == null || !venta.getSucursal().getId().equals(sucursalId)) {
+            throw new ResourceNotFoundException("Venta no encontrada en su sucursal");
+        }
 
         // Validar que no esté ya cancelada
         if ("cancelada".equals(venta.getEstado())) {

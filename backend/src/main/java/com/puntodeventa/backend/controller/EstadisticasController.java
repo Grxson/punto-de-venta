@@ -25,7 +25,7 @@ public class EstadisticasController {
     }
 
     @GetMapping("/ventas/dia")
-    @Operation(summary = "Resumen de ventas del día", description = "Parámetro 'fecha' es opcional. Si no se envía, usa la fecha del servidor (puede tener offset si zona horaria es diferente).")
+    @Operation(summary = "Resumen de ventas del día", description = "Parámetro 'fecha' es opcional. Si no se envía, usa la fecha del servidor (puede tener offset si zona horaria es diferente). ✅ SOLO GASTOS OPERACIONALES")
     public ResponseEntity<ResumenVentasDiaDTO> resumenDia(
             @RequestParam(name = "fecha", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha) {
         // ⚠️ Si el cliente NO envía fecha, usar fecha del servidor (pero con aviso en
@@ -36,11 +36,12 @@ public class EstadisticasController {
                     .warn("⚠️ ENDPOINT /api/estadisticas/ventas/dia LLAMADO SIN PARÁMETRO 'fecha'. " +
                             "Usando LocalDate.now() del servidor. ESTO PUEDE CAUSAR OFFSET DE FECHA.");
         }
-        return ResponseEntity.ok(estadisticasService.resumenDia(f));
+        // ✅ DailyStatsPanel: Solo gastos operacionales
+        return ResponseEntity.ok(estadisticasService.resumenDiaConGastosOperacionales(f));
     }
 
     @GetMapping("/ventas/rango")
-    @Operation(summary = "Resumen de ventas en rango")
+    @Operation(summary = "Resumen de ventas en rango - Para reportes (Corte por Producto, etc.)", description = "✅ INCLUYE TODOS LOS GASTOS: operacionales + administrativos + nómina + etc.")
     public ResponseEntity<ResumenVentasDiaDTO> resumenRango(
             @RequestParam("desde") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime desde,
             @RequestParam("hasta") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime hasta) {
@@ -50,7 +51,8 @@ public class EstadisticasController {
 
         // Extraer la fecha representativa desde el parámetro "desde"
         LocalDate fechaRepresentativa = desde.toLocalDate();
-        return ResponseEntity.ok(estadisticasService.resumenRango(desde, hasta, fechaRepresentativa));
+        // ✅ Para reportes, incluir TODOS los gastos (operacionales + administrativos + nómina + etc.)
+        return ResponseEntity.ok(estadisticasService.resumenRangoConTodosGastos(desde, hasta, fechaRepresentativa));
     }
 
     @GetMapping("/productos/dia")

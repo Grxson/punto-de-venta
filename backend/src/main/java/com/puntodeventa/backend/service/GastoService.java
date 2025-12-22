@@ -58,8 +58,16 @@ public class GastoService {
     }
 
     public GastoDTO obtenerPorId(Long id) {
+        // ✅ SEGREGACIÓN: Validar que el gasto pertenece a la sucursal del usuario
+        Long sucursalId = SucursalContext.getSucursalId();
+
         Gasto gasto = gastoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Gasto no encontrado con id: " + id));
+
+        // Validar que pertenece a la sucursal del usuario
+        if (gasto.getSucursal() == null || !gasto.getSucursal().getId().equals(sucursalId)) {
+            throw new ResourceNotFoundException("Gasto no encontrado en su sucursal");
+        }
         return toDTO(gasto);
     }
 
