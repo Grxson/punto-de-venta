@@ -37,6 +37,10 @@ public class CategoriaProducto {
     private String descripcion;
 
     @Column(nullable = false)
+    @Builder.Default
+    private Integer orden = 0;
+
+    @Column(nullable = false)
     @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activa = true;
@@ -48,7 +52,8 @@ public class CategoriaProducto {
 
     /**
      * Lista de subcategorías de esta categoría.
-     * ✅ CASCADA: Al eliminar una categoría, se eliminan automáticamente todas sus subcategorías
+     * ✅ CASCADA: Al eliminar una categoría, se eliminan automáticamente todas sus
+     * subcategorías
      */
     @OneToMany(mappedBy = "categoria", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CategoriaSubcategoria> subcategorias;

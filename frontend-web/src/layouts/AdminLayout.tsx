@@ -3,6 +3,7 @@ import { Box, AppBar, Toolbar, Typography, Button, Drawer, List, ListItem, ListI
 import { Dashboard, Assessment, Inventory, AccountBalance, AttachMoney, PointOfSale, Menu as MenuIcon, Logout, Group, Restaurant } from '@mui/icons-material';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLogout } from '../hooks/useLogout';
 
 const menuItems = [
       { text: 'Dashboard', icon: <Dashboard />, path: '/admin' },
@@ -19,7 +20,8 @@ const menuItems = [
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { usuario, logout } = useAuth();
+  const { usuario } = useAuth();
+  const handleLogout = useLogout();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const isActiveRoute = (path: string) => {
@@ -61,8 +63,7 @@ export default function AdminLayout() {
             color="inherit"
             startIcon={<Logout />}
             onClick={() => {
-              logout();
-              navigate('/login');
+              handleLogout();
             }}
             sx={{ minHeight: '48px' }}
           >

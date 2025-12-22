@@ -29,7 +29,7 @@ import {
   AccordionSummary,
   AccordionDetails,
 } from '@mui/material';
-import { Refresh, CheckCircle, HighlightOff, Add, Edit, Delete, Visibility, VisibilityOff, ExpandMore } from '@mui/icons-material';
+import { Refresh, CheckCircle, HighlightOff, Add, Edit, Delete, Visibility, VisibilityOff, ExpandMore, ArrowUpward, ArrowDownward } from '@mui/icons-material';
 import { useCategorias, useCrearCategoria, useActualizarCategoria, useEliminarCategoria } from '../../hooks/useCategorias';
 import { useSubcategorias, useCrearSubcategoria, useActualizarSubcategoria, useEliminarSubcategoria } from '../../hooks/useSubcategorias';
 import type { CategoriaProducto } from '../../types/categorias.types';
@@ -44,6 +44,7 @@ export default function AdminCategorias() {
   const [editingCategoria, setEditingCategoria] = useState<CategoriaProducto | null>(null);
   const [formCategoriaNombre, setFormCategoriaNombre] = useState('');
   const [formCategoriaDescripcion, setFormCategoriaDescripcion] = useState('');
+  const [formCategoriaOrden, setFormCategoriaOrden] = useState(0);
   const [formCategoriaActiva, setFormCategoriaActiva] = useState(true);
 
   // Diálogo de subcategoría
@@ -82,12 +83,104 @@ export default function AdminCategorias() {
     return true;
   });
 
+  // Ordenar categorías por su campo orden
+  const categoriasOrdenadas = [...categoriasFiltradas].sort((a, b) => ((a as any).orden || 0) - ((b as any).orden || 0));
+  
+  // Ordenar subcategorías por su campo orden
+  const subcategoriasOrdenadas = [...subcategorias].sort((a, b) => (a.orden || 0) - (b.orden || 0));
+
+  // ==================== REORDENAMIENTO DE CATEGORÍAS ====================
+
+  const handleMoverCategoria = async (categoria: CategoriaProducto, direccion: 'arriba' | 'abajo') => {
+    try {
+      const indiceActual = categoriasOrdenadas.findIndex(c => c.id === categoria.id);
+      const nuevoIndice = direccion === 'arriba' ? indiceActual - 1 : indiceActual + 1;
+
+      if (nuevoIndice < 0 || nuevoIndice >= categoriasOrdenadas.length) return;
+
+      const categoriaActual = categoriasOrdenadas[indiceActual];
+      const categoriaSiguiente = categoriasOrdenadas[nuevoIndice];
+
+      const ordenActual = (categoriaActual as any).orden || 0;
+      const ordenSiguiente = (categoriaSiguiente as any).orden || 0;
+
+      // Intercambiar órdenes
+      await actualizarCategoriaFn.mutateAsync({
+        id: categoriaActual.id!,
+        categoria: {
+          nombre: categoriaActual.nombre,
+          descripcion: categoriaActual.descripcion || '',
+          orden: ordenSiguiente,
+          activa: categoriaActual.activa !== false,
+        },
+      });
+
+      await actualizarCategoriaFn.mutateAsync({
+        id: categoriaSiguiente.id!,
+        categoria: {
+          nombre: categoriaSiguiente.nombre,
+          descripcion: categoriaSiguiente.descripcion || '',
+          orden: ordenActual,
+          activa: categoriaSiguiente.activa !== false,
+        },
+      });
+
+      refetch();
+    } catch (err: any) {
+      setErrorMessage(`❌ Error al mover categoría: ${err?.message || 'Intenta de nuevo'}`);
+    }
+  };
+
+  // ==================== REORDENAMIENTO DE SUBCATEGORÍAS ====================
+
+  const handleMoverSubcategoria = async (subcategoria: CategoriaSubcategoria, direccion: 'arriba' | 'abajo') => {
+    if (!selectedCategoria) return;
+    try {
+      const indiceActual = subcategoriasOrdenadas.findIndex(s => s.id === subcategoria.id);
+      const nuevoIndice = direccion === 'arriba' ? indiceActual - 1 : indiceActual + 1;
+
+      if (nuevoIndice < 0 || nuevoIndice >= subcategoriasOrdenadas.length) return;
+
+      const subcategoriaActual = subcategoriasOrdenadas[indiceActual];
+      const subcategoriaSiguiente = subcategoriasOrdenadas[nuevoIndice];
+
+      const ordenActual = subcategoriaActual.orden || 0;
+      const ordenSiguiente = subcategoriaSiguiente.orden || 0;
+
+      // Intercambiar órdenes
+      await actualizarSubcategoriaFn.mutateAsync({
+        categoriaId: selectedCategoria.id!,
+        subcategoriaId: subcategoriaActual.id!,
+        data: {
+          nombre: subcategoriaActual.nombre,
+          descripcion: subcategoriaActual.descripcion || '',
+          orden: ordenSiguiente,
+          activa: subcategoriaActual.activa !== false,
+        },
+      });
+
+      await actualizarSubcategoriaFn.mutateAsync({
+        categoriaId: selectedCategoria.id!,
+        subcategoriaId: subcategoriaSiguiente.id!,
+        data: {
+          nombre: subcategoriaSiguiente.nombre,
+          descripcion: subcategoriaSiguiente.descripcion || '',
+          orden: ordenActual,
+          activa: subcategoriaSiguiente.activa !== false,
+        },
+      });
+    } catch (err: any) {
+      setErrorMessage(`❌ Error al mover subcategoría: ${err?.message || 'Intenta de nuevo'}`);
+    }
+  };
+
   // ==================== CATEGORÍAS ====================
 
   const resetCategoriaForm = () => {
     setEditingCategoria(null);
     setFormCategoriaNombre('');
     setFormCategoriaDescripcion('');
+    setFormCategoriaOrden(0);
     setFormCategoriaActiva(true);
   };
 
@@ -100,6 +193,7 @@ export default function AdminCategorias() {
     setEditingCategoria(categoria);
     setFormCategoriaNombre(categoria.nombre);
     setFormCategoriaDescripcion(categoria.descripcion || '');
+    setFormCategoriaOrden((categoria as any).orden || 0);
     setFormCategoriaActiva(categoria.activa !== false);
     setOpenCategoriaDialog(true);
   };
@@ -119,6 +213,7 @@ export default function AdminCategorias() {
           categoria: {
             nombre: formCategoriaNombre.trim(),
             descripcion: formCategoriaDescripcion.trim(),
+            orden: formCategoriaOrden,
             activa: formCategoriaActiva,
           },
         });
@@ -127,6 +222,7 @@ export default function AdminCategorias() {
         await crearCategoriaFn.mutateAsync({
           nombre: formCategoriaNombre.trim(),
           descripcion: formCategoriaDescripcion.trim(),
+          orden: formCategoriaOrden,
           activa: formCategoriaActiva,
         });
         setSuccessMessage(`✅ Categoría "${formCategoriaNombre}" creada exitosamente`);
@@ -185,6 +281,7 @@ export default function AdminCategorias() {
           data: {
             nombre: formSubcategoriaNombre.trim(),
             descripcion: formSubcategoriaDescripcion.trim(),
+            orden: formSubcategoriaOrden,
             activa: formSubcategoriaActiva,
           },
         });
@@ -195,6 +292,7 @@ export default function AdminCategorias() {
           data: {
             nombre: formSubcategoriaNombre.trim(),
             descripcion: formSubcategoriaDescripcion.trim(),
+            orden: formSubcategoriaOrden,
           },
         });
         setSuccessMessage(`✅ Subcategoría "${formSubcategoriaNombre}" creada exitosamente`);
@@ -326,23 +424,24 @@ export default function AdminCategorias() {
             <Table size="small">
               <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
                 <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold', width: '40px' }}>Orden</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Estado</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Nombre</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Descripción</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 'bold', width: '150px' }}>
+                  <TableCell align="center" sx={{ fontWeight: 'bold', width: '200px' }}>
                     Acciones
                   </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {categoriasFiltradas.length === 0 ? (
+                {categoriasOrdenadas.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 3, color: 'textSecondary' }}>
+                    <TableCell colSpan={5} align="center" sx={{ py: 3, color: 'textSecondary' }}>
                       <Typography variant="body2">No hay categorías disponibles</Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  categoriasFiltradas.map((categoria) => (
+                  categoriasOrdenadas.map((categoria, index) => (
                     <TableRow
                       key={categoria.id}
                       sx={{
@@ -351,6 +450,9 @@ export default function AdminCategorias() {
                       }}
                       onClick={() => setSelectedCategoria(categoria)}
                     >
+                      <TableCell sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                        {(categoria as any).orden || 0}
+                      </TableCell>
                       <TableCell>
                         {categoria.activa ? (
                           <Chip label="Activa" size="small" color="success" variant="outlined" icon={<CheckCircle />} />
@@ -362,31 +464,61 @@ export default function AdminCategorias() {
                       <TableCell sx={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {categoria.descripcion || <span style={{ color: '#aaa' }}>Sin descripción</span>}
                       </TableCell>
-                      <TableCell align="center">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenEditCategoria(categoria);
-                          }}
-                          disabled={isLoading_mutation}
-                          title="Editar"
-                        >
-                          <Edit fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDeleteConfirm('categoria', categoria);
-                          }}
-                          disabled={isLoading_mutation}
-                          title="Eliminar"
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
+                      <TableCell align="center" sx={{ display: 'flex', gap: 0.5, justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          <IconButton
+                            size="small"
+                            color="default"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoverCategoria(categoria, 'arriba');
+                            }}
+                            disabled={isLoading_mutation || index === 0}
+                            title="Mover arriba"
+                            sx={{ padding: '4px' }}
+                          >
+                            <ArrowUpward fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="default"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoverCategoria(categoria, 'abajo');
+                            }}
+                            disabled={isLoading_mutation || index === categoriasOrdenadas.length - 1}
+                            title="Mover abajo"
+                            sx={{ padding: '4px' }}
+                          >
+                            <ArrowDownward fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEditCategoria(categoria);
+                            }}
+                            disabled={isLoading_mutation}
+                            title="Editar"
+                            sx={{ padding: '4px' }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenDeleteConfirm('categoria', categoria);
+                            }}
+                            disabled={isLoading_mutation}
+                            title="Eliminar"
+                            sx={{ padding: '4px' }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))
@@ -438,9 +570,9 @@ export default function AdminCategorias() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {subcategorias.map((subcategoria) => (
+                    {subcategoriasOrdenadas.map((subcategoria, index) => (
                       <TableRow key={subcategoria.id} sx={{ '&:hover': { backgroundColor: '#fafafa' } }}>
-                        <TableCell sx={{ fontWeight: 'bold', color: 'primary.main' }}>{subcategoria.orden}</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold', color: 'primary.main' }}>{subcategoria.orden || 0}</TableCell>
                         <TableCell sx={{ fontWeight: '500' }}>{subcategoria.nombre}</TableCell>
                         <TableCell sx={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {subcategoria.descripcion || <span style={{ color: '#aaa' }}>Sin descripción</span>}
@@ -453,24 +585,48 @@ export default function AdminCategorias() {
                           )}
                         </TableCell>
                         <TableCell align="center">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => handleOpenEditSubcategoria(subcategoria)}
-                            disabled={isLoading_mutation}
-                            title="Editar"
-                          >
-                            <Edit fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleOpenDeleteConfirm('subcategoria', subcategoria)}
-                            disabled={isLoading_mutation}
-                            title="Eliminar"
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
+                          <Box sx={{ display: 'flex', gap: 0.3, justifyContent: 'center', alignItems: 'center' }}>
+                            <IconButton
+                              size="small"
+                              color="default"
+                              onClick={() => handleMoverSubcategoria(subcategoria, 'arriba')}
+                              disabled={isLoading_mutation || index === 0}
+                              title="Mover arriba"
+                              sx={{ padding: '4px' }}
+                            >
+                              <ArrowUpward fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="default"
+                              onClick={() => handleMoverSubcategoria(subcategoria, 'abajo')}
+                              disabled={isLoading_mutation || index === subcategoriasOrdenadas.length - 1}
+                              title="Mover abajo"
+                              sx={{ padding: '4px' }}
+                            >
+                              <ArrowDownward fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => handleOpenEditSubcategoria(subcategoria)}
+                              disabled={isLoading_mutation}
+                              title="Editar"
+                              sx={{ padding: '4px' }}
+                            >
+                              <Edit fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleOpenDeleteConfirm('subcategoria', subcategoria)}
+                              disabled={isLoading_mutation}
+                              title="Eliminar"
+                              sx={{ padding: '4px' }}
+                            >
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </Box>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -505,6 +661,16 @@ export default function AdminCategorias() {
               multiline
               rows={2}
               disabled={isLoading_mutation}
+            />
+            <TextField
+              fullWidth
+              label="Orden de Visualización"
+              type="number"
+              value={formCategoriaOrden}
+              onChange={(e) => setFormCategoriaOrden(parseInt(e.target.value) || 0)}
+              placeholder="Ej: 1, 2, 3... (números menores aparecen primero)"
+              disabled={isLoading_mutation}
+              inputProps={{ step: '1', min: '0' }}
             />
             <FormControlLabel
               control={
@@ -552,6 +718,16 @@ export default function AdminCategorias() {
               multiline
               rows={2}
               disabled={isLoading_mutation}
+            />
+            <TextField
+              fullWidth
+              label="Orden de Visualización"
+              type="number"
+              value={formSubcategoriaOrden}
+              onChange={(e) => setFormSubcategoriaOrden(parseInt(e.target.value) || 0)}
+              placeholder="Ej: 1, 2, 3... (números menores aparecen primero)"
+              disabled={isLoading_mutation}
+              inputProps={{ step: '1', min: '0' }}
             />
             <FormControlLabel
               control={

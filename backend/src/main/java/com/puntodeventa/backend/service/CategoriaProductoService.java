@@ -55,14 +55,14 @@ public class CategoriaProductoService {
     public CategoriaProductoDTO obtener(Long id) {
         // ✅ SEGREGACIÓN: Validar que la categoría pertenece a la sucursal del usuario
         Long sucursalId = SucursalContext.getSucursalId();
-        
+
         CategoriaProducto c = categoriaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con id: " + id));
-        
+
         if (c.getSucursal() == null || !c.getSucursal().getId().equals(sucursalId)) {
             throw new ResourceNotFoundException("Categoría no encontrada en su sucursal");
         }
-        
+
         return toDTO(c);
     }
 
@@ -96,19 +96,20 @@ public class CategoriaProductoService {
         long productosConCategoria = productoRepository.findByCategoriaId(id).size();
         if (productosConCategoria > 0) {
             throw new IllegalArgumentException(
-                    "No se puede eliminar la categoría '" + c.getNombre() + "' porque tiene " + 
-                    productosConCategoria + " producto(s) asociado(s). " +
-                    "Elimina o reasigna los productos antes de eliminar la categoría."
-            );
+                    "No se puede eliminar la categoría '" + c.getNombre() + "' porque tiene " +
+                            productosConCategoria + " producto(s) asociado(s). " +
+                            "Elimina o reasigna los productos antes de eliminar la categoría.");
         }
 
-        // ✅ CASCADA: Las subcategorías se eliminarán automáticamente por JPA (CascadeType.ALL)
+        // ✅ CASCADA: Las subcategorías se eliminarán automáticamente por JPA
+        // (CascadeType.ALL)
         if (c.getSubcategorias() != null && !c.getSubcategorias().isEmpty()) {
-            log.info("Eliminando {} subcategorías de la categoría: {} (ID: {})", 
+            log.info("Eliminando {} subcategorías de la categoría: {} (ID: {})",
                     c.getSubcategorias().size(), c.getNombre(), id);
         }
 
-        // Eliminar definitivamente de la BD - JPA eliminará en cascada todas las subcategorías
+        // Eliminar definitivamente de la BD - JPA eliminará en cascada todas las
+        // subcategorías
         categoriaRepository.deleteById(id);
         log.info("Categoría eliminada permanentemente: {} (ID: {})", c.getNombre(), c.getId());
     }
@@ -119,6 +120,8 @@ public class CategoriaProductoService {
         c.setDescripcion(dto.descripcion());
         if (dto.activa() != null)
             c.setActiva(dto.activa());
+        if (dto.orden() != null)
+            c.setOrden(dto.orden());
     }
 
     private CategoriaProductoDTO toDTO(CategoriaProducto c) {
@@ -126,6 +129,7 @@ public class CategoriaProductoService {
                 c.getId(),
                 c.getNombre(),
                 c.getDescripcion(),
-                c.getActiva());
+                c.getActiva(),
+                c.getOrden());
     }
 }
