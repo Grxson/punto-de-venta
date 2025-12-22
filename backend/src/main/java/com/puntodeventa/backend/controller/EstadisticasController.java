@@ -51,7 +51,8 @@ public class EstadisticasController {
 
         // Extraer la fecha representativa desde el parámetro "desde"
         LocalDate fechaRepresentativa = desde.toLocalDate();
-        // ✅ Para reportes, incluir TODOS los gastos (operacionales + administrativos + nómina + etc.)
+        // ✅ Para reportes, incluir TODOS los gastos (operacionales + administrativos +
+        // nómina + etc.)
         return ResponseEntity.ok(estadisticasService.resumenRangoConTodosGastos(desde, hasta, fechaRepresentativa));
     }
 
