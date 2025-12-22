@@ -52,7 +52,7 @@ export default function PosHome() {
   const location = useLocation();
   const { cart, addToCart, removeFromCart, updateQuantity, updateItemPrice, itemCount, total } = useCart();
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [categorias, setCategorias] = useState<{ id: number; nombre: string }[]>([]);
+  const [categorias, setCategorias] = useState<{ id: number; nombre: string; orden?: number }[]>([]);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(() => {
     // Intentar restaurar la categoría guardada al inicializar
     // Nota: esto puede ser null si aún no se han cargado las categorías
@@ -184,7 +184,12 @@ export default function PosHome() {
       // Cargar categorías
       const categoriasResponse = await apiService.get(API_ENDPOINTS.CATEGORIES);
       if (categoriasResponse.success && categoriasResponse.data) {
-        const categoriasCargadas = categoriasResponse.data;
+        // Ordenar categorías por campo 'orden' (ascendente)
+        const categoriasCargadas = categoriasResponse.data.sort((a: any, b: any) => {
+          const ordenA = a.orden ?? 0;
+          const ordenB = b.orden ?? 0;
+          return ordenA - ordenB;
+        });
         setCategorias(categoriasCargadas);
 
         // Siempre restaurar la categoría seleccionada guardada al cargar las categorías
@@ -622,7 +627,8 @@ export default function PosHome() {
             {loadingSubcategorias ? (
               <CircularProgress size={24} />
             ) : (
-              subcategorias.map(subcat => (
+              // Ordenar subcategorías por campo 'orden' antes de renderizar
+              [...subcategorias].sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)).map(subcat => (
                 <Button
                   key={subcat.id}
                   variant={subcategoriaSeleccionada === subcat.id ? 'contained' : 'outlined'}
@@ -980,17 +986,17 @@ export default function PosHome() {
         {pasoModal === 'tamaños' && (
           <>
             <DialogTitle>
-              Seleccionar tamaño - {productoSeleccionado?.nombre}
+              Seleccionar Tamaño - {productoSeleccionado?.nombre}
             </DialogTitle>
             <DialogContent>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Este producto tiene diferentes tamaños disponibles. Selecciona el tamaño que deseas:
-              </Typography>
               <List>
                 {productoSeleccionado?.variantes?.map((variante, index) => (
                   <div key={variante.id}>
                     <ListItem disablePadding>
-                      <ListItemButton onClick={() => handleSeleccionarVariante(variante)}>
+                      <ListItemButton 
+                        onClick={() => handleSeleccionarVariante(variante)}
+                        sx={{ minHeight: '80px' }}
+                      >
                         <ListItemText
                           primary={
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1002,7 +1008,6 @@ export default function PosHome() {
                               </Typography>
                             </Box>
                           }
-                          secondary={variante.nombreVariante || variante.nombre}
                         />
                       </ListItemButton>
                     </ListItem>

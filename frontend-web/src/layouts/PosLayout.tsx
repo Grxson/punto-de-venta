@@ -3,12 +3,14 @@ import { Box, AppBar, Toolbar, Typography, Button, Drawer, List, ListItem, ListI
 import { ShoppingCart, Home, Logout, AdminPanelSettings, Menu as MenuIcon, AttachMoney, PointOfSale } from '@mui/icons-material';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLogout } from '../hooks/useLogout';
 import DailyStatsPanel from '../components/DailyStatsPanel';
 
 export default function PosLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { usuario, logout } = useAuth();
+  const { usuario } = useAuth();
+  const handleLogout = useLogout();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const menuItems = [
@@ -54,8 +56,7 @@ export default function PosLayout() {
             color="inherit"
             startIcon={<Logout />}
             onClick={() => {
-              logout();
-              navigate('/login');
+              handleLogout();
             }}
             sx={{ minHeight: '48px' }}
           >
