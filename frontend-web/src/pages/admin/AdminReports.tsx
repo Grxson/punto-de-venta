@@ -689,13 +689,13 @@ export default function AdminReports() {
                               Venta Total
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600, color: '#2e7d32' }}>
-                              ${ventas.filter(v => v.estado !== 'cancelada').reduce((sum, v) => sum + v.total, 0).toFixed(2)}
+                              ${ventas.reduce((sum, v) => sum + v.total, 0).toFixed(2)}
                             </Typography>
                           </Box>
                         {/* Tabla de métodos de pago */}
                         <Box sx={{ mb: 3 }}>
                           {(() => {
-                            const metodosPago = ventas.filter(v => v.estado !== 'cancelada').reduce((acc, venta) => {
+                            const metodosPago = ventas.reduce((acc, venta) => {
                               venta.pagos.forEach((pago) => {
                                 const metodo = pago.metodoPagoNombre;
                                 acc[metodo] = (acc[metodo] || 0) + pago.monto;
@@ -806,7 +806,7 @@ export default function AdminReports() {
                                 }, {} as Record<string, { nombre: string; cantidad: number; total: number; precioUnitario: number }>);
 
                                 return Object.values(productosAgrupados)
-                                  .sort((a, b) => b.total - a.total)
+                                  .sort((a, b) => a.nombre.localeCompare(b.nombre))
                                   .map((producto, idx) => (
                                     <TableRow key={idx} hover>
                                       <TableCell sx={{ py: 1 }}>{producto.nombre}</TableCell>
