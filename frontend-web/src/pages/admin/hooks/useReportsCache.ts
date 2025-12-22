@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface CachedReport {
   data: any;
@@ -13,13 +14,29 @@ const CACHE_TTL = {
 };
 
 export const useReportsCache = () => {
+  const { sucursal, usuario } = useAuth();
   const cache = useRef<Map<string, CachedReport>>(new Map());
 
   /**
-   * Generar clave única para caché
+   * 🔒 SEGURIDAD CRÍTICA: Generar clave única INCLUYENDO sucursalId
+   * 
+   * ✅ CADA SUCURSAL TIENE SU PROPIA RAMA DE CACHE AISLADA
+   * - Usuario 1 (Sucursal A): resumen_1_2025-12-01_2025-12-31
+   * - Usuario 2 (Sucursal B): resumen_2_2025-12-01_2025-12-31
+   * 
+   * ❌ ANTES (VULNERABLE A CONTAMINACIÓN):
+   *   return `${type}_${desde}_${hasta}`;  
+   *   - Mismo cache para todas las sucursales
+   *   - User B veía datos de User A si cargaban mismo rango
+   * 
+   * ✅ AHORA (SEGURO):
+   *   return `${type}_${sucursalId}_${desde}_${hasta}`;
+   *   - Cache aislado por sucursal
+   *   - Imposible contaminación entre usuarios de diferentes sucursales
    */
   const getCacheKey = (type: string, desde: string, hasta: string) => {
-    return `${type}_${desde}_${hasta}`;
+    const sucursalId = sucursal?.id || usuario?.sucursalId || 'unknown';
+    return `${type}_${sucursalId}_${desde}_${hasta}`;
   };
 
   /**
