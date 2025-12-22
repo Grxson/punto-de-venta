@@ -48,13 +48,13 @@ public class SucursalContextFilter extends OncePerRequestFilter {
     private JwtUtil jwtUtil;
 
     /**
-     * Ignora rutas estáticas, dashboard de monitoreo y APIs de monitoreo
+     * Ignora rutas estáticas, dashboard de monitoreo, APIs de monitoreo y WebSocket
      * para no exigir contexto de sucursal en estas rutas públicas.
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        // Permitir acceso público a recursos estáticos y dashboard de monitoreo
+        // Permitir acceso público a recursos estáticos, dashboard de monitoreo y WebSocket
         return path.startsWith("/monitoring") ||
                 path.startsWith("/api/monitoring") ||
                 path.startsWith("/static/") ||
@@ -62,7 +62,8 @@ public class SucursalContextFilter extends OncePerRequestFilter {
                 path.startsWith("/js/") ||
                 path.startsWith("/images/") ||
                 path.startsWith("/favicon.ico") ||
-                path.startsWith("/error");
+                path.startsWith("/error") ||
+                path.startsWith("/ws/"); // Ignorar WebSocket handshake y conexiones
     }
 
     @Override
