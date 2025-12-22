@@ -1,66 +1,24 @@
 import React, { useState } from 'react';
 import { Box, Tabs, Tab } from '@mui/material';
-import ComprasList from './components/ComprasList';
-import CompraForm from './components/CompraForm';
 import CompraSimpleForm from './components/CompraSimpleForm';
 import ComprasListaSimple from './components/ComprasListaSimple';
 import CrearIngredienteDesdeCompra from './components/CrearIngredienteDesdeCompra';
 
 /**
- * AdminCompras - Componente principal para gestión de compras
+ * AdminCompras - Gestión de compras simples
  * 
- * Flujo nuevo (recomendado):
+ * Flujo:
  * 1. Registrar Compra Simple (nombre, fecha, cantidad, unidad, precio)
  * 2. Ver Compras Simples
  * 3. Crear Ingrediente desde Compra (calcular costo unitario basado en rendimiento)
- * 
- * Flujo antiguo (para compras complejas con proveedor):
- * - Listado de compras
- * - Crear nueva compra con ingredientes múltiples
- * - Editar compra existente
  */
 export default function AdminCompras() {
-  const [currentTab, setCurrentTab] = useState(0);
-  const [compraEnEdicion, setCompraEnEdicion] = useState<number | null>(null);
+  const [currentTab, setCurrentTab] = useState(1); // Por defecto: Ver Compras Simples
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [modalCrearIngrediente, setModalCrearIngrediente] = useState(false);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
-    setCompraEnEdicion(null);
-  };
-
-  /**
-   * Navegar a crear nueva compra
-   */
-  const handleCrear = () => {
-    setCompraEnEdicion(null);
-    setCurrentTab(1);
-  };
-
-  /**
-   * Navegar a editar compra
-   */
-  const handleEditar = (compraId: number) => {
-    setCompraEnEdicion(compraId);
-    setCurrentTab(2);
-  };
-
-  /**
-   * Después de guardar, volver al listado
-   */
-  const handleGuardado = () => {
-    setRefreshTrigger((prev) => prev + 1);
-    setCompraEnEdicion(null);
-    setCurrentTab(0);
-  };
-
-  /**
-   * Al cancelar, volver al listado
-   */
-  const handleCancelado = () => {
-    setCompraEnEdicion(null);
-    setCurrentTab(0);
   };
 
   /**
@@ -84,23 +42,17 @@ export default function AdminCompras() {
       <h1 style={{ margin: '0 0 1rem 0' }}>📦 Gestión de Compras</h1>
 
       <Tabs value={currentTab} onChange={handleTabChange} sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-        {/* FLUJO NUEVO - RECOMENDADO */}
         <Tab label="🔥 Registrar Compra Simple" />
         <Tab label="📋 Ver Compras Simples" />
         <Tab label="✨ Crear Ingrediente" />
-        
-        {/* FLUJO ANTIGUO */}
-        <Tab label="Compras (Antiguo)" />
-        <Tab label="Nueva Compra (Antiguo)" disabled={currentTab === 3} />
-        {compraEnEdicion && <Tab label={`Editar Compra #${compraEnEdicion}`} disabled={currentTab === 3} />}
       </Tabs>
 
-      {/* TAB 0: Registrar Compra Simple (NUEVO) */}
+      {/* TAB 0: Registrar Compra Simple */}
       {currentTab === 0 && (
         <CompraSimpleForm onGuardado={handleGuardadoCompraSimple} onCancelado={() => setCurrentTab(1)} />
       )}
 
-      {/* TAB 1: Ver Compras Simples (NUEVO) */}
+      {/* TAB 1: Ver Compras Simples */}
       {currentTab === 1 && (
         <Box>
           <ComprasListaSimple refreshTrigger={refreshTrigger} />
@@ -135,7 +87,7 @@ export default function AdminCompras() {
         </Box>
       )}
 
-      {/* TAB 2: Crear Ingrediente desde Compra (NUEVO) */}
+      {/* TAB 2: Crear Ingrediente desde Compra */}
       {currentTab === 2 && (
         <Box>
           <button 
@@ -154,21 +106,6 @@ export default function AdminCompras() {
             ✨ Crear Ingrediente desde Compra
           </button>
         </Box>
-      )}
-
-      {/* TAB 3: Listado de Compras (ANTIGUO) */}
-      {currentTab === 3 && (
-        <ComprasList onCrear={handleCrear} onEditar={handleEditar} refreshTrigger={refreshTrigger} />
-      )}
-
-      {/* TAB 4: Nueva Compra (ANTIGUO) */}
-      {currentTab === 4 && (
-        <CompraForm onGuardado={handleGuardado} onCancelado={handleCancelado} />
-      )}
-
-      {/* TAB 5: Editar Compra (ANTIGUO) */}
-      {currentTab === 5 && compraEnEdicion && (
-        <CompraForm compraId={compraEnEdicion} onGuardado={handleGuardado} onCancelado={handleCancelado} />
       )}
 
       {/* Modal: Crear Ingrediente desde Compra */}

@@ -169,6 +169,12 @@ export default function CrearIngredienteDesdeCompra({
         factorConversion: factorConversion,
         descripcion,
         activo: true,
+        // NOTA: No vinculamos con gastoId porque las compras simples se guardan en localStorage
+        // y no tienen ID en la BD. En el futuro, si las compras simples se guardan en BD,
+        // podemos descomentar esto:
+        // gastoId: compraSeleccionada.id,
+        // unidadGastoId: unidadFactorId,
+        // costoTotalGasto: compraSeleccionada.precioTotal,
       });
 
       setSuccess(`✅ Ingrediente "${ingredienteCreado.nombre}" creado correctamente\n💰 Costo: $${costoUnitario.toFixed(6)} por ${unidadRendimientoObj?.abreviatura}`);
