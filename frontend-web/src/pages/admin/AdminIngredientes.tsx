@@ -45,7 +45,6 @@ export default function AdminIngredientes() {
   // Form fields
   const [nombre, setNombre] = useState<string>('');
   const [descripcion, setDescripcion] = useState<string>('');
-  const [sku, setSku] = useState<string>('');
   const [unidadBaseId, setUnidadBaseId] = useState<number | ''>('');
   const [costoUnitarioBase, setCostoUnitarioBase] = useState<number>(0);
   const [stockMinimo, setStockMinimo] = useState<number>(0);
@@ -56,7 +55,7 @@ export default function AdminIngredientes() {
   const [gastosMateriaPrima, setGastosMateriaPrima] = useState<Gasto[]>([]);
   const [buscandoGastos, setBuscandoGastos] = useState(false);
   const [unidadGastoId, setUnidadGastoId] = useState<number | null>(null);
-  const [factorConversion, setFactorConversion] = useState<number | ''>('');
+  const [factorConversion, setFactorConversion] = useState<string>('');
   const [mostrarCostoCalculado, setMostrarCostoCalculado] = useState(false);
   const [costoCalculado, setCostoCalculado] = useState<number>(0);
 
@@ -121,7 +120,6 @@ export default function AdminIngredientes() {
       setEditingIngrediente(ingrediente);
       setNombre(ingrediente.nombre);
       setDescripcion(ingrediente.descripcion || '');
-      setSku(ingrediente.sku || '');
       // Usar nombres correctos del DTO: unidadBaseId y costoUnitarioBase
       setUnidadBaseId(ingrediente.unidadBaseId || '');
       setCostoUnitarioBase(Number(ingrediente.costoUnitarioBase) || 0);
@@ -134,7 +132,7 @@ export default function AdminIngredientes() {
           nota: ingrediente.unidadGastoNombre || '',
         } as any);
         setUnidadGastoId(ingrediente.unidadGastoId || null);
-        setFactorConversion(ingrediente.factorConversion?.toString() || '');
+        setFactorConversion(ingrediente.factorConversion || '');
       } else {
         setGastoSeleccionado(null);
         setFactorConversion('');
@@ -145,7 +143,6 @@ export default function AdminIngredientes() {
       setEditingIngrediente(null);
       setNombre('');
       setDescripcion('');
-      setSku('');
       setUnidadBaseId('');
       setCostoUnitarioBase(0);
       setStockMinimo(0);
@@ -162,7 +159,6 @@ export default function AdminIngredientes() {
     setEditingIngrediente(null);
     setNombre('');
     setDescripcion('');
-    setSku('');
     setUnidadBaseId('');
     setCostoUnitarioBase(0);
     setStockMinimo(0);
@@ -198,12 +194,11 @@ export default function AdminIngredientes() {
         descripcion: descripcion.trim() || undefined,
         costoUnitarioBase: costoUnitarioBase,
         unidadBaseId: Number(unidadBaseId),
-        sku: sku.trim() || undefined,
         activo,
         // Vinculación con gasto (INCLUIDA)
         gastoId: gastoSeleccionado?.id,
         unidadGastoId: unidadGastoId || undefined,
-        factorConversion: factorConversion ? Number(factorConversion) : 1,
+        factorConversion: factorConversion || undefined,
         costoTotalGasto: gastoSeleccionado?.monto,
       };
 
@@ -457,15 +452,6 @@ export default function AdminIngredientes() {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
-                  label="SKU / Código"
-                  value={sku}
-                  onChange={(e) => setSku(e.target.value)}
-                  fullWidth
-                  placeholder="Ej: HARINA-INT-001"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
                   select
                   label="Unidad de Medida"
                   value={unidadBaseId}
@@ -515,7 +501,6 @@ export default function AdminIngredientes() {
               loading={buscandoGastos}
               fullWidth
               noOptionsText="Escribe para buscar gastos de insumos"
-              placeholder="Buscar gasto..."
               renderInput={(params) => (
                 <TextField {...params} label="Buscar Gasto de Insumos" placeholder="Ej: Harina, Azúcar..." />
               )}
@@ -565,7 +550,7 @@ export default function AdminIngredientes() {
                     <TextField
                       type="number"
                       value={factorConversion}
-                      onChange={(e) => setFactorConversion(e.target.value ? Number(e.target.value) : '')}
+                      onChange={(e) => setFactorConversion(e.target.value)}
                       fullWidth
                       size="small"
                       placeholder="Ej: 100 (si compré 100 piezas en un paquete)"
