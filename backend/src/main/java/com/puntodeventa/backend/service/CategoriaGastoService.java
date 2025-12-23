@@ -56,7 +56,7 @@ public class CategoriaGastoService {
         Long sucursalId = SucursalContext.getSucursalId();
         Sucursal sucursal = sucursalRepository.findById(sucursalId)
                 .orElseThrow(() -> new ResourceNotFoundException("Sucursal no encontrada"));
-        
+
         CategoriaGasto categoria = new CategoriaGasto();
         categoria.setSucursal(sucursal);
         categoria.setNombre(dto.nombre());
