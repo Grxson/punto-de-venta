@@ -8,6 +8,7 @@ import com.puntodeventa.backend.repository.CategoriaGastoRepository;
 import com.puntodeventa.backend.repository.SucursalRepository;
 import com.puntodeventa.backend.context.SucursalContext;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.List;
  * Servicio para gestión de categorías de gastos.
  * Soporta segregación por sucursal mediante SucursalContext.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)

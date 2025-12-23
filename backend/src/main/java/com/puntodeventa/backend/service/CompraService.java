@@ -102,7 +102,6 @@ public class CompraService {
          * movimientos
          */
         @Transactional
-        @Transactional
         public CompraDTO crearCompra(CrearCompraRequest request) {
                 Long sucursalId = SucursalContext.getSucursalId();
                 log.info("📦 Creando compra en sucursal: {}", sucursalId);

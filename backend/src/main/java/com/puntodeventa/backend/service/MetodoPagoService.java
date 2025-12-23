@@ -5,6 +5,7 @@ import com.puntodeventa.backend.exception.ResourceNotFoundException;
 import com.puntodeventa.backend.model.MetodoPago;
 import com.puntodeventa.backend.repository.MetodoPagoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.List;
 /**
  * Servicio para gestión de métodos de pago.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)

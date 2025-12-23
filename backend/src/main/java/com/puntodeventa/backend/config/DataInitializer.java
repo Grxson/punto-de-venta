@@ -2,6 +2,7 @@ package com.puntodeventa.backend.config;
 
 import com.puntodeventa.backend.dto.MetodoPagoDTO;
 import com.puntodeventa.backend.service.MetodoPagoService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +26,7 @@ import static com.puntodeventa.backend.config.DataInitializerMenuHelper.crearPro
  * @version 1.0.0
  * @since Java 21
  */
+@Slf4j
 @Configuration
 @Profile("dev-h2") // Cambiado de "dev" a "dev-h2" para evitar ejecutar con Railway
 public class DataInitializer {
