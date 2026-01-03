@@ -27,6 +27,7 @@ import { Add, Edit, Delete, Close } from '@mui/icons-material';
 import { recetasService } from '../../services/recetas.service';
 import { productosService } from '../../services/productos.service';
 import { ingredientesService, Ingrediente as IngredienteService } from '../../services/ingredientes.service';
+import AgregarIngredientesReceta from './components/AgregarIngredientesReceta';
 
 interface Ingrediente {
   id: number;
@@ -80,6 +81,7 @@ export default function AdminRecipes() {
   const [recetas, setRecetas] = useState<Receta[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [ingredientes, setIngredientes] = useState<Ingrediente[]>([]);
+  const [unidades, setUnidades] = useState<Unidad[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +94,6 @@ export default function AdminRecipes() {
   // Form fields
   const [selectedProducto, setSelectedProducto] = useState<Producto | null>(null);
   const [productoSearchInput, setProductoSearchInput] = useState<string>('');
-  const [nuevoIngrediente, setNuevoIngrediente] = useState<RecetaIngrediente | null>(null);
   const [recetaIngredientes, setRecetaIngredientes] = useState<RecetaIngrediente[]>([]);
   const [costoIndirecto, setCostoIndirecto] = useState<number>(0);
   const [manoObra, setManoObra] = useState<number>(0);
@@ -125,6 +126,10 @@ export default function AdminRecipes() {
       // Cargar ingredientes
       const ingredientesResponse = await ingredientesService.obtenerActivos();
       setIngredientes(Array.isArray(ingredientesResponse) ? ingredientesResponse : []);
+
+      // Cargar unidades
+      const unidadesResponse = await ingredientesService.obtenerUnidades();
+      setUnidades(Array.isArray(unidadesResponse) ? unidadesResponse : []);
     } catch (err: any) {
       console.error('Error al cargar datos:', err);
       setError(err.message || 'Error al cargar datos');
@@ -138,6 +143,26 @@ export default function AdminRecipes() {
       receta.productoNombre.toLowerCase().includes(searchText.toLowerCase())
     );
   }, [recetas, searchText]);
+
+  // Calcular costo total de ingredientes
+  const costoDirectoTotal = useMemo(() => {
+    return recetaIngredientes.reduce((sum, ing) => sum + (ing.costoTotal || 0), 0);
+  }, [recetaIngredientes]);
+
+  // Calcular costo total por unidad de rendimiento
+  const costoTotalReceta = useMemo(() => {
+    return costoDirectoTotal + costoIndirecto + manoObra;
+  }, [costoDirectoTotal, costoIndirecto, manoObra]);
+
+  // Calcular precio sugerido
+  const precioSugerido = useMemo(() => {
+    return costoTotalReceta * (1 + porcentajeUtilidad / 100);
+  }, [costoTotalReceta, porcentajeUtilidad]);
+
+  // Calcular costo por unidad de rendimiento
+  const costoPorUnidad = useMemo(() => {
+    return rendimiento > 0 ? costoTotalReceta / rendimiento : 0;
+  }, [costoTotalReceta, rendimiento]);
 
   const handleOpenDialog = (receta?: Receta) => {
     if (receta) {
@@ -175,7 +200,6 @@ export default function AdminRecipes() {
     setSelectedProducto(null);
     setProductoSearchInput('');
     setRecetaIngredientes([]);
-    setNuevoIngrediente(null);
     setCostoIndirecto(0);
     setManoObra(0);
     setRendimiento(1);
@@ -186,20 +210,8 @@ export default function AdminRecipes() {
     setError(null);
   };
 
-  const handleAgregarIngrediente = () => {
-    if (!nuevoIngrediente || !nuevoIngrediente.ingredienteId || nuevoIngrediente.cantidad <= 0) {
-      setError('Debe seleccionar un ingrediente y una cantidad válida');
-      return;
-    }
-
-    // Verificar si el ingrediente ya existe
-    if (recetaIngredientes.some((ing) => ing.ingredienteId === nuevoIngrediente.ingredienteId)) {
-      setError('Este ingrediente ya está en la receta');
-      return;
-    }
-
-    setRecetaIngredientes([...recetaIngredientes, nuevoIngrediente]);
-    setNuevoIngrediente(null);
+  const handleAgregarIngrediente = (ingrediente: RecetaIngrediente) => {
+    setRecetaIngredientes([...recetaIngredientes, ingrediente]);
     setError(null);
   };
 
@@ -217,23 +229,20 @@ export default function AdminRecipes() {
         return;
       }
 
-      // Calcular costo directo (suma de ingredientes)
-      const costoDirectoCalculado = 0; // Se calcula en backend basado en ingredientes
-
       const recetaData: Receta = {
         productoId: selectedProducto!.id,
         productoNombre: selectedProducto!.nombre,
         ingredientes: recetaIngredientes,
-        costoDirecto: costoDirectoCalculado,
+        costoDirecto: costoDirectoTotal,
         costoIndirecto,
         manoObra,
-        costoTotal: costoDirectoCalculado + costoIndirecto + manoObra,
+        costoTotal: costoTotalReceta,
         rendimiento,
         unidadRendimiento,
         descripcion,
         notas,
         porcentajeUtilidadDeseado: porcentajeUtilidad,
-        precioSugerido: ((costoDirectoCalculado + costoIndirecto + manoObra) * (1 + porcentajeUtilidad / 100)),
+        precioSugerido: precioSugerido,
       };
 
       if (editingReceta) {
@@ -394,7 +403,7 @@ export default function AdminRecipes() {
       </Card>
 
       {/* Dialog para crear/editar receta */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="lg" fullWidth scroll="paper">
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth scroll="paper">
         <DialogTitle>
           {editingReceta ? 'Editar Receta' : 'Nueva Receta'}
           <IconButton
@@ -404,272 +413,136 @@ export default function AdminRecipes() {
             <Close />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
+        <DialogContent sx={{ pt: 1 }}>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-          {/* Sección 1: Información General */}
-          <Box sx={{ mb: 3, p: 2, backgroundColor: '#f9f9f9', borderRadius: 1, border: '1px solid #e0e0e0' }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-              📋 Información General
-            </Typography>
+          {/* Producto */}
+          <Autocomplete
+            options={productos}
+            getOptionLabel={(option) => option.nombre}
+            value={selectedProducto}
+            onChange={(event, newValue) => {
+              setSelectedProducto(newValue);
+              if (newValue) {
+                setProductoSearchInput(newValue.nombre);
+              }
+            }}
+            inputValue={productoSearchInput}
+            onInputChange={(event, newInputValue) => {
+              setProductoSearchInput(newInputValue);
+            }}
+            disabled={!!editingReceta}
+            fullWidth
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Producto"
+                margin="dense"
+                size="small"
+                placeholder="Buscar producto..."
+              />
+            )}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            filterOptions={(options, state) => {
+              const inputValue = state.inputValue.toLowerCase();
+              return options.filter((option) =>
+                option.nombre.toLowerCase().includes(inputValue)
+              );
+            }}
+          />
 
-            <Autocomplete
-              options={productos}
-              getOptionLabel={(option) => option.nombre}
-              value={selectedProducto}
-              onChange={(event, newValue) => {
-                setSelectedProducto(newValue);
-                if (newValue) {
-                  setProductoSearchInput(newValue.nombre);
-                }
-              }}
-              inputValue={productoSearchInput}
-              onInputChange={(event, newInputValue) => {
-                setProductoSearchInput(newInputValue);
-              }}
-              disabled={!!editingReceta}
-              fullWidth
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Buscar Producto"
-                  margin="normal"
-                  placeholder="Escribe para buscar..."
-                />
-              )}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              filterOptions={(options, state) => {
-                const inputValue = state.inputValue.toLowerCase();
-                return options.filter((option) =>
-                  option.nombre.toLowerCase().includes(inputValue)
-                );
-              }}
-            />
-
+          {/* Rendimiento */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 1.5, mt: 2 }}>
             <TextField
-              label="Descripción"
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
+              label="Cantidad"
+              type="number"
+              value={rendimiento}
+              onChange={(e) => setRendimiento(Number(e.target.value))}
+              inputProps={{ step: 0.01, min: 0.01 }}
+              margin="dense"
+              size="small"
               fullWidth
-              margin="normal"
-              multiline
-              rows={2}
-              placeholder="Ej: Jugo natural de naranja recién exprimido"
             />
-
             <TextField
-              label="Notas"
-              value={notas}
-              onChange={(e) => setNotas(e.target.value)}
+              label="Unidad"
+              value={unidadRendimiento}
+              onChange={(e) => setUnidadRendimiento(e.target.value)}
+              placeholder="unidad, kg, lt"
+              margin="dense"
+              size="small"
               fullWidth
-              margin="normal"
-              multiline
-              rows={2}
-              placeholder="Ej: Servir inmediatamente, debe estar fresco"
             />
           </Box>
 
-          {/* Sección 2: Ingredientes */}
-          <Box sx={{ mb: 3, p: 2, backgroundColor: '#f9f9f9', borderRadius: 1, border: '1px solid #e0e0e0' }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-              🥘 Ingredientes Necesarios
+          {/* Ingredientes */}
+          <Box sx={{ mt: 2.5, mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1.5 }}>
+              🥘 Ingredientes
             </Typography>
-
-            <TextField
-              select
-              label="Ingrediente"
-              value={nuevoIngrediente?.ingredienteId || ''}
-              onChange={(e) => {
-                const ing = ingredientes.find((i) => i.id === Number(e.target.value));
-                if (ing) {
-                  setNuevoIngrediente({
-                    ingredienteId: ing.id,
-                    ingredienteNombre: ing.nombre,
-                    cantidad: 1,
-                    unidadId: 1,
-                    unidadNombre: 'kg',
-                    unidadAbreviatura: 'kg',
-                  });
-                }
-              }}
-              fullWidth
-              margin="normal"
-              variant="outlined"
-              SelectProps={{ native: true }}
-              InputLabelProps={{ shrink: true }}
-            >
-              <option value="">-- Seleccionar ingrediente --</option>
-              {ingredientes.map((ing) => (
-                <option key={ing.id} value={ing.id}>
-                  {ing.nombre}
-                </option>
-              ))}
-            </TextField>
-
-            {nuevoIngrediente && (
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
-                <TextField
-                  label="Cantidad"
-                  type="number"
-                  value={nuevoIngrediente.cantidad}
-                  onChange={(e) =>
-                    setNuevoIngrediente({ ...nuevoIngrediente, cantidad: Number(e.target.value) })
-                  }
-                  inputProps={{ step: 0.01, min: 0 }}
-                />
-                <TextField
-                  label="Unidad"
-                  value={nuevoIngrediente.unidadAbreviatura}
-                  disabled
-                />
-                <Button
-                  variant="contained"
-                  onClick={handleAgregarIngrediente}
-                  sx={{ gridColumn: '1 / -1' }}
-                >
-                  + Agregar Ingrediente
-                </Button>
-              </Box>
-            )}
-
-            {/* Lista de Ingredientes */}
-            {recetaIngredientes.length > 0 && (
-              <Box sx={{ mt: 3 }}>
-                <TableContainer>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow sx={{ backgroundColor: '#e8f5e9' }}>
-                        <TableCell sx={{ fontWeight: 'bold' }}>Ingrediente</TableCell>
-                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>Cantidad</TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 'bold' }}>Acción</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {recetaIngredientes.map((ing) => (
-                        <TableRow key={ing.ingredienteId}>
-                          <TableCell>{ing.ingredienteNombre}</TableCell>
-                          <TableCell align="right">{ing.cantidad} {ing.unidadAbreviatura}</TableCell>
-                          <TableCell align="center">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => handleRemoverIngrediente(ing.ingredienteId)}
-                            >
-                              <Delete fontSize="small" />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Box>
-            )}
-
-            {recetaIngredientes.length === 0 && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                Aún no hay ingredientes. Selecciona un ingrediente y haz clic en "Agregar Ingrediente".
-              </Alert>
-            )}
+            <AgregarIngredientesReceta
+              ingredientesDisponibles={ingredientes}
+              unidades={unidades}
+              ingredientesEnReceta={recetaIngredientes}
+              onAgregarIngrediente={handleAgregarIngrediente}
+              onRemoverIngrediente={handleRemoverIngrediente}
+              loading={loading}
+            />
           </Box>
 
-          {/* Sección 3: Rendimiento */}
-          <Box sx={{ mb: 3, p: 2, backgroundColor: '#f9f9f9', borderRadius: 1, border: '1px solid #e0e0e0' }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-              📏 Rendimiento
+          {/* Costos Adicionales */}
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1.5 }}>
+              💰 Costos Adicionales
             </Typography>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 2 }}>
-              <TextField
-                label="Cantidad que se produce"
-                type="number"
-                value={rendimiento}
-                onChange={(e) => setRendimiento(Number(e.target.value))}
-                inputProps={{ step: 0.01, min: 0.01 }}
-              />
-              <TextField
-                label="Unidad"
-                value={unidadRendimiento}
-                onChange={(e) => setUnidadRendimiento(e.target.value)}
-                placeholder="Ej: unidad, litro, kg"
-              />
-            </Box>
-            <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#666' }}>
-              Esta receta produce {rendimiento} {unidadRendimiento}(s)
-            </Typography>
-          </Box>
-
-          {/* Sección 4: Costos */}
-          <Box sx={{ mb: 3, p: 2, backgroundColor: '#f9f9f9', borderRadius: 1, border: '1px solid #e0e0e0' }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-              💰 Costos
-            </Typography>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <TextField
-                label="Costo de Insumos Directos ($)"
-                type="number"
-                value={0}
-                disabled
-                helperText="Se calcula automáticamente"
-                inputProps={{ step: 0.01 }}
-              />
-
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5, mb: 1.5 }}>
               <TextField
                 label="Costo Indirecto ($)"
                 type="number"
                 value={costoIndirecto}
                 onChange={(e) => setCostoIndirecto(Number(e.target.value))}
-                helperText="Servicios, renta, etc."
                 inputProps={{ step: 0.01, min: 0 }}
+                margin="dense"
+                size="small"
               />
-
               <TextField
                 label="Mano de Obra ($)"
                 type="number"
                 value={manoObra}
                 onChange={(e) => setManoObra(Number(e.target.value))}
-                helperText="Sueldos, pagos por turno, etc."
                 inputProps={{ step: 0.01, min: 0 }}
-              />
-
-              <TextField
-                label="Costo Total ($)"
-                type="number"
-                value={(0 + costoIndirecto + manoObra).toFixed(2)}
-                disabled
-                helperText="Cálculo automático"
+                margin="dense"
+                size="small"
               />
             </Box>
+            <Typography variant="caption" sx={{ display: 'block', color: '#666', mb: 1.5 }}>
+              💵 Costo Directo: ${costoDirectoTotal.toFixed(2)} | Total: ${costoTotalReceta.toFixed(2)}
+            </Typography>
           </Box>
 
-          {/* Sección 5: Precio Sugerido */}
-          <Box sx={{ mb: 3, p: 2, backgroundColor: '#f0f4ff', borderRadius: 1, border: '1px solid #bbdefb' }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
-              🎯 Precio Sugerido
+          {/* Utilidad */}
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1.5 }}>
+              📊 Utilidad & Precio
             </Typography>
-
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <TextField
-                label="% Utilidad Deseada"
-                type="number"
-                value={porcentajeUtilidad}
-                onChange={(e) => setPorcentajeUtilidad(Number(e.target.value))}
-                inputProps={{ step: 1, min: 0, max: 300 }}
-              />
-
-              <TextField
-                label="Precio Sugerido ($)"
-                type="number"
-                value={((0 + costoIndirecto + manoObra) * (1 + porcentajeUtilidad / 100)).toFixed(2)}
-                disabled
-                helperText="Basado en costo total y utilidad"
-              />
+            <TextField
+              label="% Utilidad Deseada"
+              type="number"
+              value={porcentajeUtilidad}
+              onChange={(e) => setPorcentajeUtilidad(Number(e.target.value))}
+              inputProps={{ step: 1, min: 0, max: 300 }}
+              margin="dense"
+              size="small"
+              fullWidth
+              sx={{ mb: 1 }}
+            />
+            <Box sx={{ p: 1.5, backgroundColor: '#e3f2fd', borderRadius: 0.5 }}>
+              <Typography variant="body2" sx={{ fontWeight: '600', color: '#1565c0' }}>
+                💵 Precio Sugerido: ${precioSugerido.toFixed(2)}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#0d47a1' }}>
+                (${costoPorUnidad.toFixed(2)} por {unidadRendimiento})
+              </Typography>
             </Box>
-
-            <Typography variant="caption" sx={{ mt: 2, display: 'block', color: '#1976d2' }}>
-              💡 Con {porcentajeUtilidad}% de utilidad, el precio sugerido es: ${((0 + costoIndirecto + manoObra) * (1 + porcentajeUtilidad / 100)).toFixed(2)}
-            </Typography>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>

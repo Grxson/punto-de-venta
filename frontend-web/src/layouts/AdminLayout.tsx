@@ -1,7 +1,7 @@
                                                                                                       import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Typography, Button, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { Dashboard, Assessment, Inventory, AccountBalance, AttachMoney, PointOfSale, Menu as MenuIcon, Logout, Group, Restaurant, Blender, ShoppingCart, DeleteOutline } from '@mui/icons-material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLogout } from '../hooks/useLogout';
 
@@ -33,6 +33,11 @@ export default function AdminLayout() {
     }
     return location.pathname.startsWith(path);
   };
+
+  // Cerrar drawer automáticamente cuando cambia la ruta
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location.pathname]);
 
   return (
     <Box sx={{ display: 'flex', height: '100vh' }}>
@@ -79,6 +84,9 @@ export default function AdminLayout() {
       <Drawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        ModalProps={{
+          onBackdropClick: () => setDrawerOpen(false),
+        }}
         sx={{
           '& .MuiDrawer-paper': {
             width: 250,

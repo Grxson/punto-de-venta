@@ -48,6 +48,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSalesCache } from '../../hooks/useSalesCache';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
 import type { DateRangeValue } from '../../types/dateRange.types';
+import CrearIngredienteDesdeCompra from './components/CrearIngredienteDesdeCompra';
 import { limpiarNombreProducto, limpiarNombreVariante } from '../../utils/stringFormatters';
 
 interface VentaItem {
@@ -159,6 +160,9 @@ export default function AdminSales() {
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
   const [productoSeleccionadoParaVariante, setProductoSeleccionadoParaVariante] = useState<any | null>(null);
   const [indiceItemParaVariante, setIndiceItemParaVariante] = useState<number | null>(null);
+
+  // Estado para el modal de crear ingrediente desde compra
+  const [modalCrearIngredienteAbierto, setModalCrearIngredienteAbierto] = useState(false);
 
   useEffect(() => {
     loadVentas();
@@ -847,16 +851,27 @@ export default function AdminSales() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
         <Typography variant="h4">Gestión de Ventas</Typography>
-        <Button
-          variant="outlined"
-          startIcon={<Refresh />}
-          onClick={loadVentas}
-          sx={{ minHeight: '48px' }}
-        >
-          Actualizar
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<Add />}
+            onClick={() => setModalCrearIngredienteAbierto(true)}
+            sx={{ minHeight: '48px' }}
+          >
+            ✨ Crear Ingrediente
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={loadVentas}
+            sx={{ minHeight: '48px' }}
+          >
+            Actualizar
+          </Button>
+        </Stack>
       </Box>
 
       {/* Filtro de fechas + Paginador de Días */}
@@ -1778,6 +1793,19 @@ export default function AdminSales() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Modal para crear ingrediente desde compra */}
+      <CrearIngredienteDesdeCompra
+        open={modalCrearIngredienteAbierto}
+        onClose={() => setModalCrearIngredienteAbierto(false)}
+        onIngredienteCreado={(ingrediente: any) => {
+          setSnackbar({
+            open: true,
+            message: `✅ Ingrediente "${ingrediente.nombre}" creado exitosamente`,
+            tipo: 'success',
+          });
+        }}
+      />
     </Box>
   );
 }
