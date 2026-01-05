@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -44,27 +47,41 @@ public class VentaService {
 
     /**
      * ✅ SEGREGACIÓN: Obtener solo ventas de la sucursal del usuario actual
+     * 🔧 OPTIMIZACIÓN: Usa paginación en BD (no en memoria)
+     * 📅 FILTRO: Filtra por rango de fechas (por defecto, hoy)
      */
-    public List<VentaDTO> obtenerTodas(int page, int size) {
+    public List<VentaDTO> obtenerTodas(int page, int size, String desde, String hasta) {
         Long sucursalId = SucursalContext.getSucursalId();
-        // ✅ OPTIMIZACIÓN: Con paginación, el frontend puede cargar todas las ventas
-        // incrementalmente
-        // Traer las últimas N ventas (page 0 = más recientes, ordenadas por fecha
-        // descendente)
-        return ventaRepository.findBySucursalId(sucursalId).stream()
-                .sorted((v1, v2) -> v2.getFecha().compareTo(v1.getFecha()))
-                .skip((long) page * size)
-                .limit(size)
+
+        // Si no se especifican fechas, usar hoy (00:00:00 a 23:59:59)
+        LocalDateTime fechaDesde = desde != null
+                ? LocalDateTime.parse(desde + "T00:00:00")
+                : LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+
+        LocalDateTime fechaHasta = hasta != null
+                ? LocalDateTime.parse(hasta + "T23:59:59")
+                : LocalDateTime.now().withHour(23).withMinute(59).withSecond(59).withNano(999999999);
+
+        // Crear pageable con ordenamiento por fecha DESC (más recientes primero)
+        Pageable pageable = PageRequest.of(page, size);
+
+        // Usar paginación directa de BD con filtro de fechas (MUCHO más eficiente)
+        Page<Venta> pageResult = ventaRepository.findBySucursalIdAndFechaRangePageable(
+                sucursalId, fechaDesde, fechaHasta, pageable);
+
+        log.info("📄 Obtener página {} de ventas para sucursal {} (desde {} hasta {}). Total: {} registros",
+                page, sucursalId, fechaDesde, fechaHasta, pageResult.getTotalElements());
+
+        return pageResult.getContent().stream()
                 .map(this::toDTO)
                 .toList();
     }
 
     /**
-     * ⚠️ DEPRECADO: Mantener solo para compatibilidad backward
+     * Sobrecarga para compatibilidad (sin fechas, carga solo de hoy)
      */
-    @Deprecated(forRemoval = true)
-    public List<VentaDTO> obtenerTodas() {
-        return obtenerTodas(0, 100);
+    public List<VentaDTO> obtenerTodas(int page, int size) {
+        return obtenerTodas(page, size, null, null);
     }
 
     public VentaDTO obtenerPorId(Long id) {

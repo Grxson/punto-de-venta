@@ -35,6 +35,8 @@ import {
   ListItemText,
   TablePagination,
   Pagination,
+  LinearProgress,
+  SnackbarContent,
 } from '@mui/material';
 import { Cancel, Refresh, Edit, Add, Delete, Remove, ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { format } from 'date-fns';
@@ -154,21 +156,50 @@ export default function AdminSales() {
     message: '',
     tipo: 'info',
   });
+  // 🔄 Estado para notificación de carga
+  const [snackbarCarga, setSnackbarCarga] = useState<{ open: boolean; message: string }>({
+    open: false,
+    message: '',
+  });
   const [tooltipOpen, setTooltipOpen] = useState<{ [key: number]: boolean }>({});
   const tooltipRefs = useRef<{ [key: number]: HTMLElement | null }>({});
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
   const [productoSeleccionadoParaVariante, setProductoSeleccionadoParaVariante] = useState<any | null>(null);
   const [indiceItemParaVariante, setIndiceItemParaVariante] = useState<number | null>(null);
 
+  // Estado para el modal de crear ingrediente desde compra
+  const [modalCrearIngredienteAbierto, setModalCrearIngredienteAbierto] = useState(false);
+
+  // 🔒 Usar ref para evitar invocación duplicada del efecto en React 18 Strict Mode
+  const ventasInicializadasRef = useRef(false);
+  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
-    loadVentas();
+    // Solo cargar una vez al montar el componente (ignorar Strict Mode double-mount)
+    if (!ventasInicializadasRef.current) {
+      ventasInicializadasRef.current = true;
+      loadVentas();
+    }
   }, []);
 
   // Recargar ventas cuando cambia el rango de fechas
   useEffect(() => {
-    if (dateRange.desde && dateRange.hasta) {
-      loadVentas();
+    if (dateRange.desde && dateRange.hasta && ventasInicializadasRef.current) {
+      // Usar timeout para debounce y evitar múltiples cargas por cambios rápidos
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+      loadTimeoutRef.current = setTimeout(() => {
+        loadVentas();
+      }, 300);
     }
+
+    // Cleanup: limpiar timeout si el componente se desmonta
+    return () => {
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
   }, [dateRange.desde, dateRange.hasta]);
 
   // Auto-actualizar el monto del último pago cuando cambia el total de la venta
@@ -201,25 +232,71 @@ export default function AdminSales() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemsEditados.map(i => `${i.productoId}-${i.cantidad}-${i.subtotal}`).join(',')]); // Solo cuando cambian los items
 
+  // 🔄 Cerrar el snackbar de carga después de 2 segundos si fue exitoso
+  useEffect(() => {
+    if (!snackbarCarga.open) return;
+
+    if (snackbarCarga.message.includes('✅') || snackbarCarga.message.includes('ℹ️')) {
+      const timeoutId = setTimeout(() => {
+        setSnackbarCarga({ open: false, message: '' });
+      }, 2000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [snackbarCarga.open, snackbarCarga.message]);
+
   const loadVentas = async () => {
     try {
       setLoading(true);
       setError(null);
+      // 🔄 Mostrar notificación de carga
+      setSnackbarCarga({ open: true, message: '⏳ Cargando ventas...' });
 
-      // Usar el hook useSalesCache que ya tiene caching automático
-      await loadAllSales();
+      // ✅ Pasar rango de fechas al hook para filtrar en backend
+      const desde = dateRange.desde instanceof Date
+        ? dateRange.desde.toISOString().split('T')[0]
+        : dateRange.desde;
+      const hasta = dateRange.hasta instanceof Date
+        ? dateRange.hasta.toISOString().split('T')[0]
+        : dateRange.hasta;
 
-      if (allSales && allSales.length > 0) {
-        setVentas(allSales);
-        // Reiniciar a página 0 cuando se carguen nuevos datos
-        setPage(0);
+      console.log('📅 Cargando ventas con filtro de fechas:', { desde, hasta });
+
+      const ventasData = await loadAllSales({ desde, hasta });
+
+      // 🔄 Actualizar datos ANTES de quitar el spinner
+      // Esto asegura que no haya un render intermedio con tabla vacía
+      if (ventasData === null) {
+        // Error en la carga
+        setError('Error al cargar ventas del servidor');
+        setVentas([]);
+        setSnackbarCarga({ open: true, message: '❌ Error al cargar ventas' });
+        setLoading(false); // Quitar spinner después del error
       } else {
-        setError('Error al cargar ventas');
+        // Éxito - actualizar datos primero
+        setVentas(ventasData);
+        setPage(0);
+
+        // Aquí se ejecuta el batch de setState antes de quitar loading
+        // React agrupa estos en un solo render
+        setTimeout(() => {
+          // Esperar un microtask para asegurar que setVentas se procesó
+          setLoading(false); // Quitar spinner DESPUÉS de actualizar datos
+
+          if (ventasData.length === 0) {
+            console.log('ℹ️ No hay ventas en el rango de fechas seleccionado');
+            setSnackbarCarga({ open: true, message: 'ℹ️ No hay ventas en este período' });
+          } else {
+            console.log(`✅ Ventas cargadas: ${ventasData.length} registros`);
+            setSnackbarCarga({ open: true, message: `✅ ${ventasData.length} ventas cargadas` });
+          }
+        }, 0);
       }
     } catch (err: any) {
       setError(err.message || 'Error de conexión');
-    } finally {
+      setSnackbarCarga({ open: true, message: '❌ Error de conexión' });
       setLoading(false);
+      console.error('❌ Error en loadVentas:', err);
     }
   };
 
@@ -837,13 +914,7 @@ export default function AdminSales() {
     return 'default';
   };
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
+  // 🚀 Ya no cargamos la página completa, solo mostramos la tabla con spinner dentro
 
   return (
     <Box>
@@ -895,6 +966,43 @@ export default function AdminSales() {
         </Box>
       </DateRangeFilter>
 
+      {/* 🔄 Indicador de progreso mientras carga */}
+      {loading && (
+        <Box sx={{ mb: 2 }}>
+          <LinearProgress
+            sx={{
+              height: 6,
+              borderRadius: 2,
+              backgroundColor: 'rgba(25, 118, 210, 0.15)',
+              '& .MuiLinearProgress-bar': {
+                backgroundColor: '#1565c0',
+                borderRadius: 2,
+                boxShadow: '0 0 10px rgba(21, 101, 192, 0.6)',
+              }
+            }}
+          />
+          <Typography
+            variant="body2"
+            color="primary"
+            sx={{
+              mt: 1.5,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              fontWeight: 600,
+              animation: 'pulse 1.5s ease-in-out infinite',
+              '@keyframes pulse': {
+                '0%': { opacity: 0.7 },
+                '50%': { opacity: 1 },
+                '100%': { opacity: 0.7 },
+              }
+            }}
+          >
+            ⏳ Cargando ventas...
+          </Typography>
+        </Box>
+      )}
+
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
           {error}
@@ -911,184 +1019,219 @@ export default function AdminSales() {
         </Typography>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Fecha</TableCell>
-              <TableCell>Total</TableCell>
-              <TableCell>Estado</TableCell>
-              <TableCell>Items</TableCell>
-              <TableCell>Método Pago</TableCell>
-              <TableCell>Usuario</TableCell>
-              <TableCell align="right">Acciones</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {ventasMostradas.length === 0 ? (
+      {/* 🔄 Tabla con overlay de carga (no recarga la página completa) */}
+      <Box sx={{ position: 'relative', minHeight: loading && ventas.length === 0 ? '400px' : 'auto' }}>
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
               <TableRow>
-                <TableCell colSpan={8} align="center">
-                  <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
-                    No hay ventas en el rango de fechas seleccionado
-                  </Typography>
-                </TableCell>
+                <TableCell>ID</TableCell>
+                <TableCell>Fecha</TableCell>
+                <TableCell>Total</TableCell>
+                <TableCell>Estado</TableCell>
+                <TableCell>Items</TableCell>
+                <TableCell>Método Pago</TableCell>
+                <TableCell>Usuario</TableCell>
+                <TableCell align="right">Acciones</TableCell>
               </TableRow>
-            ) : (
-              ventasMostradas.map((venta) => (
-                <TableRow key={venta.id}>
-                  <TableCell>#{venta.id}</TableCell>
-                  <TableCell>
-                    {format(new Date(venta.fecha), "dd/MM/yyyy HH:mm", { locale: es })}
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="bold">
-                      ${venta.total.toFixed(2)}
+            </TableHead>
+            <TableBody>
+              {ventasMostradas.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} align="center">
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 3 }}>
+                      No hay ventas en el rango de fechas seleccionado
                     </Typography>
                   </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={venta.estado}
-                      color={getEstadoColor(venta.estado)}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ maxWidth: 250 }}>
-                      {venta.items.length === 1 ? (
-                        <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                          {venta.items[0].cantidad}x {limpiarNombreProducto(venta.items[0].productoNombre)}
-                        </Typography>
-                      ) : (
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 0.5 }}>
-                            {venta.items.length} productos:
-                          </Typography>
-                          {venta.items.slice(0, 2).map((item, index) => (
-                            <Typography key={index} variant="caption" display="block" color="text.secondary">
-                              {item.cantidad}x {limpiarNombreProducto(item.productoNombre)}
-                            </Typography>
-                          ))}
-                          {venta.items.length > 2 && (
-                            <>
-                              <Typography
-                                ref={(el) => {
-                                  if (el) {
-                                    tooltipRefs.current[venta.id] = el;
-                                  } else {
-                                    delete tooltipRefs.current[venta.id];
-                                  }
-                                }}
-                                variant="caption"
-                                color="primary"
-                                onClick={() => setTooltipOpen(prev => ({ ...prev, [venta.id]: !prev[venta.id] }))}
-                                sx={{
-                                  fontStyle: 'italic',
-                                  cursor: 'pointer',
-                                  textDecoration: 'underline',
-                                  '&:hover': { color: 'primary.dark' }
-                                }}
-                              >
-                                +{venta.items.length - 2} más... (ver todos)
-                              </Typography>
-                              {tooltipOpen[venta.id] && tooltipRefs.current[venta.id] && (
-                                <Popper
-                                  open={true}
-                                  anchorEl={tooltipRefs.current[venta.id]}
-                                  placement="right-start"
-                                  sx={{ zIndex: 1300 }}
-                                  disablePortal={false}
-                                  modifiers={[
-                                    {
-                                      name: 'preventOverflow',
-                                      enabled: true,
-                                      options: {
-                                        altAxis: true,
-                                        altBoundary: true,
-                                        tether: true,
-                                        rootBoundary: 'document',
-                                      },
-                                    },
-                                  ]}
-                                >
-                                  <ClickAwayListener onClickAway={() => setTooltipOpen(prev => ({ ...prev, [venta.id]: false }))}>
-                                    <Paper
-                                      elevation={8}
-                                      sx={{
-                                        p: 2,
-                                        maxWidth: 300,
-                                        ml: 1
-                                      }}
-                                    >
-                                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
-                                        Todos los productos:
-                                      </Typography>
-                                      {venta.items.map((item, index) => (
-                                        <Typography key={index} variant="body2" display="block" sx={{ mb: 0.5 }}>
-                                          {item.cantidad}x {limpiarNombreProducto(item.productoNombre)} - ${(item.precioUnitario * item.cantidad).toFixed(2)}
-                                        </Typography>
-                                      ))}
-                                    </Paper>
-                                  </ClickAwayListener>
-                                </Popper>
-                              )}
-                            </>
-                          )}
-                        </Box>
-                      )}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    {venta.pagos.map(p => p.metodoPagoNombre).join(', ')}
-                  </TableCell>
-                  <TableCell>{venta.usuarioNombre || 'N/A'}</TableCell>
-                  <TableCell align="right">
-                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                      {puedeEditar(venta) && (
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleAbrirDialogoEdicion(venta)}
-                          size="small"
-                          title="Editar venta"
-                        >
-                          <Edit />
-                        </IconButton>
-                      )}
-                      {puedeCancelar(venta) && (
-                        <IconButton
-                          color="error"
-                          onClick={() => handleAbrirDialogoCancelacion(venta)}
-                          size="small"
-                          title="Cancelar venta"
-                        >
-                          <Cancel />
-                        </IconButton>
-                      )}
-                      {usuario?.rol === 'ADMIN' && venta.estado !== 'CANCELADA' && (
-                        <IconButton
-                          color="error"
-                          onClick={() => handleAbrirDialogoEliminacion(venta)}
-                          size="small"
-                          title="Eliminar venta permanentemente (ADMIN)"
-                          sx={{
-                            backgroundColor: 'error.main',
-                            color: 'white',
-                            '&:hover': {
-                              backgroundColor: 'error.dark',
-                            }
-                          }}
-                        >
-                          <Delete />
-                        </IconButton>
-                      )}
-                    </Box>
-                  </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              ) : (
+                ventasMostradas.map((venta) => (
+                  <TableRow key={venta.id}>
+                    <TableCell>#{venta.id}</TableCell>
+                    <TableCell>
+                      {format(new Date(venta.fecha), "dd/MM/yyyy HH:mm", { locale: es })}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="bold">
+                        ${venta.total.toFixed(2)}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={venta.estado}
+                        color={getEstadoColor(venta.estado)}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ maxWidth: 250 }}>
+                        {venta.items.length === 1 ? (
+                          <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                            {venta.items[0].cantidad}x {limpiarNombreProducto(venta.items[0].productoNombre)}
+                          </Typography>
+                        ) : (
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 'medium', mb: 0.5 }}>
+                              {venta.items.length} productos:
+                            </Typography>
+                            {venta.items.slice(0, 2).map((item, index) => (
+                              <Typography key={index} variant="caption" display="block" color="text.secondary">
+                                {item.cantidad}x {limpiarNombreProducto(item.productoNombre)}
+                              </Typography>
+                            ))}
+                            {venta.items.length > 2 && (
+                              <>
+                                <Typography
+                                  ref={(el) => {
+                                    if (el) {
+                                      tooltipRefs.current[venta.id] = el;
+                                    } else {
+                                      delete tooltipRefs.current[venta.id];
+                                    }
+                                  }}
+                                  variant="caption"
+                                  color="primary"
+                                  onClick={() => setTooltipOpen(prev => ({ ...prev, [venta.id]: !prev[venta.id] }))}
+                                  sx={{
+                                    fontStyle: 'italic',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline',
+                                    '&:hover': { color: 'primary.dark' }
+                                  }}
+                                >
+                                  +{venta.items.length - 2} más... (ver todos)
+                                </Typography>
+                                {tooltipOpen[venta.id] && tooltipRefs.current[venta.id] && (
+                                  <Popper
+                                    open={true}
+                                    anchorEl={tooltipRefs.current[venta.id]}
+                                    placement="right-start"
+                                    sx={{ zIndex: 1300 }}
+                                    disablePortal={false}
+                                    modifiers={[
+                                      {
+                                        name: 'preventOverflow',
+                                        enabled: true,
+                                        options: {
+                                          altAxis: true,
+                                          altBoundary: true,
+                                          tether: true,
+                                          rootBoundary: 'document',
+                                        },
+                                      },
+                                    ]}
+                                  >
+                                    <ClickAwayListener onClickAway={() => setTooltipOpen(prev => ({ ...prev, [venta.id]: false }))}>
+                                      <Paper
+                                        elevation={8}
+                                        sx={{
+                                          p: 2,
+                                          maxWidth: 300,
+                                          ml: 1
+                                        }}
+                                      >
+                                        <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>
+                                          Todos los productos:
+                                        </Typography>
+                                        {venta.items.map((item, index) => (
+                                          <Typography key={index} variant="body2" display="block" sx={{ mb: 0.5 }}>
+                                            {item.cantidad}x {limpiarNombreProducto(item.productoNombre)} - ${(item.precioUnitario * item.cantidad).toFixed(2)}
+                                          </Typography>
+                                        ))}
+                                      </Paper>
+                                    </ClickAwayListener>
+                                  </Popper>
+                                )}
+                              </>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      {venta.pagos.map(p => p.metodoPagoNombre).join(', ')}
+                    </TableCell>
+                    <TableCell>{venta.usuarioNombre || 'N/A'}</TableCell>
+                    <TableCell align="right">
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                        {puedeEditar(venta) && (
+                          <IconButton
+                            color="primary"
+                            onClick={() => handleAbrirDialogoEdicion(venta)}
+                            size="small"
+                            title="Editar venta"
+                          >
+                            <Edit />
+                          </IconButton>
+                        )}
+                        {puedeCancelar(venta) && (
+                          <IconButton
+                            color="error"
+                            onClick={() => handleAbrirDialogoCancelacion(venta)}
+                            size="small"
+                            title="Cancelar venta"
+                          >
+                            <Cancel />
+                          </IconButton>
+                        )}
+                        {usuario?.rol === 'ADMIN' && venta.estado !== 'CANCELADA' && (
+                          <IconButton
+                            color="error"
+                            onClick={() => handleAbrirDialogoEliminacion(venta)}
+                            size="small"
+                            title="Eliminar venta permanentemente (ADMIN)"
+                            sx={{
+                              backgroundColor: 'error.main',
+                              color: 'white',
+                              '&:hover': {
+                                backgroundColor: 'error.dark',
+                              }
+                            }}
+                          >
+                            <Delete />
+                          </IconButton>
+                        )}
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        {/* 🔄 Overlay de carga (solo recarga la tabla, no la página) */}
+        {loading && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.85)',
+              backdropFilter: 'blur(2px)',
+              borderRadius: 1,
+              zIndex: 10,
+            }}
+          >
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <CircularProgress size={56} thickness={4} />
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="body1" fontWeight={600} color="primary" sx={{ mb: 0.5 }}>
+                  Cargando ventas...
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Esto puede tardar unos segundos
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        )}
+      </Box>
 
       {/* ✨ PAGINADOR: Solo mostrar si hay muchas ventas */}
       {ventasFiltradas.length > 15 && (
@@ -1778,6 +1921,43 @@ export default function AdminSales() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* 🔄 Snackbar para notificaciones de carga */}
+      <Snackbar
+        open={snackbarCarga.open}
+        autoHideDuration={snackbarCarga.message.includes('✅') ? 2000 : 4000}
+        onClose={() => setSnackbarCarga({ open: false, message: '' })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <SnackbarContent
+          message={snackbarCarga.message}
+          sx={{
+            backgroundColor: snackbarCarga.message.includes('❌')
+              ? 'error.main'
+              : snackbarCarga.message.includes('✅')
+                ? 'success.main'
+                : 'info.main',
+            color: 'white',
+            fontWeight: 500,
+            fontSize: '14px',
+            borderRadius: 1,
+            boxShadow: 3,
+          }}
+        />
+      </Snackbar>
+
+      {/* Modal para crear ingrediente desde compra */}
+      <CrearIngredienteDesdeCompra
+        open={modalCrearIngredienteAbierto}
+        onClose={() => setModalCrearIngredienteAbierto(false)}
+        onIngredienteCreado={(ingrediente: any) => {
+          setSnackbar({
+            open: true,
+            message: `✅ Ingrediente "${ingrediente.nombre}" creado exitosamente`,
+            tipo: 'success',
+          });
+        }}
+      />
     </Box>
   );
 }
