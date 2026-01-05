@@ -1,4 +1,4 @@
-                                                                                                      import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Box, AppBar, Toolbar, Typography, Button, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
 import { Dashboard, Assessment, Inventory, AccountBalance, AttachMoney, PointOfSale, Menu as MenuIcon, Logout, Group, Restaurant, Blender, ShoppingCart, DeleteOutline } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
@@ -6,19 +6,19 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLogout } from '../hooks/useLogout';
 
 const menuItems = [
-      { text: 'Dashboard', icon: <Dashboard />, path: '/admin' },
-      { text: 'Ventas', icon: <PointOfSale />, path: '/admin/sales' },
-      { text: 'Reportes', icon: <Assessment />, path: '/admin/reports' },
-      { text: 'Inventario', icon: <Inventory />, path: '/admin/inventory' },
-      { text: 'Categorías', icon: <Restaurant />, path: '/admin/categorias' },
-      { text: 'Ingredientes', icon: <Blender />, path: '/admin/ingredientes' },
-      { text: 'Recetas', icon: <Restaurant />, path: '/admin/recetas' },
-      { text: 'Compras', icon: <ShoppingCart />, path: '/admin/compras' },
-      { text: 'Mermas', icon: <DeleteOutline />, path: '/admin/mermas' },
-      { text: 'Finanzas', icon: <AccountBalance />, path: '/admin/finances' },
-      { text: 'Gastos', icon: <AttachMoney />, path: '/admin/expenses' },
-      { text: 'Usuarios', icon: <Group />, path: '/admin/usuarios' },
-    ];
+  { text: 'Dashboard', icon: <Dashboard />, path: '/admin' },
+  { text: 'Ventas', icon: <PointOfSale />, path: '/admin/sales' },
+  { text: 'Reportes', icon: <Assessment />, path: '/admin/reports' },
+  { text: 'Inventario', icon: <Inventory />, path: '/admin/inventory' },
+  { text: 'Categorías', icon: <Restaurant />, path: '/admin/categorias' },
+  { text: 'Ingredientes', icon: <Blender />, path: '/admin/ingredientes' },
+  { text: 'Recetas', icon: <Restaurant />, path: '/admin/recetas' },
+  { text: 'Compras', icon: <ShoppingCart />, path: '/admin/compras' },
+  { text: 'Mermas', icon: <DeleteOutline />, path: '/admin/mermas' },
+  { text: 'Finanzas', icon: <AccountBalance />, path: '/admin/finances' },
+  { text: 'Gastos', icon: <AttachMoney />, path: '/admin/expenses' },
+  { text: 'Usuarios', icon: <Group />, path: '/admin/usuarios' },
+];
 
 export default function AdminLayout() {
   const navigate = useNavigate();
@@ -85,7 +85,7 @@ export default function AdminLayout() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         ModalProps={{
-          onBackdropClick: () => setDrawerOpen(false),
+          onClose: () => setDrawerOpen(false),
         }}
         sx={{
           '& .MuiDrawer-paper': {

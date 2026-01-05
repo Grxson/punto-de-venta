@@ -190,8 +190,17 @@ class ApiService {
     } catch (error: any) {
       console.error(`❌ [${options.method || 'GET'}] ${url} - Error:`, error);
       
-      // Si es error de red y hay reintentos disponibles
-      if (attempt < this.retries && error.name === 'AbortError') {
+      // NO reintentar AbortError (solicitud cancelada intencionalmente)
+      if (error.name === 'AbortError') {
+        return {
+          success: false,
+          error: 'Solicitud cancelada (AbortError)',
+          statusCode: 0,
+        };
+      }
+
+      // Si es otro error de red y hay reintentos disponibles
+      if (attempt < this.retries) {
         console.log(`Reintento ${attempt}/${this.retries} para ${endpoint}`);
         await this.delay(1000 * attempt); // Backoff exponencial
         return this.requestWithRetry<T>(endpoint, options, attempt + 1);

@@ -31,11 +31,13 @@ public class VentaController {
     private final VentaService ventaService;
 
     @GetMapping
-    @Operation(summary = "Obtener todas las ventas", description = "Soporta paginación. Por defecto retorna últimas 50 ventas. Parámetros: page (0-indexed), size (1-500)")
+    @Operation(summary = "Obtener ventas con paginación y filtro de fechas", description = "Por defecto retorna ventas de hoy. Parámetros: page (0-indexed), size (1-500), desde (opcional, formato: yyyy-MM-dd), hasta (opcional)")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
     public ResponseEntity<List<VentaDTO>> obtenerTodas(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "50") int size) {
+            @RequestParam(name = "size", defaultValue = "50") int size,
+            @RequestParam(name = "desde", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String desde,
+            @RequestParam(name = "hasta", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) String hasta) {
         // Validar parámetros
         if (page < 0)
             page = 0;
@@ -43,7 +45,7 @@ public class VentaController {
             size = 1;
         if (size > 500)
             size = 500;
-        return ResponseEntity.ok(ventaService.obtenerTodas(page, size));
+        return ResponseEntity.ok(ventaService.obtenerTodas(page, size, desde, hasta));
     }
 
     @GetMapping("/{id}")

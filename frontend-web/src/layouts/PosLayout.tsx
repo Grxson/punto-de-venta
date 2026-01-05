@@ -75,7 +75,7 @@ export default function PosLayout() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         ModalProps={{
-          onBackdropClick: () => setDrawerOpen(false),
+          onClose: () => setDrawerOpen(false),
         }}
         sx={{
           '& .MuiDrawer-paper': {
