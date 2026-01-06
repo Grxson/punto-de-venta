@@ -153,22 +153,30 @@ class ApiService {
         
         // Si es 401, el token expiró o es inválido
         if (response.status === 401) {
-          console.warn('🔓 Sesión expirada, limpiando datos...');
+          console.warn('🔓 [API] Sesión expirada (401), limpiando datos y redirigiendo...');
           
           // Limpiar autenticación
           this.clearAuthToken();
           localStorage.removeItem('auth_usuario');
           localStorage.removeItem('auth_sucursal');
           
-          // Mostrar mensaje de sesión expirada
+          // Detener reintentos para requests de autenticación
+          if (endpoint.includes('/auth/')) {
+            return {
+              success: false,
+              error: 'Autenticación fallida',
+              statusCode: response.status,
+              data,
+            };
+          }
+          
+          // Para otros requests: redirigir una sola vez
           if (typeof window !== 'undefined') {
-            // Guardar mensaje en sessionStorage para mostrarlo en login
-            sessionStorage.setItem('sessionExpiredMessage', 'Tu sesión ha caducado. Por favor inicia sesión nuevamente.');
-            
-            // Redirigir a login
-            setTimeout(() => {
-              window.location.href = '/login';
-            }, 100);
+            // Verificar si ya estamos en login para evitar redirecciones recursivas
+            if (window.location.pathname !== '/login') {
+              console.log('   📍 Redirigiendo a /login...');
+              window.location.href = '/login?expired=true';
+            }
           }
         }
 

@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...usuarioData,
           rol: normalizarRol(usuarioData), // Usar función auxiliar
         };
-        
+
         // Cargar sucursal
         let sucursalData: Sucursal | null = null;
         if (storedSucursal) {
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             sucursalData = null;
           }
         }
-        
+
         // Si no hay sucursal guardada, crear una basada en el usuario
         if (!sucursalData) {
           console.log('📍 Creando sucursal basada en usuario');
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             activa: true,
           };
         }
-        
+
         setToken(storedToken);
         setUsuario(usuarioNormalizado);
         setSucursal(sucursalData);
@@ -123,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (username: string, password: string) => {
     try {
       console.log('🔓 AuthContext: Iniciando login para', username);
-      
+
       const response = await apiService.post(
         API_ENDPOINTS.LOGIN,
         { username, password },
@@ -133,20 +133,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.success && response.data) {
         // El backend retorna: { token, usuario, mensaje }
         const { token: newToken, usuario: newUsuario } = response.data as { token: string; usuario: any; mensaje?: string };
-        
+
         console.log('✅ AuthContext: Login exitoso, token recibido');
         console.log('   Token length:', newToken?.length);
         console.log('   Usuario:', newUsuario?.username);
         console.log('   Usuario object:', newUsuario);
-        
+
         // Normalizar el rol: usar función auxiliar
         const usuarioNormalizado: Usuario = {
           ...newUsuario,
           rol: normalizarRol(newUsuario),
         };
-        
+
         console.log('✅ AuthContext: Usuario normalizado:', usuarioNormalizado);
-        
+
         // Crear sucursal basada en el sucursalId del usuario
         const sucursalId = newUsuario.sucursalId || newUsuario.idSucursal || 1;
         const sucursalData: Sucursal = {
@@ -154,22 +154,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           nombre: `Sucursal ${sucursalId}`,
           activa: true,
         };
-        
+
         console.log(`   📍 Sucursal: ID=${sucursalData.id}, nombre=${sucursalData.nombre}`);
-        
+
         // Guardar en estado
         setToken(newToken);
         setUsuario(usuarioNormalizado);
         setSucursal(sucursalData);
-        
+
         // Guardar en localStorage (con rol normalizado)
         localStorage.setItem('auth_token', newToken);
         localStorage.setItem('auth_usuario', JSON.stringify(usuarioNormalizado));
         localStorage.setItem('auth_sucursal', JSON.stringify(sucursalData));
-        
+
         // Configurar token en apiService
         apiService.setAuthToken(newToken);
-        
+
         console.log('✅ AuthContext: Token guardado en localStorage y apiService');
         console.log('   localStorage.auth_token:', localStorage.getItem('auth_token')?.substring(0, 20) + '...');
       } else {
@@ -183,6 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    console.log('🚪 AuthContext: Ejecutando logout');
     setToken(null);
     setUsuario(null);
     setSucursal(null);
@@ -190,6 +191,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('auth_usuario');
     localStorage.removeItem('auth_sucursal');
     apiService.clearAuthToken();
+    // Redirigir al login después de limpiar el estado
+    window.location.href = '/login';
+  };
+
+  // Función para validar si el token sigue siendo válido
+  const isTokenValid = (): boolean => {
+    if (!token) return false;
+    try {
+      // Un token JWT simple tiene 3 partes separadas por puntos
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        console.warn('⚠️ Token inválido (formato incorrecto)');
+        return false;
+      }
+      // Aquí podrías decodificar el JWT y verificar expiration si necesitas
+      return true;
+    } catch (error) {
+      console.error('❌ Error validando token:', error);
+      return false;
+    }
   };
 
   return (
@@ -198,7 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         usuario,
         sucursal,
         token,
-        isAuthenticated: !!token && !!usuario,
+        isAuthenticated: !!token && !!usuario && isTokenValid(),
         login,
         logout,
         loading,
