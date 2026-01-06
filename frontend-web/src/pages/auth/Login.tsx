@@ -16,17 +16,25 @@ export default function Login() {
 
   // Si ya está autenticado, redirigir según rol
   useEffect(() => {
-    // Buscar mensaje de sesión expirada
+    // Buscar mensaje de sesión expirada en URL params
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('expired')) {
+      setSessionExpiredMessage('Tu sesión ha caducado. Por favor inicia sesión nuevamente.');
+      // Limpiar el parámetro de URL
+      window.history.replaceState({}, document.title, '/login');
+    }
+
+    // Buscar mensaje de sesión expirada en sessionStorage (legacy)
     const expiredMsg = sessionStorage.getItem('sessionExpiredMessage');
     if (expiredMsg) {
       setSessionExpiredMessage(expiredMsg);
       sessionStorage.removeItem('sessionExpiredMessage');
     }
-    
+
     if (isAuthenticated && usuario) {
       // Obtener el rol (puede venir como 'rol' o 'rolNombre')
       const rol = usuario.rol || usuario.rolNombre || '';
-      
+
       // Detectar rol y redirigir automáticamente
       if (rol === 'ADMIN' || rol === 'GERENTE') {
         navigate('/admin', { replace: true });
@@ -44,7 +52,7 @@ export default function Login() {
     try {
       // Hacer login usando el contexto (actualiza el estado automáticamente)
       await login(username, password);
-      
+
       // Esperar un momento para que el estado se actualice
       // El useEffect también manejará la redirección, pero hacemos esto como respaldo
       setTimeout(() => {
@@ -53,7 +61,7 @@ export default function Login() {
           const usuarioData = JSON.parse(storedUsuario);
           // Obtener el rol (puede venir como 'rol' o 'rolNombre')
           const rol = usuarioData.rol || usuarioData.rolNombre || '';
-          
+
           // Redirigir según el rol del usuario
           if (rol === 'ADMIN' || rol === 'GERENTE') {
             navigate('/admin', { replace: true });

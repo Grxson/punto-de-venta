@@ -12,6 +12,7 @@ import { userPreferencesService } from './services/userPreferences.service';
 // Components
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Layouts
 import PosLayout from './layouts/PosLayout';
@@ -200,7 +201,7 @@ function AppRoutes() {
     <>
       <RouteTracker />
       <RouteRestorer />
-      
+
       {/* OPTIMIZACIÓN PASO 2.1: Suspense wrapper para lazy-loaded routes */}
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
@@ -252,19 +253,21 @@ function AppRoutes() {
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <CartProvider>
-          <DashboardProvider>
-            <BrowserRouter>
-              <WebSocketHandlers />
-              <AppRoutes />
-            </BrowserRouter>
-          </DashboardProvider>
-        </CartProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <AuthProvider>
+          <CartProvider>
+            <DashboardProvider>
+              <BrowserRouter>
+                <WebSocketHandlers />
+                <AppRoutes />
+              </BrowserRouter>
+            </DashboardProvider>
+          </CartProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 
