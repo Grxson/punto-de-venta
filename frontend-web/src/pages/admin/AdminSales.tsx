@@ -50,7 +50,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSalesCache } from '../../hooks/useSalesCache';
 import DateRangeFilter from '../../components/common/DateRangeFilter';
 import type { DateRangeValue } from '../../types/dateRange.types';
-import CrearIngredienteDesdeCompra from './components/CrearIngredienteDesdeCompra';
 import { limpiarNombreProducto, limpiarNombreVariante } from '../../utils/stringFormatters';
 
 interface VentaItem {
@@ -168,12 +167,9 @@ export default function AdminSales() {
   const [productoSeleccionadoParaVariante, setProductoSeleccionadoParaVariante] = useState<any | null>(null);
   const [indiceItemParaVariante, setIndiceItemParaVariante] = useState<number | null>(null);
 
-  // Estado para el modal de crear ingrediente desde compra
-  const [modalCrearIngredienteAbierto, setModalCrearIngredienteAbierto] = useState(false);
-
   // 🔒 Usar ref para evitar invocación duplicada del efecto en React 18 Strict Mode
   const ventasInicializadasRef = useRef(false);
-  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Solo cargar una vez al montar el componente (ignorar Strict Mode double-mount)
@@ -235,7 +231,7 @@ export default function AdminSales() {
 
   // 🔄 Cerrar el snackbar de carga después de 2 segundos si fue exitoso
   useEffect(() => {
-    if (!snackbarCarga.open) return;
+    if (!snackbarCarga.open) return undefined;
 
     if (snackbarCarga.message.includes('✅') || snackbarCarga.message.includes('ℹ️')) {
       const timeoutId = setTimeout(() => {
@@ -244,6 +240,7 @@ export default function AdminSales() {
 
       return () => clearTimeout(timeoutId);
     }
+    return undefined;
   }, [snackbarCarga.open, snackbarCarga.message]);
 
   const loadVentas = async () => {
@@ -254,12 +251,8 @@ export default function AdminSales() {
       setSnackbarCarga({ open: true, message: '⏳ Cargando ventas...' });
 
       // ✅ Pasar rango de fechas al hook para filtrar en backend
-      const desde = dateRange.desde instanceof Date
-        ? dateRange.desde.toISOString().split('T')[0]
-        : dateRange.desde;
-      const hasta = dateRange.hasta instanceof Date
-        ? dateRange.hasta.toISOString().split('T')[0]
-        : dateRange.hasta;
+      const desde = dateRange.desde || '';
+      const hasta = dateRange.hasta || '';
 
       console.log('📅 Cargando ventas con filtro de fechas:', { desde, hasta });
 
@@ -922,15 +915,6 @@ export default function AdminSales() {
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, gap: 2 }}>
         <Typography variant="h4">Gestión de Ventas</Typography>
         <Stack direction="row" spacing={1}>
-          <Button
-            variant="contained"
-            color="success"
-            startIcon={<Add />}
-            onClick={() => setModalCrearIngredienteAbierto(true)}
-            sx={{ minHeight: '48px' }}
-          >
-            ✨ Crear Ingrediente
-          </Button>
           <Button
             variant="outlined"
             startIcon={<Refresh />}
@@ -1957,19 +1941,6 @@ export default function AdminSales() {
           }}
         />
       </Snackbar>
-
-      {/* Modal para crear ingrediente desde compra */}
-      <CrearIngredienteDesdeCompra
-        open={modalCrearIngredienteAbierto}
-        onClose={() => setModalCrearIngredienteAbierto(false)}
-        onIngredienteCreado={(ingrediente: any) => {
-          setSnackbar({
-            open: true,
-            message: `✅ Ingrediente "${ingrediente.nombre}" creado exitosamente`,
-            tipo: 'success',
-          });
-        }}
-      />
     </Box>
   );
 }
