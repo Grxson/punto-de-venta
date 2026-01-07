@@ -168,12 +168,17 @@ export default function PosSales() {
       setError(null);
 
       // Usar el hook useSalesCache que ya tiene caching automático
-      await loadAllSales();
+      const ventasData = await loadAllSales();
 
-      if (allSales && allSales.length > 0) {
+      if (ventasData === null) {
+        // Error en la carga
+        setError('Error al cargar ventas del servidor');
+        setVentas([]);
+        setLoading(false);
+      } else if (ventasData && ventasData.length > 0) {
         // Filtrar solo ventas recientes (últimas 24 horas) para empleados
         const ahora = new Date();
-        const ventasRecientes = allSales.filter((venta: Venta) => {
+        const ventasRecientes = ventasData.filter((venta: Venta) => {
           const fechaVenta = new Date(venta.fecha);
           const horasDiferencia = (ahora.getTime() - fechaVenta.getTime()) / (1000 * 60 * 60);
           return horasDiferencia <= 24;
@@ -181,12 +186,18 @@ export default function PosSales() {
         setVentas(ventasRecientes);
         // Reiniciar a página 0 cuando se carguen nuevos datos
         setPage(0);
+
+        // Esperar un microtask para asegurar que setVentas se procesó
+        setTimeout(() => {
+          setLoading(false); // Quitar spinner DESPUÉS de actualizar datos
+        }, 0);
       } else {
-        setError('Error al cargar ventas');
+        // Sin errores pero sin datos
+        setVentas([]);
+        setLoading(false);
       }
     } catch (err: any) {
       setError(err.message || 'Error de conexión');
-    } finally {
       setLoading(false);
     }
   };
