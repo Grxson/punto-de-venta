@@ -1,6 +1,5 @@
 package com.puntodeventa.backend.model;
 
-import com.puntodeventa.backend.config.BooleanToIntegerConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -8,9 +7,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcType;
-import org.hibernate.dialect.PostgreSQLDialect;
-import org.hibernate.type.descriptor.jdbc.BooleanJdbcType;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
@@ -49,8 +47,8 @@ public class ProductoAtributo {
     @Enumerated(EnumType.STRING)
     private TipoAtributo tipo;
 
-    @Column(nullable = false)
-    @Convert(converter = BooleanToIntegerConverter.class)
+    @JdbcTypeCode(SqlTypes.BOOLEAN)
+    @Column(nullable = false, columnDefinition = "BOOLEAN")
     @Builder.Default
     private Boolean requerido = false;
 
@@ -58,8 +56,8 @@ public class ProductoAtributo {
     @Builder.Default
     private Integer orden = 0;
 
-    @Column(nullable = false)
-    @Convert(converter = BooleanToIntegerConverter.class)
+    @JdbcTypeCode(SqlTypes.BOOLEAN)
+    @Column(nullable = false, columnDefinition = "BOOLEAN")
     @Builder.Default
     private Boolean activo = true;
 

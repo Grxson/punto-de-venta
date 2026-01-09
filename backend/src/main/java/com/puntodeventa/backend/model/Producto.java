@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.model;
-import com.puntodeventa.backend.config.BooleanToIntegerConverter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -54,13 +55,13 @@ public class Producto {
     @Column(length = 50)
     private String sku;
     
+    @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(nullable = false)
-    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activo = true;
     
+    @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(name = "disponible_en_menu", nullable = false)
-    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean disponibleEnMenu = true;
 

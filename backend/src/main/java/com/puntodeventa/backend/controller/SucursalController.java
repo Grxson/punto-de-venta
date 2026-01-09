@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/sucursales")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'GERENTE', 'CAJERO', 'MESERO')")
 public class SucursalController {
 
     private final SucursalRepository sucursalRepository;
@@ -66,6 +66,7 @@ public class SucursalController {
      * Obtener sucursal por ID
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE', 'CAJERO', 'MESERO')")
     public ResponseEntity<SucursalDTO> obtenerPorId(@PathVariable Long id) {
         log.info("Obteniendo sucursal con ID: {}", id);
         return sucursalRepository.findById(id)

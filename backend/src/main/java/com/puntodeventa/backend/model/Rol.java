@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.model;
-import com.puntodeventa.backend.config.BooleanToIntegerConverter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -19,8 +20,8 @@ public class Rol {
     @Column(length = 255)
     private String descripcion;
 
+    @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
-    @Convert(converter = BooleanToIntegerConverter.class)
     private Boolean activo = true;
 
     @ManyToMany(fetch = FetchType.EAGER)

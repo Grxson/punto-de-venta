@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.model;
-import com.puntodeventa.backend.config.BooleanToIntegerConverter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -27,8 +28,8 @@ public class Sucursal {
     @Column(length = 100)
     private String email;
 
-    @Column(name = "activo", nullable = false, columnDefinition = "SMALLINT DEFAULT 1")
-    @Convert(converter = BooleanToIntegerConverter.class)
+    @JdbcTypeCode(SqlTypes.BOOLEAN)
+    @Column(name = "activo", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean activo = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)

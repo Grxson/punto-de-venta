@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.model;
-import com.puntodeventa.backend.config.BooleanToIntegerConverter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -38,8 +39,8 @@ public class Proveedor {
     @Column(length = 100)
     private String email;
     
+    @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
-    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activo = true;
 }

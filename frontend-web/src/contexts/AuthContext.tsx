@@ -24,7 +24,7 @@ interface Sucursal {
   direccion?: string;
   email?: string;
   telefono?: string;
-  activa: boolean;
+  activo: boolean;
 }
 
 interface AuthContextType {
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               sucursalData = {
                 id: usuarioNormalizado.sucursalId || usuarioNormalizado.idSucursal || 1,
                 nombre: `Sucursal ${usuarioNormalizado.sucursalId || usuarioNormalizado.idSucursal || 1}`,
-                activa: true,
+                activo: true,
               };
             }
           } catch (e) {
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           sucursalData = {
             id: usuarioNormalizado.sucursalId || usuarioNormalizado.idSucursal || 1,
             nombre: `Sucursal ${usuarioNormalizado.sucursalId || usuarioNormalizado.idSucursal || 1}`,
-            activa: true,
+            activo: true,
           };
         }
 
@@ -147,15 +147,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         console.log('✅ AuthContext: Usuario normalizado:', usuarioNormalizado);
 
-        // Crear sucursal basada en el sucursalId del usuario
+        // Cargar sucursal del servidor basado en el sucursalId del usuario
         const sucursalId = newUsuario.sucursalId || newUsuario.idSucursal || 1;
-        const sucursalData: Sucursal = {
-          id: sucursalId,
-          nombre: `Sucursal ${sucursalId}`,
-          activa: true,
-        };
-
-        console.log(`   📍 Sucursal: ID=${sucursalData.id}, nombre=${sucursalData.nombre}`);
+        let sucursalData: Sucursal;
+        
+        try {
+          // Setear token temporalmente para poder hacer la solicitud
+          apiService.setAuthToken(newToken);
+          const sucursalResponse = await apiService.get(`/v1/sucursales/${sucursalId}`);
+          
+          if (sucursalResponse.success && sucursalResponse.data) {
+            sucursalData = sucursalResponse.data;
+            console.log(`   📍 Sucursal cargada del servidor: ID=${sucursalData.id}, nombre=${sucursalData.nombre}`);
+          } else {
+            throw new Error('No se encontró la sucursal');
+          }
+        } catch (err) {
+          console.warn(`⚠️ No se pudo cargar sucursal del servidor, usando datos locales`);
+          // Fallback: crear sucursal local
+          sucursalData = {
+            id: sucursalId,
+            nombre: `Sucursal ${sucursalId}`,
+            activo: true,
+          };
+        }
 
         // Guardar en estado
         setToken(newToken);

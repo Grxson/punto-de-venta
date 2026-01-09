@@ -1,5 +1,6 @@
 package com.puntodeventa.backend.model;
-import com.puntodeventa.backend.config.BooleanToIntegerConverter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -48,8 +49,8 @@ public class CategoriaGasto {
     @Column(precision = 12, scale = 2)
     private BigDecimal presupuestoMensual; // Opcional: presupuesto mensual para esta categoría
 
+    @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(nullable = false)
-    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activo = true;
 

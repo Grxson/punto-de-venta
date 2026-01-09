@@ -20,7 +20,7 @@ public interface CategoriaSubcategoriaRepository extends JpaRepository<Categoria
      * Obtener todas las subcategorías de una categoría, ordenadas por orden.
      */
     @Query(value = "SELECT * FROM categoria_subcategorias cs " +
-            "WHERE cs.categoria_id = :categoriaId AND cs.activa = 1 " +
+            "WHERE cs.categoria_id = :categoriaId AND cs.activa = true " +
             "ORDER BY cs.orden ASC, cs.nombre ASC", nativeQuery = true)
     List<CategoriaSubcategoria> findByCategoriaIdOrderByOrden(@Param("categoriaId") Long categoriaId);
 
