@@ -1,5 +1,7 @@
 package com.puntodeventa.backend.model;
-import com.puntodeventa.backend.config.BooleanToIntegerConverter;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -18,11 +20,11 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "categorias_gasto", indexes = {
-    @Index(name = "idx_cat_gasto_sucursal", columnList = "sucursal_id"),
-    @Index(name = "idx_cat_gasto_activo", columnList = "activo"),
-    @Index(name = "idx_cat_gasto_nombre", columnList = "nombre")
+        @Index(name = "idx_cat_gasto_sucursal", columnList = "sucursal_id"),
+        @Index(name = "idx_cat_gasto_activo", columnList = "activo"),
+        @Index(name = "idx_cat_gasto_nombre", columnList = "nombre")
 }, uniqueConstraints = {
-    @UniqueConstraint(name = "unique_cat_gasto_nombre_sucursal", columnNames = {"sucursal_id", "nombre"})
+        @UniqueConstraint(name = "unique_cat_gasto_nombre_sucursal", columnNames = { "sucursal_id", "nombre" })
 })
 @Data
 @NoArgsConstructor
@@ -48,8 +50,8 @@ public class CategoriaGasto {
     @Column(precision = 12, scale = 2)
     private BigDecimal presupuestoMensual; // Opcional: presupuesto mensual para esta categoría
 
+    @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(nullable = false)
-    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activo = true;
 
@@ -60,5 +62,3 @@ public class CategoriaGasto {
     @Column
     private LocalDateTime updatedAt;
 }
-
-

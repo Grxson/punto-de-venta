@@ -1,6 +1,7 @@
 package com.puntodeventa.backend.model;
 
-import com.puntodeventa.backend.config.BooleanToIntegerConverter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
@@ -54,8 +55,8 @@ public class CategoriaSubcategoria {
     @Builder.Default
     private Integer orden = 0;
 
+    @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(nullable = false)
-    @Convert(converter = BooleanToIntegerConverter.class)
     @Builder.Default
     private Boolean activa = true;
 
