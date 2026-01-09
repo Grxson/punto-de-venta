@@ -1,4 +1,5 @@
 package com.puntodeventa.backend.model;
+
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -20,25 +21,25 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class Proveedor {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @NotBlank(message = "El nombre del proveedor es obligatorio")
     @Column(nullable = false, length = 200)
     private String nombre;
-    
+
     @Column(length = 200)
     private String contacto;
-    
+
     @Column(length = 20)
     private String telefono;
-    
+
     @Email(message = "El email debe ser válido")
     @Column(length = 100)
     private String email;
-    
+
     @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     @Builder.Default

@@ -1,4 +1,5 @@
 package com.puntodeventa.backend.model;
+
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -24,49 +25,50 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class Producto {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @NotBlank(message = "El nombre del producto es obligatorio")
     @Column(nullable = false, length = 200)
     private String nombre;
-    
+
     @Column(columnDefinition = "TEXT")
     private String descripcion;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoria_id")
     private CategoriaProducto categoria;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sucursal_id")
     private Sucursal sucursal;
-    
+
     @NotNull(message = "El precio es obligatorio")
     @PositiveOrZero(message = "El precio debe ser positivo o cero")
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal precio;
-    
+
     @Column(name = "costo_estimado", precision = 12, scale = 4)
     private BigDecimal costoEstimado;
-    
+
     @Column(length = 50)
     private String sku;
-    
+
     @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(nullable = false)
     @Builder.Default
     private Boolean activo = true;
-    
+
     @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(name = "disponible_en_menu", nullable = false)
     @Builder.Default
     private Boolean disponibleEnMenu = true;
 
     /**
-     * Si este producto es una variante de otro producto, este campo apunta al producto base.
+     * Si este producto es una variante de otro producto, este campo apunta al
+     * producto base.
      * Si es null, este producto es un producto base o un producto sin variantes.
      */
     @ManyToOne(fetch = FetchType.EAGER)
@@ -81,7 +83,8 @@ public class Producto {
     private List<Producto> variantes;
 
     /**
-     * Nombre de la variante (ej: "1 Litro", "500ml", "Bolsa 250ml", "Grande", "Mediano", "Chico").
+     * Nombre de la variante (ej: "1 Litro", "500ml", "Bolsa 250ml", "Grande",
+     * "Mediano", "Chico").
      * Solo aplica si producto_base_id no es null.
      */
     @Column(name = "nombre_variante", length = 100)
@@ -93,19 +96,20 @@ public class Producto {
      */
     @Column(name = "orden_variante")
     private Integer ordenVariante;
-    
+
     // ============================================================
     // Relaciones para variantes multi-paso
     // ============================================================
-    
+
     /**
      * Tamanos disponibles para este producto/variante
      */
     @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductoVarianteTamano> tamañosDisponibles;
-    
+
     /**
-     * Atributos disponibles para este producto/variante (ingredientes, salsas, etc.)
+     * Atributos disponibles para este producto/variante (ingredientes, salsas,
+     * etc.)
      */
     @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductoAtributo> atributos;
