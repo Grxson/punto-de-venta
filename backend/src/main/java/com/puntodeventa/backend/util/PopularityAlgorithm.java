@@ -23,12 +23,13 @@ public class PopularityAlgorithm {
      * Calcula el score de popularidad para un producto.
      * El score es un valor normalizado entre 0 y 100.
      * 
-     * @param productoId ID del producto
+     * @param productoId      ID del producto
      * @param frecuenciaVenta Número de veces que se vendió
-     * @param cantidadTotal Cantidad total vendida
-     * @param ingresoTotal Ingreso total generado
-     * @param ultimaVenta Fecha de última venta
-     * @param tendencia Tendencia en pendiente (ventas recientemente vs antiguas)
+     * @param cantidadTotal   Cantidad total vendida
+     * @param ingresoTotal    Ingreso total generado
+     * @param ultimaVenta     Fecha de última venta
+     * @param tendencia       Tendencia en pendiente (ventas recientemente vs
+     *                        antiguas)
      * @return Score de popularidad (0-100)
      */
     public static BigDecimal calcularScore(
@@ -93,7 +94,7 @@ public class PopularityAlgorithm {
      * Negativa: tendencia a la baja
      * 
      * @param ventasRecientes Cantidad vendida en las últimas 7 días
-     * @param ventasAntiguas Cantidad vendida en los 7 días antes de eso
+     * @param ventasAntiguas  Cantidad vendida en los 7 días antes de eso
      * @return Tendencia como pendiente (-1 a 1)
      */
     public static double calcularTendencia(long ventasRecientes, long ventasAntiguas) {
@@ -124,10 +125,11 @@ public class PopularityAlgorithm {
     }
 
     /**
-     * Distribuye productos en una grilla (grid) de izquierda a derecha, arriba hacia abajo.
+     * Distribuye productos en una grilla (grid) de izquierda a derecha, arriba
+     * hacia abajo.
      * Sigue el patrón: → → → ↓ → → →
      * 
-     * @param productos Lista ordenada de productos por popularidad
+     * @param productos    Lista ordenada de productos por popularidad
      * @param columnasGrid Número de columnas en la grilla
      * @return Mapa con posiciones: {producto_id -> {row, col}}
      */
@@ -151,7 +153,7 @@ public class PopularityAlgorithm {
      * Agrupa productos por categoría y distribuye cada grupo en su propia grilla.
      * Útil para menús categorizados.
      * 
-     * @param productos Lista ordenada de productos
+     * @param productos    Lista ordenada de productos
      * @param columnasGrid Columnas por categoría
      * @return Mapa: {categoria -> {producto_id -> posición}}
      */
@@ -206,8 +208,7 @@ public class PopularityAlgorithm {
                 productoActual.cantidadVendida() + 1,
                 productoActual.ingresoTotal(),
                 ahoraMismo,
-                nuevoScore
-        );
+                nuevoScore);
     }
 
     /**

@@ -82,14 +82,14 @@ public class MenuPopularidadService {
                 .ordenarPorPopularidad(productosConPopularidad);
 
         // Distribuir en grilla
-        Map<Long, ?> posiciones;
+        Object posiciones;
         if (porCategoria) {
             // Por categoría: Map<String, Map<Long, GridPosition>>
-            posiciones = (Map<Long, ?>) (Object) PopularityAlgorithm.distribuirPorCategoria(productosOrdenados,
+            posiciones = PopularityAlgorithm.distribuirPorCategoria(productosOrdenados,
                     columnasGrid);
         } else {
             // Simple: Map<Long, GridPosition>
-            posiciones = (Map<Long, ?>) (Object) PopularityAlgorithm.distribuirEnGrid(productosOrdenados, columnasGrid);
+            posiciones = PopularityAlgorithm.distribuirEnGrid(productosOrdenados, columnasGrid);
         }
 
         return new MenuGrillaDTO(
@@ -201,8 +201,8 @@ public class MenuPopularidadService {
     @Async("asyncExecutor")
     @Transactional(readOnly = true)
     public CompletableFuture<MenuGrillaDTO> obtenerMenuOrdenadoAsync(
-            int columnasGrid, 
-            int diasAnalizar, 
+            int columnasGrid,
+            int diasAnalizar,
             boolean porCategoria) {
         try {
             MenuGrillaDTO resultado = obtenerMenuOrdenado(columnasGrid, diasAnalizar, porCategoria);
@@ -215,14 +215,14 @@ public class MenuPopularidadService {
     /**
      * OPTIMIZACIÓN PASO 1.6: Obtener top productos de forma asincrónica.
      * 
-     * @param limite Número máximo de productos
+     * @param limite       Número máximo de productos
      * @param diasAnalizar Días para análisis
      * @return CompletableFuture<List<ProductoPopularidadDTO>>
      */
     @Async("asyncExecutor")
     @Transactional(readOnly = true)
     public CompletableFuture<List<ProductoPopularidadDTO>> obtenerTopProductosAsync(
-            int limite, 
+            int limite,
             int diasAnalizar) {
         try {
             List<ProductoPopularidadDTO> resultado = obtenerTopProductos(limite, diasAnalizar);
@@ -242,7 +242,7 @@ public class MenuPopularidadService {
     @Async("fastAsyncExecutor")
     @Transactional(readOnly = true)
     public CompletableFuture<MenuGrillaDTO> obtenerDistribucionGrillaAsync(
-            int columnasGrid, 
+            int columnasGrid,
             int diasAnalizar) {
         try {
             MenuGrillaDTO resultado = obtenerDistribucionGrilla(columnasGrid, diasAnalizar);
