@@ -11,7 +11,6 @@ export interface WebSocketMessage {
 
 type MessageHandler = (message: WebSocketMessage) => void;
 
-// Tipo para el mensaje STOMP (basado en lo que retorna subscribe)
 interface StompMessage {
   body: string;
   headers: Record<string, string>;
@@ -20,7 +19,6 @@ interface StompMessage {
   nack?: () => void;
 }
 
-// Tipo para la suscripción STOMP
 type StompSubscription = {
   id: string;
   unsubscribe: () => void;
@@ -39,12 +37,13 @@ class WebSocketService {
   }
 
   private initializeClient() {
-    // Obtener URL base de API
-    const apiUrl = import.meta.env.VITE_API_URL_PROD || 
-                   import.meta.env.VITE_API_URL || 
+    // Leer env vars en RUNTIME (después del build)
+    const windowEnv = (window as any).__ENV__ || {};
+    
+    const apiUrl = windowEnv.VITE_API_URL_PROD || 
+                   import.meta.env.VITE_API_URL_PROD || 
                    'https://backend-production-df01.up.railway.app';
     
-    // Convertir HTTPS a WSS y HTTP a WS
     const wsEndpoint = this.convertToWebSocketUrl(apiUrl) + '/ws';
 
     console.log('🔌 WebSocket endpoint:', wsEndpoint);
@@ -78,8 +77,6 @@ class WebSocketService {
   }
 
   private convertToWebSocketUrl(httpUrl: string): string {
-    // https://example.com → wss://example.com
-    // http://example.com → ws://example.com
     return httpUrl
       .replace(/^https:/, 'wss:')
       .replace(/^http:/, 'ws:');
@@ -108,22 +105,18 @@ class WebSocketService {
   }
 
   private subscribeToTopics() {
-    // Suscribirse a productos
     this.subscribe('/topic/productos', (message) => {
       this.handleMessage('productos', message);
     });
 
-    // Suscribirse a ventas
     this.subscribe('/topic/ventas', (message) => {
       this.handleMessage('ventas', message);
     });
 
-    // Suscribirse a estadísticas
     this.subscribe('/topic/estadisticas', (message) => {
       this.handleMessage('estadisticas', message);
     });
 
-    // Suscribirse a inventario
     this.subscribe('/topic/inventario', (message) => {
       this.handleMessage('inventario', message);
     });
