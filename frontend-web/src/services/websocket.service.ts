@@ -44,7 +44,7 @@ class WebSocketService {
                    import.meta.env.VITE_API_URL_PROD || 
                    'https://backend-production-df01.up.railway.app';
     
-    const wsEndpoint = this.convertToWebSocketUrl(apiUrl) + '/ws';
+    const wsEndpoint = new URL('/ws', apiUrl).toString();
 
     console.log('🔌 WebSocket endpoint:', wsEndpoint);
 
@@ -74,12 +74,6 @@ class WebSocketService {
         console.debug('⚠️ Error WebSocket (reconectando):', event);
       },
     });
-  }
-
-  private convertToWebSocketUrl(httpUrl: string): string {
-    return httpUrl
-      .replace(/^https:/, 'wss:')
-      .replace(/^http:/, 'ws:');
   }
 
   connect() {
