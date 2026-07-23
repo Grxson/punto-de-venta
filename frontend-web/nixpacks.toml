@@ -1,8 +1,8 @@
 [build]
-cmds = ["npm ci && npm run build:prod"]
+cmds = ["npm install && npm run build:prod"]
 
 [[build.buildpacks]]
 id = "nodejs"
 
 [start]
-cmd = "node_modules/.bin/serve -s dist -l ${PORT:-3000}"
+cmd = "serve -s dist -l ${PORT:-3000}"
