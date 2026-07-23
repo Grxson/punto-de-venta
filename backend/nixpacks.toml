@@ -1,20 +1,8 @@
-# Nixpacks configuration for Railway with Java 21 + Maven
-# This file configures Railpack to properly build and deploy the Spring Boot app
+[build]
+cmds = ["./mvnw clean package -DskipTests -q"]
 
-[phases.setup]
-nixPkgs = ["jdk21", "maven"]
-# Disable automatic providers that might interfere
-aptPkgs = []
-
-[phases.install]
-# Skip automatic install phase
-cmds = ["echo 'Skipping install phase'"]
-
-[phases.build]
-cmds = [
-  "chmod +x mvnw || true",
-  "./mvnw clean package -DskipTests -B"
-]
+[[build.buildpacks]]
+id = "maven"
 
 [start]
-cmd = "java -Dserver.port=$PORT ${JAVA_OPTS:--XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0} -Dspring.profiles.active=${SPRING_PROFILES_ACTIVE:-railway} -jar target/backend-*.jar"
+cmd = "java -Dserver.port=$PORT -Dspring.profiles.active=railway -jar target/backend-*.jar"

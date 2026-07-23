@@ -1,0 +1,5 @@
+[build]
+cmds = []
+
+[start]
+cmd = "echo 'Multi-service project - see backend and frontend-web for individual configs'"
