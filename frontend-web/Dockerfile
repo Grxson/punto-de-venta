@@ -1,7 +1,8 @@
 FROM node:22-alpine AS builder
 WORKDIR /app
+# Force cache bust - timestamp: $(date)
 COPY package*.json ./
-RUN npm install
+RUN npm install --no-cache
 COPY . ./
 RUN npm run build:prod
 
