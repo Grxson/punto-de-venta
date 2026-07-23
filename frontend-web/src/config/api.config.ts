@@ -23,7 +23,7 @@ const getEnvVars = (): ApiConfig => {
   const nodeEnv = import.meta.env.MODE || 'development';
   const apiUrlDev = import.meta.env.VITE_API_URL_DEV || 'http://localhost:8080/api';
   const apiUrlStaging = import.meta.env.VITE_API_URL_STAGING || 'https://punto-de-venta-staging.up.railway.app/api';
-  const apiUrlProd = import.meta.env.VITE_API_URL_PROD || 'https://punto-de-venta-production.up.railway.app/api';
+  const apiUrlProd = import.meta.env.VITE_API_URL_PROD || 'https://backend-production-df01.up.railway.app/api';
 
   const ENV: Environment = {
     dev: {

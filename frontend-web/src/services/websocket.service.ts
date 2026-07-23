@@ -42,7 +42,7 @@ class WebSocketService {
     // Obtener URL base de API
     const apiUrl = import.meta.env.VITE_API_URL_PROD || 
                    import.meta.env.VITE_API_URL || 
-                   'http://localhost:8080';
+                   'https://backend-production-df01.up.railway.app';
     
     // Convertir HTTPS a WSS y HTTP a WS
     const wsEndpoint = this.convertToWebSocketUrl(apiUrl) + '/ws';
