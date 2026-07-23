@@ -70,3 +70,20 @@ const getEnvVars = (): ApiConfig => {
 };
 
 export const API_CONFIG = getEnvVars();
+
+// Headers por defecto
+export const DEFAULT_HEADERS = {
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+};
+
+// Endpoints de API
+export const API_ENDPOINTS = {
+  AUTH: {
+    LOGIN: '/auth/login',
+    LOGOUT: '/auth/logout',
+    REFRESH: '/auth/refresh',
+    ME: '/auth/me',
+  },
+  // Agregar más endpoints según sea necesario
+};
