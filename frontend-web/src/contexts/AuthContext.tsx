@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           // Setear token temporalmente para poder hacer la solicitud
           apiService.setAuthToken(newToken);
-          const sucursalResponse = await apiService.get(`/v1/sucursales/${sucursalId}`);
+          const sucursalResponse = await apiService.get(`/sucursales/${sucursalId}`);
           
           if (sucursalResponse.success && sucursalResponse.data) {
             sucursalData = sucursalResponse.data;

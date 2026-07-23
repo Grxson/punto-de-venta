@@ -98,7 +98,8 @@ export default function AdminLayout() {
           {menuItems.map((item) => (
             <ListItem key={item.text} disablePadding>
               <ListItemButton
-                onClick={() => {
+                onClick={(event) => {
+                  event.currentTarget.blur();
                   navigate(item.path);
                   setDrawerOpen(false);
                 }}
