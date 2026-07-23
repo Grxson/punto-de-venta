@@ -1,0 +1,23 @@
+{
+  "services": {
+    "backend": {
+      "buildCommand": "cd backend && ./mvnw clean package -DskipTests",
+      "startCommand": "java -Dserver.port=$PORT -Dspring.profiles.active=railway -jar backend/target/backend-*.jar",
+      "variables": {
+        "PORT": "8080"
+      }
+    },
+    "frontend-web": {
+      "buildCommand": "cd frontend-web && npm install && npm run build:prod",
+      "startCommand": "npm start --prefix frontend-web",
+      "variables": {
+        "PORT": "3000"
+      }
+    }
+  },
+  "databases": {
+    "postgres": {
+      "plan": "essential"
+    }
+  }
+}
