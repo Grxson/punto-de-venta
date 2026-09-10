@@ -133,6 +133,21 @@ SELECT 'Caja', 'caja', 1.0, 'Caja de producto'
 WHERE NOT EXISTS (SELECT 1 FROM unidades WHERE nombre = 'Caja');
 
 -- ==============================================
+-- Métodos de pago
+-- ==============================================
+INSERT INTO metodos_pago (nombre, requiere_referencia, activo) 
+SELECT 'Efectivo', FALSE, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM metodos_pago WHERE nombre = 'Efectivo');
+
+INSERT INTO metodos_pago (nombre, requiere_referencia, activo) 
+SELECT 'Transferencia', TRUE, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM metodos_pago WHERE nombre = 'Transferencia');
+
+INSERT INTO metodos_pago (nombre, requiere_referencia, activo) 
+SELECT 'Tarjeta', TRUE, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM metodos_pago WHERE nombre = 'Tarjeta');
+
+-- ==============================================
 -- Catálogo de prueba: categorías
 -- ==============================================
 INSERT INTO categorias_productos (nombre, descripcion, activa, orden, sucursal_id) 
