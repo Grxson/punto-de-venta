@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -91,20 +92,20 @@ public class GlobalExceptionHandler {
 
     /**
      * Maneja rutas no encontradas (404).
-     * Este handler evita que NoHandlerFoundException sea capturado por handleGenericException
-     * y devuelva un error 500 en lugar de un 404 apropiado.
+     * Boot 3.2+ lanza NoResourceFoundException (springdoc /v3/api-docs y paths estáticos)
+     * además de NoHandlerFoundException; sin esto caen en handleGenericException y devuelven 500.
      */
-    @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoHandlerFound(NoHandlerFoundException ex) {
-        log.warn("⚠️ Ruta no encontrada: {} {}", ex.getHttpMethod(), ex.getRequestURL());
-        
+    @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
+    public ResponseEntity<ErrorResponse> handleNoHandlerFound(Exception ex) {
+        log.warn("⚠️ Ruta no encontrada: {}", ex.getMessage());
+
         ErrorResponse error = ErrorResponse.builder()
             .timestamp(LocalDateTime.now())
             .status(HttpStatus.NOT_FOUND.value())
             .error("Endpoint no encontrado")
-            .message(String.format("La ruta %s %s no existe", ex.getHttpMethod(), ex.getRequestURL()))
+            .message("La ruta solicitada no existe")
             .build();
-        
+
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
