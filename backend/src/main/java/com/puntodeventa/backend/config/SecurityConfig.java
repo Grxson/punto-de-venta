@@ -99,19 +99,21 @@ public class SecurityConfig {
                 // Configurar autorización de requests
                 .authorizeHttpRequests(auth -> auth
                         // Endpoints públicos - IMPORTANTE: El orden importa, estos se evalúan primero
-                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/login").permitAll()
+                        // NOTA: /api/auth/register y el resto de /api/auth requieren autenticación
+                        // (evitar alta y gestión de usuarios sin login)
                         .requestMatchers("/api/categorias/**").permitAll() // Subcategorías para el formulario de
                                                                            // productos
                         .requestMatchers("/api/v1/menu/**").permitAll() // Menú dinámico por popularidad
-                        .requestMatchers("/api/v1/metrics/**").permitAll() // Performance metrics
-                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/api/v1/metrics/web-vitals").permitAll() // Telemetría de navegador (sin auth)
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        // REST de actuator (metrics, prometheus, info) y métricas internas requieren auth
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs",
                                 "/api-docs/**")
                         .permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/monitoring").permitAll() // Dashboard de monitoreo
-                        .requestMatchers("/api/monitoring/**").permitAll() // API endpoints de monitoreo
+                        .requestMatchers("/monitoring").permitAll() // Dashboard HTML (datos vía /api/monitoring protegido)
+                        .requestMatchers("/api/monitoring/**").permitAll() // Autenticado por MonitoringAuthFilter
                         .requestMatchers("/ws/**", "/topic/**", "/queue/**", "/user/**", "/app/**").permitAll() // WebSocket
                                                                                                                 // endpoints
                         .requestMatchers("/error").permitAll()
