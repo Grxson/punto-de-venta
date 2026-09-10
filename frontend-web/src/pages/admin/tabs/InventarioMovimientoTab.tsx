@@ -9,7 +9,7 @@ import {
   Alert,
 } from '@mui/material';
 import { Refresh } from '@mui/icons-material';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import InventarioMovimientoTabla from '../../../components/reportes/InventarioMovimientoTabla';
 import { useInventarioMovimiento } from '../../../hooks/useInventarioMovimiento';
 import type { DateRangeValue } from '../../../types/dateRange.types';
@@ -55,8 +55,8 @@ export const InventarioMovimientoTab: React.FC<InventarioMovimientoTabProps> = (
       <Box sx={{ mb: 2, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
         <Typography variant="body2" color="info.main">
           📅 Mostrando datos de:{' '}
-          <strong>{format(new Date(dateRange.desde), 'dd/MM/yyyy')}</strong> a{' '}
-          <strong>{format(new Date(dateRange.hasta), 'dd/MM/yyyy')}</strong>
+          <strong>{format(parseISO(dateRange.desde), 'dd/MM/yyyy')}</strong> a{' '}
+          <strong>{format(parseISO(dateRange.hasta), 'dd/MM/yyyy')}</strong>
         </Typography>
         {reporte && (
           <Typography variant="body2" color="success.main" sx={{ mt: 1 }}>

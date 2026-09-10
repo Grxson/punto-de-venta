@@ -22,7 +22,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import { Edit, Delete, Visibility, MoreVert, Add } from '@mui/icons-material';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { comprasService, CompraListado } from '../../../services/compras.service';
 
@@ -193,7 +193,7 @@ export default function ComprasList({ onEditar, onCrear, refreshTrigger = 0 }: C
                     <TableCell>#{compra.id}</TableCell>
                     <TableCell>{compra.proveedorNombre}</TableCell>
                     <TableCell align="center">
-                      {format(new Date(compra.fecha), 'dd/MM/yyyy', { locale: es })}
+                      {format(parseISO(compra.fecha), 'dd/MM/yyyy', { locale: es })}
                     </TableCell>
                     <TableCell align="right">{compra.cantidadItems}</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 'bold' }}>

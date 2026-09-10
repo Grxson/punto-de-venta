@@ -16,7 +16,7 @@ import {
   DialogActions,
 } from '@mui/material';
 import { Delete, Edit } from '@mui/icons-material';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { ingredientesService, Unidad } from '../../../services/ingredientes.service';
 
 interface CompraSimple {
@@ -136,7 +136,7 @@ export default function ComprasListaSimple({ refreshTrigger = 0 }: ComprasListaS
                         <strong>{compra.nombre}</strong>
                       </TableCell>
                       <TableCell align="center">
-                        {format(new Date(compra.fecha), 'dd/MM/yyyy')}
+                        {format(parseISO(compra.fecha), 'dd/MM/yyyy')}
                       </TableCell>
                       <TableCell align="right">{compra.cantidad.toFixed(2)}</TableCell>
                       <TableCell align="center">{unidadAbre}</TableCell>
