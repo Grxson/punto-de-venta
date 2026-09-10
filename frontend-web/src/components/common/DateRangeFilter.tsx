@@ -112,14 +112,14 @@ export default function DateRangeFilter({
   );
 
   // Detectar qué preset coincide con el rango actual
-  const detectPreset = (range: DateRangeValue): PresetKey => {
+  function detectPreset(range: DateRangeValue): PresetKey {
     if (range.desde === presets.hoy.desde && range.hasta === presets.hoy.hasta) return 'hoy';
     if (range.desde === presets.estaSemana.desde && range.hasta === presets.estaSemana.hasta) return 'estaSemana';
     if (range.desde === presets.semanaPasada.desde && range.hasta === presets.semanaPasada.hasta) return 'semanaPasada';
     if (range.desde === presets.esteMes.desde && range.hasta === presets.esteMes.hasta) return 'esteMes';
     if (range.desde === presets.mesPasado.desde && range.hasta === presets.mesPasado.hasta) return 'mesPasado';
     return 'personalizado';
-  };
+  }
 
   useEffect(() => {
     if (initialRange) {
