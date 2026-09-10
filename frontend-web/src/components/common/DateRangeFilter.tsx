@@ -37,9 +37,7 @@ const getStartOfWeek = (date: Date): Date => {
   // Si es lunes (1), retroceder 0 días; si es martes (2), retroceder 1; etc.
   // Si es domingo (0), retroceder 6 días (para llegar al lunes anterior)
   const daysToSubtract = day === 0 ? 6 : day - 1;
-  console.log(`getStartOfWeek: date=${d.toLocaleDateString('es-ES')}, day=${day}, daysToSubtract=${daysToSubtract}`);
   d.setDate(d.getDate() - daysToSubtract);
-  console.log(`  -> resultado=${d.toLocaleDateString('es-ES')}`);
   return d;
 };
 
@@ -106,7 +104,9 @@ export default function DateRangeFilter({
   
   const presets = getPresetRanges();
   
-  const [selectedPreset, setSelectedPreset] = useState<PresetKey>('hoy');
+  const [selectedPreset, setSelectedPreset] = useState<PresetKey>(() =>
+    initialRange ? detectPreset(initialRange) : 'hoy'
+  );
   const [customRange, setCustomRange] = useState<DateRangeValue>(
     initialRange || presets.hoy
   );
@@ -133,8 +133,6 @@ export default function DateRangeFilter({
     if (preset !== 'personalizado') {
       const range = presets[preset];
       setCustomRange(range);
-      console.log('Preset seleccionado:', preset, range);
-      console.log('Desde:', new Date(range.desde), 'Hasta:', new Date(range.hasta));
       onChange(range);
     }
   };
@@ -142,7 +140,7 @@ export default function DateRangeFilter({
   const handleCustomDateChange = (field: 'desde' | 'hasta', value: string) => {
     const newRange = { ...customRange, [field]: value };
     setCustomRange(newRange);
-    setSelectedPreset('personalizado');
+    setSelectedPreset(detectPreset(newRange));
     
     // Solo notificar si ambas fechas son válidas
     if (newRange.desde && newRange.hasta && newRange.desde <= newRange.hasta) {
