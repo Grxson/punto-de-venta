@@ -205,6 +205,7 @@ export const UsuariosTable = ({
                       size="small"
                       onClick={() => onEdit(usuario)}
                       title="Editar usuario"
+                      aria-label={`Editar usuario ${usuario.nombre || usuario.username}`}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>
@@ -213,6 +214,7 @@ export const UsuariosTable = ({
                       onClick={() => onDelete(usuario.id)}
                       title="Eliminar usuario"
                       color="error"
+                      aria-label={`Eliminar usuario ${usuario.nombre || usuario.username}`}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>

@@ -204,6 +204,7 @@ export default function VariantesManager({ productoId, productoNombre, onUpdate 
                   edge="end"
                   onClick={() => handleOpenDialog(variante)}
                   disabled={loading}
+                  aria-label={`Editar variante ${variante.nombreVariante}`}
                 >
                   <Edit />
                 </IconButton>
@@ -211,6 +212,7 @@ export default function VariantesManager({ productoId, productoNombre, onUpdate 
                   edge="end"
                   onClick={() => variante.id && handleDeleteVariante(variante.id)}
                   disabled={loading}
+                  aria-label={`Eliminar variante ${variante.nombreVariante}`}
                 >
                   <Delete />
                 </IconButton>
@@ -234,7 +236,7 @@ export default function VariantesManager({ productoId, productoNombre, onUpdate 
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <TextField
-              label="Nombre de la variante *"
+              label="Nombre de la variante"
               value={nombreVariante}
               onChange={(e) => setNombreVariante(e.target.value)}
               fullWidth
@@ -244,7 +246,7 @@ export default function VariantesManager({ productoId, productoNombre, onUpdate 
             />
 
             <TextField
-              label="Precio *"
+              label="Precio"
               type="number"
               value={precio}
               onChange={(e) => setPrecio(e.target.value)}

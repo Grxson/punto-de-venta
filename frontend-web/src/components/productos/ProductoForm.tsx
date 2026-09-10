@@ -452,7 +452,7 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
           <TextField
-            label="Nombre *"
+            label="Nombre"
             value={nombre}
             onChange={handleNombreChange}
             fullWidth
@@ -513,7 +513,7 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
           )}
 
           <TextField
-            label="Precio *"
+            label="Precio"
             type="number"
             value={precio}
             onChange={(e) => setPrecio(e.target.value)}
@@ -600,6 +600,7 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
                                   onChange={(e) => handleVarianteChange(index, 'nombre', e.target.value)}
                                   sx={{ flex: 1 }}
                                   disabled={loading}
+                                  inputProps={{ 'aria-label': `Nombre de la variante ${index + 1}` }}
                                 />
                                 <TextField
                                   size="small"
@@ -607,7 +608,7 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
                                   placeholder="Precio"
                                   value={variante.precio}
                                   onChange={(e) => handleVarianteChange(index, 'precio', e.target.value)}
-                                  inputProps={{ min: 0, step: 0.01 }}
+                                  inputProps={{ min: 0, step: 0.01, 'aria-label': `Precio de la variante ${index + 1}` }}
                                   sx={{ width: 120 }}
                                   disabled={loading}
                                 />
@@ -622,6 +623,7 @@ export default function ProductoForm({ open, onClose, producto, onSuccess }: Pro
                               disabled={loading}
                               size="small"
                               color="error"
+                              aria-label={`Eliminar variante ${index + 1}`}
                             >
                               <Delete fontSize="small" />
                             </IconButton>
