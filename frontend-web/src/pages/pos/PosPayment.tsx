@@ -33,7 +33,6 @@ export default function PosPayment() {
   const [loading, setLoading] = useState(false);
   const [loadingMetodos, setLoadingMetodos] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [clickTimers, setClickTimers] = useState<Record<number, ReturnType<typeof setTimeout> | null>>({});
   const [isProcessing, setIsProcessing] = useState(false); // Prevenir pagos duplicados
 
   useEffect(() => {
@@ -136,32 +135,12 @@ export default function PosPayment() {
   };
 
   const handleMetodoClick = (metodo: MetodoPago) => {
-    // Prevenir clics si ya está procesando
+    // Clic único selecciona el método; la confirmación es explícita con "Confirmar Pago"
     if (isProcessing) {
       return;
     }
-
-    // Cancelar timer anterior si existe
-    if (clickTimers[metodo.id]) {
-      clearTimeout(clickTimers[metodo.id]!);
-    }
-
-    // Si ya está seleccionado, es el segundo clic -> procesar pago
-    if (metodoSeleccionado?.id === metodo.id) {
-      handleProcesarPago();
-      return;
-    }
-
-    // Primer clic: seleccionar el método
     setMetodoSeleccionado(metodo);
     setError(null);
-
-    // Establecer timer para resetear después de 3 segundos
-    const timer = setTimeout(() => {
-      setClickTimers(prev => ({ ...prev, [metodo.id]: null }));
-    }, 3000);
-
-    setClickTimers(prev => ({ ...prev, [metodo.id]: timer }));
   };
 
   if (loadingMetodos) {
@@ -265,9 +244,7 @@ export default function PosPayment() {
           </Typography>
 
           <Alert severity="info" sx={{ mb: 2 }}>
-            {metodoSeleccionado
-              ? '¡Haz doble clic en el método seleccionado para confirmar el pago!'
-              : 'Haz clic para seleccionar un método de pago'}
+            Selecciona el método de pago y pulsa Confirmar Pago
           </Alert>
 
           {metodosPago.length === 0 ? (
@@ -299,17 +276,6 @@ export default function PosPayment() {
                     minHeight: '80px',
                     fontSize: '16px',
                     position: 'relative',
-                    ...(metodoSeleccionado?.id === metodo.id && {
-                      animation: 'pulse 1s ease-in-out infinite',
-                      '@keyframes pulse': {
-                        '0%, 100%': {
-                          transform: 'scale(1)',
-                        },
-                        '50%': {
-                          transform: 'scale(1.05)',
-                        },
-                      },
-                    }),
                   }}
                 >
                   {loading && metodoSeleccionado?.id === metodo.id ? (
@@ -329,7 +295,7 @@ export default function PosPayment() {
                             width: '100%',
                           }}
                         >
-                          (Clic otra vez para pagar)
+                          Seleccionado
                         </Box>
                       )}
                     </Box>
@@ -338,6 +304,20 @@ export default function PosPayment() {
               ))}
             </Box>
           )}
+
+          {/* Confirmación explícita del pago */}
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            fullWidth
+            disabled={!metodoSeleccionado || loading || isProcessing}
+            onClick={handleProcesarPago}
+            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Payment />}
+            sx={{ mt: 3, minHeight: '56px', fontSize: '18px' }}
+          >
+            {loading ? 'Procesando pago...' : 'Confirmar Pago'}
+          </Button>
         </CardContent>
       </Card>
     </Box>
