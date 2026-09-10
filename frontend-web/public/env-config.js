@@ -8,17 +8,17 @@
   const isProduction = !currentHost.includes('localhost') && !currentHost.includes('127.0.0.1');
   
   let apiUrl = 'http://localhost:8080/api';
-  let apiUrlProd = 'https://backend-production-df01.up.railway.app/api';
+  let apiUrlProd = 'https://backend-production-4bc3.up.railway.app/api';
   
   // Si está en frontend-web-production-*.up.railway.app, usar backend-production-*
   if (currentHost.includes('frontend-web-production')) {
-    apiUrl = 'https://backend-production-df01.up.railway.app/api';
+    apiUrl = 'https://backend-production-4bc3.up.railway.app/api';
   }
   
   // Inyectar en window.__ENV__
   window.__ENV__ = window.__ENV__ || {};
   window.__ENV__.VITE_API_URL_DEV = apiUrl;
-  window.__ENV__.VITE_API_URL_STAGING = 'https://backend-production-df01.up.railway.app/api';
+  window.__ENV__.VITE_API_URL_STAGING = 'https://backend-production-4bc3.up.railway.app/api';
   window.__ENV__.VITE_API_URL_PROD = isProduction ? apiUrlProd : apiUrl;
   window.__ENV__.VITE_API_TIMEOUT = 30000;
   window.__ENV__.VITE_API_RETRIES = 3;
