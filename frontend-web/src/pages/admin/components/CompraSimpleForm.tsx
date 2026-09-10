@@ -227,7 +227,7 @@ export default function CompraSimpleForm({ onGuardado, onCancelado }: CompraSimp
             <Button
               onClick={handleGuardar}
               variant="contained"
-              disabled={loading || !compra.nombre.trim() || compra.cantidad <= 0}
+              disabled={loading || !compra.nombre.trim() || compra.cantidad <= 0 || compra.unidadId === 0}
             >
               {loading ? <CircularProgress size={24} /> : 'Registrar Compra'}
             </Button>
