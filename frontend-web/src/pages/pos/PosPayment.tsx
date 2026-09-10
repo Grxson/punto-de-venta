@@ -55,9 +55,9 @@ export default function PosPayment() {
       } else {
         setError(response.error || 'Error al cargar métodos de pago');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error al cargar métodos de pago:', err);
-      setError(err.message || 'Error al cargar métodos de pago');
+      setError(err instanceof Error ? err.message : 'Error al cargar métodos de pago');
     } finally {
       setLoadingMetodos(false);
     }
@@ -126,8 +126,8 @@ export default function PosPayment() {
         setError(response.error || 'Error al procesar la venta');
         setIsProcessing(false); // Permitir reintentos en caso de error
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al procesar el pago');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al procesar el pago');
       setIsProcessing(false); // Permitir reintentos en caso de error
     } finally {
       setLoading(false);
