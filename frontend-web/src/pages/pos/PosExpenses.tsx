@@ -216,8 +216,13 @@ export default function PosExpenses() {
     setLoadingData(true);
     setError(null);
     try {
-      // ✅ Usar categorías predefinidas desde el JSON en lugar de la API
-      setCategoriasGasto(categoriasGastoPredefinidas as CategoriaGasto[]);
+      // ✅ Cargar categorías de gasto desde la API (fallback al JSON predefinido)
+      const categoriasRes = await apiService.get(API_ENDPOINTS.CATEGORIAS_GASTO);
+      setCategoriasGasto(
+        (categoriasRes.success && Array.isArray(categoriasRes.data) && categoriasRes.data.length
+          ? categoriasRes.data
+          : categoriasGastoPredefinidas) as CategoriaGasto[]
+      );
 
       // Cargar métodos de pago activos desde la API
       const metodosPagoRes = await apiService.get(API_ENDPOINTS.PAYMENT_METHODS_ACTIVOS);
@@ -233,7 +238,6 @@ export default function PosExpenses() {
         }
       } catch (err) {
         // Si no tiene permisos para ver proveedores, simplemente no cargar (es opcional)
-        console.log('No se pudieron cargar proveedores (puede requerir permisos adicionales)');
       }
 
     } catch (err: any) {

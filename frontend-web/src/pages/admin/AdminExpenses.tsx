@@ -194,10 +194,6 @@ export default function AdminExpenses() {
 
   // Monitor de cambios en estado de gastos
   useEffect(() => {
-    console.log('👀 [useEffect] Estado de gastos cambió:', {
-      totalGastos: gastos.length,
-      gastos: gastos.map(g => ({ id: g.id, monto: g.monto, fecha: g.fecha, tipo: g.tipoGasto }))
-    });
   }, [gastos]);
 
   // Cuando el diálogo se abre, establecer valores por defecto
@@ -236,14 +232,10 @@ export default function AdminExpenses() {
       setError(null);
 
       // Cargar gastos
-      console.log('� [loadData] Iniciando carga de gastos...');
-      console.log('📍 Endpoint:', API_ENDPOINTS.GASTOS);
       const gastosResponse = await apiService.get(API_ENDPOINTS.GASTOS);
       
-      console.log('� [loadData] Respuesta completa del API:', gastosResponse);
       
       if (gastosResponse.success && gastosResponse.data) {
-        console.log('✅ [loadData] Gastos cargados correctamente. Total:', gastosResponse.data.length);
         
         // Mapear datos para asegurar que categoriaGastoNombre esté presente
         const gastosMapeados = gastosResponse.data.map((g: any) => ({
@@ -251,26 +243,21 @@ export default function AdminExpenses() {
           categoriaGastoNombre: g.categoriaGastoNombre || g.categoriaGasto?.nombre || '-'
         }));
         
-        console.log('📋 [loadData] Gastos recibidos:', gastosMapeados.map((g: any) => ({ 
-          id: g.id, 
-          monto: g.monto, 
-          fecha: g.fecha,
-          tipoGasto: g.tipoGasto,
-          categoriaGastoNombre: g.categoriaGastoNombre,
-          updatedAt: g.updatedAt
-        })));
         
         // Log antes de actualizar estado
-        console.log('💾 [loadData] Actualizando estado de gastos...');
         setGastos(gastosMapeados);
-        console.log('✅ [loadData] Estado de gastos actualizado');
       } else {
         console.error('❌ [loadData] Error al cargar gastos:', gastosResponse.error);
         setError(`Error al cargar gastos: ${gastosResponse.error}`);
       }
 
-      // Cargar categorías desde JSON predefinidas
-      setCategorias(categoriasGastoPredefinidas as CategoriaGasto[]);
+      // Cargar categorías de gasto desde la API (fallback al JSON predefinido)
+      const categoriasResponse = await apiService.get(API_ENDPOINTS.CATEGORIAS_GASTO);
+      setCategorias(
+        (categoriasResponse.success && Array.isArray(categoriasResponse.data) && categoriasResponse.data.length
+          ? categoriasResponse.data
+          : categoriasGastoPredefinidas) as CategoriaGasto[]
+      );
 
       // Cargar proveedores
       const proveedoresResponse = await apiService.get(`${API_ENDPOINTS.PROVEEDORES}/activos`);
@@ -287,20 +274,14 @@ export default function AdminExpenses() {
       console.error('🔴 [loadData] Error crítico:', err);
       setError(err.message || 'Error al cargar datos');
     } finally {
-      console.log('🏁 [loadData] Carga completada');
       setLoadingData(false);
     }
   };
 
   // Filtrar gastos por rango de fechas y tipo
   const gastosFiltrados = useMemo(() => {
-    console.log('🔍 [useMemo gastosFiltrados] Iniciando filtrado');
-    console.log('📊 Total de gastos en estado:', gastos.length);
-    console.log('🗓️ Rango de fechas:', { desde: dateRange.desde, hasta: dateRange.hasta });
-    console.log('💰 Filtro tipo gasto:', filtroTipoGasto);
     
     if (!dateRange.desde || !dateRange.hasta) {
-      console.log('⚠️ Rango de fechas incompleto, retornando todos los gastos');
       return gastos;
     }
     
@@ -308,20 +289,11 @@ export default function AdminExpenses() {
     const desde = new Date(dateRange.desde + 'T00:00:00');
     const hasta = new Date(dateRange.hasta + 'T23:59:59');
     
-    console.log('🔍 Filtro aplicado:', {
-      desdeISO: desde.toISOString(),
-      hastaISO: hasta.toISOString(),
-      desdeLocal: desde.toLocaleString(),
-      hastaLocal: hasta.toLocaleString(),
-      totalGastos: gastos.length,
-    });
     
     // Log detallado de todos los gastos
-    console.log('📋 Gastos antes de filtro:');
     gastos.forEach((g, idx) => {
       const fechaGasto = new Date(g.fecha);
       const cumpleFiltro = fechaGasto >= desde && fechaGasto <= hasta;
-      console.log(`  [${idx}] ID: ${g.id}, Monto: $${g.monto}, Fecha: ${g.fecha} (${fechaGasto.toLocaleString()}), Tipo: ${g.tipoGasto}, ✓Cumple: ${cumpleFiltro}`);
     });
     
     const filtrados = gastos.filter(gasto => {
@@ -340,8 +312,6 @@ export default function AdminExpenses() {
       return cumpleFechas && cumpleTipo;
     });
     
-    console.log(`✅ Gastos filtrados: ${filtrados.length} de ${gastos.length}`);
-    console.log('📋 Gastos después de filtro:', filtrados.map(g => ({ id: g.id, monto: g.monto, fecha: g.fecha, tipo: g.tipoGasto })));
     
     return filtrados;
   }, [gastos, dateRange, filtroTipoGasto]);
@@ -479,26 +449,15 @@ export default function AdminExpenses() {
         };
 
         try {
-          console.log('🔄 [PUT] Enviando solicitud de actualización');
-          console.log('🎯 [PUT] Gasto ID:', editingGasto.id);
-          console.log('📤 [PUT] Request body:', request);
           
           const response = await apiService.put(`${API_ENDPOINTS.GASTOS}/${editingGasto.id}`, request);
           
-          console.log('📥 [PUT] Respuesta completa:', response);
-          console.log('📥 [PUT] Success:', response.success);
-          console.log('📥 [PUT] Response.data:', response.data);
-          console.log('📥 [PUT] Response.error:', response.error);
           
           if (response.success) {
-            console.log('✅ [PUT] Actualización exitosa!');
-            console.log('🎉 [PUT] Gasto actualizado en BD:', response.data);
             
             handleCloseDialog();
             
-            console.log('⏳ [PUT] Llamando a loadData()...');
             await loadData();
-            console.log('✅ [PUT] loadData() completado');
           } else {
             console.error('❌ [PUT] Actualización falló:', response.error);
             setError(response.error || 'Error al procesar el gasto.');
