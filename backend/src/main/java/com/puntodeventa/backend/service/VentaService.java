@@ -533,7 +533,8 @@ public class VentaService {
      * registrado.
      * - Precio de request distinto + CAJERO → se ignora, se usa precio de BD.
      */
-    private BigDecimal resolverPrecioUnitarioServidor(VentaItemDTO itemDTO, Producto producto, Usuario usuario) {
+    // package-private: visible para tests unitarios (T1.7)
+    BigDecimal resolverPrecioUnitarioServidor(VentaItemDTO itemDTO, Producto producto, Usuario usuario) {
         BigDecimal precioBD = producto.getPrecio();
         BigDecimal solicitado = itemDTO.precioUnitario();
         if (solicitado == null || solicitado.compareTo(precioBD) == 0) {
@@ -556,7 +557,8 @@ public class VentaService {
      * Cajero/rol sin permiso: máximo 10% del subtotal. ADMIN/GERENTE: hasta
      * subtotal.
      */
-    private void validarDescuento(BigDecimal descuento, BigDecimal subtotal, Usuario usuario) {
+    // package-private: visible para tests unitarios (T1.7)
+    void validarDescuento(BigDecimal descuento, BigDecimal subtotal, Usuario usuario) {
         if (descuento.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("El descuento no puede ser negativo");
         }
