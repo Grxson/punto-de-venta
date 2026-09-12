@@ -166,6 +166,9 @@ export default function AdminSales() {
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
   const [productoSeleccionadoParaVariante, setProductoSeleccionadoParaVariante] = useState<any | null>(null);
   const [indiceItemParaVariante, setIndiceItemParaVariante] = useState<number | null>(null);
+  const [dialogoVariantes2, setDialogoVariantes2] = useState(false);
+  const [varianteIntermedia, setVarianteIntermedia] = useState<any | null>(null);
+  const [subVariantes, setSubVariantes] = useState<any[]>([]);
 
   // 🔒 Usar ref para evitar invocación duplicada del efecto en React 18 Strict Mode
   const ventasInicializadasRef = useRef(false);
@@ -659,7 +662,25 @@ export default function AdminSales() {
     }
   };
 
-  const handleSeleccionarVariante = (variante: any) => {
+  const handleSeleccionarVariante = async (variante: any) => {
+    // Si la variante es un grupo con sub-variantes (ej. Jugo Mixto: combinación -> tamaño),
+    // abrir segundo diálogo para elegir el tamaño exacto.
+    try {
+      const res = await apiService.get(`${API_ENDPOINTS.PRODUCTS}/${variante.id}/variantes`);
+      const hijas = res?.data || [];
+      if (hijas.length > 0) {
+        setVarianteIntermedia(variante);
+        setSubVariantes(hijas);
+        setDialogoVariantes2(true);
+        return;
+      }
+    } catch {
+      // Si el endpoint falla, seguir el flujo normal
+    }
+    agregarVarianteFinal(variante);
+  };
+
+  const agregarVarianteFinal = (variante: any) => {
     // Asegurar que la variante esté en la lista de productos disponibles
     const varianteExiste = productos.some(p => p.id === variante.id);
     if (!varianteExiste) {
@@ -703,8 +724,15 @@ export default function AdminSales() {
     }
 
     setDialogoVariantes(false);
+    setDialogoVariantes2(false);
     setProductoSeleccionadoParaVariante(null);
+    setVarianteIntermedia(null);
+    setSubVariantes([]);
     setIndiceItemParaVariante(null);
+  };
+
+  const handleSeleccionarSubVariante = (sub: any) => {
+    agregarVarianteFinal(sub);
   };
 
   const handleAgregarProductoBase = () => {
@@ -1790,7 +1818,7 @@ export default function AdminSales() {
                             {variante.nombreVariante || variante.nombre}
                           </Typography>
                           <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
-                            ${variante.precio.toFixed(2)}
+                            {variante.precio > 0 ? `$${variante.precio.toFixed(2)}` : '→'}
                           </Typography>
                         </Box>
                       }
@@ -1822,6 +1850,62 @@ export default function AdminSales() {
               setDialogoVariantes(false);
               setProductoSeleccionadoParaVariante(null);
               setIndiceItemParaVariante(null);
+            }}
+            sx={{ minHeight: '48px' }}
+          >
+            Cancelar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Segundo diálogo: elegir tamaño de una sub-variante (ej. Jugo Mixto) */}
+      <Dialog
+        open={dialogoVariantes2}
+        onClose={() => {
+          setDialogoVariantes2(false);
+          setVarianteIntermedia(null);
+          setSubVariantes([]);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Seleccionar Tamaño - {varianteIntermedia?.nombreVariante || varianteIntermedia?.nombre}
+        </DialogTitle>
+        <DialogContent>
+          <List>
+            {subVariantes.map((sub: any, index: number) => (
+              <div key={sub.id}>
+                <ListItem disablePadding>
+                  <ListItemButton
+                    onClick={() => handleSeleccionarSubVariante(sub)}
+                    sx={{ minHeight: '64px' }}
+                  >
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography variant="h6">
+                            {sub.nombreVariante || sub.nombre}
+                          </Typography>
+                          <Typography variant="h6" color="primary" sx={{ fontWeight: 'bold' }}>
+                            ${sub.precio.toFixed(2)}
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </ListItemButton>
+                </ListItem>
+                {index < subVariantes.length - 1 && <Divider />}
+              </div>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setDialogoVariantes2(false);
+              setVarianteIntermedia(null);
+              setSubVariantes([]);
             }}
             sx={{ minHeight: '48px' }}
           >
