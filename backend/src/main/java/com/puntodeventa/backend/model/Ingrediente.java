@@ -70,6 +70,15 @@ public class Ingrediente {
     @Column(name = "stock_minimo", precision = 12, scale = 3)
     private BigDecimal stockMinimo;
 
+    @Column(name = "stock_actual", nullable = false, precision = 14, scale = 6)
+    @Builder.Default
+    private BigDecimal stockActual = BigDecimal.ZERO;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "proveedor_id")
     private Proveedor proveedor;

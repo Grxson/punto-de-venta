@@ -213,6 +213,19 @@ public class CompraService {
                         // 2b. Actualizar costo unitario
                         ingrediente.setCostoUnitarioBase(item.getPrecioUnitario());
 
+                        // Auditoría 2026-09-11 (C2): incrementar stockActual al recibir
+                        BigDecimal stockActual = ingrediente.getStockActual() != null ? ingrediente.getStockActual()
+                                        : BigDecimal.ZERO;
+                        ingrediente.setStockActual(stockActual.add(cantidadRecibida));
+
+                        if (item.getUnidad() != null && ingrediente.getUnidadBase() != null
+                                        && !item.getUnidad().getId().equals(ingrediente.getUnidadBase().getId())) {
+                                log.warn("Compra #{} usa unidad distinta a la base del ingrediente {} (compra={}, base={}); "
+                                                + "stockActual sumado sin conversión (falta factor numérico)",
+                                                compra.getId(), ingrediente.getNombre(), item.getUnidad().getNombre(),
+                                                ingrediente.getUnidadBase().getNombre());
+                        }
+
                         ingredienteRepository.save(ingrediente);
                         compraItemRepository.save(item);
 

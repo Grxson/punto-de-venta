@@ -43,4 +43,11 @@ public interface InventarioMovimientoRepository extends JpaRepository<Inventario
      * Usado para revertir el consumo de inventario al cancelar una venta.
      */
     List<InventarioMovimiento> findByRefTipoAndRefId(String refTipo, Long refId);
+
+    /**
+     * Auditoría 2026-09-11 (C2): indica si un ingrediente ya es trackeado por el
+     * sistema de inventario (tiene historial de movimientos).
+     * Activa la validación de stock al vender (adopción progresiva).
+     */
+    boolean existsByIngredienteId(Long ingredienteId);
 }

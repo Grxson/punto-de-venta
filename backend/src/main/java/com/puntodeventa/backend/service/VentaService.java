@@ -210,12 +210,15 @@ public class VentaService {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Producto no encontrado con ID: " + itemDTO.productoId()));
 
-            // TODO: Validar stock suficiente (pendiente)
+            // Auditoría 2026-09-11 (C1): validar cantidad positiva
+            if (itemDTO.cantidad() == null || itemDTO.cantidad() <= 0) {
+                throw new IllegalArgumentException(
+                        "La cantidad del producto '" + producto.getNombre() + "' debe ser mayor a 0");
+            }
 
-            // Calcular subtotal del item (precio * cantidad)
-            BigDecimal precioUnitario = itemDTO.precioUnitario() != null
-                    ? itemDTO.precioUnitario()
-                    : producto.getPrecio();
+            // Auditoría 2026-09-11 (C1): el precio SIEMPRE se resuelve en servidor.
+            // Override del request SOLO para ADMIN/GERENTE (con registro).
+            BigDecimal precioUnitario = resolverPrecioUnitarioServidor(itemDTO, producto, usuarioActual);
 
             BigDecimal subtotalItem = precioUnitario.multiply(BigDecimal.valueOf(itemDTO.cantidad()));
 
@@ -258,7 +261,9 @@ public class VentaService {
         venta.setSubtotal(subtotal);
 
         // Aplicar descuento y calcular total
+        // Auditoría 2026-09-11 (C1): descuento validado en servidor; cajero máx 10%
         BigDecimal descuentoAplicado = request.descuento() != null ? request.descuento() : BigDecimal.ZERO;
+        validarDescuento(descuentoAplicado, subtotal, usuarioActual);
         venta.setDescuento(descuentoAplicado);
 
         // Total = Subtotal - Descuento + Impuestos
@@ -300,14 +305,9 @@ public class VentaService {
         estadisticasService.invalidarCachesReportes();
 
         // 6. Descontar inventario automáticamente (consumo por recetas)
-        // COMENTADO TEMPORALMENTE: No implementado aún en H2
-        // try {
-        // descontarInventario(ventaGuardada);
-        // } catch (Exception e) {
-        // org.slf4j.LoggerFactory.getLogger(VentaService.class)
-        // .warn("No se pudo descontar inventario (posiblemente en modo desarrollo H2):
-        // {}", e.getMessage());
-        // }
+        // Auditoría 2026-09-11 (C2): reactivado; valida stock y descuenta en la
+        // misma transacción (rollback total si falla).
+        descontarInventario(ventaGuardada);
 
         VentaDTO ventaDTO = toDTO(ventaGuardada);
 
@@ -437,30 +437,76 @@ public class VentaService {
     /**
      * Descuenta el inventario automáticamente basado en las recetas de los
      * productos vendidos.
-     * Genera movimientos de inventario de tipo "EGRESO" por consumo.
+     * Genera movimientos de inventario de tipo "EGRESO" por consumo y actualiza
+     * stockActual del ingrediente.
+     * Auditoría 2026-09-11 (C2): validación de stock + descuento dentro de la
+     * transacción de la venta.
+     * Calibración: la validación solo se activa para ingredientes ya trackeados
+     * (existen movimientos ENTRADA/EGRESO).
+     * Un ingrediente nunca registrado en inventario se descuenta igual pero sin
+     * bloquear la venta (adopción progresiva).
      */
     private void descontarInventario(Venta venta) {
-        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime ahora = LocalDateTime.now(java.time.ZoneId.of("America/Mexico_City"));
 
         for (VentaItem item : venta.getItems()) {
             Producto producto = item.getProducto();
-            Integer cantidadVendida = item.getCantidad();
+            int cantidadVendida = item.getCantidad();
 
-            // Buscar recetas del producto
-            List<Receta> recetas = recetaRepository.findByProductoId(producto.getId());
+            // Buscar recetas del producto (con ingrediente y unidad cargados)
+            List<Receta> recetas = recetaRepository.findByProductoIdWithDetails(producto.getId());
+
+            if (recetas.isEmpty()) {
+                log.warn("Producto {} sin receta; no se descuenta inventario", producto.getId());
+                continue;
+            }
 
             for (Receta receta : recetas) {
                 Ingrediente ingrediente = receta.getIngrediente();
 
-                // Calcular cantidad a descontar (cantidad_receta * cantidad_vendida)
+                // Cantidad a consumir = cantidad_receta * cantidad_vendida (con merma
+                // teórica)
                 BigDecimal cantidadConsumir = receta.getCantidad()
                         .multiply(BigDecimal.valueOf(cantidadVendida));
+                if (receta.getMermaTeorica() != null
+                        && receta.getMermaTeorica().compareTo(BigDecimal.ZERO) > 0) {
+                    cantidadConsumir = cantidadConsumir
+                            .multiply(BigDecimal.ONE.add(receta.getMermaTeorica()));
+                }
 
-                // Calcular costo del consumo
-                BigDecimal costoUnitario = ingrediente.getCostoUnitarioBase();
+                if (receta.getUnidad() != null && ingrediente.getUnidadBase() != null
+                        && !receta.getUnidad().getId().equals(ingrediente.getUnidadBase().getId())) {
+                    log.warn("Receta del producto {} usa unidad distinta a la base del ingrediente {} (uso={}, base={}); "
+                            + "asumiendo cantidades equivalentes (falta factor numérico de conversión)",
+                            producto.getId(), ingrediente.getNombre(),
+                            receta.getUnidad().getNombre(), ingrediente.getUnidadBase().getNombre());
+                }
+
+                BigDecimal stockActual = ingrediente.getStockActual() != null ? ingrediente.getStockActual()
+                        : BigDecimal.ZERO;
+
+                // Validación autocalibrante: solo trackeado (ya tiene historial en
+                // inventario_movimientos)
+                boolean trackeado = inventarioMovimientoRepository.existsByIngredienteId(ingrediente.getId());
+                if (trackeado && stockActual.compareTo(cantidadConsumir) < 0) {
+                    throw new IllegalStateException(String.format(
+                            "Stock insuficiente de '%s': la venta requiere %s %s y hay %s %s",
+                            ingrediente.getNombre(),
+                            cantidadConsumir, receta.getUnidad() != null ? receta.getUnidad().getNombre() : "",
+                            stockActual, ingrediente.getUnidadBase() != null ? ingrediente.getUnidadBase().getNombre() : ""));
+                }
+
+                // Descontar stock actual
+                ingrediente.setStockActual(stockActual.subtract(cantidadConsumir));
+                ingredienteRepository.save(ingrediente);
+
+                // Costo del consumo
+                BigDecimal costoUnitario = ingrediente.getCostoUnitarioBase() != null
+                        ? ingrediente.getCostoUnitarioBase()
+                        : BigDecimal.ZERO;
                 BigDecimal costoTotal = cantidadConsumir.multiply(costoUnitario);
 
-                // Crear movimiento de inventario (EGRESO por consumo)
+                // Movimiento de inventario (EGRESO por consumo)
                 InventarioMovimiento movimiento = InventarioMovimiento.builder()
                         .ingrediente(ingrediente)
                         .tipo("EGRESO")
@@ -475,13 +521,55 @@ public class VentaService {
                         .build();
 
                 inventarioMovimientoRepository.save(movimiento);
+            }
+        }
+    }
 
-                // TODO: Actualizar stock actual del ingrediente (pendiente - requiere agregar
-                // campo stockActual a Ingrediente)
-                // BigDecimal nuevoStock =
-                // ingrediente.getStockActual().subtract(cantidadConsumir);
-                // ingrediente.setStockActual(nuevoStock);
-                // ingredienteRepository.save(ingrediente);
+    /**
+     * Resuelve el precio unitario del item en servidor (C1).
+     * - Sin precio en request → precio de BD.
+     * - Precio de request igual al de BD → precio de BD.
+     * - Precio de request distinto + ADMIN/GERENTE → override permitido y
+     * registrado.
+     * - Precio de request distinto + CAJERO → se ignora, se usa precio de BD.
+     */
+    private BigDecimal resolverPrecioUnitarioServidor(VentaItemDTO itemDTO, Producto producto, Usuario usuario) {
+        BigDecimal precioBD = producto.getPrecio();
+        BigDecimal solicitado = itemDTO.precioUnitario();
+        if (solicitado == null || solicitado.compareTo(precioBD) == 0) {
+            return precioBD;
+        }
+        String rol = usuario != null && usuario.getRol() != null ? usuario.getRol().getNombre() : "";
+        if ("ADMIN".equalsIgnoreCase(rol) || "GERENTE".equalsIgnoreCase(rol)) {
+            log.warn("PRECIO_OVERRIDE: producto={} (id={}) precioBD={} solicitado={} usuario={}",
+                    producto.getNombre(), producto.getId(), precioBD, solicitado,
+                    usuario != null ? usuario.getUsername() : "anonimo");
+            return solicitado;
+        }
+        log.warn("Precio del request ignorado (rol sin permiso): producto={} (id={}) solicitado={} usado={}",
+                producto.getNombre(), producto.getId(), solicitado, precioBD);
+        return precioBD;
+    }
+
+    /**
+     * Valida el descuento en servidor (C1).
+     * Cajero/rol sin permiso: máximo 10% del subtotal. ADMIN/GERENTE: hasta
+     * subtotal.
+     */
+    private void validarDescuento(BigDecimal descuento, BigDecimal subtotal, Usuario usuario) {
+        if (descuento.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("El descuento no puede ser negativo");
+        }
+        if (descuento.compareTo(subtotal) > 0) {
+            throw new IllegalArgumentException("El descuento no puede exceder el subtotal");
+        }
+        String rol = usuario != null && usuario.getRol() != null ? usuario.getRol().getNombre() : "";
+        if (!"ADMIN".equalsIgnoreCase(rol) && !"GERENTE".equalsIgnoreCase(rol)) {
+            BigDecimal maximo = subtotal.multiply(new BigDecimal("0.10"));
+            if (descuento.compareTo(maximo) > 0) {
+                throw new IllegalArgumentException(String.format(
+                        "Descuento fuera de rango para cajero: máximo 10%% del subtotal ($%s), solicitado $%s",
+                        maximo, descuento));
             }
         }
     }
@@ -620,30 +708,37 @@ public class VentaService {
 
         LocalDateTime ahora = LocalDateTime.now();
 
-        // Crear movimientos de reversión (ENTRADA) para cada movimiento de consumo
-        // (EGRESO)
-        for (InventarioMovimiento movimientoOriginal : movimientosVenta) {
-            // Solo revertir movimientos de tipo EGRESO (consumo)
-            if (!"EGRESO".equals(movimientoOriginal.getTipo())) {
-                continue; // Saltar otros tipos de movimientos
+// Crear movimiento de reversión (ENTRADA) para cada movimiento de consumo
+            // (EGRESO)
+            for (InventarioMovimiento movimientoOriginal : movimientosVenta) {
+                // Solo revertir movimientos de tipo EGRESO (consumo)
+                if (!"EGRESO".equals(movimientoOriginal.getTipo())) {
+                    continue; // Saltar otros tipos de movimientos
+                }
+
+                // Auditoría 2026-09-11 (C2): restituir stockActual al revertir consumo
+                Ingrediente ingrediente = movimientoOriginal.getIngrediente();
+                BigDecimal stockActual = ingrediente.getStockActual() != null ? ingrediente.getStockActual()
+                        : BigDecimal.ZERO;
+                ingrediente.setStockActual(stockActual.add(movimientoOriginal.getCantidad()));
+                ingredienteRepository.save(ingrediente);
+
+                // Crear movimiento de reversión (ENTRADA)
+                InventarioMovimiento movimientoReversion = InventarioMovimiento.builder()
+                        .ingrediente(ingrediente)
+                        .tipo("ENTRADA") // Devolución al inventario
+                        .cantidad(movimientoOriginal.getCantidad())
+                        .unidad(movimientoOriginal.getUnidad())
+                        .costoUnitario(movimientoOriginal.getCostoUnitario())
+                        .costoTotal(movimientoOriginal.getCostoTotal())
+                        .fecha(ahora)
+                        .refTipo("venta_cancelada")
+                        .refId(venta.getId())
+                        .nota("Reversión de consumo por cancelación de venta #" + venta.getId())
+                        .build();
+
+                inventarioMovimientoRepository.save(movimientoReversion);
             }
-
-            // Crear movimiento de reversión (ENTRADA)
-            InventarioMovimiento movimientoReversion = InventarioMovimiento.builder()
-                    .ingrediente(movimientoOriginal.getIngrediente())
-                    .tipo("ENTRADA") // Devolución al inventario
-                    .cantidad(movimientoOriginal.getCantidad())
-                    .unidad(movimientoOriginal.getUnidad())
-                    .costoUnitario(movimientoOriginal.getCostoUnitario())
-                    .costoTotal(movimientoOriginal.getCostoTotal())
-                    .fecha(ahora)
-                    .refTipo("venta_cancelada")
-                    .refId(venta.getId())
-                    .nota("Reversión de consumo por cancelación de venta #" + venta.getId())
-                    .build();
-
-            inventarioMovimientoRepository.save(movimientoReversion);
-        }
     }
 
     /**
@@ -725,10 +820,13 @@ public class VentaService {
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Producto no encontrado con ID: " + itemDTO.productoId()));
 
-            // Calcular subtotal del item (precio * cantidad)
-            BigDecimal precioUnitario = itemDTO.precioUnitario() != null
-                    ? itemDTO.precioUnitario()
-                    : producto.getPrecio();
+            // Auditoría 2026-09-11 (C1): misma regla de precio servidor en edición
+            if (itemDTO.cantidad() == null || itemDTO.cantidad() <= 0) {
+                throw new IllegalArgumentException(
+                        "La cantidad del producto '" + producto.getNombre() + "' debe ser mayor a 0");
+            }
+
+            BigDecimal precioUnitario = resolverPrecioUnitarioServidor(itemDTO, producto, usuarioActual);
 
             BigDecimal subtotalItem = precioUnitario.multiply(BigDecimal.valueOf(itemDTO.cantidad()));
 
@@ -771,7 +869,9 @@ public class VentaService {
         venta.setSubtotal(subtotal);
 
         // Aplicar descuento y calcular total
+        // Auditoría 2026-09-11 (C1): descuento validado en servidor; cajero máx 10%
         BigDecimal descuentoAplicado = request.descuento() != null ? request.descuento() : BigDecimal.ZERO;
+        validarDescuento(descuentoAplicado, subtotal, usuarioActual);
         venta.setDescuento(descuentoAplicado);
 
         // Total = Subtotal - Descuento + Impuestos
