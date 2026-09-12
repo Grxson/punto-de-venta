@@ -113,7 +113,10 @@ public class UsuarioServicio {
             return new LoginResponse(token, usuarioDTO, "Login exitoso");
 
         } catch (AuthenticationException e) {
-            throw new IllegalArgumentException("Username o contraseña inválidos");
+            // Auditoría 2026-09-11 (T1.1): propagar AuthenticationException real para
+            // que el handler global responda 401 (antes se convertía en 400 por
+            // IllegalArgumentException).
+            throw e;
         } catch (IllegalStateException e) {
             throw new RuntimeException("Error en el proceso de login: " + e.getMessage(), e);
         }

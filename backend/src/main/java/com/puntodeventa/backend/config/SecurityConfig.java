@@ -100,6 +100,9 @@ public class SecurityConfig {
 .authorizeHttpRequests(auth -> auth
                 // Endpoints públicos - IMPORTANTE: El orden importa, estos se evalúan primero
                 .requestMatchers("/api/auth/login").permitAll()
+                // Refresh: el JWT llega expirado, JwtAuthenticationFilter lo deja pasar
+                // a propósito y el controlador renueva la sesión
+                .requestMatchers("/api/auth/refresh-token").permitAll()
                 // NOTA: /api/auth/register y el resto de /api/auth requieren autenticación
                 // (evitar alta y gestión de usuarios sin login)
                 .requestMatchers("/api/categorias/**").permitAll() // Subcategorías para el formulario de
