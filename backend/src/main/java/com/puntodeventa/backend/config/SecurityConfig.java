@@ -97,29 +97,55 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // Configurar autorización de requests
-                .authorizeHttpRequests(auth -> auth
-                        // Endpoints públicos - IMPORTANTE: El orden importa, estos se evalúan primero
-                        .requestMatchers("/api/auth/login").permitAll()
-                        // NOTA: /api/auth/register y el resto de /api/auth requieren autenticación
-                        // (evitar alta y gestión de usuarios sin login)
-                        .requestMatchers("/api/categorias/**").permitAll() // Subcategorías para el formulario de
-                                                                           // productos
-                        .requestMatchers("/api/v1/menu/**").permitAll() // Menú dinámico por popularidad
-                        .requestMatchers("/api/v1/metrics/web-vitals").permitAll() // Telemetría de navegador (sin auth)
-                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        // REST de actuator (metrics, prometheus, info) y métricas internas requieren auth
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs",
-                                "/api-docs/**")
-                        .permitAll()
-                        .requestMatchers("/h2-console/**").permitAll()
-                        .requestMatchers("/monitoring").permitAll() // Dashboard HTML (datos vía /api/monitoring protegido)
-                        .requestMatchers("/api/monitoring/**").permitAll() // Autenticado por MonitoringAuthFilter
-                        .requestMatchers("/ws/**", "/topic/**", "/queue/**", "/user/**", "/app/**").permitAll() // WebSocket
-                                                                                                                // endpoints
-                        .requestMatchers("/error").permitAll()
+.authorizeHttpRequests(auth -> auth
+                // Endpoints públicos - IMPORTANTE: El orden importa, estos se evalúan primero
+                .requestMatchers("/api/auth/login").permitAll()
+                // NOTA: /api/auth/register y el resto de /api/auth requieren autenticación
+                // (evitar alta y gestión de usuarios sin login)
+                .requestMatchers("/api/categorias/**").permitAll() // Subcategorías para el formulario de
+                                                                   // productos
+                .requestMatchers("/api/v1/menu/**").permitAll() // Menú dinámico por popularidad
+                .requestMatchers("/api/v1/metrics/web-vitals").permitAll() // Telemetría de navegador (sin auth)
+                .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                // REST de actuator (metrics, prometheus, info) y métricas internas requieren auth
+                .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs",
+                        "/api-docs/**")
+                .permitAll()
+                .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/monitoring").permitAll() // Dashboard HTML (datos vía /api/monitoring protegido)
+                .requestMatchers("/api/monitoring/**").permitAll() // Autenticado por MonitoringAuthFilter
+                .requestMatchers("/ws/**", "/topic/**", "/queue/**", "/user/**", "/app/**").permitAll() // WebSocket
+                                                                                                        // endpoints
+                .requestMatchers("/error").permitAll()
 
                 // Permitir OPTIONS para CORS preflight
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+
+                // Auditoría 2026-09-11 (A14): RBAC explícito por endpoint.
+                // Ventas y métodos de pago: los 3 roles (el cajero opera el POS)
+                .requestMatchers("/api/ventas/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_CAJERO", "ROLE_GERENTE")
+                // Productos: lectura para todos, escritura SOLO ADMIN
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/inventario/productos/**")
+                .hasAnyAuthority("ROLE_ADMIN", "ROLE_CAJERO", "ROLE_GERENTE")
+                .requestMatchers("/api/inventario/productos/**").hasAuthority("ROLE_ADMIN")
+                // Categorías de producto: lectura para todos, escritura SOLO ADMIN
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/inventario/categorias-productos/**")
+                .hasAnyAuthority("ROLE_ADMIN", "ROLE_CAJERO", "ROLE_GERENTE")
+                .requestMatchers("/api/inventario/categorias-productos/**").hasAuthority("ROLE_ADMIN")
+                // Atributos/variantes/tamaños de productos: escritura ADMIN
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/productos/**")
+                .hasAnyAuthority("ROLE_ADMIN", "ROLE_CAJERO", "ROLE_GERENTE")
+                .requestMatchers("/api/v1/productos/**").hasAuthority("ROLE_ADMIN")
+                // Admin + Gerente: compras, finanzas, reportes, estadísticas, inventario
+                // completo, mano de obra, catálogos, usuarios
+                .requestMatchers("/api/compras/**", "/api/finanzas/**", "/api/reportes/**",
+                        "/api/estadisticas/**", "/api/ingredientes/**", "/api/recetas/**",
+                        "/api/inventario/movimientos/**", "/api/inventario/mermas/**",
+                        "/api/inventario/proveedores/**", "/api/inventario/unidades/**",
+                        "/api/mano-obra/**", "/api/gastos-indirectos/**", "/api/sucursales/**",
+                        "/api/roles/**", "/api/auth/usuarios/**", "/api/v1/atributos/**",
+                        "/api/v1/tamaños/**", "/api/v1/ventas-items/**")
+                .hasAnyAuthority("ROLE_ADMIN", "ROLE_GERENTE")
 
                 // Todos los demás endpoints requieren autenticación
                 .anyRequest().authenticated())

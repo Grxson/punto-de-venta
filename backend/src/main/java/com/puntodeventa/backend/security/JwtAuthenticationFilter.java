@@ -5,6 +5,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -37,8 +40,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String username = jwtUtil.extractUsername(jwt);
                 String rol = jwtUtil.extractRol(jwt);
 
+                // Auditoría 2026-09-11 (A14): authorities desde el claim rol del JWT.
+                // Antes se inyectaban vacías => hasAuthority/hasRole SIEMPRE fallaban.
+                List<GrantedAuthority> authorities = new ArrayList<>();
+                if (rol != null && !rol.isBlank()) {
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + rol.toUpperCase()));
+                }
+
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username,
-                        null, new ArrayList<>());
+                        null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
