@@ -446,6 +446,10 @@ export default function PosSales() {
     } catch {
       // Si el endpoint falla, seguir el flujo normal
     }
+    // Nunca agregar directamente un producto sin precio final (ej. Jugo Mixto)
+    if (variante.precio <= 0) {
+      return;
+    }
     agregarVarianteFinal(variante);
   };
 
