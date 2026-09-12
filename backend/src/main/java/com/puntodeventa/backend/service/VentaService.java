@@ -7,8 +7,6 @@ import com.puntodeventa.backend.model.*;
 import com.puntodeventa.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Servicio para gestión de ventas.
@@ -41,9 +40,8 @@ public class VentaService {
     private final UsuarioRepository usuarioRepository;
     private final WebSocketNotificationService notificationService;
     private final EstadisticasService estadisticasService;
-
-    @PersistenceContext
-    private EntityManager entityManager;
+    private final CajaRepository cajaRepository;
+    private final TurnoRepository turnoRepository;
 
     /**
      * ✅ SEGREGACIÓN: Obtener solo ventas de la sucursal del usuario actual
@@ -152,32 +150,20 @@ public class VentaService {
                 .descuento(BigDecimal.ZERO) // TODO: Implementar descuentos
                 .build();
 
-        // Asignar caja por compatibilidad con esquema actual (Railway exige caja_id NOT
-        // NULL)
-        // Si no viene en la request, usar un valor por defecto (1L) temporalmente.
-        Long cajaId = null;
-        try {
-            cajaId = request.cajaId();
-        } catch (Exception ignored) {
-        }
+        // Asignar caja (Railway exige caja_id NOT NULL). Si no viene en la request,
+        // resolver caja activa de la sucursal (Auditoría 2026-09-11, A5/T1.4).
+        Long cajaId = request.cajaId();
         if (cajaId == null) {
             cajaId = seleccionarCajaActiva(sucursalId);
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                    .warn("crearVenta(): cajaId no proporcionado; resolviendo caja activa -> {}", cajaId);
+            log.warn("crearVenta(): cajaId no proporcionado; resolviendo caja activa -> {}", cajaId);
         }
         venta.setCajaId(cajaId);
 
-        // Asignar turno (NOT NULL en Railway). Si no viene, usar 1L hasta implementar
-        // gestión de turnos.
-        Long turnoId = null;
-        try {
-            turnoId = request.turnoId();
-        } catch (Exception ignored) {
-        }
+        // Asignar turno (NOT NULL en Railway). Si no viene, resolver turno activo.
+        Long turnoId = request.turnoId();
         if (turnoId == null) {
-            turnoId = seleccionarTurnoActivo(request.sucursalId(), cajaId);
-            org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                    .warn("crearVenta(): turnoId no proporcionado; resolviendo turno activo -> {}", turnoId);
+            turnoId = seleccionarTurnoActivo(sucursalId, cajaId);
+            log.warn("crearVenta(): turnoId no proporcionado; resolviendo turno activo -> {}", turnoId);
         }
         venta.setTurnoId(turnoId);
 
@@ -338,100 +324,31 @@ public class VentaService {
     }
 
     /**
-     * Selecciona una caja activa preferentemente por sucursal. Si no hay activa,
-     * toma cualquiera.
-     * Lanza IllegalStateException si no existe ninguna caja.
+     * Selecciona la caja activa de la sucursal. Lanza IllegalStateException si no
+     * existe ninguna (Auditoría 2026-09-11, A5/T1.4: sin fallback silencioso).
      */
     private Long seleccionarCajaActiva(Long sucursalId) {
-        // Intentar por sucursal y activa
-        try {
-            var query = new StringBuilder("select id from cajas where activa = true");
-            if (sucursalId != null) {
-                query.append(" and sucursal_id = :suc");
-            }
-            query.append(" order by id limit 1");
-            var q = entityManager.createNativeQuery(query.toString());
-            if (sucursalId != null)
-                q.setParameter("suc", sucursalId);
-            var res = q.getResultList();
-            if (!res.isEmpty()) {
-                return ((Number) res.getFirst()).longValue();
-            }
-        } catch (Exception ignored) {
-        }
-
-        // Cualquiera activa
-        try {
-            var res = entityManager.createNativeQuery("select id from cajas where activa = true order by id limit 1")
-                    .getResultList();
-            if (!res.isEmpty())
-                return ((Number) res.getFirst()).longValue();
-        } catch (Exception ignored) {
-        }
-
-        // Cualquiera existente
-        try {
-            var res = entityManager.createNativeQuery("select id from cajas order by id limit 1").getResultList();
-            if (!res.isEmpty())
-                return ((Number) res.getFirst()).longValue();
-        } catch (Exception ignored) {
-        }
-
-        // Fallback: si no existe la tabla cajas (H2 local), retornar ID por defecto
-        org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .warn("No se pudo acceder a tabla 'cajas'. Usando cajaId por defecto = 1 (modo desarrollo H2)");
-        return 1L;
+        return cajaRepository.findFirstBySucursalIdAndActivaTrueOrderByIdAsc(sucursalId)
+                .map(Caja::getId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "No existe una caja activa para la sucursal " + sucursalId));
     }
 
     /**
-     * Selecciona un turno activo preferentemente por caja/sucursal. Si no hay
-     * activo, toma el más reciente.
-     * Lanza IllegalStateException si no existe ningún turno.
+     * Selecciona el turno activo de la caja (o de la sucursal si la caja no
+     * tiene). Lanza IllegalStateException si no existe ninguno (Auditoría
+     * 2026-09-11, A5/T1.4: sin fallback silencioso).
      */
     private Long seleccionarTurnoActivo(Long sucursalId, Long cajaId) {
-        // Intentar activo por caja
-        try {
-            var sb = new StringBuilder("select id from turnos where activo = true");
-            if (cajaId != null)
-                sb.append(" and caja_id = :caja");
-            if (sucursalId != null)
-                sb.append(" and sucursal_id = :suc");
-            sb.append(" order by fecha_apertura desc limit 1");
-            var q = entityManager.createNativeQuery(sb.toString());
-            if (cajaId != null)
-                q.setParameter("caja", cajaId);
-            if (sucursalId != null)
-                q.setParameter("suc", sucursalId);
-            var res = q.getResultList();
-            if (!res.isEmpty())
-                return ((Number) res.getFirst()).longValue();
-        } catch (Exception ignored) {
+        Optional<Turno> turno = cajaId != null
+                ? turnoRepository.findFirstByCajaIdAndActivoTrueOrderByFechaAperturaDesc(cajaId)
+                : Optional.empty();
+        if (turno.isEmpty()) {
+            turno = turnoRepository.findFirstBySucursalIdAndActivoTrueOrderByFechaAperturaDesc(sucursalId);
         }
-
-        // Activo cualquiera
-        try {
-            var res = entityManager
-                    .createNativeQuery("select id from turnos where activo = true order by fecha_apertura desc limit 1")
-                    .getResultList();
-            if (!res.isEmpty())
-                return ((Number) res.getFirst()).longValue();
-        } catch (Exception ignored) {
-        }
-
-        // El más reciente
-        try {
-            var res = entityManager
-                    .createNativeQuery("select id from turnos order by fecha_apertura desc nulls last, id desc limit 1")
-                    .getResultList();
-            if (!res.isEmpty())
-                return ((Number) res.getFirst()).longValue();
-        } catch (Exception ignored) {
-        }
-
-        // Fallback: si no existe la tabla turnos (H2 local), retornar ID por defecto
-        org.slf4j.LoggerFactory.getLogger(VentaService.class)
-                .warn("No se pudo acceder a tabla 'turnos'. Usando turnoId por defecto = 1 (modo desarrollo H2)");
-        return 1L;
+        return turno.map(Turno::getId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "No existe un turno activo para la caja " + cajaId + " / sucursal " + sucursalId));
     }
 
     /**

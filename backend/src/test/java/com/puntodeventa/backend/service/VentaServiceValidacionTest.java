@@ -22,7 +22,7 @@ class VentaServiceValidacionTest {
 
     // Los métodos probados (validarDescuento, resolverPrecioUnitarioServidor)
     // no tocan repos => instancia con dependencias null.
-    private final VentaService service = new VentaService(null, null, null, null, null, null, null, null, null, null);
+    private final VentaService service = new VentaService(null, null, null, null, null, null, null, null, null, null, null, null);
 
     private Usuario usuarioConRol(String rolNombre) {
         Rol rol = new Rol();
