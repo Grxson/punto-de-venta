@@ -17,6 +17,7 @@ export default defineConfig({
     // PASO 2.7: PWA con Service Worker
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: null,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
         globIgnores: ['**/stats.html'], // Excluir stats.html del precache
