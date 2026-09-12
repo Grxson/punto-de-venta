@@ -36,6 +36,11 @@ public class Compra implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     @NotNull(message = "La sucursal es obligatoria")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sucursal_id", nullable = false)

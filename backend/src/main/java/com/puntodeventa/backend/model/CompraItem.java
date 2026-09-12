@@ -31,6 +31,11 @@ public class CompraItem implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     @NotNull(message = "La compra es obligatoria")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "compra_id", nullable = false)

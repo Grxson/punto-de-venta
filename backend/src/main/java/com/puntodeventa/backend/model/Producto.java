@@ -30,6 +30,11 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     @NotBlank(message = "El nombre del producto es obligatorio")
     @Column(nullable = false, length = 200)
     private String nombre;

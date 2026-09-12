@@ -28,6 +28,11 @@ public class VentaItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     @NotNull(message = "La venta es obligatoria")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "venta_id", nullable = false)
