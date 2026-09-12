@@ -3,6 +3,7 @@ package com.puntodeventa.backend.security;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -14,11 +15,24 @@ import java.util.Map;
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret:punto-de-venta-secret-key-2025-debe-ser-muy-larga-para-seguridad}")
+    // Auditoría 2026-09-11 (C4): sin fallback de secreto. La property jwt.secret
+    // debe resolverse desde el entorno (JWT_SECRET) o el arranque falla.
+    @Value("${jwt.secret}")
     private String jwtSecret;
 
     @Value("${jwt.expiration:604800000}") // 7 días por defecto (604800000 ms)
     private long jwtExpiration;
+
+    @PostConstruct
+    void validarSecret() {
+        // Fail-fast: secreto vacío/corto → aplicar no levanta.
+        // Keys.hmacShaKeyFor exige >= 256 bits (32 bytes) para HS256.
+        if (jwtSecret == null || jwtSecret.isBlank() || jwtSecret.length() < 32) {
+            throw new IllegalStateException(
+                    "JWT_SECRET no configurada o demasiado corta (< 32 chars). "
+                            + "Genera una con: openssl rand -base64 64  y configúrala en Railway.");
+        }
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
