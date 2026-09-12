@@ -166,31 +166,32 @@ public class SucursalContextFilter extends OncePerRequestFilter {
                         + ", Nombre=" + sucursalNombre + " | Request: " + request.getRequestURI());
             } else {
                 // CRÍTICO: No se pudo obtener sucursal_id de ningún origen
-                // ⚠️ IMPORTANTE: NO usar fallback a sucursal 1
-                // Dejar que el request falle si no hay sucursal
+                // Auditoría 2026-09-11 (C3): sin sucursal resuelta → 401, no se
+                // continúa el request con contexto indeterminado.
                 logger.error("❌ [SucursalContextFilter] CRÍTICO - No se pudo obtener sucursal_id de:");
                 logger.error("   - JWT (no contiene sucursalId o token inválido)");
                 logger.error("   - BD (usuario no autenticado, no encontrado, o sin sucursal asignada)");
                 logger.error("   Request: " + request.getRequestURI());
-                logger.error(
-                        "   ⚠️ NOTA: No se establecerá SucursalContext. Los servicios recibirán excepción si intentan acceder a sucursal_id");
-                // Comentar la siguiente línea para evitar fallback inseguro
-                // SucursalContext.setSucursal(1L, "Default-FALLBACK");
+                if (!response.isCommitted()) {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter()
+                            .write("{\"error\":\"Sucursal no resuelta para el usuario o la sesión actual\"}");
+                    return;
+                }
             }
 
             filterChain.doFilter(request, response);
         } catch (Exception e) {
             logger.error("❌ [SucursalContextFilter] EXCEPCIÓN INESPERADA en filter: " + e.getMessage()
                     + " | Exception: " + e.getClass().getName(), e);
-            // Continuar con sucursal por defecto si hay error
-            try {
-                SucursalContext.setSucursal(1L, "Default-ERROR");
-                logger.warn("⚠️ [SucursalContextFilter] SucursalContext establecido con fallback debido a error");
-            } catch (Exception ignore) {
-                // Si hasta aquí falla, dejar que el request continúe sin contexto
-                logger.error("❌ [SucursalContextFilter] No se pudo ni hacer fallback a sucursal 1");
+            // Auditoría 2026-09-11 (C3): SIN fallback a sucursal 1. Error interno del
+            // filtro → 401 y abortar request (contexto inseguro no se propaga).
+            if (!response.isCommitted()) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"error\":\"Sucursal no resuelta: error interno del filtro\"}");
             }
-            filterChain.doFilter(request, response);
         } finally {
             // Limpiar el contexto al final del request
             SucursalContext.clear();
