@@ -66,6 +66,46 @@ class ApiService {
   }
 
   /**
+   * Auditoría 2026-09-11 (T1.2): renovar el JWT expirado vía /auth/refresh-token.
+   * Devuelve true si el nuevo token se guardó (y el caller puede reintentar).
+   */
+  private async tryRefreshToken(): Promise<boolean> {
+    const oldToken = this.getAuthToken();
+    if (!oldToken) return false;
+
+    try {
+      const url = `${this.baseUrl}${API_ENDPOINTS.REFRESH_TOKEN}`;
+      const response = await this.fetchWithTimeout(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${oldToken}`,
+        },
+      }, this.timeout);
+
+      if (!response.ok) {
+        console.warn('🔓 [API] Refresh token rechazado:', response.status);
+        return false;
+      }
+
+      const data = await response.json();
+      const newToken: string | undefined = data?.token;
+
+      if (!newToken) {
+        console.warn('🔓 [API] Refresh token sin token nuevo en respuesta');
+        return false;
+      }
+
+      this.setAuthToken(newToken);
+      return true;
+    } catch (error) {
+      console.error('❌ [API] Error renovando token:', error);
+      return false;
+    }
+  }
+
+  /**
    * Construir headers de la petición
    */
   private buildHeaders(options: RequestOptions): Record<string, string> {
@@ -153,6 +193,19 @@ class ApiService {
         
         // Si es 401, el token expiró o es inválido
         if (response.status === 401) {
+          // Auditoría 2026-09-11 (T1.2): intentar renovar sesión con refresh-token
+          // antes de tirar al usuario al login. Solo una vez por request.
+          if (!endpoint.includes('/auth/refresh-token') &&
+              !endpoint.includes('/auth/login') &&
+              options.requiresAuth !== false &&
+              attempt === 1) {
+            const refreshed = await this.tryRefreshToken();
+            if (refreshed) {
+              console.log('🔄 [API] Token renovado, reintentando request original...');
+              return this.requestWithRetry<T>(endpoint, options, attempt + 1);
+            }
+          }
+          
           console.warn('🔓 [API] Sesión expirada (401), limpiando datos y redirigiendo...');
           
           // Limpiar autenticación
