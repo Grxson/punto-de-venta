@@ -88,6 +88,7 @@ public class CategoriaProductoService {
     }
 
     @CacheEvict(value = "categorias-productos", allEntries = true)
+    @Transactional
     public void eliminar(Long id) {
         CategoriaProducto c = categoriaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con id: " + id));
@@ -101,17 +102,19 @@ public class CategoriaProductoService {
                             "Elimina o reasigna los productos antes de eliminar la categoría.");
         }
 
-        // ✅ CASCADA: Las subcategorías se eliminarán automáticamente por JPA
-        // (CascadeType.ALL)
+        // ✅ CASCADA BLANDA: Las subcategorías se desactivan con la categoría
+        // (Auditoría 2026-09-11, T1.6: soft-delete en vez de hard delete)
         if (c.getSubcategorias() != null && !c.getSubcategorias().isEmpty()) {
-            log.info("Eliminando {} subcategorías de la categoría: {} (ID: {})",
+            c.getSubcategorias().forEach(sub -> sub.setActiva(false));
+            log.info("Desactivando {} subcategorías de la categoría: {} (ID: {})",
                     c.getSubcategorias().size(), c.getNombre(), id);
         }
 
-        // Eliminar definitivamente de la BD - JPA eliminará en cascada todas las
-        // subcategorías
-        categoriaRepository.deleteById(id);
-        log.info("Categoría eliminada permanentemente: {} (ID: {})", c.getNombre(), c.getId());
+        // Borrado lógico: la categoría queda inactiva y oculta, sin romper
+        // historial ni referencias. Antes se hacía deleteById (hard delete).
+        c.setActiva(false);
+        categoriaRepository.save(c);
+        log.info("Categoría desactivada (soft delete): {} (ID: {})", c.getNombre(), c.getId());
     }
 
     private void apply(CategoriaProductoDTO dto, CategoriaProducto c) {

@@ -140,18 +140,20 @@ public class CategoriaSubcategoriaService {
         }
 
         /**
-         * Eliminar una subcategoría (hard delete - eliminación permanente).
+         * Eliminar una subcategoría (soft delete - desactiva).
          */
         public void eliminar(Long id) {
-                log.info("🗑️ Eliminando subcategoría permanentemente: {}", id);
+                log.info("🗑️ Desactivando subcategoría: {}", id);
 
                 CategoriaSubcategoria entity = categoriaSubcategoriaRepository.findById(id)
                                 .orElseThrow(() -> new ResourceNotFoundException("Subcategoría no encontrada: " + id));
 
-                // Eliminar definitivamente de la BD
-                categoriaSubcategoriaRepository.deleteById(id);
+                // Auditoría 2026-09-11 (T1.6): soft-delete en vez de hard delete
+                // para preservar historial de productos y reportes.
+                entity.setActiva(false);
+                categoriaSubcategoriaRepository.save(entity);
 
-                log.info("✅ Subcategoría eliminada permanentemente: {}", id);
+                log.info("✅ Subcategoría desactivada: {}", id);
         }
 
         /**
