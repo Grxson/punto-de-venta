@@ -86,23 +86,22 @@ export const useReportData = () => {
         const hasta = new Date(hastaISO);
 
         const gastosFiltrados = gastosResponse.data.filter((g: any) => {
-            const fechaGasto = g.fecha ? new Date(g.fecha) : null;
-            return fechaGasto && fechaGasto >= desde && fechaGasto <= hasta;
-          });
-          
-          // Mapear y almacenar gastos detallados
-          result.gastosDetallados = gastosFiltrados.map((g: any) => ({
-            id: g.id,
-            monto: parseFloat(g.monto) || 0,
-            categoriaGastoNombre: g.categoriaGastoNombre || 'Sin categoría',
-            proveedorNombre: g.proveedorNombre || 'Sin proveedor',
-            descripcion: g.descripcion || '',
-            fecha: g.fecha || '',
-          }));
-          
-          // Calcular total
-          result.gastosDia = result.gastosDetallados.reduce((sum, gasto) => sum + gasto.monto, 0);
-        }
+          const fechaGasto = g.fecha ? new Date(g.fecha) : null;
+          return fechaGasto && fechaGasto >= desde && fechaGasto <= hasta;
+        });
+
+        // Mapear y almacenar gastos detallados
+        result.gastosDetallados = gastosFiltrados.map((g: any) => ({
+          id: g.id,
+          monto: parseFloat(g.monto) || 0,
+          categoriaGastoNombre: g.categoriaGastoNombre || 'Sin categoría',
+          proveedorNombre: g.proveedorNombre || 'Sin proveedor',
+          descripcion: g.descripcion || '',
+          fecha: g.fecha || '',
+        }));
+
+        // Calcular total
+        result.gastosDia = result.gastosDetallados.reduce((sum, gasto) => sum + gasto.monto, 0);
       } else {
         // Si el endpoint de gastos falla, simplemente no mostrar gastos
         result.gastosDia = 0;
