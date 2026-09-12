@@ -408,7 +408,7 @@ SELECT 'Panecitos (3 piezas)', TRUE, TRUE, (SELECT id FROM categorias_productos 
 WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Panecitos (3 piezas)' AND sucursal_id = 1);
 
 INSERT INTO productos (nombre, activo, disponible_en_menu, categoria_id, sucursal_id, precio, version)
-SELECT 'Galletas de Nuez', TRUE, TRUE, (SELECT id FROM categorias_productos WHERE nombre = 'Extras'), 1, 10.00, 0
+SELECT 'Galletas de Nuez', TRUE, TRUE, (SELECT id FROM categorias_productos WHERE nombre = 'Extras'), 1, 12.00, 0
 WHERE NOT EXISTS (SELECT 1 FROM productos WHERE nombre = 'Galletas de Nuez' AND sucursal_id = 1);
 
 INSERT INTO productos (nombre, activo, disponible_en_menu, categoria_id, sucursal_id, precio, version)
