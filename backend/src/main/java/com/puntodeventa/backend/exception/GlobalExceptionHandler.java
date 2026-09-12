@@ -65,6 +65,24 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Auditoría 2026-09-11 (T1.1): validaciones de negocio lanzadas como
+     * IllegalArgumentException (ej: descuento cajero > 10%, cantidad <= 0) → 400.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        log.warn("⚠️ Validación de negocio: {}", ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Solicitud inválida")
+                .message(ex.getMessage() != null ? ex.getMessage() : "Argumento inválido")
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
      * Maneja violaciones de integridad de datos (claves duplicadas, foreign keys, etc).
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -110,45 +128,128 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Maneja errores de autenticación y autorización (401).
-     * Captura IllegalArgumentException lanzadas desde servicios de autenticación.
+     * Auditoría 2026-09-11 (T1.1): errores de autenticación de Spring Security → 401.
+     * Reemplaza la heurística por texto de IllegalArgumentException.
      */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
-        // Si el mensaje contiene palabras clave de autenticación, es un error 401
-        String message = ex.getMessage();
-        boolean isAuthError = message != null && (
-            message.toLowerCase().contains("username") ||
-            message.toLowerCase().contains("password") ||
-            message.toLowerCase().contains("contraseña") ||
-            message.toLowerCase().contains("credencial")
-        );
-        
-        if (isAuthError) {
-            log.warn("⚠️ Error de autenticación: {}", message);
-            
-            ErrorResponse error = ErrorResponse.builder()
+    @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthentication(
+            org.springframework.security.core.AuthenticationException ex) {
+        log.warn("⚠️ Error de autenticación: {}", ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.UNAUTHORIZED.value())
                 .error("Error de autenticación")
-                .message(message)
+                .message("Credenciales inválidas")
                 .build();
-            
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
-        }
-        
-        // Si no es error de auth, es un bad request genérico (400)
-        log.warn("⚠️ Argumento inválido: {}", message);
-        
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    /**
+     * Auditoría 2026-09-11 (T1.1): sin autorización (403) con body JSON.
+     */
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            org.springframework.security.access.AccessDeniedException ex) {
+        log.warn("⚠️ Acceso denegado: {}",
+                ex.getMessage() != null ? ex.getMessage() : "Sin permisos suficientes");
+
         ErrorResponse error = ErrorResponse.builder()
-            .timestamp(LocalDateTime.now())
-            .status(HttpStatus.BAD_REQUEST.value())
-            .error("Solicitud inválida")
-            .message(message != null ? message : "Argumento inválido")
-            .build();
-        
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.FORBIDDEN.value())
+                .error("Acceso denegado")
+                .message("No tiene permisos para realizar esta operación")
+                .build();
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
+    /**
+     * Auditoría 2026-09-11 (T1.1): conflicto de optimistic locking (409).
+     * Dos usuarios editaron el mismo registro concurrentemente.
+     */
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ErrorResponse> handleOptimisticLock(
+            org.springframework.orm.ObjectOptimisticLockingFailureException ex) {
+        log.warn("⚠️ Conflicto de concurrencia (optimistic lock): {}", ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Conflicto de edición")
+                .message("Datos modificados por otro usuario. Recargue e intente de nuevo.")
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
+     * Auditoría 2026-09-11 (T1.1): violación de constraints de bean validation.
+     */
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            jakarta.validation.ConstraintViolationException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getConstraintViolations().forEach(v -> errors.put(v.getPropertyPath().toString(), v.getMessage()));
+
+        log.warn("❌ Violación de constraints: {}", errors);
+
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Error de validación")
+                .message("Los datos proporcionados no son válidos")
+                .validationErrors(errors)
+                .build();
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
+
+    /**
+     * Auditoría 2026-09-11 (T1.1): body JSON malformado o vacío (400).
+     */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleMessageNotReadable(
+            org.springframework.http.converter.HttpMessageNotReadableException ex) {
+        log.warn("⚠️ JSON inválido: {}", ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Solicitud inválida")
+                .message("El cuerpo de la solicitud contiene JSON inválido o tipo de dato incorrecto")
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
+     * Auditoría 2026-09-11 (T1.1): parámetro de path/query con tipo inválido (400).
+     */
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
+        String nombre = ex.getName() != null ? ex.getName() : "parámetro";
+        String mensaje = String.format("Parámetro inválido: %s (se esperaba %s)",
+                nombre,
+                ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "otro tipo");
+
+        log.warn("⚠️ {}", mensaje);
+
+        ErrorResponse error = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Solicitud inválida")
+                .message(mensaje)
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
+     * Maneja errores de validación de datos (@Valid).
+     */
 
     /**
      * Maneja excepciones genéricas no capturadas.
