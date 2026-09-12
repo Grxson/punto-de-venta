@@ -88,6 +88,13 @@ public class CacheConfig {
         cacheManager.registerCustomCache("menuPopularidad", 
             buildCache(CACHE_MENU_SIZE, CACHE_MENU_MINUTES));
 
+        // Auditoría 2026-09-11 (A3): cachés huérfanas registradas (antes caían al
+        // builder default sin TTL ni tamaño acotado)
+        cacheManager.registerCustomCache("productos-top",
+            buildCache(CACHE_MENU_SIZE, CACHE_DYNAMIC_MINUTES));
+        cacheManager.registerCustomCache("productosSucursal",
+            buildCache(CACHE_MENU_SIZE, 2));
+
         // Ventas (datos más críticos, caché muy corto)
         cacheManager.registerCustomCache("ventas-del-dia", 
             buildCache(CACHE_SALES_SIZE, CACHE_SALES_MINUTES));
