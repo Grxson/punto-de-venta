@@ -24,5 +24,4 @@
   window.__ENV__.VITE_API_RETRIES = 3;
   window.__ENV__.VITE_APP_ENV = isProduction ? 'production' : 'development';
   
-  console.log('⚙️ Runtime Environment Config Loaded:', window.__ENV__);
 })();
