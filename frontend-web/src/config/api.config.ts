@@ -53,7 +53,6 @@ const getEnvVars = (): ApiConfig => {
     },
   };
 
-  console.log('🔧 API Config Env:', { nodeEnv, windowEnv, fallback: apiUrlProd });
 
   // En desarrollo
   if (nodeEnv === 'development') {

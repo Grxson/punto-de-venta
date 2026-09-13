@@ -17,13 +17,11 @@ export const useReportsLocalStorage = () => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (!stored) {
-        console.log('📦 localStorage: Sin datos previos');
         return new Map<string, StoredReport>();
       }
 
       const parsed: Record<string, StoredReport> = JSON.parse(stored);
       const map = new Map(Object.entries(parsed));
-      console.log(`📦 localStorage: Cargados ${map.size} items`);
       return map;
     } catch (error) {
       console.error('❌ Error cargando localStorage:', error);
@@ -47,7 +45,6 @@ export const useReportsLocalStorage = () => {
       }
 
       localStorage.setItem(STORAGE_KEY, jsonStr);
-      console.log(`💾 localStorage: Guardados ${reports.size} items (${(sizeInBytes / 1024).toFixed(2)} KB)`);
     } catch (error) {
       if (error instanceof Error && error.name === 'QuotaExceededError') {
         console.error('❌ localStorage LLENO. Limpiando datos antiguos...');
@@ -74,7 +71,6 @@ export const useReportsLocalStorage = () => {
         }
       }
 
-      console.log(`🗑️ localStorage: Limpiados ${deletedCount} items antiguos (> ${maxDays} días)`);
       return reports;
     },
     []
@@ -92,21 +88,18 @@ export const useReportsLocalStorage = () => {
       const report = parsed[key];
 
       if (!report) {
-        console.log(`📦 localStorage MISS: ${key}`);
         return null;
       }
 
       // Verificar si no ha expirado (7 días)
       const maxAge = MAX_DAYS_IN_CACHE * 24 * 60 * 60 * 1000;
       if (Date.now() - report.timestamp > maxAge) {
-        console.log(`⏰ localStorage EXPIRADO: ${key}`);
         // Eliminar del almacenamiento
         delete parsed[key];
         localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
         return null;
       }
 
-      console.log(`✅ localStorage HIT: ${key}`);
       return report.data;
     } catch (error) {
       console.error('❌ Error leyendo localStorage:', error);
@@ -128,7 +121,6 @@ export const useReportsLocalStorage = () => {
       };
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
-      console.log(`💾 localStorage: Guardado ${key}`);
     } catch (error) {
       console.error('❌ Error guardando en localStorage:', error);
     }
@@ -140,7 +132,6 @@ export const useReportsLocalStorage = () => {
   const clearAll = useCallback(() => {
     try {
       localStorage.removeItem(STORAGE_KEY);
-      console.log('🗑️ localStorage: Completamente limpio');
     } catch (error) {
       console.error('❌ Error limpiando localStorage:', error);
     }

@@ -106,7 +106,6 @@ export const UsuarioForm = ({
       const rolId = Number(data.rolId);
       const sucursalId = Number(data.sucursalId);
 
-      console.log('📝 Datos del formulario:', { ...data, rolId, sucursalId });
 
       if (!rolId || isNaN(rolId) || rolId <= 0) {
         console.error('❌ Rol inválido:', data.rolId);
@@ -131,7 +130,6 @@ export const UsuarioForm = ({
         submitData.password = data.password;
       }
 
-      console.log('✅ Enviando:', submitData);
 
       await onSubmit(submitData);
       handleClose();

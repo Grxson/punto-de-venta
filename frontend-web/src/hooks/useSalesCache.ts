@@ -66,7 +66,6 @@ export function useSalesCache() {
   const loadAllSales = useCallback(async (dateRange?: { desde: string; hasta: string }) => {
     // 🔒 Evitar múltiples cargas simultáneas (idempotencia)
     if (isLoadingRef.current) {
-      console.log('⏳ Ya hay una carga en progreso, ignorando nueva solicitud');
       return allSales;
     }
 
@@ -90,7 +89,6 @@ export function useSalesCache() {
         const entry = cache.get(cacheKey)!;
         const now = Date.now();
         if (now - entry.timestamp < CACHE_DURATION) {
-          console.log('📦 Usando caché válido para:', cacheKey);
           // ⚠️ IMPORTANTE: No llamar setLoading(false) aquí
           // El componente es responsable de manejar el estado loading
           // Mantener el spinner visible hasta que setVentas() complete
@@ -102,7 +100,6 @@ export function useSalesCache() {
         cache.delete(cacheKey);
       }
 
-      console.log('🔄 Iniciando carga de ventas desde el backend...', { desde: dateRange?.desde, hasta: dateRange?.hasta });
       const allSalesData: Venta[] = [];
       let page = 0;
       const pageSize = 50;
@@ -119,14 +116,12 @@ export function useSalesCache() {
       // Cargar páginas de forma SECUENCIAL
       while (hasMorePages) {
         try {
-          console.log(`  📡 Solicitando página ${page}...`);
           const response = await apiService.get(buildUrl(page));
 
           if (response.success && response.data) {
             const pageData = response.data;
             if (Array.isArray(pageData) && pageData.length > 0) {
               allSalesData.push(...pageData);
-              console.log(`  ✓ Página ${page}: ${pageData.length} registros`);
               
               if (pageData.length < pageSize) {
                 hasMorePages = false;
@@ -134,7 +129,6 @@ export function useSalesCache() {
                 page++;
               }
             } else {
-              console.log(`  ℹ️ Página ${page} vacía, finalizando carga`);
               hasMorePages = false;
             }
           } else {
@@ -156,7 +150,6 @@ export function useSalesCache() {
         }
       }
 
-      console.log(`✅ Carga completada: ${allSalesData.length} ventas totales`);
 
       // 🔄 Delay mínimo para asegurar que el usuario vea el spinner (UX)
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -197,7 +190,6 @@ export function useSalesCache() {
     const cacheKey = getCacheKey(dateRange);
     cache.delete(cacheKey);
     cache.delete('all-sales');
-    console.log('🔄 Caché invalidado');
   }, [getCacheKey]);
 
   /**
@@ -206,7 +198,6 @@ export function useSalesCache() {
   const clearAllCache = useCallback(() => {
     cache.clear();
     setAllSales([]);
-    console.log('🗑️ Caché limpiado');
   }, []);
 
   return {

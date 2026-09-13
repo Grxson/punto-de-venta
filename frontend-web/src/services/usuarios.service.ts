@@ -24,10 +24,8 @@ export const usuariosService = {
       }
       // Si activo es undefined, no agregamos nada (backend debe devolver todos)
       const query = params.toString() ? `?${params.toString()}` : '';
-      console.log(`📤 obtenerPorSucursal: GET /auth/usuarios/sucursal/${sucursalId}${query}`);
       const response = await apiService.get<Usuario[]>(`${API_BASE}/sucursal/${sucursalId}${query}`);
       if (response.success && response.data) {
-        console.log(`✅ Usuarios obtenidos: ${response.data.length}`);
         return response.data;
       }
       console.warn('Error al obtener usuarios:', response.error || 'Unknown error');
@@ -59,9 +57,7 @@ export const usuariosService = {
    * Crear nuevo usuario
    */
   crear: async (data: CrearUsuarioRequest) => {
-    console.log('🔵 usuariosService.crear() - Datos:', data);
     const response = await apiService.post<Usuario>(API_BASE, data);
-    console.log('🔴 usuariosService.crear() - Respuesta:', response);
     return response.data;
   },
 
@@ -69,9 +65,7 @@ export const usuariosService = {
    * Actualizar usuario
    */
   actualizar: async (id: number, data: EditarUsuarioRequest) => {
-    console.log('🔵 usuariosService.actualizar() - ID:', id, 'Datos:', data);
     const response = await apiService.put<Usuario>(`${API_BASE}/${id}`, data);
-    console.log('🔴 usuariosService.actualizar() - Respuesta:', response);
     if (!response.success) {
       console.error('❌ Error en respuesta:', response.error);
       throw new Error(response.error || 'Error al actualizar usuario');
@@ -83,9 +77,7 @@ export const usuariosService = {
    * Cambiar rol de un usuario
    */
   cambiarRol: async (id: number, rolId: number) => {
-    console.log('🔵 usuariosService.cambiarRol() - ID:', id, 'RolId:', rolId);
     const response = await apiService.put<Usuario>(`${API_BASE}/${id}/rol?rolId=${rolId}`, {});
-    console.log('🔴 usuariosService.cambiarRol() - Respuesta:', response);
     if (!response.success) {
       console.error('❌ Error en respuesta:', response.error);
       throw new Error(response.error || 'Error al cambiar rol');
@@ -97,9 +89,7 @@ export const usuariosService = {
    * Desactivar usuario
    */
   desactivar: async (id: number) => {
-    console.log('🔵 usuariosService.desactivar() - ID:', id);
     const response = await apiService.delete<void>(`${API_BASE}/${id}`);
-    console.log('🔴 usuariosService.desactivar() - Respuesta:', response);
     if (!response.success) {
       console.error('❌ Error en respuesta:', response.error);
       throw new Error(response.error || 'Error al desactivar usuario');

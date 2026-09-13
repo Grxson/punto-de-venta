@@ -257,7 +257,6 @@ export default function AdminSales() {
       const desde = dateRange.desde || '';
       const hasta = dateRange.hasta || '';
 
-      console.log('📅 Cargando ventas con filtro de fechas:', { desde, hasta });
 
       const ventasData = await loadAllSales({ desde, hasta });
 
@@ -281,10 +280,8 @@ export default function AdminSales() {
           setLoading(false); // Quitar spinner DESPUÉS de actualizar datos
 
           if (ventasData.length === 0) {
-            console.log('ℹ️ No hay ventas en el rango de fechas seleccionado');
             setSnackbarCarga({ open: true, message: 'ℹ️ No hay ventas en este período' });
           } else {
-            console.log(`✅ Ventas cargadas: ${ventasData.length} registros`);
             setSnackbarCarga({ open: true, message: `✅ ${ventasData.length} ventas cargadas` });
           }
         }, 0);
@@ -305,30 +302,17 @@ export default function AdminSales() {
     const desde = crearFechaLocal(dateRange.desde, 'inicio');
     const hasta = crearFechaLocal(dateRange.hasta, 'fin');
 
-    console.log('Filtro de ventas:', {
-      desde: desde.toISOString(),
-      hasta: hasta.toISOString(),
-      totalVentas: ventas.length,
-      ventasEjemplo: ventas.slice(0, 3).map(v => ({ id: v.id, fecha: v.fecha }))
-    });
 
     const filtradas = ventas.filter(venta => {
       const fechaVenta = new Date(venta.fecha);
       const cumpleFiltro = fechaVenta >= desde && fechaVenta <= hasta;
 
       if (ventas.length <= 5) { // Solo log si hay pocas ventas para no saturar
-        console.log('Venta', venta.id, {
-          fechaVenta: fechaVenta.toISOString(),
-          desde: desde.toISOString(),
-          hasta: hasta.toISOString(),
-          cumpleFiltro
-        });
       }
 
       return cumpleFiltro;
     });
 
-    console.log('Ventas filtradas:', filtradas.length);
     return filtradas;
   }, [ventas, dateRange]);
 

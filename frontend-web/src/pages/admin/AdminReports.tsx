@@ -101,7 +101,6 @@ export default function AdminReports() {
       const desdeDate = dateRange.desde;
       const hastaDate = dateRange.hasta;
 
-      console.log(`📊 [AdminReports] Cargando reportes: ${desdeDate} - ${hastaDate}`);
 
       // 🔄 PASO 1: Verificar cache para resumen y productos (más lentos)
       let resumenData = cache.getFromCache('resumen', desdeDate, hastaDate);
@@ -221,7 +220,6 @@ export default function AdminReports() {
         setGastosDetallados(gastosFormateados);
       }
 
-      console.log(`✅ [AdminReports] Reportes cargados (${peticiones.length} peticiones paralelas)`);
     } catch (err: any) {
       setError(err.message || 'Error al cargar reportes');
       console.error('❌ [AdminReports] Error:', err);
@@ -239,7 +237,6 @@ export default function AdminReports() {
    * 🔄 Refrescar datos manualmente (invalida cache)
    */
   const handleRefreshData = () => {
-    console.log('🔄 [AdminReports] Refrescando datos manualmente...');
     cache.clearAll(); // Limpia TODO el cache
     loadData();
   };

@@ -116,7 +116,6 @@ class ApiService {
       const token = this.getAuthToken();
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
-        console.log('🔑 [API] Authorization header agregado, token length:', token.length);
       } else {
         console.warn('⚠️ [API] requiresAuth=true pero no hay token disponible');
       }
@@ -170,9 +169,7 @@ class ApiService {
       // Agregar body si existe
       if (options.body) {
         requestOptions.body = JSON.stringify(options.body);
-        console.log(`📤 [${options.method}] ${url}`, options.body);
       } else {
-        console.log(`📤 [${options.method}] ${url}`, { requiresAuth: options.requiresAuth, hasAuth: !!headers['Authorization'] });
       }
 
       const response = await this.fetchWithTimeout(url, requestOptions, timeout);
@@ -201,7 +198,6 @@ class ApiService {
               attempt === 1) {
             const refreshed = await this.tryRefreshToken();
             if (refreshed) {
-              console.log('🔄 [API] Token renovado, reintentando request original...');
               return this.requestWithRetry<T>(endpoint, options, attempt + 1);
             }
           }
@@ -227,7 +223,6 @@ class ApiService {
           if (typeof window !== 'undefined') {
             // Verificar si ya estamos en login para evitar redirecciones recursivas
             if (window.location.pathname !== '/login') {
-              console.log('   📍 Redirigiendo a /login...');
               window.location.href = '/login?expired=true';
             }
           }
@@ -241,7 +236,6 @@ class ApiService {
         };
       }
 
-      console.log(`✅ [${options.method}] ${url} - Status ${response.status}`);
       
       return {
         success: true,
@@ -262,7 +256,6 @@ class ApiService {
 
       // Si es otro error de red y hay reintentos disponibles
       if (attempt < this.retries) {
-        console.log(`Reintento ${attempt}/${this.retries} para ${endpoint}`);
         await this.delay(1000 * attempt); // Backoff exponencial
         return this.requestWithRetry<T>(endpoint, options, attempt + 1);
       }

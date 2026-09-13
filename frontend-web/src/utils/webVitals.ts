@@ -96,11 +96,6 @@ function processMetric(metric: Metric) {
 
   // Log en desarrollo
   if (import.meta.env.DEV) {
-    console.log(`${metric.name}:`, {
-      value: vitals.value,
-      rating: vitals.rating,
-      delta: vitals.delta,
-    });
   }
 
   // Enviar cuando completemos todas las métricas
@@ -123,7 +118,6 @@ export function useWebVitals() {
     onLCP(processMetric);
     onTTFB(processMetric);
 
-    console.log('Web Vitals monitoring inicializado');
   }
 }
 
@@ -143,10 +137,6 @@ export function reportWebVital(name: string, value: number) {
   metricsQueue.push(metric);
 
   if (import.meta.env.DEV) {
-    console.log(`Custom metric ${name}:`, {
-      value: metric.value,
-      rating: metric.rating,
-    });
   }
 }
 

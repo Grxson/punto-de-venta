@@ -48,7 +48,6 @@ export const useCrearUsuario = (sucursalId?: number) => {
   return useMutation({
     mutationFn: (data: CrearUsuarioRequest) => usuariosService.crear(data),
     onSuccess: (_, data) => {
-      console.log('✅ Usuario creado:', data);
       // Invalidar cache específico de la sucursal si se conoce
       if (sucursalId) {
         queryClient.invalidateQueries({ 
@@ -80,7 +79,6 @@ export const useActualizarUsuario = (sucursalId?: number) => {
     mutationFn: ({ id, data }: { id: number; data: EditarUsuarioRequest }) =>
       usuariosService.actualizar(id, data),
     onSuccess: (_, { id, data }) => {
-      console.log('✅ Usuario actualizado:', id);
       // Invalidar cache específico del usuario y la sucursal
       queryClient.invalidateQueries({ queryKey: usuariosKeys.detail(id) });
       
@@ -112,7 +110,6 @@ export const useCambiarRol = (sucursalId?: number) => {
     mutationFn: ({ id, rolId }: { id: number; rolId: number }) =>
       usuariosService.cambiarRol(id, rolId),
     onSuccess: (_, { id }) => {
-      console.log('✅ Rol cambiado:', id);
       queryClient.invalidateQueries({ queryKey: usuariosKeys.detail(id) });
       
       if (sucursalId) {
@@ -138,7 +135,6 @@ export const useDesactivarUsuario = (sucursalId?: number) => {
   return useMutation({
     mutationFn: (id: number) => usuariosService.desactivar(id),
     onSuccess: (_, id) => {
-      console.log('✅ Usuario desactivado:', id);
       queryClient.invalidateQueries({ queryKey: usuariosKeys.detail(id) });
       
       if (sucursalId) {

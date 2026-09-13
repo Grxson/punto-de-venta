@@ -19,7 +19,6 @@ export function useServiceWorkerRegistration() {
           { scope: '/' }
         );
 
-        console.log('Service Worker registrado:', registration);
 
         // Escuchar actualizaciones
         registration.addEventListener('updatefound', () => {
@@ -29,7 +28,6 @@ export function useServiceWorkerRegistration() {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
               // Hay una nueva versión disponible
-              console.log('Nueva versión del Service Worker disponible');
               
               // Mostrar notificación al usuario
               if (window.confirm('Nueva versión disponible. ¿Recargar?')) {
@@ -42,7 +40,6 @@ export function useServiceWorkerRegistration() {
 
         // Manejar cambios en la conexión
         registration.addEventListener('controllerchange', () => {
-          console.log('Service Worker actualizado');
         });
       } catch (error) {
         console.error('Error registrando Service Worker:', error);

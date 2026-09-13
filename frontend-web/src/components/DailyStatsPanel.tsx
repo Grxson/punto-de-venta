@@ -102,18 +102,11 @@ export default function DailyStatsPanel() {
       const inicioDiaISO = toLocalISOString(fechaStr, '00:00:00');
       const finDiaISO = toLocalISOString(fechaStr, '23:59:59');
 
-      console.log('[DailyStatsPanel] Dates correctas (zone local):', { 
-        inicioDiaISO, 
-        finDiaISO,
-        horaLocalInicio: format(inicioDiaLocal, 'HH:mm:ss'),
-        horaLocalFin: format(finDiaLocal, 'HH:mm:ss'),
-      });
 
       const desgloseResponse = await apiService.get(
         `${API_ENDPOINTS.SALES}/resumen/metodos-pago?desde=${inicioDiaISO}&hasta=${finDiaISO}`
       );
 
-      console.log('[DailyStatsPanel] Respuesta desglose:', desgloseResponse);
 
       if (desgloseResponse.success && Array.isArray(desgloseResponse.data)) {
         const datosValidos = desgloseResponse.data
@@ -131,7 +124,6 @@ export default function DailyStatsPanel() {
             };
           });
 
-        console.log('[DailyStatsPanel] Desglose procesado:', datosValidos);
         setDesglosePagos(datosValidos);
 
         if (datosValidos.length === 0 && Array.isArray(desgloseResponse.data) && desgloseResponse.data.length > 0) {

@@ -49,7 +49,6 @@ export const AdminUsers = () => {
   // Obtener sucursal actual del contexto de autenticación
   useEffect(() => {
     if (sucursalDelUsuario?.id && sucursalDelUsuario.id > 0) {
-      console.log(`📍 AdminUsers: Usando sucursal del usuario: ${sucursalDelUsuario.id}`);
       setSucursalId(sucursalDelUsuario.id);
     }
   }, [sucursalDelUsuario]);

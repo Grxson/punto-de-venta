@@ -60,10 +60,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUsuario = localStorage.getItem('auth_usuario');
     const storedSucursal = localStorage.getItem('auth_sucursal');
 
-    console.log('🔐 AuthContext: Cargando desde localStorage...');
-    console.log('   Token existe:', !!storedToken);
-    console.log('   Usuario existe:', !!storedUsuario);
-    console.log('   Sucursal existe:', !!storedSucursal);
 
     if (storedToken && storedUsuario) {
       try {
@@ -96,7 +92,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Si no hay sucursal guardada, crear una basada en el usuario
         if (!sucursalData) {
-          console.log('📍 Creando sucursal basada en usuario');
           sucursalData = {
             id: usuarioNormalizado.sucursalId || usuarioNormalizado.idSucursal || 1,
             nombre: `Sucursal ${usuarioNormalizado.sucursalId || usuarioNormalizado.idSucursal || 1}`,
@@ -108,8 +103,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUsuario(usuarioNormalizado);
         setSucursal(sucursalData);
         apiService.setAuthToken(storedToken);
-        console.log('✅ AuthContext: Token, usuario y sucursal cargados correctamente');
-        console.log(`   Usuario: ${usuarioNormalizado.nombre}, Sucursal: ${sucursalData.id}`);
       } catch (error) {
         console.error('❌ Error al parsear usuario de localStorage:', error);
         localStorage.removeItem('auth_token');
@@ -122,7 +115,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (username: string, password: string) => {
     try {
-      console.log('🔓 AuthContext: Iniciando login para', username);
 
       const response = await apiService.post(
         API_ENDPOINTS.LOGIN,
@@ -134,10 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // El backend retorna: { token, usuario, mensaje }
         const { token: newToken, usuario: newUsuario } = response.data as { token: string; usuario: any; mensaje?: string };
 
-        console.log('✅ AuthContext: Login exitoso, token recibido');
-        console.log('   Token length:', newToken?.length);
-        console.log('   Usuario:', newUsuario?.username);
-        console.log('   Usuario object:', newUsuario);
 
         // Normalizar el rol: usar función auxiliar
         const usuarioNormalizado: Usuario = {
@@ -145,7 +133,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           rol: normalizarRol(newUsuario),
         };
 
-        console.log('✅ AuthContext: Usuario normalizado:', usuarioNormalizado);
 
         // Cargar sucursal del servidor basado en el sucursalId del usuario
         const sucursalId = newUsuario.sucursalId || newUsuario.idSucursal || 1;
@@ -158,7 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           
           if (sucursalResponse.success && sucursalResponse.data) {
             sucursalData = sucursalResponse.data;
-            console.log(`   📍 Sucursal cargada del servidor: ID=${sucursalData.id}, nombre=${sucursalData.nombre}`);
           } else {
             throw new Error('No se encontró la sucursal');
           }
@@ -185,8 +171,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Configurar token en apiService
         apiService.setAuthToken(newToken);
 
-        console.log('✅ AuthContext: Token guardado en localStorage y apiService');
-        console.log('   localStorage.auth_token:', localStorage.getItem('auth_token')?.substring(0, 20) + '...');
       } else {
         console.error('❌ AuthContext: Response sin éxito:', response);
         throw new Error(response.error || 'Error al iniciar sesión');
@@ -198,7 +182,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    console.log('🚪 AuthContext: Ejecutando logout');
     setToken(null);
     setUsuario(null);
     setSucursal(null);

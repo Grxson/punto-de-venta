@@ -78,4 +78,3 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('Service Worker registrado correctamente');

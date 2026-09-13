@@ -198,11 +198,6 @@ export default function AdminMermas() {
 
       if (tipoMerma === 'ingrediente') {
         // Guardar merma de ingrediente individual
-        console.log('📝 Guardando merma de ingrediente:', {
-          ingrediente: ingredienteSeleccionado?.nombre,
-          cantidad,
-          unidad: unidadId,
-        });
 
         const costoTotal = cantidad * costoUnitario;
         const mermaData = {
@@ -215,10 +210,8 @@ export default function AdminMermas() {
           costoTotal,
         };
 
-        console.log('📤 Enviando POST a /inventario/mermas:', mermaData);
         const response = await apiService.post('/inventario/mermas', mermaData);
 
-        console.log('📥 Respuesta del servidor:', response);
 
         if (response.success) {
           setSnackbar({
@@ -236,11 +229,6 @@ export default function AdminMermas() {
         // Guardar merma de producto completo (con todos sus ingredientes)
         const producto = productoSeleccionado!;
 
-        console.log('📝 Guardando merma de producto:', {
-          producto: producto.nombre,
-          cantidad,
-          recetaItems: producto.receta?.length,
-        });
 
         let muermasGuardadas = 0;
 
@@ -259,11 +247,9 @@ export default function AdminMermas() {
             costoTotal: costoTotalIngrediente,
           };
 
-          console.log(`📤 Enviando merma ${muermasGuardadas + 1}/${producto.receta!.length}: ${ingredienteReceta.ingredienteNombre}`, mermaPorIngrediente);
 
           const response = await apiService.post('/inventario/mermas', mermaPorIngrediente);
 
-          console.log(`📥 Respuesta merma ${muermasGuardadas + 1}:`, response);
 
           if (!response.success) {
             console.error(`❌ Error al guardar merma para ${ingredienteReceta.ingredienteNombre}:`, response.error);
@@ -274,7 +260,6 @@ export default function AdminMermas() {
           muermasGuardadas++;
         }
 
-        console.log(`✅ Se guardaron ${muermasGuardadas} mermas exitosamente`);
 
         setSnackbar({
           open: true,

@@ -46,7 +46,6 @@ class WebSocketService {
     
     const wsEndpoint = new URL('/ws', apiUrl).toString();
 
-    console.log('🔌 WebSocket endpoint:', wsEndpoint);
 
     this.client = new Client({
       webSocketFactory: () => new SockJS(wsEndpoint) as any,
@@ -56,22 +55,18 @@ class WebSocketService {
       onConnect: () => {
         this.connected = true;
         this.reconnectAttempts = 0;
-        console.log('✅ WebSocket conectado');
         this.subscribeToTopics();
       },
       onDisconnect: () => {
-        console.log('❌ WebSocket desconectado');
         this.connected = false;
       },
       onStompError: (frame) => {
-        console.debug('⚠️ Error STOMP:', frame?.body);
         this.reconnectAttempts++;
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
           console.warn('🔌 WebSocket: máximo de intentos de reconexión alcanzado.');
         }
       },
       onWebSocketError: (event) => {
-        console.debug('⚠️ Error WebSocket (reconectando):', event);
       },
     });
   }
@@ -82,7 +77,6 @@ class WebSocketService {
     }
 
     if (!this.connected && this.client) {
-      console.log('🔌 Activando WebSocket client...');
       this.client.activate();
     }
   }

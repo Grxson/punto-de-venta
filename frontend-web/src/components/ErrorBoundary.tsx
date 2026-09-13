@@ -38,14 +38,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     handleReset = () => {
-        console.log('🔄 [ErrorBoundary] Reiniciando aplicación...');
         this.setState({ hasError: false, error: null });
         // Recargar la página para limpiar todo el estado
         window.location.href = '/login';
     };
 
     handleRetry = () => {
-        console.log('🔄 [ErrorBoundary] Reintentando...');
         this.setState({ hasError: false, error: null });
     };
 

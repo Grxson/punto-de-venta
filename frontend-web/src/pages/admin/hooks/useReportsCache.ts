@@ -48,7 +48,6 @@ export const useReportsCache = () => {
       const cached = cache.current.get(key);
 
       if (!cached) {
-        console.log(`❌ Cache MISS: ${key}`);
         return null;
       }
 
@@ -56,12 +55,10 @@ export const useReportsCache = () => {
       const isExpired = Date.now() - cached.timestamp > ttl;
 
       if (isExpired) {
-        console.log(`⏰ Cache EXPIRADO: ${key} (${ttl / 1000}s ago)`);
         cache.current.delete(key);
         return null;
       }
 
-      console.log(`✅ Cache HIT: ${key}`);
       return cached.data;
     },
     []
@@ -77,7 +74,6 @@ export const useReportsCache = () => {
       data,
       timestamp: Date.now(),
     });
-    console.log(`💾 Cache SET: ${key} (TTL: ${ttlMs / 1000}s)`);
   }, []);
 
   /**
@@ -87,7 +83,6 @@ export const useReportsCache = () => {
     const keysToDelete = Array.from(cache.current.keys()).filter(k => k.startsWith(type));
     keysToDelete.forEach(k => {
       cache.current.delete(k);
-      console.log(`🗑️ Cache INVALIDATED: ${k}`);
     });
   }, []);
 
@@ -97,7 +92,6 @@ export const useReportsCache = () => {
   const clearAll = useCallback(() => {
     const count = cache.current.size;
     cache.current.clear();
-    console.log(`🗑️ Cache CLEARED (${count} items)`);
   }, []);
 
   /**
