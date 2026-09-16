@@ -17,8 +17,8 @@ export const queryClient = new QueryClient({
       gcTime: 10 * 60 * 1000, // 10 minutos - tiempo en caché (antes cacheTime)
       retry: 1, // Reintentar 1 vez en caso de error
       refetchOnWindowFocus: false, // No refetch automático al volver a la ventana
-      refetchOnMount: 'stale', // Refetch solo si datos están stale
-      refetchOnReconnect: 'stale', // Refetch solo si datos están stale
+      refetchOnMount: true, // Refetch solo si los datos están stale
+      refetchOnReconnect: true, // Refetch solo si los datos están stale
       // NUEVA OPTIMIZACIÓN: Request deduplication automática
       networkMode: 'always', // Permitir queries sin conexión
     },

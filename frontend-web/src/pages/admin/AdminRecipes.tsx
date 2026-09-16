@@ -51,6 +51,7 @@ interface RecetaIngrediente {
   unidadNombre: string;
   unidadAbreviatura: string;
   mermaTeorica?: number;
+  costoTotal?: number;
 }
 
 interface Receta {
@@ -118,10 +119,17 @@ export default function AdminRecipes() {
 
       // Cargar productos
       const productosResponse = await productosService.listar({ activo: true });
-      const productosData = (productosResponse?.data || productosResponse || []).filter(
-        (p: any) => p && p.id
+      const productosData: Producto[] = (productosResponse.data || []).flatMap((producto) =>
+        typeof producto.id === 'number'
+          ? [{
+            id: producto.id,
+            nombre: producto.nombre,
+            precio: producto.precio,
+            activo: producto.activo !== false,
+          }]
+          : []
       );
-      setProductos(Array.isArray(productosData) ? productosData : []);
+      setProductos(productosData);
 
       // Cargar ingredientes
       const ingredientesResponse = await ingredientesService.obtenerActivos();

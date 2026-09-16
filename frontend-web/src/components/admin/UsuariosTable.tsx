@@ -24,7 +24,6 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useState, useMemo } from 'react';
 import type { Usuario } from '../../types/usuario.types';
 import type { Rol } from '../../types/rol.types';
@@ -50,7 +49,7 @@ export const UsuariosTable = ({
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRol, setFilterRol] = useState<number | ''>('');
-  const [filterActivo, setFilterActivo] = useState<boolean | ''>('');
+  const [filterActivo, setFilterActivo] = useState<'' | 'true' | 'false'>('');
 
   // Filtrar usuarios
   const filteredUsuarios = useMemo(() => {
@@ -62,7 +61,8 @@ export const UsuariosTable = ({
         usuario.username.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchRol = filterRol === '' || usuario.rol?.id === filterRol;
-      const matchActivo = filterActivo === '' || usuario.activo === filterActivo;
+      const matchActivo =
+        filterActivo === '' || usuario.activo === (filterActivo === 'true');
 
       return matchSearch && matchRol && matchActivo;
     });
@@ -132,7 +132,7 @@ export const UsuariosTable = ({
             value={filterActivo}
             onChange={(e) => {
               const value = e.target.value;
-              setFilterActivo(value === '' ? '' : value === 'true');
+              setFilterActivo(value as '' | 'true' | 'false');
               setPage(0);
             }}
             label="Estado"
@@ -176,14 +176,14 @@ export const UsuariosTable = ({
                   <TableCell>
                     {usuario.rol ? (
                       <Select
-                        value={usuario.rol.id || ''}
+                        value={usuario.rol.id ? String(usuario.rol.id) : ''}
                         onChange={(e) => onChangeRole(usuario.id, Number(e.target.value))}
                         size="small"
                         variant="standard"
                         sx={{ minWidth: 120 }}
                       >
                         {Array.isArray(roles) && roles.map((rol) => (
-                          <MenuItem key={rol.id} value={rol.id}>
+                          <MenuItem key={rol.id} value={String(rol.id)}>
                             {rol.nombre}
                           </MenuItem>
                         ))}

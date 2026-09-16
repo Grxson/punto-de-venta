@@ -27,3 +27,5 @@ server.log
 *.temp
 *~
 /.cursor
+.serena
+AGENTS.md

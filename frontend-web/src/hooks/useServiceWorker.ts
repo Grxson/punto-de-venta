@@ -9,7 +9,7 @@ export function useServiceWorkerRegistration() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) {
       console.warn('Service Workers no soportados en este navegador');
-      return;
+      return undefined;
     }
 
     const registerServiceWorker = async () => {

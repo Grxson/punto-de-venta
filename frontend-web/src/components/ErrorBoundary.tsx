@@ -104,7 +104,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                                 Se presentó un error inesperado. Por favor intenta de nuevo o contacta con soporte si el problema persiste.
                             </Typography>
 
-                            {process.env.NODE_ENV === 'development' && this.state.error && (
+                            {import.meta.env.DEV && this.state.error && (
                                 <Box
                                     sx={{
                                         backgroundColor: '#f5f5f5',

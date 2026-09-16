@@ -22,8 +22,6 @@ import { useForm, Controller } from 'react-hook-form';
 import { useRoles } from '../../hooks/useRoles';
 import { useSucursales } from '../../hooks/useSucursales';
 import type { Usuario, CrearUsuarioRequest, EditarUsuarioRequest } from '../../types/usuario.types';
-import type { Rol } from '../../types/rol.types';
-import type { Sucursal } from '../../types/sucursal.types';
 
 interface UsuarioFormProps {
   open: boolean;
@@ -36,8 +34,8 @@ interface UsuarioFormProps {
 }
 
 interface UsuarioFormData extends Omit<CrearUsuarioRequest, 'rolId' | 'sucursalId'> {
-  rolId: number | string;
-  sucursalId: number | string;
+  rolId: string;
+  sucursalId: string;
 }
 
 export const UsuarioForm = ({
@@ -83,8 +81,12 @@ export const UsuarioForm = ({
           email: usuario.email,
           username: usuario.username,
           password: '',
-          rolId: usuario.rol?.id || '',
-          sucursalId: usuario.sucursal?.id || sucursalActual || '',
+          rolId: usuario.rol?.id ? String(usuario.rol.id) : '',
+          sucursalId: usuario.sucursal?.id
+            ? String(usuario.sucursal.id)
+            : sucursalActual
+              ? String(sucursalActual)
+              : '',
         });
       } else {
         reset({
@@ -94,7 +96,7 @@ export const UsuarioForm = ({
           username: '',
           password: '',
           rolId: '',
-          sucursalId: sucursalActual || '',
+          sucursalId: sucursalActual ? String(sucursalActual) : '',
         });
       }
     }
@@ -116,7 +118,7 @@ export const UsuarioForm = ({
         return;
       }
 
-      const submitData: any = {
+      const submitData: CrearUsuarioRequest | EditarUsuarioRequest = {
         nombre: data.nombre,
         apellido: data.apellido,
         email: data.email,
@@ -282,7 +284,7 @@ export const UsuarioForm = ({
                 <Select {...field} label="Rol">
                   <MenuItem value="">Seleccionar rol...</MenuItem>
                   {roles.map((rol) => (
-                    <MenuItem key={rol.id} value={rol.id}>
+                    <MenuItem key={rol.id} value={String(rol.id)}>
                       {rol.nombre}
                     </MenuItem>
                   ))}
@@ -306,7 +308,7 @@ export const UsuarioForm = ({
                 <Select {...field} label="Sucursal">
                   <MenuItem value="">Seleccionar sucursal...</MenuItem>
                   {sucursales.map((sucursal) => (
-                    <MenuItem key={sucursal.id} value={sucursal.id}>
+                    <MenuItem key={sucursal.id} value={String(sucursal.id)}>
                       {sucursal.nombre}
                     </MenuItem>
                   ))}

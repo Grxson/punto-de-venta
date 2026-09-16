@@ -115,7 +115,7 @@ export default function PosHome() {
   useEffect(() => {
     if (!ventaExitosa) {
       timerCompletadoRef.current = false;
-      return;
+      return undefined;
     }
 
     const timeoutId = window.setTimeout(() => {

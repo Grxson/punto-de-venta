@@ -43,6 +43,19 @@ export interface IngredienteReceta {
   mermaTeorica?: number;
 }
 
+interface ValidationErrorPayload {
+  validationErrors: Record<string, unknown>;
+}
+
+const isValidationErrorPayload = (value: unknown): value is ValidationErrorPayload => {
+  if (!value || typeof value !== 'object' || !('validationErrors' in value)) {
+    return false;
+  }
+
+  const { validationErrors } = value as { validationErrors?: unknown };
+  return Boolean(validationErrors && typeof validationErrors === 'object');
+};
+
 const BASE_URL = '/ingredientes';
 
 export const ingredientesService = {
@@ -100,18 +113,23 @@ export const ingredientesService = {
       ...(datos.factorConversion ? { factorConversion: datos.factorConversion } : {}),
       costoTotalGasto: datos.costoTotalGasto || null,
     };
-    const response = await apiService.post<Ingrediente>(endpoint, ingredienteDTO);
+    const response = await apiService.post<Ingrediente | ValidationErrorPayload>(endpoint, ingredienteDTO);
     if (response.error) {
       // Si hay validationErrors, incluirlos en el mensaje
-      if (response.data?.validationErrors) {
+      if (isValidationErrorPayload(response.data)) {
         const detalles = Object.entries(response.data.validationErrors)
-          .map(([campo, msg]: [string, any]) => `${campo}: ${msg}`)
+          .map(([campo, mensaje]) => `${campo}: ${String(mensaje)}`)
           .join('; ');
         throw new Error(JSON.stringify({ message: detalles, validationErrors: response.data.validationErrors }));
       }
       throw new Error(response.error);
     }
-    return response.data!;
+
+    if (!response.data || isValidationErrorPayload(response.data)) {
+      throw new Error('Respuesta inválida al crear el ingrediente');
+    }
+
+    return response.data;
   },
 
   /**

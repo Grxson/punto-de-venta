@@ -5,13 +5,16 @@
  * Verifica que todas las variables de entorno necesarias estén configuradas
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 console.log('🔍 Verificando configuración para producción...\n');
 
 // Verificar que existe el build
-const distPath = path.join(__dirname, 'dist');
+const distPath = path.join(currentDirectory, 'dist');
 if (!fs.existsSync(distPath)) {
   console.error('❌ Error: No se encontró la carpeta dist/');
   console.log('   Ejecuta: npm run build\n');
@@ -26,7 +29,7 @@ const requiredFiles = [
 
 let allFilesExist = true;
 requiredFiles.forEach(file => {
-  const filePath = path.join(__dirname, file);
+  const filePath = path.join(currentDirectory, file);
   if (!fs.existsSync(filePath)) {
     console.error(`❌ Error: No se encontró ${file}`);
     allFilesExist = false;
@@ -63,7 +66,7 @@ if (!allEnvVarsSet) {
 }
 
 // Verificar configuración de Electron
-const electronMainPath = path.join(__dirname, 'electron', 'main.js');
+const electronMainPath = path.join(currentDirectory, 'electron', 'main.cjs');
 if (fs.existsSync(electronMainPath)) {
   const electronMain = fs.readFileSync(electronMainPath, 'utf8');
   if (electronMain.includes('RAILWAY_FRONTEND_URL')) {
