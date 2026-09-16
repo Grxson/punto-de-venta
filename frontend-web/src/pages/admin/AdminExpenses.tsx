@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -47,6 +47,7 @@ import { gastosIndirectosService } from '../../services/gastos-indirectos.servic
 import { manoObraService } from '../../services/mano-obra.service';
 import type { DateRangeValue } from '../../types/dateRange.types';
 import { getTodayLocalDate, getDateWithOffset } from '../../utils/dateHelper';
+import { acquireLock, releaseLock } from '../../utils/concurrency';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -158,6 +159,7 @@ export default function AdminExpenses() {
   const [error, setError] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingGasto, setEditingGasto] = useState<Gasto | null>(null);
+  const submissionLock = useRef(false);
   const [openNewProveedorDialog, setOpenNewProveedorDialog] = useState(false);
   const [newProveedorName, setNewProveedorName] = useState<string>('');
   
@@ -402,6 +404,8 @@ export default function AdminExpenses() {
   };
 
   const handleSubmit = async () => {
+    if (!acquireLock(submissionLock)) return;
+
     try {
       setLoading(true);
       setError(null);
@@ -536,6 +540,7 @@ export default function AdminExpenses() {
     } catch (err: any) {
       setError(err.message || 'Error al procesar el gasto');
     } finally {
+      releaseLock(submissionLock);
       setLoading(false);
     }
   };

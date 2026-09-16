@@ -1,5 +1,7 @@
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { API_CONFIG } from '../config/api.config';
+import { toWebSocketEndpoint } from '../utils/websocketUrl';
 
 export interface WebSocketMessage {
   tipo: string;
@@ -38,13 +40,7 @@ class WebSocketService {
 
   private initializeClient() {
     // Leer env vars en RUNTIME (después del build)
-    const windowEnv = (window as any).__ENV__ || {};
-    
-    const apiUrl = windowEnv.VITE_API_URL_PROD || 
-                   import.meta.env.VITE_API_URL_PROD || 
-                   'https://backend-production-df01.up.railway.app';
-    
-    const wsEndpoint = new URL('/ws', apiUrl).toString();
+    const wsEndpoint = toWebSocketEndpoint(API_CONFIG.apiUrl);
 
 
     this.client = new Client({

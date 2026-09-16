@@ -49,7 +49,7 @@
 
 ## Domains
 
-- Backend: https://backend-production-df01.up.railway.app
+- Backend: https://backend-production-4bc3.up.railway.app
 - Frontend: https://frontend-web-production-05d0.up.railway.app
 - Postgres: postgres.railway.internal:5432
 

@@ -94,7 +94,7 @@ cd frontend-web && npm run preview:prod
 
 **Current Setup**
 - Project: "punto de venta" on Railway
-- Backend service: backend-production-df01 (Java)
+- Backend service: backend-production-4bc3 (Java)
 - Frontend service: frontend-web-production-* (Node)
 - Database: PostgreSQL on Railway
 

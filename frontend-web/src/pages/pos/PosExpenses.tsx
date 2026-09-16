@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -42,8 +42,10 @@ import DateRangeFilter from '../../components/common/DateRangeFilter';
 import ExpandableExpenseRow from '../../components/expenses/ExpandableExpenseRow';
 import { useGroupExpensesByTime } from '../../hooks/useGroupExpensesByTime';
 import { useCategoriasGasto } from '../../hooks/useCategoriasGasto';
-import ProveedorAutoComplete, { Proveedor } from '../admin/components/ProveedorAutoComplete';
+import ProveedorAutoComplete from '../admin/components/ProveedorAutoComplete';
 import type { DateRangeValue } from '../../types/dateRange.types';
+import { acquireLock, releaseLock } from '../../utils/concurrency';
+import { getTodayLocalDate } from '../../utils/dateHelper';
 
 interface CategoriaGasto {
   id: number;
@@ -123,8 +125,8 @@ export default function PosExpenses() {
   
   // Estado para el filtro de fechas
   const [dateRange, setDateRange] = useState<DateRangeValue>({
-    desde: new Date().toISOString().split('T')[0],
-    hasta: new Date().toISOString().split('T')[0],
+    desde: getTodayLocalDate(),
+    hasta: getTodayLocalDate(),
   });
 
   // Estado del formulario - CAMPOS COMUNES para todos los gastos
@@ -153,6 +155,7 @@ export default function PosExpenses() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingGasto, setEditingGasto] = useState<Gasto | null>(null);
+  const submissionLock = useRef(false);
 
   // Verificar si el usuario es administrador
   const isAdmin = usuario?.rolNombre === 'ADMIN';
@@ -370,8 +373,10 @@ export default function PosExpenses() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!acquireLock(submissionLock)) return;
+
     setSubmitting(true);
     setError(null);
 
@@ -381,6 +386,7 @@ export default function PosExpenses() {
     if (!sucursalId) {
       setError('No se pudo obtener la sucursal del usuario. Intenta iniciar sesión de nuevo.');
       setSubmitting(false);
+      releaseLock(submissionLock);
       return;
     }
 
@@ -495,6 +501,7 @@ export default function PosExpenses() {
     } catch (err: any) {
       setError('Error de conexión: ' + (err.message || ''));
     } finally {
+      releaseLock(submissionLock);
       setSubmitting(false);
     }
   };

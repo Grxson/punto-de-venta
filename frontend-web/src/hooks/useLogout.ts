@@ -6,6 +6,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { clearClientSession } from '../utils/clientSession';
 
 export const useLogout = () => {
   const queryClient = useQueryClient();
@@ -18,14 +19,7 @@ export const useLogout = () => {
       queryClient.clear();
 
       // 2. Limpiar almacenamiento local/sesión relacionado a usuario
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_usuario');
-      localStorage.removeItem('auth_sucursal');
-      localStorage.removeItem('pos_selected_category');
-      localStorage.removeItem('pos_subcategory_id');
-      localStorage.removeItem('cart_items');
-
-      sessionStorage.clear();
+      clearClientSession(localStorage, sessionStorage);
 
       // 3. Realizar logout en el contexto
       authLogout();

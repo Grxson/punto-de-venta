@@ -29,11 +29,11 @@ const getEnvVars = (): ApiConfig => {
                     
   const apiUrlStaging = windowEnv.VITE_API_URL_STAGING || 
                         import.meta.env.VITE_API_URL_STAGING || 
-                        'https://backend-production-df01.up.railway.app/api';
+                        'https://backend-production-4bc3.up.railway.app/api';
                         
   const apiUrlProd = windowEnv.VITE_API_URL_PROD || 
                      import.meta.env.VITE_API_URL_PROD || 
-                     'https://backend-production-df01.up.railway.app/api';
+                     'https://backend-production-4bc3.up.railway.app/api';
 
   const ENV: Environment = {
     dev: {

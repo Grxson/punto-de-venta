@@ -90,7 +90,6 @@ Prueba en diferentes pestañas:
 
 ## URLs Finales (después de fix)
 
-- Backend: https://backend-production-df01.up.railway.app/swagger-ui.html
+- Backend: https://backend-production-4bc3.up.railway.app/swagger-ui.html
 - Frontend: https://frontend-web-production-05d0.up.railway.app
 - DB: postgres.railway.internal:5432
-

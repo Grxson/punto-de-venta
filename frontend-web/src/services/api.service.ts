@@ -4,6 +4,7 @@
  */
 
 import { API_CONFIG, DEFAULT_HEADERS, API_ENDPOINTS } from '../config/api.config';
+import { createSingleFlight, didAuthTokenChange } from '../utils/concurrency';
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
@@ -25,6 +26,7 @@ class ApiService {
   private baseUrl: string;
   private timeout: number;
   private retries: number;
+  private readonly refreshSingleFlight = createSingleFlight<boolean>();
 
   constructor() {
     this.baseUrl = API_CONFIG.apiUrl;
@@ -69,7 +71,11 @@ class ApiService {
    * Auditoría 2026-09-11 (T1.2): renovar el JWT expirado vía /auth/refresh-token.
    * Devuelve true si el nuevo token se guardó (y el caller puede reintentar).
    */
-  private async tryRefreshToken(): Promise<boolean> {
+  private tryRefreshToken(): Promise<boolean> {
+    return this.refreshSingleFlight(() => this.performRefreshToken());
+  }
+
+  private async performRefreshToken(): Promise<boolean> {
     const oldToken = this.getAuthToken();
     if (!oldToken) return false;
 
@@ -196,6 +202,10 @@ class ApiService {
               !endpoint.includes('/auth/login') &&
               options.requiresAuth !== false &&
               attempt === 1) {
+            if (didAuthTokenChange(headers.Authorization, this.getAuthToken())) {
+              return this.requestWithRetry<T>(endpoint, options, attempt + 1);
+            }
+
             const refreshed = await this.tryRefreshToken();
             if (refreshed) {
               return this.requestWithRetry<T>(endpoint, options, attempt + 1);

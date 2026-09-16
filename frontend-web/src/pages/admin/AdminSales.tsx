@@ -837,9 +837,9 @@ export default function AdminSales() {
 
       if (soloFechaCambio && fechaEditada !== ventaSeleccionada.fecha) {
         // Solo actualizar la fecha usando el endpoint específico
-        // Convertir la fecha al formato YYYY-MM-DDTHH:mm:ss (sin la Z)
-        const fecha = new Date(fechaEditada);
-        const fechaLocal = fecha.toISOString().replace('Z', '').slice(0, 19);
+        // Convertir la fecha al formato YYYY-MM-DDTHH:mm:ss en hora LOCAL (sin la Z).
+        // Usar toISOString() desplazaba la hora a UTC (medianoche local -> 06:00 UTC en MX).
+        const fechaLocal = `${obtenerFechaLocal(new Date(fechaEditada))}T00:00:00`;
         const fechaResponse = await apiService.put(
           `${API_ENDPOINTS.SALES}/${ventaSeleccionada.id}/fecha?fecha=${encodeURIComponent(fechaLocal)}`
         );
