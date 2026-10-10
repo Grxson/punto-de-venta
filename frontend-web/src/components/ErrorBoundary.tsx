@@ -1,6 +1,23 @@
 import React, { Component, ReactNode } from 'react';
+import * as Sentry from '@sentry/react';
 import { Box, Card, CardContent, Typography, Button } from '@mui/material';
 import ErrorIcon from '@mui/icons-material/Error';
+
+const sentryWindowEnv: Record<string, string | undefined> =
+  (window as any).__ENV__ || {};
+
+const sentryDsn =
+  sentryWindowEnv.VITE_SENTRY_DSN || import.meta.env.VITE_SENTRY_DSN || '';
+
+const sentryEnvironment =
+  sentryWindowEnv.VITE_APP_ENV || import.meta.env.VITE_APP_ENV || 'development';
+
+if (sentryDsn) {
+  Sentry.init({
+    dsn: sentryDsn,
+    environment: sentryEnvironment,
+  });
+}
 
 interface ErrorBoundaryProps {
     children: ReactNode;
@@ -35,6 +52,20 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
         console.error('📋 [ErrorBoundary] Error Info:', errorInfo);
         console.error('   Stack:', error.stack);
+        Sentry.captureException(error, {
+            contexts: { react: { componentStack: errorInfo.componentStack } },
+        });
+
+        const isChunkError = /Loading chunk|Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(
+            error.message
+        );
+        if (isChunkError) {
+            const reloadKey = 'errorBoundaryChunkReloaded';
+            if (!sessionStorage.getItem(reloadKey)) {
+                sessionStorage.setItem(reloadKey, '1');
+                window.location.reload();
+            }
+        }
     }
 
     handleReset = () => {

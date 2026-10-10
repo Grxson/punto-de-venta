@@ -16,13 +16,11 @@ export default defineConfig({
     }),
     // PASO 2.7: PWA con Service Worker
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       injectRegister: null,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
         globIgnores: ['**/stats.html'], // Excluir stats.html del precache
-        skipWaiting: true,
-        clientsClaim: true,
         cleanupOutdatedCaches: true,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
         runtimeCaching: [
