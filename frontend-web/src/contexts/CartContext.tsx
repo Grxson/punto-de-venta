@@ -1,40 +1,77 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
+/**
+ * Producto que puede agregarse al carrito (incluye datos de variante).
+ */
 interface Producto {
+  /** Identificador del producto o de su variante. */
   id: number;
+  /** Nombre completo del producto. */
   nombre: string;
+  /** Precio de venta base. */
   precio: number;
+  /** Categoría del producto, o `null` si no tiene. */
   categoriaId: number | null;
+  /** Nombre de la categoría, o `null` si no tiene. */
   categoriaNombre: string | null;
+  /** Indica si el producto está activo. */
   activo: boolean;
+  /** Id del producto base cuando la entrada es una variante. */
   productoBaseId?: number | null;
+  /** Nombre de la variante, cuando aplica. */
   nombreVariante?: string | null;
+  /** Orden de la variante dentro de su producto base. */
   ordenVariante?: number | null;
 }
 
+/**
+ * Línea del carrito.
+ */
 interface CartItem {
+  /** Producto agregado. */
   producto: Producto;
+  /** Cantidad de unidades agregada. */
   cantidad: number;
-  // Precio editado solo para esta venta (no persiste en BD)
+  /** Precio editado por el cajero que sustituye al del producto solo en esta venta (no se persiste en la base de datos). */
   overridePrice?: number;
-  // ID único para diferenciar combinaciones con ingredientes
+  /** Clave única de la línea, necesaria para distinguir combinaciones con ingredientes. */
   cartItemId?: string;
 }
 
+/**
+ * Estado global del carrito de venta.
+ */
 interface CartContextType {
+  /** Líneas actuales del carrito. */
   cart: CartItem[];
+  /** Agrega una unidad del producto y lo sube al inicio de la lista; si ya existe, suma la cantidad. */
   addToCart: (producto: Producto) => void;
+  /** Elimina la línea identificada por `cartItemId` o, en su defecto, por `productoId`. */
   removeFromCart: (productoId: number, cartItemId?: string) => void;
+  /** Fija la cantidad de la línea; si la cantidad es 0 o menor, la elimina. */
   updateQuantity: (productoId: number, cantidad: number, cartItemId?: string) => void;
+  /** Sobrescribe el precio de la línea para esta venta; un valor no numérico o negativo se descarta. */
   updateItemPrice: (productoId: number, precio: number, cartItemId?: string) => void;
+  /** Vacía el carrito y borra su persistencia en `localStorage`. */
   clearCart: () => void;
+  /** Suma de todas las líneas, usando `overridePrice` cuando exista. */
   total: number;
+  /** Número total de unidades en el carrito. */
   itemCount: number;
 }
 
+/**
+ * Contexto del carrito. Se crea como `undefined` para detectar usos fuera del proveedor.
+ */
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+/**
+ * Proveedor del carrito: mantiene las líneas en estado y las persiste en `localStorage`
+ * para que la venta en curso sobreviva a una recarga de la página.
+ *
+ * @param props.children - Árbol de componentes que recibe el contexto.
+ */
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
@@ -153,6 +190,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Hook de acceso al contexto del carrito.
+ *
+ * @returns Las líneas del carrito, sus acciones de edición y los totales calculados.
+ * @throws Error Si se usa fuera de {@link CartProvider}.
+ */
 export function useCart() {
   const context = useContext(CartContext);
   if (context === undefined) {

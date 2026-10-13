@@ -15,6 +15,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Controlador REST de categorías de productos del menú.
+ *
+ * Expone el CRUD de categorías; la eliminación es permanente.
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/inventario/categorias-productos")
@@ -23,10 +28,22 @@ public class CategoriaProductoController {
 
     private final CategoriaProductoService categoriaService;
 
+    /**
+     * Crea el controlador con el servicio de categorías de productos.
+     *
+     * @param categoriaService servicio de categorías de productos
+     */
     public CategoriaProductoController(CategoriaProductoService categoriaService) {
         this.categoriaService = categoriaService;
     }
 
+    /**
+     * Lista las categorías de productos con filtros opcionales.
+     *
+     * @param activa filtra por estado activo cuando está presente
+     * @param query búsqueda por nombre, opcional
+     * @return lista de categorías que cumplen los filtros
+     */
     @GetMapping
     @Operation(summary = "Listar categorías", description = "Permite filtrar por activa y búsqueda por nombre (q)")
     public ResponseEntity<List<CategoriaProductoDTO>> listar(
@@ -35,12 +52,24 @@ public class CategoriaProductoController {
         return ResponseEntity.ok(categoriaService.listar(activa, query));
     }
 
+    /**
+     * Obtiene una categoría de producto por su identificador.
+     *
+     * @param id identificador de la categoría
+     * @return categoría encontrada
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Obtener categoría por ID")
     public ResponseEntity<CategoriaProductoDTO> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(categoriaService.obtener(id));
     }
 
+    /**
+     * Crea una categoría de producto nueva.
+     *
+     * @param dto datos de la categoría
+     * @return categoría creada con estado 201
+     */
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     @Operation(summary = "Crear categoría")
@@ -49,6 +78,13 @@ public class CategoriaProductoController {
         return new ResponseEntity<>(creada, HttpStatus.CREATED);
     }
 
+    /**
+     * Actualiza una categoría de producto existente.
+     *
+     * @param id identificador de la categoría
+     * @param dto datos a actualizar
+     * @return categoría actualizada
+     */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     @Operation(summary = "Actualizar categoría")
@@ -57,6 +93,12 @@ public class CategoriaProductoController {
         return ResponseEntity.ok(categoriaService.actualizar(id, dto));
     }
 
+    /**
+     * Elimina permanentemente una categoría de producto.
+     *
+     * @param id identificador de la categoría
+     * @return sin contenido
+     */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE')")
     @Operation(summary = "Eliminar categoría", description = "Elimina permanentemente la categoría de la base de datos")

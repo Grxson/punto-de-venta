@@ -7,7 +7,21 @@ import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 
 /**
- * DTO para Receta (BOM - Bill of Materials).
+ * Receta de un producto: la lista de ingredientes y cantidades que lo componen (BOM, bill
+ * of materials).
+ *
+ * <p>Se envía como request al definir o editar la receta de un producto y se devuelve como
+ * response al consultarla. Es la base para calcular el costo estimado del producto.
+ *
+ * @param productoId producto al que pertenece la receta
+ * @param productoNombre nombre de ese producto (solo lectura)
+ * @param ingredienteId ingrediente que compone la receta
+ * @param ingredienteNombre nombre de ese ingrediente (solo lectura)
+ * @param cantidad cantidad del ingrediente requerida por unidad de producto
+ * @param unidadId unidad de medida de la cantidad
+ * @param unidadNombre nombre de esa unidad (solo lectura)
+ * @param unidadAbreviatura abreviatura de esa unidad (solo lectura)
+ * @param mermaTeorica porcentaje de merma esperado en la preparación, entre 0 y 1
  */
 public record RecetaDTO(
     @NotNull(message = "El ID del producto es obligatorio")

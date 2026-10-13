@@ -1,12 +1,12 @@
 /**
- * Hooks de React Query para categorías de productos
- * Implementa caché y sincronización de datos con el backend
+ * Hooks de React Query para categorías de productos.
+ * Implementan `cache` y sincronización de datos con el backend.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoriasService, type CategoriaProducto, type CategoriaFiltros } from '../services/categorias.service';
 
-// Query keys para categorías
+/** Fábrica de claves de `cache` de React Query para categorías. */
 export const categoriasKeys = {
   all: ['categorias'] as const,
   lists: () => [...categoriasKeys.all, 'list'] as const,
@@ -16,8 +16,10 @@ export const categoriasKeys = {
 };
 
 /**
- * Hook para listar categorías
- * Caché: 10 minutos (estático - catálogo)
+ * Lista categorías, opcionalmente filtradas.
+ *
+ * @param filtros - Filtros de búsqueda enviados al servicio.
+ * @returns Resultado de `useQuery` con la lista de categorías. `cache`: 10 minutos (catálogo estático).
  */
 export const useCategorias = (filtros?: CategoriaFiltros) => {
   return useQuery({
@@ -28,8 +30,10 @@ export const useCategorias = (filtros?: CategoriaFiltros) => {
 };
 
 /**
- * Hook para obtener una categoría específica
- * Caché: 10 minutos (estático - catálogo)
+ * Obtiene una categoría específica por su id.
+ *
+ * @param id - Id de la categoría; si no es válido, la consulta no se ejecuta.
+ * @returns Resultado de `useQuery` con el detalle de la categoría.
  */
 export const useCategoria = (id: number) => {
   return useQuery({
@@ -41,8 +45,9 @@ export const useCategoria = (id: number) => {
 };
 
 /**
- * Hook para crear categoría
- * Invalida automáticamente el caché de categorías
+ * Crea una categoría e invalida las listas cacheadas.
+ *
+ * @returns Resultado de `useMutation` que expone `mutate`/`mutateAsync`, `isPending`, `error`, etc.
  */
 export const useCrearCategoria = () => {
   const queryClient = useQueryClient();
@@ -58,8 +63,9 @@ export const useCrearCategoria = () => {
 };
 
 /**
- * Hook para actualizar categoría
- * Invalida automáticamente el caché
+ * Actualiza una categoría e invalida listas y su detalle.
+ *
+ * @returns Resultado de `useMutation` que espera `{ id, categoria }`.
  */
 export const useActualizarCategoria = () => {
   const queryClient = useQueryClient();
@@ -76,8 +82,9 @@ export const useActualizarCategoria = () => {
 };
 
 /**
- * Hook para eliminar categoría
- * Invalida automáticamente el caché y fuerza refetch inmediato
+ * Elimina una categoría e invalida las listas con `refetch` inmediato.
+ *
+ * @returns Resultado de `useMutation` que espera el `id` de la categoría.
  */
 export const useEliminarCategoria = () => {
   const queryClient = useQueryClient();

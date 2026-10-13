@@ -23,27 +23,49 @@ import {
 import { Delete, Add, Search } from '@mui/icons-material';
 import { Ingrediente, Unidad } from '../../../services/ingredientes.service';
 
+/** Ingrediente ya añadido a la receta, con su merma y costo calculado. */
 interface RecetaIngrediente {
+  /** Id del ingrediente del catálogo. */
   ingredienteId: number;
+  /** Nombre del ingrediente. */
   ingredienteNombre: string;
+  /** Cantidad usada en la receta. */
   cantidad: number;
+  /** Id de la unidad usada. */
   unidadId: number;
+  /** Nombre de la unidad. */
   unidadNombre: string;
+  /** Abreviatura de la unidad. */
   unidadAbreviatura: string;
+  /** Merma teórica en porcentaje. */
   mermaTeorica?: number;
+  /** Costo por unidad base del ingrediente. */
   costoUnitario?: number;
+  /** Costo de la línea, ya ajustado por la merma. */
   costoTotal?: number;
 }
 
+/** Props del panel para agregar ingredientes a una receta. */
 interface AgregarIngredientesRecetaProps {
+  /** Catálogo de ingredientes disponibles para agregar. */
   ingredientesDisponibles: Ingrediente[];
+  /** Unidades de medida disponibles. */
   unidades: Unidad[];
+  /** Ingredientes que ya están en la receta en edición. */
   ingredientesEnReceta: RecetaIngrediente[];
+  /** Notifica al padre que se agregó una línea. */
   onAgregarIngrediente: (ingrediente: RecetaIngrediente) => void;
+  /** Notifica al padre que se quitó una línea por id. */
   onRemoverIngrediente: (ingredienteId: number) => void;
+  /** Bloquea la interacción mientras se guarda la receta. */
   loading?: boolean;
 }
 
+/**
+ * Panel para agregar ingredientes a una receta con cantidad, unidad y merma teórica.
+ * @remarks Mantiene el formulario de alta oculto tras un botón y filtra el catálogo para
+ * no ofrecer ingredientes ya presentes; el costo de cada línea se calcula al agregarla.
+ */
 export default function AgregarIngredientesReceta({
   ingredientesDisponibles,
   unidades,
@@ -63,7 +85,7 @@ export default function AgregarIngredientesReceta({
   const [error, setError] = useState<string | null>(null);
   const [mostrarForm, setMostrarForm] = useState<boolean>(false);
 
-  // Actualizar unidad seleccionada cuando cambian las unidades
+  // Cubre el caso en que las unidades lleguen después del primer render
   useEffect(() => {
     if (unidades.length > 0 && !unidadSeleccionada) {
       setUnidadSeleccionada(unidades[0]);
@@ -96,7 +118,12 @@ export default function AgregarIngredientesReceta({
       });
   }, [searchText, ingredientesDisponibles, ingredientesEnReceta]);
 
-  // Calcular costo del ingrediente
+  /**
+   * Calcula el costo de la línea seleccionada, inflando la cantidad según la merma.
+   * @remarks La merma teórica reduce el rendimiento real, por eso la cantidad se divide
+   * entre `1 - merma/100`; sin selección o cantidad válida devuelve 0.
+   * @returns El costo total estimado de la línea.
+   */
   const calcularCostoIngrediente = () => {
     if (!ingredienteSeleccionado || !unidadSeleccionada || cantidad <= 0) {
       return 0;
@@ -110,6 +137,9 @@ export default function AgregarIngredientesReceta({
     return cantidadReal * costoUnitario;
   };
 
+  /**
+   * Valida el formulario, construye la línea y la entrega al padre.
+   */
   const handleAgregarIngrediente = () => {
     setError(null);
 

@@ -1,3 +1,6 @@
+/**
+ * Resumen de ventas de un periodo.
+ */
 export interface VentasResumen {
   total: number;
   cantidad: number;
@@ -5,6 +8,9 @@ export interface VentasResumen {
   porCategoria: { [categoria: string]: number };
 }
 
+/**
+ * Resumen de gastos de un periodo.
+ */
 export interface GastosResumen {
   total: number;
   cantidad: number;
@@ -12,12 +18,18 @@ export interface GastosResumen {
   porCategoria: { [categoria: string]: number };
 }
 
+/**
+ * Resumen de ganancias de un periodo.
+ */
 export interface GananciasResumen {
   neto: number;
   margen: number;
   gananciaPromedioDia: number;
 }
 
+/**
+ * Reporte completo de un periodo.
+ */
 export interface ReporteDTO {
   periodo: { inicio: string; fin: string };
   ventas: VentasResumen;
@@ -30,6 +42,9 @@ export interface ReporteDTO {
   };
 }
 
+/**
+ * Indicadores clave para el panel de administración.
+ */
 export interface KPIAdmin {
   ventasTotales: number;
   gastosTotales: number;
@@ -38,6 +53,9 @@ export interface KPIAdmin {
   tendencia: 'ARRIBA' | 'ABAJO' | 'ESTABLE';
 }
 
+/**
+ * Contrato del contexto de reportes y KPIs.
+ */
 export interface ReporteContextType {
   // Estado
   reporteGeneral: ReporteDTO | null;

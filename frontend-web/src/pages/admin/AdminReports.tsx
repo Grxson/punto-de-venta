@@ -48,29 +48,55 @@ import { useReportsCache } from './hooks/useReportsCache';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
+/**
+ * Pantalla de reportes y estadísticas: dashboard del período, cortes por producto y
+ * general, y movimiento de inventario.
+ * @remarks Orquesta la carga de resumen, productos, ventas y gastos con caché por
+ * sucursal (`useReportsCache`) para evitar golpear la API al alternar tabs o volver al
+ * mismo rango. Cada tab consume los mismos datos ya normalizados.
+ */
 export default function AdminReports() {
   const todayLocal = getTodayLocalDate();
+  /** Rango de fechas analizado; por defecto, hoy. */
   const [dateRange, setDateRange] = useState<DateRangeValue>({
     desde: todayLocal,
     hasta: todayLocal,
   });
+  /** Offset de días respecto a hoy que controla el paginador de días. */
   const [diaSeleccionado, setDiaSeleccionado] = useState(0); // Offset de días desde hoy
+  /** Totales del rango devueltos por el backend. */
   const [resumen, setResumen] = useState<ResumenVentas | null>(null);
+  /** Ranking de productos por ingreso del rango. */
   const [productosTop, setProductosTop] = useState<ProductoRendimiento[]>([]);
+  /** Ventas individuales del rango. */
   const [ventas, setVentas] = useState<VentaDetalle[]>([]);
+  /** Total de gastos del rango. */
   const [gastosDia, setGastosDia] = useState<number>(0);
+  /** Gastos del rango con categoría y proveedor resueltos. */
   const [gastosDetallados, setGastosDetallados] = useState<GastoDetallado[]>([]);
+  /** Indica una carga en curso. */
   const [loading, setLoading] = useState(false);
+  /** Mensaje de error de la última carga. */
   const [error, setError] = useState<string | null>(null);
+  /** Tab activa (dashboard, corte por producto, corte general o inventario). */
   const [currentTab, setCurrentTab] = useState(0);
   
   // 🔄 Cache hooks
   const cache = useReportsCache();
 
+  /**
+   * Cambia la tab activa.
+   * @param _event - Evento de la tab; no se usa.
+   * @param newValue - Índice de la nueva tab.
+   */
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
   };
 
+  /**
+   * Avanza o retrocede un día en el rango de fechas.
+   * @param direccion - `anterior` resta un día, `siguiente` suma uno.
+   */
   const handleCambiarDia = (direccion: 'anterior' | 'siguiente') => {
     const nuevoDia = direccion === 'anterior' ? diaSeleccionado - 1 : diaSeleccionado + 1;
     const fechaFormato = getDateWithOffset(nuevoDia);
@@ -85,6 +111,11 @@ export default function AdminReports() {
     loadData();
   }, [dateRange, diaSeleccionado]);
 
+  /**
+   * Carga los datos del rango sirviéndose del caché y pidiendo sólo lo que falta.
+   * @remarks Convierte las fechas a ISO local antes de consultar. El total de gastos
+   * se toma del resumen del backend, no de la suma de los gastos detallados.
+   */
   const loadData = async () => {
     try {
       setLoading(true);
@@ -228,6 +259,10 @@ export default function AdminReports() {
     }
   };
 
+  /**
+   * Cambia el rango manualmente desde el filtro.
+   * @param range - Nuevo rango seleccionado.
+   */
   const handleDateRangeChange = (range: DateRangeValue) => {
     setDateRange(range);
     setDiaSeleccionado(0); // Resetear el día cuando cambia manualmente el rango
@@ -724,7 +759,7 @@ export default function AdminReports() {
                       </Alert>
                     ) : (
                       <>
-                        {/* Header */}
+                        {/* Encabezado del corte por producto */}
                         <Box sx={{ mb: 3, pb: 2, borderBottom: 1, borderColor: 'divider' }}>
                           <Typography variant="h5" sx={{ mb: 1, fontWeight: 600 }}>
                             📋 Corte Por Producto

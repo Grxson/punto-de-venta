@@ -126,18 +126,37 @@ public class ProductoController {
         return ResponseEntity.ok(page.getContent());
     }
 
+    /**
+     * Obtiene un producto por su identificador.
+     *
+     * @param id identificador del producto
+     * @return producto encontrado
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Obtener producto por ID")
     public ResponseEntity<ProductoDTO> obtener(@PathVariable Long id) {
         return ResponseEntity.ok(productoService.obtener(id));
     }
 
+    /**
+     * Obtiene las variantes de un producto base.
+     *
+     * @param id identificador del producto base
+     * @return variantes del producto
+     */
     @GetMapping("/{id}/variantes")
     @Operation(summary = "Obtener variantes de un producto")
     public ResponseEntity<List<ProductoDTO>> obtenerVariantes(@PathVariable Long id) {
         return ResponseEntity.ok(productoService.obtenerVariantes(id));
     }
 
+    /**
+     * Agrega una variante a un producto base.
+     *
+     * @param id identificador del producto base
+     * @param dto datos de la variante
+     * @return variante creada con estado 201
+     */
     @PostMapping("/{id}/variantes")
     @Operation(summary = "Agregar variante a un producto base")
     public ResponseEntity<ProductoDTO> crearVariante(@PathVariable Long id, @Validated @RequestBody ProductoDTO dto) {
@@ -145,6 +164,12 @@ public class ProductoController {
         return new ResponseEntity<>(variante, HttpStatus.CREATED);
     }
 
+    /**
+     * Crea un producto nuevo.
+     *
+     * @param dto datos del producto
+     * @return producto creado con estado 201
+     */
     @PostMapping
     @Operation(summary = "Crear producto")
     public ResponseEntity<ProductoDTO> crear(@Validated @RequestBody ProductoDTO dto) {
@@ -152,18 +177,38 @@ public class ProductoController {
         return new ResponseEntity<>(creado, HttpStatus.CREATED);
     }
 
+    /**
+     * Actualiza un producto existente.
+     *
+     * @param id identificador del producto
+     * @param dto datos a actualizar
+     * @return producto actualizado
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar producto")
     public ResponseEntity<ProductoDTO> actualizar(@PathVariable Long id, @Validated @RequestBody ProductoDTO dto) {
         return ResponseEntity.ok(productoService.actualizar(id, dto));
     }
 
+    /**
+     * Activa o desactiva un producto.
+     *
+     * @param id identificador del producto
+     * @param activo nuevo estado del producto
+     * @return producto actualizado
+     */
     @PatchMapping("/{id}/estado")
     @Operation(summary = "Activar/Desactivar producto")
     public ResponseEntity<ProductoDTO> cambiarEstado(@PathVariable Long id, @RequestParam boolean activo) {
         return ResponseEntity.ok(productoService.cambiarEstado(id, activo));
     }
 
+    /**
+     * Elimina un producto mediante borrado lógico.
+     *
+     * @param id identificador del producto
+     * @return sin contenido
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar producto", description = "Borrado lógico: marca el producto como inactivo")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
@@ -171,6 +216,12 @@ public class ProductoController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Elimina un producto de forma permanente.
+     *
+     * @param id identificador del producto
+     * @return sin contenido
+     */
     @DeleteMapping("/{id}/permanente")
     @Operation(summary = "Eliminar producto permanentemente", 
                description = "Hard delete: elimina el producto de la base de datos. Solo si no tiene variantes, ventas o recetas. Requiere permiso ADMIN")
@@ -179,6 +230,12 @@ public class ProductoController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Traduce los errores de estado inválido de las reglas de negocio a 400.
+     *
+     * @param ex excepción con el mensaje de la regla incumplida
+     * @return respuesta 400 con el mensaje de error
+     */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, String>> handleIllegalStateException(IllegalStateException ex) {
         Map<String, String> error = new HashMap<>();

@@ -35,73 +35,128 @@ import { es } from 'date-fns/locale';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 
+/** Registro de merma devuelto por `/inventario/mermas`. */
 interface Merma {
+  /** Id de la merma. */
   id: number;
+  /** Id del ingrediente afectado. */
   ingredienteId: number;
+  /** Nombre del ingrediente afectado. */
   ingredienteNombre: string;
+  /** Cantidad perdida. */
   cantidad: number;
+  /** Id de la unidad. */
   unidadId: number;
+  /** Nombre de la unidad. */
   unidadNombre: string;
+  /** Abreviatura de la unidad. */
   unidadAbreviatura: string;
+  /** Motivo de la merma. */
   motivo: string;
+  /** Fecha de la merma en formato ISO. */
   fecha: string;
+  /** Id del responsable, si se registró. */
   responsableId?: number;
+  /** Nombre del responsable, si se registró. */
   responsableNombre?: string;
+  /** Costo por unidad al momento de la merma. */
   costoUnitario: number;
+  /** `cantidad * costoUnitario`. */
   costoTotal: number;
 }
 
+/** Ingrediente del catálogo para el `Autocomplete` de mermas. */
 interface Ingrediente {
+  /** Id del ingrediente. */
   id: number;
+  /** Nombre del ingrediente. */
   nombre: string;
+  /** Id de su unidad base. */
   unidadBaseId: number;
+  /** Costo por unidad base. */
   costoUnitarioBase: number;
 }
 
+/** Unidad de medida. */
 interface Unidad {
+  /** Id de la unidad. */
   id: number;
+  /** Nombre de la unidad. */
   nombre: string;
+  /** Abreviatura para mostrar. */
   abreviatura: string;
 }
 
+/** Producto con su receta, usado para dar de baja el producto completo. */
 interface Producto {
+  /** Id del producto. */
   id: number;
+  /** Nombre del producto. */
   nombre: string;
+  /** Descripción opcional. */
   descripcion?: string;
+  /** Ingredientes que conforman su receta. */
   receta?: RecetaItem[];
 }
 
+/** Ingrediente dentro de la receta de un producto. */
 interface RecetaItem {
+  /** Id del ingrediente. */
   ingredienteId: number;
+  /** Nombre del ingrediente. */
   ingredienteNombre: string;
+  /** Cantidad usada en la receta. */
   cantidad: number;
+  /** Id de la unidad usada. */
   unidadId: number;
+  /** Nombre de la unidad. */
   unidadNombre: string;
+  /** Abreviatura de la unidad. */
   unidadAbreviatura: string;
+  /** Costo por unidad. */
   costoUnitario: number;
 }
 
+/**
+ * Pantalla de gestión de mermas de inventario.
+ * @remarks Permite registrar la merma de un ingrediente individual o de un producto
+ * completo; en el segundo caso crea un movimiento por cada ingrediente de su receta.
+ */
 export default function AdminMermas() {
+  /** Mermas registradas. */
   const [mermas, setMermas] = useState<Merma[]>([]);
+  /** Ingredientes disponibles para el alta. */
   const [ingredientes, setIngredientes] = useState<Ingrediente[]>([]);
+  /** Productos con receta para el alta por producto. */
   const [productos, setProductos] = useState<Producto[]>([]);
+  /** Unidades de medida. */
   const [unidades, setUnidades] = useState<Unidad[]>([]);
+  /** Indica una operación en curso (guardar o eliminar). */
   const [loading, setLoading] = useState(false);
+  /** Indica la carga inicial de datos de la pantalla. */
   const [loadingData, setLoadingData] = useState(true);
+  /** Mensaje de error de la última operación. */
   const [error, setError] = useState<string | null>(null);
+  /** Controla el diálogo de alta de merma. */
   const [openDialog, setOpenDialog] = useState(false);
+  /** Texto del buscador de la tabla. */
   const [searchText, setSearchText] = useState('');
+  /** Página actual de la tabla. */
   const [page, setPage] = useState(0);
+  /** Filas por página de la tabla. */
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  /** Notificación inferior con el resultado de la operación. */
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; tipo: 'success' | 'error' }>({
     open: false,
     message: '',
     tipo: 'success',
   });
+  /** Id de la merma pendiente de eliminar. */
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  /** Controla el diálogo de confirmación de eliminación. */
   const [dialogDelete, setDialogDelete] = useState(false);
 
-  // Form fields
+  // Campos del formulario
   const [tipoMerma, setTipoMerma] = useState<'ingrediente' | 'producto'>('ingrediente');
   const [ingredienteSeleccionado, setIngredienteSeleccionado] = useState<Ingrediente | null>(null);
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
@@ -114,12 +169,13 @@ export default function AdminMermas() {
     loadData();
   }, []);
 
+  /** Carga en paralelo mermas, catálogo de productos y unidades. */
   const loadData = async () => {
     try {
       setLoadingData(true);
       setError(null);
 
-      // Cargar mermas, ingredientes, productos y unidades
+      // Se disparan las cuatro consultas en paralelo para no encadenar latencias
       const [mermasRes, ingredientesRes, productosRes, unidadesRes] = await Promise.all([
         apiService.get('/inventario/mermas'),
         apiService.get(API_ENDPOINTS.PRODUCTS),
@@ -154,6 +210,7 @@ export default function AdminMermas() {
     );
   }, [mermas, searchText]);
 
+  /** Resetea el formulario y abre el diálogo de alta. */
   const handleOpenDialog = () => {
     setTipoMerma('ingrediente');
     setIngredienteSeleccionado(null);
@@ -169,6 +226,11 @@ export default function AdminMermas() {
     setOpenDialog(false);
   };
 
+  /**
+   * Valida y registra la merma según el tipo elegido.
+   * @remarks Para un producto completo recorre su receta y crea un movimiento por
+   * ingrediente; si un ingrediente falla, se aborta y se muestra el error.
+   */
   const handleGuardarMerma = async () => {
     if (tipoMerma === 'ingrediente') {
       // Validar merma de ingrediente
@@ -277,6 +339,10 @@ export default function AdminMermas() {
     }
   };
 
+  /**
+   * Elimina la merma indicada y recarga el listado.
+   * @param mermaId - Id de la merma a eliminar.
+   */
   const handleEliminarMerma = async (mermaId: number) => {
     try {
       setLoading(true);

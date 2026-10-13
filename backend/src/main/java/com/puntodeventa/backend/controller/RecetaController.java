@@ -26,6 +26,11 @@ public class RecetaController {
     
     private final RecetaService recetaService;
     
+    /**
+     * Obtiene todas las recetas.
+     *
+     * @return lista completa de recetas
+     */
     @GetMapping
     @Operation(summary = "Obtener todas las recetas")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'COCINA')")
@@ -33,6 +38,12 @@ public class RecetaController {
         return ResponseEntity.ok(recetaService.obtenerTodas());
     }
     
+    /**
+     * Obtiene las recetas de un producto.
+     *
+     * @param productoId identificador del producto
+     * @return recetas del producto
+     */
     @GetMapping("/producto/{productoId}")
     @Operation(summary = "Obtener recetas de un producto")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'COCINA')")
@@ -40,6 +51,12 @@ public class RecetaController {
         return ResponseEntity.ok(recetaService.obtenerPorProducto(productoId));
     }
     
+    /**
+     * Obtiene las recetas que usan un ingrediente.
+     *
+     * @param ingredienteId identificador del ingrediente
+     * @return recetas que lo utilizan
+     */
     @GetMapping("/ingrediente/{ingredienteId}")
     @Operation(summary = "Obtener recetas que usan un ingrediente")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -47,6 +64,12 @@ public class RecetaController {
         return ResponseEntity.ok(recetaService.obtenerPorIngrediente(ingredienteId));
     }
     
+    /**
+     * Calcula el costo estándar de un producto según su receta.
+     *
+     * @param productoId identificador del producto
+     * @return costo de la receta
+     */
     @GetMapping("/producto/{productoId}/costo")
     @Operation(summary = "Calcular costo estándar de un producto según su receta")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -55,6 +78,12 @@ public class RecetaController {
         return ResponseEntity.ok(Map.of("costoReceta", costo));
     }
     
+    /**
+     * Crea una receta nueva.
+     *
+     * @param dto datos de la receta
+     * @return receta creada con estado 201
+     */
     @PostMapping
     @Operation(summary = "Crear nueva receta")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -63,6 +92,14 @@ public class RecetaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(creada);
     }
     
+    /**
+     * Actualiza la receta de un par producto-ingrediente.
+     *
+     * @param productoId identificador del producto
+     * @param ingredienteId identificador del ingrediente
+     * @param dto datos a actualizar
+     * @return receta actualizada
+     */
     @PutMapping("/producto/{productoId}/ingrediente/{ingredienteId}")
     @Operation(summary = "Actualizar receta")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -73,6 +110,13 @@ public class RecetaController {
         return ResponseEntity.ok(recetaService.actualizar(productoId, ingredienteId, dto));
     }
     
+    /**
+     * Elimina una receta concreta.
+     *
+     * @param productoId identificador del producto
+     * @param ingredienteId identificador del ingrediente
+     * @return sin contenido
+     */
     @DeleteMapping("/producto/{productoId}/ingrediente/{ingredienteId}")
     @Operation(summary = "Eliminar receta específica")
     @PreAuthorize("hasRole('ADMIN')")
@@ -83,6 +127,12 @@ public class RecetaController {
         return ResponseEntity.noContent().build();
     }
     
+    /**
+     * Elimina todas las recetas de un producto.
+     *
+     * @param productoId identificador del producto
+     * @return sin contenido
+     */
     @DeleteMapping("/producto/{productoId}")
     @Operation(summary = "Eliminar todas las recetas de un producto")
     @PreAuthorize("hasRole('ADMIN')")

@@ -1,4 +1,4 @@
--- Minimal seed data for H2 dev
+-- Datos iniciales mínimos para desarrollo con H2
 
 -- Sucursal
 INSERT INTO sucursales (id, nombre, direccion, telefono, email, activo, created_at, updated_at) 

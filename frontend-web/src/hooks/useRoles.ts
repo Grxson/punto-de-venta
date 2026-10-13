@@ -1,12 +1,12 @@
 /**
- * Hooks de React Query para gestión de roles
+ * Hooks de React Query para la gestión de roles.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { rolesService } from '../services/roles.service';
 import type { CrearRolRequest, EditarRolRequest } from '../types/rol.types';
 
-// Query keys para roles
+/** Fábrica de claves de `cache` de React Query para roles. */
 export const rolesKeys = {
   all: ['roles'] as const,
   lists: () => [...rolesKeys.all, 'list'] as const,
@@ -17,8 +17,9 @@ export const rolesKeys = {
 };
 
 /**
- * Hook para obtener roles activos
- * Caché: 10 minutos (datos más estables)
+ * Obtiene los roles activos.
+ *
+ * @returns Resultado de `useQuery` con los roles activos. `cache`: 10 minutos.
  */
 export const useRoles = () => {
   return useQuery({
@@ -29,7 +30,9 @@ export const useRoles = () => {
 };
 
 /**
- * Hook para obtener todos los roles (incluyendo inactivos)
+ * Obtiene todos los roles, incluidos los inactivos.
+ *
+ * @returns Resultado de `useQuery` con la lista completa de roles.
  */
 export const useRolesConInactivos = () => {
   return useQuery({
@@ -40,7 +43,10 @@ export const useRolesConInactivos = () => {
 };
 
 /**
- * Hook para obtener un rol por ID
+ * Obtiene un rol por su id.
+ *
+ * @param id - Id del rol a consultar.
+ * @returns Resultado de `useQuery` con el detalle del rol.
  */
 export const useRol = (id: number) => {
   return useQuery({
@@ -51,7 +57,9 @@ export const useRol = (id: number) => {
 };
 
 /**
- * Hook para crear un rol
+ * Crea un rol e invalida las listas cacheadas.
+ *
+ * @returns Resultado de `useMutation` que espera un `CrearRolRequest`.
  */
 export const useCrearRol = () => {
   const queryClient = useQueryClient();
@@ -65,7 +73,9 @@ export const useCrearRol = () => {
 };
 
 /**
- * Hook para actualizar un rol
+ * Actualiza un rol e invalida su detalle y las listas.
+ *
+ * @returns Resultado de `useMutation` que espera `{ id, data }`.
  */
 export const useActualizarRol = () => {
   const queryClient = useQueryClient();
@@ -81,7 +91,9 @@ export const useActualizarRol = () => {
 };
 
 /**
- * Hook para desactivar un rol
+ * Desactiva un rol e invalida las listas.
+ *
+ * @returns Resultado de `useMutation` que espera el `id` del rol.
  */
 export const useDesactivarRol = () => {
   const queryClient = useQueryClient();
@@ -95,7 +107,9 @@ export const useDesactivarRol = () => {
 };
 
 /**
- * Hook para reactivar un rol
+ * Reactiva un rol e invalida las listas.
+ *
+ * @returns Resultado de `useMutation` que espera el `id` del rol.
  */
 export const useReactivarRol = () => {
   const queryClient = useQueryClient();

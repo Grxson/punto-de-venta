@@ -12,7 +12,7 @@
 
 ### 1.1 Crear Base de Datos PostgreSQL
 
-1. **Ir a Railway Dashboard** → Click en "New Project"
+1. **Ir a Railway Dashboard** → Haz clic en "New Project"
 2. **Seleccionar "Provision PostgreSQL"**
 3. **Copiar las credenciales** que Railway genera automáticamente:
    - `PGHOST`
@@ -74,7 +74,7 @@ railway connect postgres < src/main/resources/schema.sql
 
 ### 2.1 Crear Servicio Backend
 
-1. **En Railway Dashboard** → Click en tu proyecto → "New Service"
+1. **En Railway Dashboard** → Haz clic en tu proyecto → "New Service"
 2. **Seleccionar "GitHub Repo"**
 3. **Seleccionar el repositorio:** `punto-de-venta`
 4. **Configurar Root Directory:** `backend`
@@ -87,7 +87,7 @@ En Railway, ir a tu servicio backend → **Variables** → Añadir las siguiente
 # Perfil Spring
 SPRING_PROFILES_ACTIVE=prod
 
-# Base de Datos (copiar desde PostgreSQL service)
+# Base de Datos (copiar desde el servicio PostgreSQL)
 DB_USERNAME=${{Postgres.PGUSER}}
 DB_PASSWORD=${{Postgres.PGPASSWORD}}
 SPRING_DATASOURCE_URL=jdbc:postgresql://${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}
@@ -141,9 +141,9 @@ npx cap init
 ```
 
 Durante la inicialización, configurar:
-- **App name:** Punto de Venta
-- **App ID:** com.puntodeventa.app
-- **Web directory:** build
+- **Nombre de la app:** Punto de Venta
+- **ID de la app:** com.puntodeventa.app
+- **Directorio web:** build
 
 ### 3.2 Configurar API Backend
 
@@ -233,12 +233,12 @@ npm run build  # Genera ejecutables
 | `ADMIN_USERNAME` | Usuario admin | `admin` |
 | `ADMIN_PASSWORD` | Password admin | `[seguro]` |
 | `CORS_ORIGINS` | Orígenes permitidos | `https://app.railway.app,...` |
-| `JWT_SECRET` | Secret para JWT | `[generar aleatorio]` |
+| `JWT_SECRET` | Secreto para JWT | `[generar aleatorio]` |
 
-### 4.2 Generar Secrets Seguros
+### 4.2 Generar secretos seguros
 
 ```bash
-# JWT Secret (256 bits)
+# Secreto JWT (256 bits)
 openssl rand -base64 32
 
 # Admin Password
@@ -318,7 +318,7 @@ Railway detectará el cambio y desplegará automáticamente.
 
 ## 📱 PASO 7: Configurar Apps (Móvil/Escritorio)
 
-### 7.1 Capacitor Config
+### 7.1 Configuración de Capacitor
 
 **`capacitor.config.ts`:**
 
@@ -345,7 +345,7 @@ const config: CapacitorConfig = {
 export default config;
 ```
 
-### 7.2 App Versioning
+### 7.2 Versionado de la app
 
 **Android (`android/app/build.gradle`):**
 
@@ -369,7 +369,7 @@ android {
 
 ---
 
-## 🛠️ Troubleshooting
+## 🛠️ Solución de problemas
 
 ### Error: "Connection refused" en Railway
 
@@ -408,7 +408,7 @@ android {
 
 ---
 
-## 🎯 Checklist de Despliegue
+## 🎯 Lista de verificación de Despliegue
 
 - [ ] PostgreSQL desplegado en Railway
 - [ ] Script SQL ejecutado

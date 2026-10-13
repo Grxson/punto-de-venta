@@ -15,20 +15,28 @@ import java.util.Optional;
 public interface ProductoTamanoRepository extends JpaRepository<ProductoTamano, Long> {
 
     /**
-     * Encuentra un tamaño por nombre
+     * Encuentra un tamaño por nombre, sin distinguir mayúsculas.
+     *
+     * @param nombre nombre del tamaño
+     * @return el tamaño coincidente, o vacío si no existe
      */
     Optional<ProductoTamano> findByNombreIgnoreCase(String nombre);
 
     /**
-     * Encuentra todos los tamaños activos ordenados por orden
+     * Encuentra todos los tamaños activos ordenados por orden.
      * ✅ ARREGLO: Usar = true en lugar de IS TRUE (activo se almacena como INTEGER)
+     *
+     * @return lista de tamaños activos ordenados
      */
     @Query("SELECT pt FROM ProductoTamano pt WHERE pt.activo = true ORDER BY pt.orden ASC")
     List<ProductoTamano> findAllActivos();
 
     /**
-     * Busca tamaños por nombre (case-insensitive)
+     * Busca tamaños activos cuyo nombre contiene el texto indicado, sin distinguir mayúsculas.
      * ✅ ARREGLO: Usar = true en lugar de IS TRUE (activo se almacena como INTEGER)
+     *
+     * @param nombre fragmento del nombre a buscar
+     * @return lista de tamaños coincidentes ordenados por orden
      */
     @Query("SELECT pt FROM ProductoTamano pt WHERE LOWER(pt.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')) AND pt.activo = true ORDER BY pt.orden ASC")
     List<ProductoTamano> buscarPorNombre(String nombre);

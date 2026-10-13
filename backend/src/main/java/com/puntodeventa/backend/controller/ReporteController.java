@@ -33,7 +33,7 @@ public class ReporteController {
      * Obtiene reporte de movimiento de inventario por producto.
      * 
      * ✅ Optimizado:
-     * - Query única con proyección
+     * - Consulta única con proyección
      * - Detección dinámica de días activos
      * - Caché por sucursal y rango de fechas
      * - Estructura que elimina columnas vacías

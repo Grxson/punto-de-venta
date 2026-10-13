@@ -17,12 +17,19 @@ import java.util.Optional;
 public interface SucursalProductoRepository extends JpaRepository<SucursalProducto, Long> {
 
     /**
-     * Obtiene un producto de una sucursal específica.
+     * Obtiene la configuración de un producto en una sucursal específica.
+     *
+     * @param sucursalId ID de la sucursal
+     * @param productoId ID del producto
+     * @return la configuración si existe, o vacío en caso contrario
      */
     Optional<SucursalProducto> findBySucursalIdAndProductoId(Long sucursalId, Long productoId);
 
     /**
-     * Obtiene todos los productos de una sucursal que están disponibles.
+     * Obtiene todos los productos disponibles de una sucursal, ordenados para el menú.
+     *
+     * @param sucursalId ID de la sucursal
+     * @return lista de configuraciones disponibles ordenada por orden de visualización y nombre
      */
     @Query("SELECT sp FROM SucursalProducto sp " +
            "WHERE sp.sucursal.id = :sucursalId " +
@@ -34,6 +41,9 @@ public interface SucursalProductoRepository extends JpaRepository<SucursalProduc
 
     /**
      * Obtiene todos los productos de una sucursal (incluyendo no disponibles).
+     *
+     * @param sucursalId ID de la sucursal
+     * @return lista de configuraciones ordenada por orden de visualización y nombre
      */
     @Query("SELECT sp FROM SucursalProducto sp " +
            "WHERE sp.sucursal.id = :sucursalId " +
@@ -43,7 +53,11 @@ public interface SucursalProductoRepository extends JpaRepository<SucursalProduc
     );
 
     /**
-     * Busca productos de una sucursal por nombre (disponibles).
+     * Busca productos disponibles de una sucursal por nombre.
+     *
+     * @param sucursalId ID de la sucursal
+     * @param nombre     fragmento del nombre del producto
+     * @return lista de configuraciones coincidentes ordenada para el menú
      */
     @Query("SELECT sp FROM SucursalProducto sp " +
            "WHERE sp.sucursal.id = :sucursalId " +
@@ -56,7 +70,12 @@ public interface SucursalProductoRepository extends JpaRepository<SucursalProduc
     );
 
     /**
-     * Obtiene los productos más vendidos de una sucursal en un período.
+     * Obtiene los productos más vendidos de una sucursal desde una fecha.
+     * Agrega las cantidades en base de datos para no traer las ventas a memoria.
+     *
+     * @param sucursalId ID de la sucursal
+     * @param desde      fecha desde la que se acumulan las ventas
+     * @return lista de configuraciones ordenada por cantidad vendida descendente
      */
     @Query("SELECT sp FROM SucursalProducto sp " +
            "JOIN VentaItem vi ON vi.producto.id = sp.producto.id " +
@@ -73,19 +92,28 @@ public interface SucursalProductoRepository extends JpaRepository<SucursalProduc
     );
 
     /**
-     * Obtiene todos los productos de todas las sucursales (para admin).
+     * Obtiene todos los productos de todas las sucursales (para administración).
+     *
+     * @return lista de configuraciones ordenada por sucursal, orden de visualización y nombre
      */
     @Query("SELECT sp FROM SucursalProducto sp " +
            "ORDER BY sp.sucursal.nombre ASC, sp.ordenVisualizacion ASC, sp.producto.nombre ASC")
     List<SucursalProducto> findAllByOrderBySucursalNombreAscOrdenVisualizacionAscProductoNombreAsc();
 
     /**
-     * Cuenta cuántas sucursales venden un producto.
+     * Cuenta en cuántas sucursales está configurado un producto.
+     *
+     * @param productoId ID del producto
+     * @return número de configuraciones del producto
      */
     Long countByProductoId(Long productoId);
 
     /**
      * Verifica si un producto está disponible en una sucursal.
+     *
+     * @param sucursalId ID de la sucursal
+     * @param productoId ID del producto
+     * @return true si existe una configuración disponible
      */
     @Query("SELECT COUNT(sp) > 0 FROM SucursalProducto sp " +
            "WHERE sp.sucursal.id = :sucursalId " +

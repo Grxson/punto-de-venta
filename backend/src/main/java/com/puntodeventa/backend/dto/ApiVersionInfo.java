@@ -14,8 +14,8 @@ import java.time.Instant;
  * verificar la versión del backend y mostrarla en la interfaz.
  * 
  * @param version Versión semántica de la aplicación (ej: 1.0.0)
- * @param build Timestamp del build
- * @param javaVersion Versión de Java utilizada
+ * @param build marca de tiempo del build (formato {@code yyyyMMddHHmmss})
+ * @param javaVersion versión de Java utilizada
  * @param description Descripción de la aplicación
  * @param timestamp Timestamp actual del servidor
  * @param environment Entorno actual (dev, prod)
@@ -47,6 +47,8 @@ public record ApiVersionInfo(
     /**
      * Constructor compacto que valida los datos.
      * Java 21 permite agregar validación en el constructor compacto de records.
+     *
+     * @throws IllegalArgumentException si la versión viene vacía o nula
      */
     public ApiVersionInfo {
         if (version == null || version.isBlank()) {

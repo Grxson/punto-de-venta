@@ -49,13 +49,21 @@ import type { DateRangeValue } from '../../types/dateRange.types';
 import { getTodayLocalDate, getDateWithOffset } from '../../utils/dateHelper';
 import { acquireLock, releaseLock } from '../../utils/concurrency';
 
+/** Props del contenedor de una pestaña de gastos. */
 interface TabPanelProps {
+  /** Contenido de la pestaña. */
   children?: React.ReactNode;
+  /** Índice de esta pestaña. */
   index: number;
+  /** Índice de la pestaña activa. */
   value: number;
+  /** Estilos del contenedor. */
   sx?: any;
 }
 
+/**
+ * Contenedor accesible de una pestaña; sólo renderiza su contenido cuando está activa.
+ */
 function TabPanel(props: TabPanelProps) {
   const { children, value, index, sx } = props;
 
@@ -71,61 +79,109 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
+/** Categoría de gasto. */
 interface CategoriaGasto {
+  /** Id de la categoría. */
   id: number;
+  /** Nombre de la categoría. */
   nombre: string;
+  /** Descripción opcional. */
   descripcion?: string;
+  /** Presupuesto mensual asignado, si existe. */
   presupuestoMensual?: number;
+  /** Indica si la categoría está activa. */
   activo: boolean;
 }
 
+/** Proveedor de gastos. */
 interface Proveedor {
+  /** Id del proveedor. */
   id: number;
+  /** Nombre del proveedor. */
   nombre: string;
+  /** Persona de contacto. */
   contacto?: string;
+  /** Teléfono. */
   telefono?: string;
+  /** Email. */
   email?: string;
+  /** Indica si el proveedor está activo. */
   activo: boolean;
 }
 
+/** Método de pago disponible. */
 interface MetodoPago {
+  /** Id del método. */
   id: number;
+  /** Nombre del método. */
   nombre: string;
+  /** Si exige referencia al cobrar. */
   requiereReferencia: boolean;
+  /** Indica si el método está activo. */
   activo: boolean;
 }
 
+/** Gasto registrado tal como lo devuelve la API. */
 interface Gasto {
+  /** Id del gasto. */
   id: number;
+  /** Id de la categoría. */
   categoriaGastoId: number;
+  /** Nombre de la categoría. */
   categoriaGastoNombre: string;
+  /** Id del proveedor, si aplica. */
   proveedorId?: number;
+  /** Nombre del proveedor, si aplica. */
   proveedorNombre?: string;
+  /** Id de la sucursal. */
   sucursalId?: number;
+  /** Nombre de la sucursal. */
   sucursalNombre?: string;
+  /** Importe del gasto. */
   monto: number;
+  /** Fecha del gasto en formato ISO. */
   fecha: string;
+  /** Id del método de pago. */
   metodoPagoId?: number;
+  /** Nombre del método de pago. */
   metodoPagoNombre?: string;
+  /** Referencia o folio del pago. */
   referencia?: string;
+  /** Nota o descripción. */
   nota?: string;
+  /** Tipo de gasto (Operacional, Administrativo, etc.). */
   tipoGasto?: string;
+  /** URL del comprobante. */
   comprobanteUrl?: string;
+  /** Id del usuario que registró el gasto. */
   usuarioId?: number;
+  /** Nombre del usuario que registró el gasto. */
   usuarioNombre?: string;
+  /** Marca de creación del registro. */
   createdAt: string;
 }
 
+/** Gasto aún no enviado al backend, en la cola de múltiples altas. */
 interface GastoPendiente {
+  /** Id temporal del lado del cliente. */
   tempId: string;
+  /** Id de la categoría. */
   categoriaGastoId: number;
+  /** Id del proveedor, si aplica. */
   proveedorId?: number;
+  /** Importe del gasto. */
   monto: number;
+  /** Nota o descripción. */
   nota?: string;
+  /** Tipo de gasto. */
   tipoGasto: string;
 }
 
-// Función helper: obtener color por tipo de gasto
+/**
+ * Devuelve el color asociado a un tipo de gasto.
+ * @param tipoGasto - Tipo de gasto; si falta se asume `operacional`.
+ * @returns Código de color hex para mostrar el tipo.
+ */
 function getColorByTipoGasto(tipoGasto?: string): string {
   const tipo = tipoGasto?.toLowerCase() || 'operacional';
   switch (tipo) {
@@ -143,58 +199,90 @@ function getColorByTipoGasto(tipoGasto?: string): string {
   }
 }
 
+/**
+ * Pantalla de gestión de gastos con pestañas de operacionales, indirectos y mano de obra.
+ * @remarks Carga gastos, categorías, proveedores y métodos de pago, filtra por rango de
+ * fechas y tipo, y permite registrar varios gastos operacionales en una sola tanda. El
+ * botón de guardar usa un lock (`acquireLock`) para evitar el doble envío.
+ */
 export default function AdminExpenses() {
   const { usuario } = useAuth();
   const { categorias: categoriasGastoPredefinidas } = useCategoriasGasto();
   
   // Estado de Tabs
+  /** Pestaña activa: 0 operacionales, 1 indirectos, 2 mano de obra. */
   const [activeTab, setActiveTab] = useState(0);
   
+  /** Gastos operacionales cargados. */
   const [gastos, setGastos] = useState<Gasto[]>([]);
+  /** Categorías de gasto. */
   const [categorias, setCategorias] = useState<CategoriaGasto[]>([]);
+  /** Proveedores activos. */
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  /** Métodos de pago activos. */
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
+  /** Indica una operación en curso. */
   const [loading, setLoading] = useState(false);
+  /** Indica la carga inicial de datos. */
   const [loadingData, setLoadingData] = useState(true);
+  /** Mensaje de error de la última operación. */
   const [error, setError] = useState<string | null>(null);
+  /** Controla el diálogo de alta/edición de gasto. */
   const [openDialog, setOpenDialog] = useState(false);
+  /** Gasto en edición; `null` implica alta. */
   const [editingGasto, setEditingGasto] = useState<Gasto | null>(null);
+  /** Lock de envío que impide registrar el mismo gasto dos veces. */
   const submissionLock = useRef(false);
+  /** Controla el diálogo de alta rápida de proveedor. */
   const [openNewProveedorDialog, setOpenNewProveedorDialog] = useState(false);
+  /** Nombre del proveedor a crear. */
   const [newProveedorName, setNewProveedorName] = useState<string>('');
   
   // Estado para el filtro de fechas
   const todayLocal = getTodayLocalDate();
+  /** Rango de fechas del filtro; por defecto, hoy. */
   const [dateRange, setDateRange] = useState<DateRangeValue>({
     desde: todayLocal,
     hasta: todayLocal,
   });
+  /** Offset de días respecto a hoy que controla el paginador. */
   const [diaSeleccionado, setDiaSeleccionado] = useState(0); // Offset de días desde hoy
 
   // Estado para filtro de tipo de gasto
+  /** Filtro por tipo de gasto. */
   const [filtroTipoGasto, setFiltroTipoGasto] = useState<'todos' | 'operacional' | 'administrativo'>('todos');
 
   // Campos comunes para todos los gastos
+  /** Fecha del gasto en el formulario. */
   const [fecha, setFecha] = useState<Date | null>(new Date());
+  /** Método de pago del formulario. */
   const [metodoPagoId, setMetodoPagoId] = useState<number | ''>('');
+  /** Tipo de gasto del formulario. */
   const [tipoGasto, setTipoGasto] = useState<string>('Operacional'); // Nuevo: tipo de gasto
 
   // Campos por-gasto (input temporal)
+  /** Categoría del gasto en captura. */
   const [categoriaId, setCategoriaId] = useState<number | ''>('');
+  /** Proveedor del gasto en captura. */
   const [proveedorId, setProveedorId] = useState<number | ''>('');
+  /** Texto de búsqueda del `Autocomplete` de proveedor. */
   const [proveedorSearchText, setProveedorSearchText] = useState<string>(''); // Búsqueda editable
+  /** Monto del gasto en captura, como texto para permitir el estado vacío. */
   const [monto, setMonto] = useState<string>('');
+  /** Nota del gasto en captura. */
   const [nota, setNota] = useState<string>('');
+  /** Referencia del pago en captura (modo edición). */
   const [referencia, setReferencia] = useState<string>('');
 
   // Gastos pendientes para registrar
+  /** Cola de gastos a registrar en una sola tanda. */
   const [gastosPendientes, setGastosPendientes] = useState<GastoPendiente[]>([]);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  // Monitor de cambios en estado de gastos
+  // Monitor de cambios en estado de gastos (enganche de depuración, sin efectos)
   useEffect(() => {
   }, [gastos]);
 
@@ -228,6 +316,7 @@ export default function AdminExpenses() {
     }
   }, [openDialog, editingGasto, categorias, metodosPago]);
 
+  /** Carga gastos, categorías (con fallback al JSON predefinido), proveedores y métodos de pago. */
   const loadData = async () => {
     try {
       setLoadingData(true);
@@ -281,6 +370,7 @@ export default function AdminExpenses() {
   };
 
   // Filtrar gastos por rango de fechas y tipo
+  // Las fechas se construyen en hora local para evitar desfases con la zona del backend
   const gastosFiltrados = useMemo(() => {
     
     if (!dateRange.desde || !dateRange.hasta) {
@@ -318,11 +408,19 @@ export default function AdminExpenses() {
     return filtrados;
   }, [gastos, dateRange, filtroTipoGasto]);
 
+  /**
+   * Cambia el rango de fechas del filtro.
+   * @param range - Nuevo rango seleccionado.
+   */
   const handleDateRangeChange = (range: DateRangeValue) => {
     setDateRange(range);
     setDiaSeleccionado(0);
   };
 
+  /**
+   * Avanza o retrocede un día en el filtro.
+   * @param direccion - `anterior` resta un día, `siguiente` suma uno.
+   */
   const handleCambiarDia = (direccion: 'anterior' | 'siguiente') => {
     const nuevoDia = direccion === 'anterior' ? diaSeleccionado - 1 : diaSeleccionado + 1;
     const fechaFormato = getDateWithOffset(nuevoDia);
@@ -333,6 +431,10 @@ export default function AdminExpenses() {
     });
   };
 
+  /**
+   * Abre el diálogo en modo edición o en modo alta múltiple.
+   * @param gasto - Gasto a editar; sin argumento abre el alta.
+   */
   const handleOpenDialog = (gasto?: Gasto) => {
     if (gasto) {
       // Modo edición: un gasto existente
@@ -369,6 +471,11 @@ export default function AdminExpenses() {
     setGastosPendientes([]);
   };
 
+  /**
+   * Añade a la cola el gasto capturado en el formulario.
+   * @remarks Conserva categoría, proveedor y tipo para facilitar capturar varios gastos
+   * del mismo tipo; sólo limpia monto y nota.
+   */
   const handleAgregarGasto = () => {
     // Validar que monto sea mayor a 0
     if (!monto || parseFloat(monto) <= 0) {
@@ -399,10 +506,19 @@ export default function AdminExpenses() {
     setError(null); // Limpiar errores previos
   };
 
+  /**
+   * Elimina un gasto de la cola de pendientes.
+   * @param tempId - Id temporal de la línea a quitar.
+   */
   const handleRemoverGasto = (tempId: string) => {
     setGastosPendientes(gastosPendientes.filter(g => g.tempId !== tempId));
   };
 
+  /**
+   * Envía al backend la edición o el alta (uno o varios) de gastos.
+   * @remarks En edición sólo manda la fecha si cambió, para no reescribirla al tocar
+   * otros campos. El alta múltiple se hace en paralelo y reporta cuántos fallaron.
+   */
   const handleSubmit = async () => {
     if (!acquireLock(submissionLock)) return;
 
@@ -545,6 +661,10 @@ export default function AdminExpenses() {
     }
   };
 
+  /**
+   * Elimina el gasto indicado tras confirmar.
+   * @param id - Id del gasto a eliminar.
+   */
   const handleDelete = async (id: number) => {
     if (!window.confirm('¿Estás seguro de eliminar este gasto?')) {
       return;
@@ -565,6 +685,7 @@ export default function AdminExpenses() {
     }
   };
 
+  /** Crea un proveedor al vuelo y lo deja seleccionado en el formulario de gasto. */
   const handleAgregarNuevoProveedor = async () => {
     if (!newProveedorName.trim()) {
       setError('El nombre del proveedor no puede estar vacío.');
@@ -620,7 +741,11 @@ export default function AdminExpenses() {
 
   // ============ COMPONENTES TAB ============
 
-  // Componente Tab para Gastos Indirectos
+  /**
+   * Pestaña de gastos indirectos (electricidad, agua, internet, etc.).
+   * @remarks Carga y gestiona su propio listado contra `gastosIndirectosService`,
+   * independiente de los gastos operacionales del componente padre.
+   */
   function GastosIndirectosTab() {
     const [gastosIndirectos, setGastosIndirectos] = useState<any[]>([]);
     const [loadingIndirectos, setLoadingIndirectos] = useState(false);
@@ -634,6 +759,7 @@ export default function AdminExpenses() {
       cargarGastosIndirectos();
     }, []);
 
+    /** Carga los gastos indirectos activos. */
     const cargarGastosIndirectos = async () => {
       try {
         setLoadingIndirectos(true);
@@ -647,6 +773,7 @@ export default function AdminExpenses() {
       }
     };
 
+    /** Crea o actualiza el gasto indirecto del formulario. */
     const handleGuardarIndirecto = async () => {
       if (!nombreIndirecto.trim() || !montoMensualIndirecto) {
         setError('Nombre y monto son requeridos');
@@ -684,6 +811,10 @@ export default function AdminExpenses() {
       }
     };
 
+    /**
+     * Elimina el gasto indirecto indicado tras confirmar.
+     * @param id - Id del gasto indirecto.
+     */
     const handleDeleteIndirecto = async (id: number) => {
       if (window.confirm('¿Estás seguro de eliminar este gasto indirecto?')) {
         try {
@@ -822,7 +953,11 @@ export default function AdminExpenses() {
     );
   }
 
-  // Componente Tab para Mano de Obra
+  /**
+   * Pestaña de mano de obra (puestos y salarios).
+   * @remarks Mantiene su propio listado contra `manoObraService`, separado del resto
+   * de gastos.
+   */
   function ManoObraTab() {
     const [manoObra, setManoObra] = useState<any[]>([]);
     const [loadingMano, setLoadingMano] = useState(false);
@@ -836,6 +971,7 @@ export default function AdminExpenses() {
       cargarManoObra();
     }, []);
 
+    /** Carga los registros de mano de obra activos. */
     const cargarManoObra = async () => {
       try {
         setLoadingMano(true);
@@ -849,6 +985,7 @@ export default function AdminExpenses() {
       }
     };
 
+    /** Crea o actualiza el registro de mano de obra del formulario. */
     const handleGuardarMano = async () => {
       if (!puestoMano.trim() || !salarioMensualMano) {
         setError('Puesto y salario son requeridos');
@@ -885,6 +1022,10 @@ export default function AdminExpenses() {
       }
     };
 
+    /**
+     * Elimina el registro de mano de obra indicado tras confirmar.
+     * @param id - Id del registro.
+     */
     const handleDeleteMano = async (id: number) => {
       if (window.confirm('¿Estás seguro de eliminar este registro de mano de obra?')) {
         try {

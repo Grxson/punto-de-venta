@@ -7,8 +7,8 @@ Tu frontend-web se refresca de la nada y queda en blanco. Mirando los logs:
 ```
 ✅ 14:32 - Usuario ingresa, todo funciona bien
 ❌ 15:29:23 - De repente: "No hay token Bearer válido"
-❌ El backend rechaza requests porque falta el token JWT
-⚠️ Frontend no sabe qué hacer, la app rompe
+❌ El backend rechaza las peticiones porque falta el token JWT
+⚠️ El frontend no sabe qué hacer, la app se rompe
 🟤 Pantalla queda en blanco (error no manejado)
 ✅ 15:29:26 - El usuario loguearse de nuevo y funciona
 ```
@@ -19,9 +19,9 @@ Tu frontend-web se refresca de la nada y queda en blanco. Mirando los logs:
 
 Tu **token JWT expiró** (probablemente después de 1 hora). El frontend tiene estos problemas:
 
-1. ❌ **Sin validación de token** → Envía requests con token "muerto"
+1. ❌ **Sin validación de token** → Envía peticiones con token "muerto"
 2. ❌ **Sin refresh token** → No puede renovar automáticamente
-3. ❌ **Sin manejo de errores 401** → Cuando backend rechaza, no hay plan B
+3. ❌ **Sin manejo de errores 401** → Cuando el backend rechaza, no hay plan B
 4. ❌ **Sin error boundary** → Los errores de React no se muestran (pantalla en blanco)
 
 ---
@@ -69,7 +69,7 @@ if (response.status === 401) {
   }
 }
 ```
-✅ Cuando backend rechaza, redirige de forma segura
+✅ Cuando el backend rechaza, redirige de forma segura
 
 ---
 
@@ -109,11 +109,11 @@ if (params.has('expired')) {
 ```
 Token Expira
     ↓
-Frontend envía request con token inválido
+Frontend envía petición con token inválido
     ↓
 Backend retorna 401
     ↓
-Frontend no maneja error
+Frontend no maneja el error
     ↓
 App queda en estado inconsistente
     ↓
@@ -130,9 +130,9 @@ logout() automático
     ↓
 Redirige a /login?expired=true
     ↓
-User ve: "Tu sesión ha caducado"
+El usuario ve: "Tu sesión ha caducado"
     ↓
-User puede volver a ingresar
+El usuario puede volver a ingresar
 ```
 
 ---
@@ -188,14 +188,14 @@ Para evitar que vuelva a pasar:
 1. **Refresh Token Automático**
    - Backend: JWT con expiración de 15 min
    - Frontend: Renovar automáticamente cada 10 min
-   
+    
 2. **Aviso Visual**
    - "Tu sesión expirará en 5 minutos"
    - Botón "Renovar Sesión"
 
 3. **Seguridad**
-   - Usar httpOnly cookies en lugar de localStorage
-   - Sync de logout entre pestañas
+   - Usar cookies httpOnly en lugar de localStorage
+   - Sincronización del logout entre pestañas
 
 ---
 
@@ -207,7 +207,7 @@ Para evitar que vuelva a pasar:
 | Estado inconsistente | ✅ logout() completo |
 | Error 401 no manejado | ✅ Redirección segura |
 | Pantalla en blanco | ✅ ErrorBoundary |
-| User confundido | ✅ Mensaje claro |
+| Usuario confundido | ✅ Mensaje claro |
 
 **Resultado**: Tu app ya no quedará en blanco cuando expire la sesión. 🎉
 

@@ -7,31 +7,30 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.concurrent.Executor;
 
 /**
- * Configuración para procesamiento asincrónico con Virtual Threads (Java 21).
- * 
- * En Java 21, los Virtual Threads permiten:
- * - Miles de threads sin overhead
- * - Mejor utilización de CPU
- * - Manejo automático de bloqueos
- * 
- * ThreadPoolTaskExecutor activa Virtual Threads automáticamente
- * cuando se configura con corePoolSize >= 1.
- * 
- * @author Sistema POS
- * @version 1.0
+ * Configuración del procesamiento asíncrono en Java 21.
+ *
+ * En Java 21 los hilos virtuales permiten:
+ * - Miles de hilos sin sobrecarga
+ * - Mejor aprovechamiento de la CPU
+ * - Manejo automático de los bloqueos
+ *
+ * Los ejecutores separan las tareas por duración estimada, de modo que una tarea
+ * pesada no bloquea a las consultas rápidas del punto de venta.
  */
 @Configuration
 public class AsyncConfig {
 
     /**
-     * Executor para tareas async de MedianoPlazo (500ms - 5s).
-     * Ejemplos: Cálculos de estadísticas, procesamiento de datos
+     * Ejecutor para tareas asíncronas de duración media (500 ms a 5 s).
+     * Ejemplos: cálculos de estadísticas y procesamiento de datos.
+     *
+     * @return ejecutor de tamaño medio ya inicializado
      */
     @Bean(name = "asyncExecutor")
     public Executor asyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        
-        // Virtual Threads: el tamaño aquí es indicativo, no hay límite real
+
+        // Con hilos virtuales el tamaño es orientativo, no hay un límite real
         executor.setCorePoolSize(10);
         executor.setMaxPoolSize(50);
         executor.setQueueCapacity(200);
@@ -39,18 +38,20 @@ public class AsyncConfig {
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(30);
         executor.initialize();
-        
+
         return executor;
     }
 
     /**
-     * Executor para tareas de corta duración (< 500ms).
-     * Ejemplos: Búsquedas rápidas, validaciones
+     * Ejecutor para tareas de corta duración (menos de 500 ms).
+     * Ejemplos: búsquedas rápidas y validaciones.
+     *
+     * @return ejecutor rápido ya inicializado
      */
     @Bean(name = "fastAsyncExecutor")
     public Executor fastAsyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        
+
         executor.setCorePoolSize(5);
         executor.setMaxPoolSize(20);
         executor.setQueueCapacity(100);
@@ -58,18 +59,20 @@ public class AsyncConfig {
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(10);
         executor.initialize();
-        
+
         return executor;
     }
 
     /**
-     * Executor para tareas pesadas (> 5s).
-     * Ejemplos: Generación de reportes, procesamiento batch
+     * Ejecutor para tareas pesadas (más de 5 s).
+     * Ejemplos: generación de reportes y procesamiento por lotes.
+     *
+     * @return ejecutor de tareas pesadas ya inicializado
      */
     @Bean(name = "heavyAsyncExecutor")
     public Executor heavyAsyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        
+
         executor.setCorePoolSize(3);
         executor.setMaxPoolSize(10);
         executor.setQueueCapacity(50);
@@ -77,7 +80,7 @@ public class AsyncConfig {
         executor.setWaitForTasksToCompleteOnShutdown(true);
         executor.setAwaitTerminationSeconds(60);
         executor.initialize();
-        
+
         return executor;
     }
 }

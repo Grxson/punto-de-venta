@@ -24,6 +24,11 @@ public class LogService {
     private final Object lock = new Object();
     private long totalLogsProcessed = 0;
 
+    /**
+     * Crea el buffer circular y lo conecta con el appender de Logback.
+     *
+     * @param maxSize Capacidad máxima del buffer; se fuerza un mínimo de 100 entradas.
+     */
     public LogService(@Value("${monitoring.log.buffer-size:1000}") int maxSize) {
         this.maxSize = Math.max(100, maxSize);  // Mínimo 100 entradas
         this.logBuffer = new CopyOnWriteArrayList<>();
@@ -34,6 +39,9 @@ public class LogService {
 
     /**
      * Agrega una entrada de log al buffer circular.
+     * Si el buffer está lleno, se descarta la entrada más antigua.
+     *
+     * @param logEntry Entrada de log a agregar.
      */
     public void addLogEntry(LogEntry logEntry) {
         synchronized (lock) {
@@ -48,6 +56,8 @@ public class LogService {
 
     /**
      * Obtiene todos los logs del buffer (últimos N).
+     *
+     * @return Copia de la lista con todas las entradas almacenadas.
      */
     public List<LogEntry> obtenerTodos() {
         return new ArrayList<>(logBuffer);
@@ -55,6 +65,9 @@ public class LogService {
 
     /**
      * Obtiene los últimos N logs.
+     *
+     * @param cantidad Número máximo de entradas a devolver.
+     * @return Lista con las entradas más recientes, hasta {@code cantidad}.
      */
     public List<LogEntry> obtenerUltimos(int cantidad) {
         synchronized (lock) {
@@ -65,6 +78,9 @@ public class LogService {
 
     /**
      * Filtra logs por nivel (ERROR, WARN, INFO, DEBUG).
+     *
+     * @param nivel Nivel de log a conservar.
+     * @return Lista de entradas de ese nivel.
      */
     public List<LogEntry> filtrarPorNivel(String nivel) {
         return logBuffer.stream()
@@ -74,6 +90,9 @@ public class LogService {
 
     /**
      * Filtra logs por múltiples niveles.
+     *
+     * @param niveles Niveles a conservar.
+     * @return Lista de entradas cuyo nivel esté en el conjunto indicado.
      */
     public List<LogEntry> filtrarPorNiveles(String... niveles) {
         Set<String> nivelesSet = Arrays.stream(niveles)
@@ -87,6 +106,9 @@ public class LogService {
 
     /**
      * Filtra logs por logger (clase que generó el log).
+     *
+     * @param logger Fragmento del nombre del logger.
+     * @return Lista de entradas cuyo logger contiene ese texto.
      */
     public List<LogEntry> filtrarPorLogger(String logger) {
         return logBuffer.stream()
@@ -96,6 +118,9 @@ public class LogService {
 
     /**
      * Busca logs que contengan un texto en el mensaje.
+     *
+     * @param texto Texto a localizar, sin distinción de mayúsculas.
+     * @return Lista de entradas cuyo mensaje contiene el texto.
      */
     public List<LogEntry> buscarPorMensaje(String texto) {
         String textoBusqueda = texto.toLowerCase();
@@ -105,7 +130,11 @@ public class LogService {
     }
 
     /**
-     * Filtra logs por rango de tiempo.
+     * Filtra logs por rango de tiempo, ambos extremos inclusive.
+     *
+     * @param desde Límite inferior del rango.
+     * @param hasta Límite superior del rango.
+     * @return Lista de entradas dentro del rango.
      */
     public List<LogEntry> filtrarPorTiempo(LocalDateTime desde, LocalDateTime hasta) {
         return logBuffer.stream()
@@ -116,6 +145,8 @@ public class LogService {
 
     /**
      * Obtiene logs con excepciones.
+     *
+     * @return Lista de entradas que traen una traza de excepción.
      */
     public List<LogEntry> obtenerConExcepcion() {
         return logBuffer.stream()
@@ -124,7 +155,10 @@ public class LogService {
     }
 
     /**
-     * Obtiene logs de error recientes.
+     * Obtiene los últimos logs de error del buffer.
+     *
+     * @param cantidad Número máximo de errores a devolver.
+     * @return Lista con los errores más recientes, hasta {@code cantidad}.
      */
     public List<LogEntry> obtenerErroresRecientes(int cantidad) {
         return filtrarPorNivel("ERROR").stream()
@@ -133,7 +167,10 @@ public class LogService {
     }
 
     /**
-     * Filtra logs por sucursal (si aplica).
+     * Filtra logs por sucursal.
+     *
+     * @param sucursal Identificador de la sucursal.
+     * @return Lista de entradas etiquetadas con esa sucursal.
      */
     public List<LogEntry> filtrarPorSucursal(String sucursal) {
         return logBuffer.stream()
@@ -143,6 +180,9 @@ public class LogService {
 
     /**
      * Filtra logs por usuario que los causó.
+     *
+     * @param usuario Fragmento del nombre de usuario.
+     * @return Lista de entradas cuyo usuario contiene el texto.
      */
     public List<LogEntry> filtrarPorUsuario(String usuario) {
         return logBuffer.stream()
@@ -152,6 +192,14 @@ public class LogService {
 
     /**
      * Búsqueda combinada avanzada.
+     * Cada criterio es opcional: {@code null} desactiva ese filtro.
+     *
+     * @param nivel  Nivel a filtrar.
+     * @param logger Fragmento del logger a filtrar.
+     * @param texto  Texto a buscar en el mensaje.
+     * @param desde  Límite inferior del rango de tiempo.
+     * @param hasta  Límite superior del rango de tiempo.
+     * @return Lista de entradas que cumplen todos los criterios informados.
      */
     public List<LogEntry> buscarAvanzado(String nivel, String logger, String texto, 
                                         LocalDateTime desde, LocalDateTime hasta) {
@@ -166,6 +214,9 @@ public class LogService {
 
     /**
      * Estadísticas generales de logs.
+     *
+     * @return Mapa con el total actual, el procesado histórico, la capacidad, el
+     *         desglose por nivel, los extremos del buffer y el número de loggers.
      */
     public Map<String, Object> obtenerEstadisticas() {
         Map<String, Object> stats = new HashMap<>();
@@ -209,7 +260,10 @@ public class LogService {
     }
 
     /**
-     * Exporta logs como CSV (para descarga).
+     * Exporta todos los logs del buffer en formato CSV.
+     * Las comillas del mensaje se duplican para escapar el delimitador.
+     *
+     * @return Contenido CSV con cabecera y todas las entradas.
      */
     public String exportarCSV() {
         StringBuilder csv = new StringBuilder();
@@ -233,6 +287,8 @@ public class LogService {
 
     /**
      * Obtiene el tamaño actual del buffer.
+     *
+     * @return Cantidad de entradas almacenadas.
      */
     public int obtenerTamanoActual() {
         return logBuffer.size();
@@ -240,6 +296,8 @@ public class LogService {
 
     /**
      * Obtiene el porcentaje de capacidad del buffer.
+     *
+     * @return Porcentaje de ocupación respecto a la capacidad máxima.
      */
     public double obtenerPorcentajeCapacidad() {
         return (logBuffer.size() * 100.0) / maxSize;

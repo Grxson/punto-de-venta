@@ -3,13 +3,13 @@ package com.puntodeventa.backend.config;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /**
- * Helper para crear productos con variantes en el DataInitializer.
+ * Auxiliar para crear productos con variantes en el DataInitializer.
  */
 public class DataInitializerMenuHelper {
     
     /**
      * Crea un producto base y sus variantes.
-     * @param jdbcTemplate El JdbcTemplate para ejecutar queries
+     * @param jdbcTemplate El JdbcTemplate para ejecutar consultas
      * @param nombre Nombre del producto base
      * @param descripcion Descripción del producto base
      * @param categoriaId ID de la categoría
@@ -77,7 +77,7 @@ public class DataInitializerMenuHelper {
     
     /**
      * Crea un producto simple sin variantes.
-     * @param jdbcTemplate El JdbcTemplate para ejecutar queries
+     * @param jdbcTemplate El JdbcTemplate para ejecutar consultas
      * @param nombre Nombre del producto
      * @param descripcion Descripción del producto
      * @param categoriaId ID de la categoría

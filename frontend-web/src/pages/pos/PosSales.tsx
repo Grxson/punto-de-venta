@@ -48,87 +48,155 @@ import { useSalesCache } from '../../hooks/useSalesCache';
 import { useNavigate } from 'react-router-dom';
 import { limpiarNombreProducto } from '../../utils/stringFormatters';
 
+/** Línea de producto de una venta. */
 interface VentaItem {
+  /** Id de la línea. */
   id: number;
+  /** Id del producto. */
   productoId: number;
+  /** Nombre del producto. */
   productoNombre: string;
+  /** Cantidad vendida. */
   cantidad: number;
+  /** Precio unitario aplicado. */
   precioUnitario: number;
+  /** `cantidad * precioUnitario`. */
   subtotal: number;
+  /** Costo estimado de la línea. */
   costoEstimado?: number;
+  /** Nota de la línea. */
   nota?: string;
 }
 
+/** Pago aplicado a una venta. */
 interface Pago {
+  /** Id del pago. */
   id: number;
+  /** Id del método de pago. */
   metodoPagoId: number;
+  /** Nombre del método de pago. */
   metodoPagoNombre: string;
+  /** Importe cubierto. */
   monto: number;
+  /** Referencia del cobro. */
   referencia?: string;
+  /** Fecha del pago. */
   fecha: string;
 }
 
+/** Venta tal como la devuelve la API. */
 interface Venta {
+  /** Id de la venta. */
   id: number;
+  /** Id de la sucursal. */
   sucursalId?: number;
+  /** Nombre de la sucursal. */
   sucursalNombre?: string;
+  /** Fecha de la venta en formato ISO. */
   fecha: string;
+  /** Suma de subtotales. */
   subtotal: number;
+  /** Total cobrado. */
   total: number;
+  /** Impuestos aplicados. */
   impuestos: number;
+  /** Descuento aplicado. */
   descuento: number;
+  /** Canal de venta. */
   canal: string;
+  /** Estado de la venta. */
   estado: string;
+  /** Nota de la venta. */
   nota?: string;
+  /** Id del usuario que registró la venta. */
   usuarioId?: number;
+  /** Nombre del usuario que registró la venta. */
   usuarioNombre?: string;
+  /** Líneas de producto. */
   items: VentaItem[];
+  /** Pagos aplicados. */
   pagos: Pago[];
 }
 
+/**
+ * Pantalla de ventas para el punto de venta: últimas 24 horas, cancelación y edición.
+ * @remarks A diferencia de `AdminSales`, aquí sólo se listan las ventas de las últimas
+ * 24 horas y no se permite eliminarlas de forma permanente. Comparte con la vista de
+ * admin el flujo de edición de ítems y pagos.
+ */
 export default function PosSales() {
   const navigate = useNavigate();
   const { usuario } = useAuth();
   const { allSales, loading: cacheLoading, invalidateCache, loadAllSales } = useSalesCache();
+  /** Ventas de las últimas 24 horas. */
   const [ventas, setVentas] = useState<Venta[]>([]);
+  /** Indica una carga en curso. */
   const [loading, setLoading] = useState(true);
+  /** Mensaje de error de la última operación. */
   const [error, setError] = useState<string | null>(null);
+  /** Id de la venta cuya cancelación está en curso. */
   const [cancelando, setCancelando] = useState<number | null>(null);
+  /** Id de la venta cuya edición está en curso. */
   const [editando, setEditando] = useState<number | null>(null);
 
   // ✨ PAGINACIÓN LOCAL (solo visualización)
+  /** Página actual (0-indexed para `TablePagination`). */
   const [page, setPage] = useState(0); // 0-indexed para TablePagination
+  /** Filas por página. */
   const [rowsPerPage, setRowsPerPage] = useState(25); // 25 filas por defecto
 
   // Estado para el diálogo de cancelación
+  /** Controla el diálogo de cancelación. */
   const [dialogoCancelacion, setDialogoCancelacion] = useState(false);
+  /** Venta seleccionada para cancelar. */
   const [ventaSeleccionada, setVentaSeleccionada] = useState<Venta | null>(null);
+  /** Motivo de cancelación capturado. */
   const [motivoCancelacion, setMotivoCancelacion] = useState('');
+  /** Error de validación del motivo. */
   const [errorMotivo, setErrorMotivo] = useState<string | null>(null);
 
   // Estado para el diálogo de edición
+  /** Controla el diálogo de edición. */
   const [dialogoEdicion, setDialogoEdicion] = useState(false);
+  /** Copia editable de los ítems de la venta. */
   const [itemsEditados, setItemsEditados] = useState<VentaItem[]>([]);
+  /** Copia editable de los pagos de la venta. */
   const [pagosEditados, setPagosEditados] = useState<Pago[]>([]);
+  /** Descuento editable de la venta. */
   const [descuentoEditado, setDescuentoEditado] = useState(0);
+  /** Nota editable de la venta. */
   const [notaEditada, setNotaEditada] = useState('');
+  /** Fecha editable de la venta. */
   const [fechaEditada, setFechaEditada] = useState<string>('');
+  /** Controla si se está editando la fecha. */
   const [editandoFecha, setEditandoFecha] = useState(false);
+  /** Productos disponibles para agregar a la venta. */
   const [productos, setProductos] = useState<any[]>([]);
+  /** Métodos de pago disponibles. */
   const [metodosPago, setMetodosPago] = useState<any[]>([]);
+  /** Error de validación de la edición. */
   const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
+  /** Notificación con el resultado de la operación. */
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; tipo: 'info' | 'warning' | 'success' }>({
     open: false,
     message: '',
     tipo: 'info',
   });
+  /** Controla el `Popper` de desglose por índice de venta. */
   const [tooltipOpen, setTooltipOpen] = useState<{ [key: number]: boolean }>({});
+  /** Referencias a los anclas del `Popper`. */
   const tooltipRefs = useRef<{ [key: number]: HTMLElement | null }>({});
+  /** Controla el diálogo de selección de variantes. */
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
+  /** Producto cuyas variantes se están eligiendo. */
   const [productoSeleccionadoParaVariante, setProductoSeleccionadoParaVariante] = useState<any | null>(null);
+  /** Índice del ítem al que se le asigna la variante. */
   const [indiceItemParaVariante, setIndiceItemParaVariante] = useState<number | null>(null); // Para saber si es nuevo item o edición
+  /** Controla el segundo diálogo de variantes (subvariantes). */
   const [dialogoVariantes2, setDialogoVariantes2] = useState(false);
+  /** Variante intermedia seleccionada. */
   const [varianteIntermedia, setVarianteIntermedia] = useState<any | null>(null);
+  /** Subvariantes de la variante intermedia. */
   const [subVariantes, setSubVariantes] = useState<any[]>([]);
 
   useEffect(() => {
@@ -165,6 +233,10 @@ export default function PosSales() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemsEditados.map(i => `${i.productoId}-${i.cantidad}-${i.subtotal}`).join(',')]); // Solo cuando cambian los items
 
+  /**
+   * Carga las ventas y deja sólo las de las últimas 24 horas.
+   * @remarks Para el rol de empleado sólo interesan las ventas del turno reciente.
+   */
   const loadVentas = async () => {
     try {
       setLoading(true);
@@ -205,6 +277,10 @@ export default function PosSales() {
     }
   };
 
+  /**
+   * Abre el diálogo de cancelación para la venta indicada.
+   * @param venta - Venta a cancelar.
+   */
   const handleAbrirDialogoCancelacion = (venta: Venta) => {
     setVentaSeleccionada(venta);
     setMotivoCancelacion('');
@@ -219,6 +295,10 @@ export default function PosSales() {
     setErrorMotivo(null);
   };
 
+  /**
+   * Cancela la venta seleccionada enviando el motivo como query param.
+   * @remarks Invalida el caché de ventas al terminar para reflejar el nuevo estado.
+   */
   const handleCancelarVenta = async () => {
     if (!ventaSeleccionada) return;
 
@@ -254,6 +334,10 @@ export default function PosSales() {
     }
   };
 
+  /**
+   * Abre el diálogo de edición cargando productos (con variantes) y métodos de pago.
+   * @param venta - Venta a editar.
+   */
   const handleAbrirDialogoEdicion = async (venta: Venta) => {
     setVentaSeleccionada(venta);
     setItemsEditados([...venta.items]);
@@ -319,6 +403,7 @@ export default function PosSales() {
     setDialogoEdicion(true);
   };
 
+  /** Cierra y limpia el diálogo de edición. */
   const handleCerrarDialogoEdicion = () => {
     setDialogoEdicion(false);
     setVentaSeleccionada(null);
@@ -331,6 +416,7 @@ export default function PosSales() {
     setErrorEdicion(null);
   };
 
+  /** Agrega una línea vacía a la edición para capturar un producto. */
   const handleAgregarItem = () => {
     if (productos.length === 0) return;
 
@@ -364,6 +450,10 @@ export default function PosSales() {
     }
   };
 
+  /**
+   * Quita una línea de la venta en edición.
+   * @param index - Posición de la línea a eliminar.
+   */
   const handleEliminarItem = (index: number) => {
     const itemAEliminar = itemsEditados[index];
     const montoARegresar = itemAEliminar.subtotal;
@@ -391,6 +481,12 @@ export default function PosSales() {
     setItemsEditados(itemsEditados.filter((_, i) => i !== index));
   };
 
+  /**
+   * Actualiza un campo de una línea de la venta en edición.
+   * @param index - Posición de la línea.
+   * @param campo - Nombre del campo a modificar.
+   * @param valor - Nuevo valor del campo.
+   */
   const handleActualizarItem = (index: number, campo: string, valor: any) => {
     if (campo === 'productoId') {
       const producto = productos.find(p => p.id === valor);
@@ -576,6 +672,10 @@ export default function PosSales() {
   //   });
   // };
 
+  /**
+   * Deshace el pago indicado de la venta en edición.
+   * @param index - Posición del pago.
+   */
   const handleEliminarPago = (index: number) => {
     const pagoEliminado = pagosEditados[index];
     setPagosEditados(pagosEditados.filter((_, i) => i !== index));
@@ -586,6 +686,12 @@ export default function PosSales() {
     });
   };
 
+  /**
+   * Actualiza un campo de un pago de la venta en edición.
+   * @param index - Posición del pago.
+   * @param campo - Nombre del campo a modificar.
+   * @param valor - Nuevo valor del campo.
+   */
   const handleActualizarPago = (index: number, campo: string, valor: any) => {
     const nuevosPagos = [...pagosEditados];
     if (campo === 'metodoPagoId') {
@@ -606,12 +712,17 @@ export default function PosSales() {
     setPagosEditados(nuevosPagos);
   };
 
+  /**
+   * Suma los subtotales de las líneas en edición menos el descuento.
+   * @returns El total de la venta en edición.
+   */
   const calcularTotal = () => {
     const subtotal = itemsEditados.reduce((sum, item) => sum + item.subtotal, 0);
     const descuento = Math.max(0, Math.min(descuentoEditado, subtotal)); // No permitir descuento > subtotal
     return Math.max(0, subtotal - descuento); // No permitir total negativo
   };
 
+  /** Persiste los cambios de ítems, pagos, descuento, nota y fecha de la venta. */
   const handleGuardarEdicion = async () => {
     if (!ventaSeleccionada) return;
 
@@ -678,6 +789,11 @@ export default function PosSales() {
     }
   };
 
+  /**
+   * Indica si una venta puede cancelarse.
+   * @param venta - Venta a evaluar.
+   * @returns `true` si su estado permite cancelación.
+   */
   const puedeCancelar = (venta: Venta) => {
     // Cualquier empleado autenticado puede cancelar
     if (!usuario) {
@@ -697,11 +813,21 @@ export default function PosSales() {
     return horasDiferencia <= 24;
   };
 
+  /**
+   * Indica si una venta puede editarse.
+   * @param venta - Venta a evaluar.
+   * @returns `true` si su estado permite edición.
+   */
   const puedeEditar = (venta: Venta) => {
     // Mismas condiciones que cancelar
     return puedeCancelar(venta);
   };
 
+  /**
+   * Traduce el estado de una venta a un color del tema.
+   * @param estado - Estado de la venta.
+   * @returns La clave de color para el `Chip`.
+   */
   const getEstadoColor = (estado: string): 'success' | 'error' | 'warning' | 'default' => {
     if (estado === 'PAGADA') return 'success';
     if (estado === 'CANCELADA') return 'error';

@@ -21,6 +21,9 @@ import java.util.stream.Collectors;
 
 /**
  * Servicio para gestionar los atributos seleccionados en items de venta.
+ * Un atributo seleccionado puede provenir del catálogo (atributo más opción) o
+ * de un valor escrito libremente por el cajero; ambos casos conviven en la misma
+ * tabla y el {@code precioExtra} se suma al subtotal del item.
  */
 @Service
 @RequiredArgsConstructor
@@ -33,7 +36,11 @@ public class VentaItemAtributoSeleccionadoService {
     private final ProductoAtributoOpcionRepository opcionRepository;
     
     /**
-     * Obtiene todos los atributos seleccionados de un item de venta
+     * Obtiene todos los atributos seleccionados de un item de venta.
+     *
+     * @param ventaItemId Identificador del item de venta.
+     * @return Lista de atributos seleccionados del item, en el orden de la base de datos.
+     * @throws EntityNotFoundException si el item de venta no existe.
      */
     @Transactional(readOnly = true)
     public List<VentaItemAtributoSeleccionadoDTO> obtenerAtributosDelItem(Long ventaItemId) {
@@ -45,7 +52,14 @@ public class VentaItemAtributoSeleccionadoService {
     }
     
     /**
-     * Agrega un atributo seleccionado a un item de venta
+     * Agrega un atributo seleccionado del catálogo a un item de venta.
+     *
+     * @param ventaItemId  Identificador del item de venta.
+     * @param atributoId   Identificador del atributo, opcional.
+     * @param opcionId     Identificador de la opción del atributo, opcional.
+     * @param precioExtra Sobrecosto de la opción; si es {@code null} se toma cero.
+     * @return DTO del atributo seleccionado ya persistido.
+     * @throws EntityNotFoundException si el item, el atributo o la opción no existen.
      */
     public VentaItemAtributoSeleccionadoDTO agregarAtributo(
         Long ventaItemId,
@@ -81,7 +95,13 @@ public class VentaItemAtributoSeleccionadoService {
     }
     
     /**
-     * Agrega un atributo con valor personalizado (cuando no está en el catálogo)
+     * Agrega un atributo con valor personalizado, para cuando la opción no está en el catálogo.
+     *
+     * @param ventaItemId       Identificador del item de venta.
+     * @param valorSeleccionado Texto libre capturado por el cajero.
+     * @param precioExtra       Sobrecosto asociado; si es {@code null} se toma cero.
+     * @return DTO del atributo seleccionado ya persistido.
+     * @throws EntityNotFoundException si el item de venta no existe.
      */
     public VentaItemAtributoSeleccionadoDTO agregarAtributoPersonalizado(
         Long ventaItemId,
@@ -103,7 +123,10 @@ public class VentaItemAtributoSeleccionadoService {
     }
     
     /**
-     * Elimina un atributo seleccionado
+     * Elimina un atributo seleccionado.
+     *
+     * @param id Identificador del atributo seleccionado.
+     * @throws EntityNotFoundException si el atributo seleccionado no existe.
      */
     public void eliminarAtributo(Long id) {
         if (!atributoSeleccionadoRepository.existsById(id)) {
@@ -113,7 +136,10 @@ public class VentaItemAtributoSeleccionadoService {
     }
     
     /**
-     * Elimina todos los atributos seleccionados de un item de venta
+     * Elimina todos los atributos seleccionados de un item de venta.
+     *
+     * @param ventaItemId Identificador del item de venta.
+     * @throws EntityNotFoundException si el item de venta no existe.
      */
     public void limpiarAtributosDelItem(Long ventaItemId) {
         verificarVentaItemExiste(ventaItemId);
@@ -121,7 +147,10 @@ public class VentaItemAtributoSeleccionadoService {
     }
     
     /**
-     * Convierte una entidad a DTO
+     * Convierte una entidad a DTO.
+     *
+     * @param atributoSeleccionado Entidad a proyectar.
+     * @return DTO con el atributo, la opción y el valor libre resueltos.
      */
     private VentaItemAtributoSeleccionadoDTO toDTO(VentaItemAtributoSeleccionado atributoSeleccionado) {
         return new VentaItemAtributoSeleccionadoDTO(
@@ -136,6 +165,14 @@ public class VentaItemAtributoSeleccionadoService {
         );
     }
     
+    /**
+     * Valida que exista el item de venta antes de operar sobre sus atributos.
+     * Se usa {@code existsById} y no la entidad completa porque las operaciones
+     * pendientes solo necesitan confirmar la existencia.
+     *
+     * @param ventaItemId Identificador del item de venta.
+     * @throws EntityNotFoundException si el item de venta no existe.
+     */
     private void verificarVentaItemExiste(Long ventaItemId) {
         if (!ventaItemRepository.existsById(ventaItemId)) {
             throw new EntityNotFoundException("Item de venta no encontrado: " + ventaItemId);

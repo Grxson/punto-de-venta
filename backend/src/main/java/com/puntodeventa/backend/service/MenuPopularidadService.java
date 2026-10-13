@@ -21,6 +21,13 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+/**
+ * Servicio de ordenamiento dinámico del menú por popularidad.
+ * Combina las estadísticas de venta recientes y del período anterior por
+ * producto, calcula un score y distribuye los productos en una grilla. Las
+ * estadísticas se obtienen en dos consultas en {@code batch} para evitar el
+ * problema N+1 sobre el catálogo de la sucursal.
+ */
 @Service
 @Transactional(readOnly = true)
 public class MenuPopularidadService {
@@ -39,8 +46,8 @@ public class MenuPopularidadService {
      * Obtiene el menú completo ordenado por popularidad.
      * Incluye distribución en grilla (grid layout).
      *
-     * @param columnasGrid Número de columnas en la grilla (default: 3)
-     * @param diasAnalizar Número de días para calcular popularidad (default: 7)
+     * @param columnasGrid Número de columnas en la grilla (por defecto: 3)
+     * @param diasAnalizar Número de días para calcular popularidad (por defecto: 7)
      * @param porCategoria Si se distribuye por categoría o todo junto
      * @return MenuGrillaDTO con productos ordenados y posiciones en grilla
      */
@@ -101,7 +108,13 @@ public class MenuPopularidadService {
 
     /**
      * Calcula popularidad usando mapas de estadísticas previamente obtenidas en
-     * batch (optimización).
+     * batch (optimización). Si el producto no tiene estadísticas en un período, se
+     * asume cero para ese período.
+     *
+     * @param producto     Producto del catálogo a puntuar.
+     * @param mapaReciente Estadísticas del período reciente indexadas por producto.
+     * @param mapaAntiguo  Estadísticas del período anterior, usadas para la tendencia.
+     * @return DTO con los indicadores y el score de popularidad del producto.
      */
     private ProductoPopularidadDTO calcularPopularidadDesdeMapas(
             Producto producto,

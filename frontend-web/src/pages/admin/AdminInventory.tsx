@@ -32,13 +32,23 @@ import ProductoForm from '../../components/productos/ProductoForm';
 import VariantesManager from '../../components/productos/VariantesManager';
 import AtributosManager from '../../components/productos/AtributosManager';
 
+/**
+ * Pantalla de gestión de productos (inventario/catálogo).
+ * @remarks Carga productos y categorías con React Query, aplica filtros de estado,
+ * categoría y búsqueda, y refresca por WebSocket al recibir eventos de producto. El
+ * borrado definitivo sólo se ofrece a administradores.
+ */
 export default function AdminInventory() {
   const { usuario } = useAuth();
+  /** Rol admin, habilita el borrado definitivo de productos. */
   const isAdmin = usuario?.rol === 'ADMIN' || usuario?.rolNombre === 'ADMIN';
 
   // Filtros
+  /** Filtro de estado: `todos`, `true` (activos) o `false` (inactivos). */
   const [filtroActivo, setFiltroActivo] = useState<string>('todos');
+  /** Id de la categoría seleccionada; cadena vacía significa sin filtro. */
   const [filtroCategoria, setFiltroCategoria] = useState<number | ''>('');
+  /** Texto de búsqueda por nombre. */
   const [busqueda, setBusqueda] = useState('');
 
   // React Query hooks con filtros
@@ -55,21 +65,33 @@ export default function AdminInventory() {
   const actualizarProducto = useActualizarProducto();
   const eliminarProductoPermanente = useEliminarProductoPermanente();
 
+  /** Mensaje de error de la última operación. */
   const [error, setError] = useState<string | null>(null);
+  /** Mensaje de éxito de la última operación. */
   const [success, setSuccess] = useState<string | null>(null);
+  /** Indica que se está cargando el detalle de un producto (variantes o atributos). */
   const [loadingVariantes, setLoadingVariantes] = useState(false);
 
   // Paginación
+  /** Página actual de la tabla. */
   const [page, setPage] = useState(0);
+  /** Filas por página de la tabla. */
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Estados de diálogos
+  /** Controla el diálogo de alta/edición de producto. */
   const [openForm, setOpenForm] = useState(false);
+  /** Controla el diálogo de variantes. */
   const [openVariantes, setOpenVariantes] = useState(false);
+  /** Controla el diálogo de atributos/ingredientes. */
   const [openAtributos, setOpenAtributos] = useState(false);
+  /** Controla la confirmación de activación/desactivación. */
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
+  /** Controla la confirmación de borrado definitivo. */
   const [openDeletePermanenteConfirm, setOpenDeletePermanenteConfirm] = useState(false);
+  /** Producto sobre el que opera el diálogo abierto. */
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
+  /** Pestaña activa, restaurada desde las preferencias del usuario. */
   const [tabValue, setTabValue] = useState(() => {
     // Restaurar la pestaña guardada al montar el componente
     return userPreferencesService.getAdminInventoryTab();
@@ -84,11 +106,13 @@ export default function AdminInventory() {
     userPreferencesService.setAdminInventoryTab(tabValue);
   }, [tabValue]);
 
+  /** Fuerza una recarga de productos vía React Query. */
   const loadData = async () => {
     refetch(); // Solo refetch con React Query
   };
 
   // WebSocket para actualizaciones en tiempo real
+  // Refresca el catálogo cuando otro cliente crea, edita o borra un producto
   useEffect(() => {
     websocketService.connect();
 
@@ -107,16 +131,25 @@ export default function AdminInventory() {
     };
   }, [refetch]);
 
+  /** Abre el formulario en modo alta. */
   const handleNuevoProducto = () => {
     setProductoSeleccionado(null);
     setOpenForm(true);
   };
 
+  /**
+   * Abre el formulario en modo edición.
+   * @param producto - Producto a editar.
+   */
   const handleEditarProducto = (producto: Producto) => {
     setProductoSeleccionado(producto);
     setOpenForm(true);
   };
 
+  /**
+   * Carga el producto completo y abre el diálogo de variantes.
+   * @param producto - Producto del que se listan variantes.
+   */
   const handleVerVariantes = async (producto: Producto) => {
     try {
       setLoadingVariantes(true);
@@ -139,6 +172,10 @@ export default function AdminInventory() {
     }
   };
 
+  /**
+   * Carga el producto completo y abre el diálogo de atributos/ingredientes.
+   * @param producto - Producto del que se gestionan los atributos.
+   */
   const handleVerAtributos = async (producto: Producto) => {
     try {
       setLoadingVariantes(true);
@@ -160,17 +197,26 @@ export default function AdminInventory() {
     }
   };
 
+  /**
+   * Abre la confirmación de activación/desactivación.
+   * @param producto - Producto cuyo estado se va a alternar.
+   */
   const handleEliminarProducto = (producto: Producto) => {
     // Este método ahora maneja tanto activación como desactivación
     setProductoSeleccionado(producto);
     setOpenDeleteConfirm(true);
   };
 
+  /**
+   * Abre la confirmación del borrado definitivo (sólo admin).
+   * @param producto - Producto a eliminar.
+   */
   const handleEliminarPermanente = (producto: Producto) => {
     setProductoSeleccionado(producto);
     setOpenDeletePermanenteConfirm(true);
   };
 
+  /** Alterna el estado activo del producto seleccionado. */
   const confirmarEliminar = async () => {
     if (!productoSeleccionado?.id) return;
 
@@ -197,6 +243,7 @@ export default function AdminInventory() {
     }
   };
 
+  /** Elimina definitivamente el producto seleccionado. */
   const confirmarEliminarPermanente = async () => {
     if (!productoSeleccionado?.id) return;
 
@@ -216,6 +263,7 @@ export default function AdminInventory() {
     }
   };
 
+  /** Cierra el formulario, recarga y muestra el aviso de guardado. */
   const handleFormSuccess = () => {
     setOpenForm(false);
     setProductoSeleccionado(null);
@@ -248,7 +296,10 @@ export default function AdminInventory() {
     setPage(0);
   };
 
-  // Exportar a CSV
+  /**
+   * Exporta a CSV los productos actualmente filtrados.
+   * @remarks Se arma el CSV en el cliente y se descarga con un enlace temporal.
+   */
   const handleExportarCSV = () => {
     const headers = ['Nombre', 'Categoría', 'Precio', 'Costo Estimado', 'SKU', 'Estado', 'En Menú'];
     const rows = productosFiltrados.map(p => [

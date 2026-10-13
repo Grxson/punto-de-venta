@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * Controlador para exponer métricas de performance.
  * 
  * Proporciona:
- * - Queries lentas (> 100ms)
+ * - Consultas lentas (> 100ms)
  * - Endpoints más lentos
  * - Estadísticas de latencia
  * 
@@ -36,7 +36,7 @@ public class PerformanceMetricsController {
     }
 
     /**
-     * Obtiene las métricas de queries lentas (> 100ms).
+     * Obtiene las métricas de consultas lentas (> 100ms).
      * 
      * @return Map con endpoints y sus duraciones promedio
      */
@@ -151,7 +151,7 @@ public class PerformanceMetricsController {
     }
 
     /**
-     * Record interno para representar una query lenta.
+     * Record interno para representar una consulta lenta.
      */
     public record SlowQueryMetric(
             String endpoint,

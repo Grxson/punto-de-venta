@@ -29,55 +29,100 @@ import { productosService } from '../../services/productos.service';
 import { ingredientesService, Ingrediente as IngredienteService } from '../../services/ingredientes.service';
 import AgregarIngredientesReceta from './components/AgregarIngredientesReceta';
 
+/** Ingrediente del catálogo reducido a lo que usa la pantalla de recetas. */
 interface Ingrediente {
+  /** Id del ingrediente. */
   id: number;
+  /** Nombre del ingrediente. */
   nombre: string;
+  /** Precio unitario, si el servicio lo provee. */
   precioUnitario?: number;
+  /** Nombre de la unidad base. */
   unidadNombre?: string;
+  /** Indica si el ingrediente está activo. */
   activo: boolean;
 }
 
+/** Unidad de medida. */
 interface Unidad {
+  /** Id de la unidad. */
   id: number;
+  /** Nombre de la unidad. */
   nombre: string;
+  /** Abreviatura para mostrar. */
   abreviatura: string;
 }
 
+/** Ingrediente dentro de una receta, con su merma y costo. */
 interface RecetaIngrediente {
+  /** Id del ingrediente. */
   ingredienteId: number;
+  /** Nombre del ingrediente. */
   ingredienteNombre: string;
+  /** Cantidad usada. */
   cantidad: number;
+  /** Id de la unidad usada. */
   unidadId: number;
+  /** Nombre de la unidad. */
   unidadNombre: string;
+  /** Abreviatura de la unidad. */
   unidadAbreviatura: string;
+  /** Merma teórica en porcentaje. */
   mermaTeorica?: number;
+  /** Costo de la línea. */
   costoTotal?: number;
 }
 
+/** Receta de un producto: ingredientes, costos y precio sugerido. */
 interface Receta {
+  /** Id del producto al que pertenece la receta. */
   productoId: number;
+  /** Nombre del producto. */
   productoNombre: string;
+  /** Sucursal de la receta, si aplica. */
   sucursalId?: number;
+  /** Ingredientes de la receta. */
   ingredientes: RecetaIngrediente[];
+  /** Suma de los costos de los ingredientes. */
   costoDirecto?: number;
+  /** Costos indirectos (energía, insumos menores, etc.). */
   costoIndirecto?: number;
+  /** Costo de mano de obra. */
   manoObra?: number;
+  /** Costo directo más indirectos y mano de obra. */
   costoTotal?: number;
+  /** Margen de utilidad objetivo, en porcentaje. */
   porcentajeUtilidadDeseado?: number;
+  /** Precio de venta resultante del margen objetivo. */
   precioSugerido?: number;
+  /** Unidades que rinde la receta. */
   rendimiento?: number;
+  /** Unidad del rendimiento. */
   unidadRendimiento?: string;
+  /** Descripción de la receta. */
   descripcion?: string;
+  /** Notas internas. */
   notas?: string;
 }
 
+/** Producto del catálogo reducido a lo que necesita la pantalla. */
 interface Producto {
+  /** Id del producto. */
   id: number;
+  /** Nombre del producto. */
   nombre: string;
+  /** Precio de venta. */
   precio: number;
+  /** Indica si el producto está activo. */
   activo: boolean;
 }
 
+/**
+ * Pantalla de recetas: lista las recetas por producto y permite crearlas o editarlas.
+ * @remarks Carga recetas, productos, ingredientes y unidades en `loadData`; el formulario
+ * calcula en vivo costo directo, costo total, costo por unidad y precio sugerido según el
+ * porcentaje de utilidad. El rendimiento y la unidad son la base de esos cálculos.
+ */
 export default function AdminRecipes() {
   const [recetas, setRecetas] = useState<Receta[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -92,7 +137,7 @@ export default function AdminRecipes() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Form fields
+  // Campos del formulario
   const [selectedProducto, setSelectedProducto] = useState<Producto | null>(null);
   const [productoSearchInput, setProductoSearchInput] = useState<string>('');
   const [recetaIngredientes, setRecetaIngredientes] = useState<RecetaIngrediente[]>([]);
@@ -108,6 +153,7 @@ export default function AdminRecipes() {
     loadData();
   }, []);
 
+  /** Carga recetas, productos activos, ingredientes activos y unidades en paralelo. */
   const loadData = async () => {
     try {
       setLoadingData(true);
@@ -172,6 +218,10 @@ export default function AdminRecipes() {
     return rendimiento > 0 ? costoTotalReceta / rendimiento : 0;
   }, [costoTotalReceta, rendimiento]);
 
+  /**
+   * Abre el formulario de receta, precargando los valores si es edición.
+   * @param receta - Receta a editar; sin argumento abre el alta en blanco.
+   */
   const handleOpenDialog = (receta?: Receta) => {
     if (receta) {
       setEditingReceta(receta);
@@ -268,6 +318,10 @@ export default function AdminRecipes() {
     }
   };
 
+  /**
+   * Elimina la receta del producto tras confirmar.
+   * @param productoId - Id del producto cuya receta se elimina.
+   */
   const handleDelete = async (productoId: number) => {
     if (!window.confirm('¿Estás seguro de eliminar esta receta?')) {
       return;

@@ -5,6 +5,11 @@ import { useAuth } from '../../contexts/AuthContext';
 
 
 
+/**
+ * Pantalla de inicio de sesión, punto de entrada único a la app.
+ * @remarks Tras validar las credenciales decide la ruta de destino según el rol:
+ * ADMIN y GERENTE van al panel de administración, el resto al punto de venta.
+ */
 export default function Login() {
   const navigate = useNavigate();
   const { login, isAuthenticated, usuario } = useAuth();
@@ -14,17 +19,17 @@ export default function Login() {
   const [sessionExpiredMessage, setSessionExpiredMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Si ya está autenticado, redirigir según rol
+  // Redirige a la app si ya hay sesión activa y avisa cuando la sesión caducó.
   useEffect(() => {
-    // Buscar mensaje de sesión expirada en URL params
+    // El interceptor de Axios marca la caducidad con ?expired en la URL
     const params = new URLSearchParams(window.location.search);
     if (params.has('expired')) {
       setSessionExpiredMessage('Tu sesión ha caducado. Por favor inicia sesión nuevamente.');
-      // Limpiar el parámetro de URL
+      // Se limpia el parámetro para que un refresco no repita el aviso
       window.history.replaceState({}, document.title, '/login');
     }
 
-    // Buscar mensaje de sesión expirada en sessionStorage (legacy)
+    // Ruta heredada: el aviso llegaba por sessionStorage en versiones previas
     const expiredMsg = sessionStorage.getItem('sessionExpiredMessage');
     if (expiredMsg) {
       setSessionExpiredMessage(expiredMsg);
@@ -35,7 +40,6 @@ export default function Login() {
       // Obtener el rol (puede venir como 'rol' o 'rolNombre')
       const rol = usuario.rol || usuario.rolNombre || '';
 
-      // Detectar rol y redirigir automáticamente
       if (rol === 'ADMIN' || rol === 'GERENTE') {
         navigate('/admin', { replace: true });
       } else {
@@ -50,26 +54,25 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // Hacer login usando el contexto (actualiza el estado automáticamente)
+      // El login vive en AuthContext: aquí sólo se consumen sus errores
       await login(username, password);
 
-      // Esperar un momento para que el estado se actualice
-      // El useEffect también manejará la redirección, pero hacemos esto como respaldo
+      // El useEffect ya redirige cuando `usuario` se actualiza; este setTimeout
+      // es el respaldo para el caso en que el contexto llega antes que el effect.
       setTimeout(() => {
         const storedUsuario = localStorage.getItem('auth_usuario');
         if (storedUsuario) {
           const usuarioData = JSON.parse(storedUsuario);
-          // Obtener el rol (puede venir como 'rol' o 'rolNombre')
+          // El rol puede venir como 'rol' o 'rolNombre' según la versión del backend
           const rol = usuarioData.rol || usuarioData.rolNombre || '';
 
-          // Redirigir según el rol del usuario
           if (rol === 'ADMIN' || rol === 'GERENTE') {
             navigate('/admin', { replace: true });
           } else {
             navigate('/pos', { replace: true });
           }
         } else {
-          // Fallback: redirigir a POS si no se puede obtener el usuario
+          // Sin usuario en localStorage se asume el flujo del punto de venta
           navigate('/pos', { replace: true });
         }
       }, 100);

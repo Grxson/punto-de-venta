@@ -19,10 +19,23 @@ import {
 import { useCategorias } from '../hooks/useCategorias';
 import { Categoria, Subcategoria } from '../types/categorias.types';
 
+/**
+ * Props del panel de gestión de categorías.
+ */
 interface AdminCategoriasProps {
+  /** Se invoca al cerrar el panel, si el contenedor lo permite. */
   onClose?: () => void;
 }
 
+/**
+ * Panel de administración de categorías y subcategorías.
+ *
+ * Permite seleccionar una categoría y ejecutar el CRUD de sus subcategorías
+ * (crear, editar y eliminar) desde una única pantalla.
+ *
+ * @param props.onClose Callback opcional para cerrar el panel.
+ * @returns La lista de categorías, sus subcategorías y el modal de edición.
+ */
 export const AdminCategorias: React.FC<AdminCategoriasProps> = ({
   onClose,
 }) => {

@@ -14,17 +14,14 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Filtro para profiling de queries y request timing.
- * 
+ * Filtro de medición de tiempos de respuesta de las solicitudes.
+ *
  * Mide:
- * - Duración total de cada request
- * - Queries lentas (> 100ms)
- * - Categoriza por endpoint
- * 
- * Integración con Micrometer para Prometheus/Grafana
- * 
- * @author Sistema POS
- * @version 1.0
+ * - Duración total de cada solicitud
+ * - Solicitudes lentas (más de 100 ms)
+ * - Agrupa las métricas por endpoint normalizado
+ *
+ * Publica las métricas en Micrometer para Prometheus y Grafana.
  */
 @Slf4j
 @Component
@@ -37,10 +34,24 @@ public class QueryProfilerFilter extends OncePerRequestFilter {
     private final MeterRegistry meterRegistry;
     private static final AtomicLong slowQueryCount = new AtomicLong(0);
 
+    /**
+     * Crea el filtro con el registro de métricas donde se publicarán las mediciones.
+     *
+     * @param meterRegistry registro de Micrometer configurado en la aplicación
+     */
     public QueryProfilerFilter(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
     }
 
+    /**
+     * Cronometra la solicitud y publica la duración y, si supera el umbral, el aviso de lentitud.
+     *
+     * @param request solicitud HTTP en curso
+     * @param response respuesta HTTP en curso
+     * @param filterChain cadena de filtros a continuar
+     * @throws ServletException si falla el filtrado delegado
+     * @throws IOException si falla la lectura o escritura de la solicitud o la respuesta
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -50,12 +61,10 @@ public class QueryProfilerFilter extends OncePerRequestFilter {
         String path = request.getRequestURI();
 
         try {
-            // Ejecutar request
             filterChain.doFilter(request, response);
         } finally {
             long duration = System.currentTimeMillis() - startTime;
 
-            // Registrar en Micrometer
             Timer.builder(TIMER_NAME)
                     .tag("method", method)
                     .tag("endpoint", normalizePath(path))
@@ -65,44 +74,46 @@ public class QueryProfilerFilter extends OncePerRequestFilter {
                         // La métrica ya fue medida, esto es solo para registro
                     });
 
-            // Registrar en micrometer con duración
             meterRegistry.timer(TIMER_NAME, "method", method, "endpoint", normalizePath(path))
                     .record(duration, java.util.concurrent.TimeUnit.MILLISECONDS);
 
-            // Alertar si es lenta
             if (duration > SLOW_QUERY_THRESHOLD_MS) {
                 slowQueryCount.incrementAndGet();
                 meterRegistry.counter(SLOW_REQUEST_NAME, "endpoint", normalizePath(path)).increment();
-                
-                log.warn("🐌 SLOW REQUEST: {} {} took {}ms (threshold: {}ms)",
+
+                log.warn("🐌 SOLICITUD LENTA: {} {} tardó {}ms (umbral: {}ms)",
                         method, path, duration, SLOW_QUERY_THRESHOLD_MS);
             } else if (duration > 50) {
-                log.debug("⚡ Request: {} {} took {}ms", method, path, duration);
+                log.debug("⚡ Solicitud: {} {} tardó {}ms", method, path, duration);
             }
         }
     }
 
     /**
-     * Normaliza rutas para agrupar por patrón (no por IDs específicos).
+     * Normaliza las rutas para agruparlas por patrón y no por identificadores concretos.
      * Ejemplo: /api/productos/123 → /api/productos/{id}
+     *
+     * @param path ruta de la solicitud
+     * @return ruta con los identificadores numéricos sustituidos y sin parámetros de consulta
      */
     private String normalizePath(String path) {
         if (path == null) return "unknown";
-        
-        // Remover IDs numéricos
+
         return path.replaceAll("/\\d+", "/{id}")
-                   .replaceAll("\\?.*", ""); // Remover query params
+                   .replaceAll("\\?.*", "");
     }
 
     /**
-     * Obtiene el contador de queries lentas.
+     * Obtiene el contador de solicitudes lentas.
+     *
+     * @return número de solicitudes que superaron el umbral desde el arranque
      */
     public static long getSlowQueryCount() {
         return slowQueryCount.get();
     }
 
     /**
-     * Resetea el contador de queries lentas.
+     * Restablece el contador de solicitudes lentas.
      */
     public static void resetSlowQueryCount() {
         slowQueryCount.set(0);

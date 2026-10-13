@@ -1,7 +1,8 @@
 /**
- * Safe re-export of Recharts components
- * This module defers recharts imports to prevent circular dependency issues
+ * Re-exportación segura de los componentes de Recharts.
+ * Este módulo aísla los imports de recharts para evitar dependencias circulares;
+ * Vite resuelve los límites entre módulos correctamente.
  */
 
-// Direct re-export - Vite will handle the module boundaries correctly
+// Re-exportación directa: los límites de módulo los maneja Vite
 export * from 'recharts';

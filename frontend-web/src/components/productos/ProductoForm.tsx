@@ -35,12 +35,23 @@ import { subcategoriasService } from '../../services/subcategorias.service';
 import AtributosManager from './AtributosManager';
 
 interface ProductoFormProps {
+  /** Controla la visibilidad del diálogo. */
   open: boolean;
+  /** Cierra el diálogo sin guardar. */
   onClose: () => void;
+  /** Producto a editar; si es `null` o se omite, el formulario crea uno nuevo. */
   producto?: Producto | null;
+  /** Notifica al padre que el guardado terminó correctamente. */
   onSuccess: () => void;
 }
 
+/**
+ * Diálogo de alta y edición de productos.
+ * Gestiona nombre, categoría, subcategoría, precio y SKU (autogenerado en creación),
+ * además de variantes con plantillas y el acceso al gestor de ingredientes/componentes.
+ *
+ * @param props - Propiedades descritas en {@link ProductoFormProps}.
+ */
 export default function ProductoForm({ open, onClose, producto, onSuccess }: ProductoFormProps) {
   const [loading, setLoading] = useState(false);
   const [loadingCategorias, setLoadingCategorias] = useState(false);

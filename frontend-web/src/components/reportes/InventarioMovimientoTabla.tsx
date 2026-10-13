@@ -16,16 +16,21 @@ import { es } from 'date-fns/locale';
 import type { InventarioMovimientoReporteDTO } from '../../types/reportes.types';
 
 interface InventarioMovimientoTablaProps {
+  /** Reporte de movimientos, o `null` si aún no hay datos. */
   reporte: InventarioMovimientoReporteDTO | null;
+  /** Indica que el reporte se está cargando. */
   cargando: boolean;
+  /** Mensaje de error a mostrar en lugar de la tabla. */
   error?: string | null;
 }
 
 /**
- * Tabla optimizada para mostrar movimiento de inventario por producto.
- * - Renderiza solo columnas de días con operación (sin vacías)
+ * Tabla optimizada para mostrar el movimiento de inventario por producto.
+ * - Renderiza solo las columnas de días con operación (omite las vacías)
  * - Memoizada para evitar renders innecesarios
  * - Estructura flexible que se adapta a cualquier rango de fechas
+ *
+ * @param props - Propiedades descritas en {@link InventarioMovimientoTablaProps}.
  */
 const InventarioMovimientoTabla = memo(
   ({ reporte, cargando, error }: InventarioMovimientoTablaProps) => {

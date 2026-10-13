@@ -18,7 +18,12 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * Servicio para gestión de recetas (BOM - Bill of Materials).
+ * Servicio de gestión de recetas (BOM, por sus siglas en inglés Bill of Materials).
+ * Una receta indica qué ingrediente y en qué cantidad consume un producto, y es la
+ * base del descuento automático de inventario al vender y del cálculo de costo estándar.
+ * <p>
+ * La identidad de una receta es compuesta (producto, ingrediente), de modo que no
+ * existe un identificador propio que el cliente pueda usar.
  */
 @Service
 @RequiredArgsConstructor
@@ -32,7 +37,9 @@ public class RecetaService {
     private final InventarioMapper mapper;
 
     /**
-     * Obtener todas las recetas
+     * Lista todas las recetas del catálogo.
+     *
+     * @return Lista de DTO con todas las recetas.
      */
     public List<RecetaDTO> obtenerTodas() {
         return recetaRepository.findAll().stream()
@@ -40,6 +47,12 @@ public class RecetaService {
                 .toList();
     }
 
+    /**
+     * Obtiene la receta de un producto, con ingrediente y unidad cargados.
+     *
+     * @param productoId Identificador del producto.
+     * @return Lista de DTO con los ingredientes que consume el producto.
+     */
     @Cacheable(value = "recetas", key = "'producto-' + #productoId")
     public List<RecetaDTO> obtenerPorProducto(Long productoId) {
         return recetaRepository.findByProductoIdWithDetails(productoId).stream()
@@ -47,6 +60,12 @@ public class RecetaService {
                 .toList();
     }
 
+    /**
+     * Obtiene las recetas en las que participa un ingrediente.
+     *
+     * @param ingredienteId Identificador del ingrediente.
+     * @return Lista de DTO con los productos que consumen ese ingrediente.
+     */
     @Cacheable(value = "recetas", key = "'ingrediente-' + #ingredienteId")
     public List<RecetaDTO> obtenerPorIngrediente(Long ingredienteId) {
         return recetaRepository.findByIngredienteId(ingredienteId).stream()
@@ -54,19 +73,25 @@ public class RecetaService {
                 .toList();
     }
 
+    /**
+     * Crea la receta de un producto para un ingrediente.
+     *
+     * @param dto Datos de la receta, con producto, ingrediente, cantidad, unidad y merma.
+     * @return DTO de la receta creada.
+     * @throws ResourceNotFoundException si el producto, el ingrediente o la unidad no existen.
+     */
     @CacheEvict(value = "recetas", allEntries = true)
     @Transactional
     public RecetaDTO crear(RecetaDTO dto) {
-        // Validar que el producto existe
+        // Se validan las tres referencias para que la receta nunca quede apuntando
+        // a un producto, ingrediente o unidad borrados en cascada.
         Producto producto = productoRepository.findById(dto.productoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + dto.productoId()));
 
-        // Validar que el ingrediente existe
         Ingrediente ingrediente = ingredienteRepository.findById(dto.ingredienteId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Ingrediente no encontrado con id: " + dto.ingredienteId()));
 
-        // Validar que la unidad existe
         Unidad unidad = unidadRepository.findById(dto.unidadId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidad no encontrada con id: " + dto.unidadId()));
 
@@ -84,6 +109,16 @@ public class RecetaService {
         return mapper.toRecetaDTO(receta);
     }
 
+    /**
+     * Actualiza la receta existente de un producto para un ingrediente.
+     * Producto e ingrediente no se modifican: son la clave compuesta del registro.
+     *
+     * @param productoId   Identificador del producto de la receta.
+     * @param ingredienteId Identificador del ingrediente de la receta.
+     * @param dto          Datos a aplicar: cantidad, unidad y merma.
+     * @return DTO de la receta actualizada.
+     * @throws ResourceNotFoundException si la receta no existe o la unidad no existe.
+     */
     @CacheEvict(value = "recetas", allEntries = true)
     @Transactional
     public RecetaDTO actualizar(Long productoId, Long ingredienteId, RecetaDTO dto) {
@@ -92,7 +127,6 @@ public class RecetaService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Receta no encontrada para producto: " + productoId + " e ingrediente: " + ingredienteId));
 
-        // Validar que la unidad existe
         Unidad unidad = unidadRepository.findById(dto.unidadId())
                 .orElseThrow(() -> new ResourceNotFoundException("Unidad no encontrada con id: " + dto.unidadId()));
 
@@ -104,6 +138,13 @@ public class RecetaService {
         return mapper.toRecetaDTO(receta);
     }
 
+    /**
+     * Elimina la receta de un producto para un ingrediente.
+     *
+     * @param productoId    Identificador del producto de la receta.
+     * @param ingredienteId Identificador del ingrediente de la receta.
+     * @throws ResourceNotFoundException si la receta no existe.
+     */
     @CacheEvict(value = "recetas", allEntries = true)
     @Transactional
     public void eliminar(Long productoId, Long ingredienteId) {
@@ -115,6 +156,12 @@ public class RecetaService {
         recetaRepository.deleteById(recetaId);
     }
 
+    /**
+     * Elimina todas las recetas de un producto.
+     * Se usa al cambiar por completo la composición de un producto.
+     *
+     * @param productoId Identificador del producto cuyas recetas se borran.
+     */
     @CacheEvict(value = "recetas", allEntries = true)
     @Transactional
     public void eliminarRecetasDeProducto(Long productoId) {
@@ -123,8 +170,11 @@ public class RecetaService {
     }
 
     /**
-     * Calcula el costo estándar de un producto basado en su receta.
-     * Incluye el ajuste por merma teórica.
+     * Calcula el costo estándar de un producto sumando el de cada ingrediente de
+     * su receta.
+     *
+     * @param productoId Identificador del producto.
+     * @return Costo estándar del producto, o cero si no tiene receta definida.
      */
     public BigDecimal calcularCostoReceta(Long productoId) {
         List<Receta> recetas = recetaRepository.findByProductoIdWithDetails(productoId);
@@ -138,21 +188,32 @@ public class RecetaService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    /**
+     * Calcula el costo de un ingrediente dentro de una receta.
+     * <p>
+     * La receta declara la cantidad útil, así que para obtener esa cantidad hay
+     * que consumir más: {@code cantidad_real = cantidad / (1 - merma)}. El
+     * descuento se aplica sobre la cantidad ya ajustada por merma y no sobre el
+     * costo, para no arrastrar dos veces el mismo concepto.
+     *
+     * @param receta Receta del producto a costear.
+     * @return Costo del ingrediente para una unidad del producto.
+     */
     private BigDecimal calcularCostoIngrediente(Receta receta) {
         BigDecimal cantidad = receta.getCantidad();
         BigDecimal mermaTeorica = receta.getMermaTeorica();
         BigDecimal costoUnitario = receta.getIngrediente().getCostoUnitarioBase();
 
-        // cantidad_real = cantidad / (1 - merma_teorica)
+        // Una merma de 100% anularía el divisor, así que en ese caso se consume
+        // exactamente la cantidad de la receta en lugar de dividir.
         BigDecimal cantidadReal = mermaTeorica.compareTo(BigDecimal.ONE) < 0
                 ? cantidad.divide(BigDecimal.ONE.subtract(mermaTeorica), 6, BigDecimal.ROUND_HALF_UP)
                 : cantidad;
 
-        // Aplicar factor de conversión de unidad si es necesario
+        // el costo del ingrediente está expresado en su unidad base
         BigDecimal factorConversion = receta.getUnidad().getFactorBase();
         BigDecimal cantidadEnUnidadBase = cantidadReal.multiply(factorConversion);
 
-        // costo = cantidad_en_unidad_base * costo_unitario_base
         return cantidadEnUnidadBase.multiply(costoUnitario);
     }
 }

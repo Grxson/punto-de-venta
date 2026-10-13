@@ -22,24 +22,29 @@ import java.time.LocalDateTime;
 @Builder
 public class ProductoVarianteTamano {
 
+    /** Identificador único del vínculo producto-tamaño. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Producto o variante que ofrece el tamaño; many-to-one obligatorio del lado del producto. */
     @NotNull(message = "El producto es obligatorio")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 
+    /** Tamaño ofrecido; many-to-one obligatorio del lado del tamaño. */
     @NotNull(message = "El tamaño es obligatorio")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tamano_id", nullable = false)
     private ProductoTamano tamano;
 
+    /** Posición del tamaño dentro del producto; menor número se muestra primero. */
     @Column(nullable = false)
     @Builder.Default
     private Integer orden = 0;
 
+    /** Fecha de alta del vínculo. */
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

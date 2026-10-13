@@ -8,38 +8,49 @@ import java.time.LocalDateTime;
 
 /**
  * Entidad que representa una sucursal del punto de venta.
+ *
+ * Es la unidad de segregación de datos del sistema: usuarios, productos,
+ * gastos y ventas cuelgan de una sucursal, de modo que cada punto de venta
+ * opera y reporta de forma independiente.
  */
 @Entity
 @Table(name = "sucursales")
 public class Sucursal {
 
+    /** Identificador único de la sucursal. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Nombre comercial de la sucursal. */
     @Column(nullable = false, length = 100)
     private String nombre;
 
+    /** Dirección física de la sucursal. */
     @Column(length = 255)
     private String direccion;
 
+    /** Teléfono de contacto de la sucursal. */
     @Column(length = 20)
     private String telefono;
 
+    /** Correo de contacto de la sucursal. */
     @Column(length = 100)
     private String email;
 
+    /** Si es false, la sucursal deja de operar pero conserva su histórico. */
     @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(name = "activo", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     private Boolean activo = true;
 
+    /** Fecha de alta de la sucursal; no se modifica. */
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    /** Fecha de la última modificación de la sucursal. */
     @Column(name = "updated_at")
     private LocalDateTime updatedAt = LocalDateTime.now();
 
-    // Getters y Setters
     public Long getId() {
         return id;
     }

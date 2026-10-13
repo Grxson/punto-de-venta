@@ -6,7 +6,7 @@ Se implementó un sistema para registrar múltiples gastos en una sola sesión d
 - Establecer una fecha y método de pago comunes
 - Agregar múltiples líneas de gasto (categoría, monto, proveedor, concepto)
 - Visualizar una tabla de gastos pendientes
-- Registrar todos juntos con un solo click
+- Registrar todos juntos con un solo clic
 
 ## 🏗️ Cambios Implementados
 
@@ -41,7 +41,7 @@ const [nota, setNota] = useState<string>('');
 const [fecha, setFecha] = useState<Date | null>(new Date());
 const [metodoPagoId, setMetodoPagoId] = useState<number | ''>('');
 
-// Campos por-gasto (input temporal)
+// Campos por-gasto (entrada temporal)
 const [categoriaGastoId, setCategoriaGastoId] = useState<number | ''>('');
 const [proveedorId, setProveedorId] = useState<number | ''>('');
 const [monto, setMonto] = useState<string>('');
@@ -127,7 +127,7 @@ if (allSuccess) {
 }
 ```
 
-#### 5. **UI Actualizada en Dialog**
+#### 5. **Interfaz actualizada en el Dialog**
 
 **Estructura:**
 1. Encabezado: Campos comunes (fecha, método de pago) en caja destacada
@@ -252,8 +252,8 @@ if (editingGasto) {
 
 ## 🚀 Mejoras Futuras
 
-1. **Bulk Delete:** Opción para eliminar múltiples gastos de la tabla
-2. **Templates:** Guardar combinaciones frecuentes (ej: "Insumos Diarios")
+1. **Eliminación masiva:** Opción para eliminar múltiples gastos de la tabla
+2. **Plantillas:** Guardar combinaciones frecuentes (ej: "Insumos Diarios")
 3. **Validaciones Avanzadas:** 
    - Validar presupuesto mensual por categoría
    - Alertar si gasto es inusualmente alto
@@ -261,7 +261,7 @@ if (editingGasto) {
 5. **Duplicación:** Botón para duplicar una línea (útil para gastos similares)
 6. **Firma Digital:** Requerir firma para gastos > umbral
 
-## 📝 Testing Manual
+## 📝 Pruebas Manuales
 
 ### Prueba 1: Agregar y registrar 2 gastos
 - ✅ Dialog abre sin errores
@@ -303,11 +303,11 @@ Backend espera:
 }
 ```
 
-Cada gasto en batch lleva los mismos `fecha` y `metodoPagoId`.
+Cada gasto en lote lleva los mismos `fecha` y `metodoPagoId`.
 
 ---
 
 **Implementado:** 2 de diciembre de 2025  
 **Desarrollador:** GitHub Copilot  
-**Status:** ✅ COMPLETADO
+**Estado:** ✅ COMPLETADO
 

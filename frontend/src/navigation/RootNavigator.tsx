@@ -18,6 +18,11 @@ import { AdminUsuariosScreen } from '../screens/AdminUsuariosScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+/**
+ * Pila mostrada a usuarios sin sesión: solo el login.
+ *
+ * @returns Navegador de pila con la pantalla de inicio de sesión.
+ */
 function LoginNavigator() {
   return (
     <Stack.Navigator
@@ -30,6 +35,11 @@ function LoginNavigator() {
   );
 }
 
+/**
+ * Pestañas del cajero y del resto de usuarios no administradores.
+ *
+ * @returns Navegador de pestañas con menú, carrito, venta, gastos y perfil.
+ */
 function UserNavigator() {
   return (
     <Tab.Navigator
@@ -89,6 +99,12 @@ function UserNavigator() {
   );
 }
 
+/**
+ * Pestañas del administrador: sustituyen a gastos por gestión y omiten el
+ * carrito, que no es un flujo relevante en ese rol.
+ *
+ * @returns Navegador de pestañas del administrador.
+ */
 function AdminNavigator() {
   return (
     <Tab.Navigator
@@ -148,10 +164,25 @@ function AdminNavigator() {
   );
 }
 
+/**
+ * Envuelve los iconos de pestaña para aplicarles color y tamaño.
+ *
+ * @param props.color Color que aporta el navegador de pestañas.
+ * @param props.children Emoji o glifo a renderizar.
+ * @returns El texto con el estilo del icono.
+ */
 function TabIcon({ color, children }: { color: string; children: React.ReactNode }) {
   return <Text style={{ fontSize: 24, color }}>{children}</Text>;
 }
 
+/**
+ * Navegador raíz: decide qué árbol de pantallas se muestra según la sesión.
+ *
+ * Espera a que `checkAuth` termine antes de decidir, para no montar la pantalla
+ * de login y expulsar a un usuario que sí tenía una sesión guardada.
+ *
+ * @returns El `NavigationContainer` con el navegador correspondiente al rol.
+ */
 export function RootNavigator() {
   const { isAuthenticated, isLoading, isAdmin } = useAuth();
 

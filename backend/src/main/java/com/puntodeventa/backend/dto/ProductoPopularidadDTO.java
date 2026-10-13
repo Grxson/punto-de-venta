@@ -4,8 +4,21 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * DTO que expone un producto con su información de popularidad.
- * Usado para menús dinámicos que se ordenan por popularidad.
+ * Producto con sus métricas de popularidad.
+ *
+ * <p>Es el response del endpoint que arma el menú dinámico: los productos se devuelven
+ * ordenados por popularidad para destacar los más vendidos.
+ *
+ * @param id identificador del producto
+ * @param nombre nombre visible del producto
+ * @param categoriaNombre nombre de la categoría a la que pertenece
+ * @param precio precio de venta
+ * @param descripcion detalle del producto
+ * @param frecuenciaVenta número de transacciones en las que se vendió
+ * @param cantidadVendida cantidad total de unidades vendidas
+ * @param ingresoTotal dinero generado por el producto
+ * @param ultimaVenta momento de la última venta del producto
+ * @param scorePopularidad puntuación normalizada de popularidad, en el rango 0-100
  */
 public record ProductoPopularidadDTO(
         Long id,

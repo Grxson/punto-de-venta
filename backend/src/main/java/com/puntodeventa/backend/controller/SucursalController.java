@@ -173,6 +173,11 @@ public class SucursalController {
     // ENDPOINTS DE PRODUCTOS POR SUCURSAL (Multi-sucursal)
     // =====================================================================
 
+    /**
+     * Obtiene la sucursal activa del contexto de la solicitud.
+     *
+     * @return datos de la sucursal actual o 401 si no hay ninguna seleccionada
+     */
     @GetMapping("/actual")
     @Operation(summary = "Obtener información de la sucursal actual")
     @PreAuthorize("isAuthenticated()")
@@ -192,6 +197,12 @@ public class SucursalController {
         }
     }
 
+    /**
+     * Obtiene los productos disponibles de una sucursal.
+     *
+     * @param sucursalId identificador de la sucursal
+     * @return productos disponibles en la sucursal
+     */
     @GetMapping("/{sucursalId}/productos")
     @Operation(summary = "Obtener productos disponibles de una sucursal específica")
     @Parameter(name = "sucursalId", description = "ID de la sucursal", required = true)
@@ -201,6 +212,12 @@ public class SucursalController {
         return ResponseEntity.ok(productos);
     }
 
+    /**
+     * Obtiene todos los productos de una sucursal, incluidos los no disponibles.
+     *
+     * @param sucursalId identificador de la sucursal
+     * @return todos los productos de la sucursal
+     */
     @GetMapping("/{sucursalId}/productos/todos")
     @Operation(summary = "Obtener todos los productos de una sucursal (incluyendo no disponibles - solo admin)")
     @Parameter(name = "sucursalId", description = "ID de la sucursal", required = true)
@@ -209,6 +226,13 @@ public class SucursalController {
         return ResponseEntity.ok(productos);
     }
 
+    /**
+     * Obtiene el detalle de un producto dentro de una sucursal.
+     *
+     * @param sucursalId identificador de la sucursal
+     * @param productoId identificador del producto
+     * @return detalle del producto en la sucursal
+     */
     @GetMapping("/{sucursalId}/producto/{productoId}")
     @Operation(summary = "Obtener detalle de un producto en una sucursal específica")
     @PreAuthorize("isAuthenticated()")
@@ -219,6 +243,12 @@ public class SucursalController {
         return ResponseEntity.ok(producto);
     }
 
+    /**
+     * Cambia la sucursal activa (solo administradores).
+     *
+     * @param sucursalId identificador de la sucursal destino
+     * @return confirmación del cambio de contexto
+     */
     @PostMapping("/cambiar/{sucursalId}")
     @Operation(summary = "Cambiar a una sucursal diferente (solo admin)")
     @Parameter(name = "sucursalId", description = "ID de la sucursal a cambiar", required = true)
@@ -247,6 +277,11 @@ public class SucursalController {
         }
     }
 
+    /**
+     * Obtiene los productos de todas las sucursales.
+     *
+     * @return productos de todas las sucursales
+     */
     @GetMapping("/productos/todos-sucursales")
     @Operation(summary = "Obtener todos los productos de todas las sucursales (solo admin)")
     public ResponseEntity<List<ProductoSucursalDTO>> obtenerTodosProductosTodosSucursales() {

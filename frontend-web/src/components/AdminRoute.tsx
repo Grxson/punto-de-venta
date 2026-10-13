@@ -4,8 +4,17 @@ import { useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 
 interface AdminRouteProps {
+  /** Contenido protegido que solo se renderiza con permisos de administrador. */
   children: React.ReactNode;
 }
+
+/**
+ * Ruta protegida por rol de administrador.
+ * Solo deja pasar a usuarios con rol `ADMIN` o `GERENTE`; redirige al login si
+ * no hay sesión y muestra un aviso de permisos insuficientes en caso contrario.
+ *
+ * @param props.children - Vista que se muestra cuando el acceso es válido.
+ */
 export default function AdminRoute({ children }: AdminRouteProps) {
   // Usar useContext directamente para evitar errores durante hot reload
   const authContext = useContext(AuthContext);

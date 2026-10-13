@@ -19,6 +19,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Servicio de gestión de categorías de producto.
+ * Toda operación se acota a la sucursal del usuario; la baja es lógica para no
+ * romper el historial de productos ni de reportes que las referencian.
+ */
 @Slf4j
 @Service
 @Transactional
@@ -37,7 +42,16 @@ public class CategoriaProductoService {
     }
 
     // ❌ NO CACHEAR: El filtro activa cambia frecuentemente (soft deletes)
-    // Se está moviendo hacia invalidación de caché completo
+    // Los filtros y la búsqueda se aplican en memoria porque el catálogo de
+    // categorías es pequeño y así se evita multiplicar las variantes de consulta.
+    /**
+     * Lista las categorías de producto de la sucursal del usuario, con filtros
+     * opcionales por estado activo y por texto de nombre.
+     *
+     * @param activa Filtro por estado; vacío para no filtrar.
+     * @param q      Texto a buscar en el nombre; vacío para no filtrar.
+     * @return Lista de DTO con las categorías que cumplen los filtros.
+     */
     @Transactional(readOnly = true)
     public List<CategoriaProductoDTO> listar(Optional<Boolean> activa, Optional<String> q) {
         // ✅ SEGREGACIÓN: Obtener categorías solo de la sucursal del usuario
@@ -50,6 +64,13 @@ public class CategoriaProductoService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Obtiene una categoría de producto de la sucursal del usuario.
+     *
+     * @param id Identificador de la categoría.
+     * @return DTO de la categoría encontrada.
+     * @throws ResourceNotFoundException si la categoría no existe o no pertenece a la sucursal.
+     */
     @Cacheable(value = "categorias-productos", key = "#id")
     @Transactional(readOnly = true)
     public CategoriaProductoDTO obtener(Long id) {
@@ -66,6 +87,13 @@ public class CategoriaProductoService {
         return toDTO(c);
     }
 
+    /**
+     * Crea una categoría de producto en la sucursal del usuario.
+     *
+     * @param dto Datos de la categoría a crear.
+     * @return DTO de la categoría creada.
+     * @throws ResourceNotFoundException si la sucursal no existe.
+     */
     @CacheEvict(value = "categorias-productos", allEntries = true)
     public CategoriaProductoDTO crear(CategoriaProductoDTO dto) {
         // ✅ SEGREGACIÓN: Asignar la categoría a la sucursal del usuario actual
@@ -79,6 +107,14 @@ public class CategoriaProductoService {
         return toDTO(categoriaRepository.save(c));
     }
 
+    /**
+     * Actualiza una categoría de producto existente.
+     *
+     * @param id  Identificador de la categoría a actualizar.
+     * @param dto Datos a aplicar sobre la categoría.
+     * @return DTO de la categoría actualizada.
+     * @throws ResourceNotFoundException si la categoría no existe.
+     */
     @CacheEvict(value = "categorias-productos", allEntries = true)
     public CategoriaProductoDTO actualizar(Long id, CategoriaProductoDTO dto) {
         CategoriaProducto c = categoriaRepository.findById(id)
@@ -87,6 +123,16 @@ public class CategoriaProductoService {
         return toDTO(categoriaRepository.save(c));
     }
 
+    /**
+     * Da de baja una categoría de producto de forma lógica y desactiva en cascada
+     * sus subcategorías.
+     * Se rechaza el borrado si aún hay productos asignados: eliminarla dejaría
+     * productos huérfanos de categoría.
+     *
+     * @param id Identificador de la categoría a desactivar.
+     * @throws ResourceNotFoundException si la categoría no existe.
+     * @throws IllegalArgumentException  si la categoría tiene productos asociados.
+     */
     @CacheEvict(value = "categorias-productos", allEntries = true)
     @Transactional
     public void eliminar(Long id) {

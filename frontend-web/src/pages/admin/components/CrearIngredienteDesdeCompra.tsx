@@ -26,26 +26,39 @@ import {
 } from '@mui/material';
 import { ingredientesService, Unidad } from '../../../services/ingredientes.service';
 
+/** Compra mínima persistida en `localStorage` (ver `CompraSimpleForm`). */
 interface CompraSimple {
+  /** Id local generado al registrar la compra. */
   id: number;
+  /** Nombre del producto o insumo. */
   nombre: string;
+  /** Fecha de la compra en formato `yyyy-MM-dd`. */
   fecha: string;
+  /** Cantidad comprada. */
   cantidad: number;
+  /** Id de la unidad de medida. */
   unidadId: number;
+  /** Nombre de la unidad; puede venir resuelto o no. */
   unidadNombre?: string;
+  /** Abreviatura de la unidad; puede venir resuelta o no. */
   unidadAbreviatura?: string;
+  /** Importe total pagado. */
   precioTotal: number;
 }
 
+/** Props del modal para crear un ingrediente a partir de una compra simple. */
 interface CrearIngredienteDesdeCompraProps {
+  /** Controla la visibilidad del modal. */
   open: boolean;
+  /** Cierra el modal sin crear el ingrediente. */
   onClose: () => void;
+  /** Notifica el ingrediente creado para que el padre refresque su catálogo. */
   onIngredienteCreado: (ingrediente: any) => void;
 }
 
 /**
- * Modal para crear un ingrediente basado en una compra simple
- * 
+ * Modal para crear un ingrediente basado en una compra simple.
+ *
  * Flujo:
  * 1. Seleccionar una compra (nombre, cantidad comprada, unidad, precio)
  * 2. Especificar el RENDIMIENTO REAL/APROXIMADO
@@ -56,12 +69,9 @@ interface CrearIngredienteDesdeCompraProps {
  * 3. Seleccionar unidad del ingrediente final
  * 4. Calcular automáticamente costo unitario
  * 5. Crear ingrediente en el sistema
- * 
- * Ejemplos de rendimiento:
- * - Jamón: 1 kg → 20 rebanadas (el usuario especifica 20)
- * - Harina: 100 kg → 500 porciones (de 200g cada una)
- * - Naranjas: 100 kg → 50 litros (porque 1 kg rinde 0.5L de jugo)
- * - Pollo: 50 kg → 200 muslos + 150 pechugas (se puede hacer por separado)
+ *
+ * @remarks El costo unitario se deriva de `precioTotal / (cantidad * rendimiento)`,
+ * por lo que el rendimiento debe expresarse en la unidad final del ingrediente.
  */
 export default function CrearIngredienteDesdeCompra({
   open,
@@ -103,6 +113,7 @@ export default function CrearIngredienteDesdeCompra({
     }
   }, [compraSeleccionada]);
 
+  /** Carga las compras simples desde `localStorage`. */
   const cargarCompras = () => {
     try {
       const comprasGuardadas = JSON.parse(localStorage.getItem('comprasSimples') || '[]');
@@ -113,6 +124,7 @@ export default function CrearIngredienteDesdeCompra({
     }
   };
 
+  /** Carga las unidades de medida y preselecciona la primera como unidad de rendimiento. */
   const cargarUnidades = async () => {
     try {
       const data = await ingredientesService.obtenerUnidades();
@@ -125,6 +137,11 @@ export default function CrearIngredienteDesdeCompra({
     }
   };
 
+  /**
+   * Valida el formulario, calcula el costo unitario y crea el ingrediente en el backend.
+   * @remarks El factor de conversión y el desglose se guardan como texto en `descripcion`
+   * para dejar trazable cómo se obtuvo el costo.
+   */
   const handleCrearIngrediente = async () => {
     if (!compraSeleccionada || rendimiento <= 0 || unidadRendimientoId === 0 || !nombreIngrediente.trim()) {
       setError('Completa todos los campos correctamente');

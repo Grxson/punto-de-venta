@@ -49,6 +49,9 @@ public class CompraService {
         /**
          * Obtener compras de la sucursal actual (paginado).
          * ✅ SEGREGACIÓN: Solo datos de sucursal del usuario
+         *
+         * @param pageable Configuración de página y tamaño.
+         * @return Página de DTO con el listado de compras de la sucursal.
          */
         public Page<CompraListadoDTO> obtenerCompras(Pageable pageable) {
                 Long sucursalId = SucursalContext.getSucursalId();
@@ -60,6 +63,10 @@ public class CompraService {
 
         /**
          * Obtener compra por ID (con seguridad).
+         *
+         * @param id Identificador de la compra.
+         * @return DTO de la compra con sus items.
+         * @throws ResourceNotFoundException si la compra no existe o no pertenece a la sucursal.
          */
         public CompraDTO obtenerCompra(Long id) {
                 Long sucursalId = SucursalContext.getSucursalId();
@@ -73,6 +80,11 @@ public class CompraService {
 
         /**
          * Obtener compras por rango de fechas y estado.
+         *
+         * @param inicio Fecha y hora inicial del período.
+         * @param fin    Fecha y hora final del período.
+         * @param estado Estado de la compra, por ejemplo {@code pendiente} o {@code recibida}.
+         * @return Lista de DTO con las compras de la sucursal que cumplen los filtros.
          */
         public List<CompraDTO> obtenerPorFechasYEstado(
                         LocalDateTime inicio,
@@ -88,6 +100,10 @@ public class CompraService {
 
         /**
          * Obtener compras de un proveedor específico.
+         *
+         * @param proveedorId Identificador del proveedor.
+         * @param pageable    Configuración de página y tamaño.
+         * @return Página de DTO con las compras de ese proveedor en la sucursal.
          */
         public Page<CompraListadoDTO> obtenerPorProveedor(Long proveedorId, Pageable pageable) {
                 Long sucursalId = SucursalContext.getSucursalId();
@@ -100,6 +116,10 @@ public class CompraService {
          * Crear compra con items.
          * ✅ Lógica completa: Validar → Crear → Actualizar stock → Crear gasto → Crear
          * movimientos
+         *
+         * @param request Datos de la compra: proveedor, fecha, notas, factura e items.
+         * @return DTO de la compra creada.
+         * @throws ResourceNotFoundException si la sucursal, el proveedor, o algún ingrediente o unidad no existen.
          */
         @Transactional
         public CompraDTO crearCompra(CrearCompraRequest request) {
@@ -185,6 +205,15 @@ public class CompraService {
         /**
          * Marcar compra como recibida.
          * ✅ Lógica: Actualizar stock → Crear gasto → Crear movimientos
+         *
+         * Incrementa el stock de cada ingrediente por la cantidad recibida, actualiza
+         * su costo unitario, genera los movimientos de ENTRADA y crea un gasto de
+         * tipo Compra con el monto total.
+         *
+         * @param id      Identificador de la compra a recibir.
+         * @param request Cantidades recibidas por item.
+         * @return DTO de la compra con estado {@code recibida}.
+         * @throws ResourceNotFoundException si la compra no existe o no hay categorías de gasto disponibles.
          */
         @Transactional
         public CompraDTO recibirCompra(Long id, RecibirCompraRequest request) {
@@ -290,6 +319,13 @@ public class CompraService {
 
         /**
          * Actualizar compra pendiente.
+         * Reemplaza los items existentes y recalcula el monto total.
+         *
+         * @param id      Identificador de la compra a actualizar.
+         * @param request Datos actualizados de la compra.
+         * @return DTO de la compra actualizada.
+         * @throws ResourceNotFoundException si la compra, algún ingrediente o unidad no existen.
+         * @throws IllegalStateException     si la compra no está en estado {@code pendiente}.
          */
         @Transactional
         public CompraDTO actualizarCompra(Long id, ActualizarCompraRequest request) {
@@ -348,6 +384,10 @@ public class CompraService {
 
         /**
          * Cancelar compra.
+         *
+         * @param id Identificador de la compra a cancelar.
+         * @throws ResourceNotFoundException si la compra no existe.
+         * @throws IllegalStateException     si la compra no está en estado {@code pendiente}.
          */
         @Transactional
         public void cancelarCompra(Long id) {
@@ -372,6 +412,10 @@ public class CompraService {
          * Eliminar compra definitivamente (DELETE sin soft-delete).
          * ✅ Solo se pueden eliminar compras en estado PENDIENTE
          * ✅ Eliminación física (sin recuperación)
+         *
+         * @param id Identificador de la compra a eliminar.
+         * @throws ResourceNotFoundException si la compra no existe.
+         * @throws IllegalStateException     si la compra no está en estado {@code pendiente}.
          */
         @Transactional
         public void eliminarCompra(Long id) {
@@ -396,6 +440,10 @@ public class CompraService {
 
         /**
          * Obtener preferencias de usuario (últimas compras para agilizar entrada).
+         * Sirve para sugerir el proveedor y los items recurrentes de cada usuario.
+         *
+         * @param limite Número máximo de compras a devolver.
+         * @return Lista de DTO con las últimas compras del usuario, o lista vacía si no hay sesión.
          */
         public List<CompraDTO> obtenerUltimosProveedores(int limite) {
                 Long sucursalId = SucursalContext.getSucursalId();

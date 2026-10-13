@@ -14,10 +14,22 @@ import { useAuth } from '../hooks/useAuth';
 import { apiClient } from '../services/api/axiosInstance';
 import { UsuarioDTO } from '../types/auth';
 
+/**
+ * Usuario con el nombre del rol resuelto por el backend.
+ */
 interface UsuarioConRol extends UsuarioDTO {
+  /** Nombre legible del rol, si el backend lo envía por separado. */
   rolNombre?: string;
 }
 
+/**
+ * Pantalla de gestión de usuarios de la sucursal activa.
+ *
+ * Lista los usuarios de la sucursal y permite reasignarles el rol desde un
+ * modal; solo está disponible para administradores.
+ *
+ * @returns La lista de usuarios y el modal de cambio de rol.
+ */
 export function AdminUsuariosScreen() {
   const { sucursal, isAdmin } = useAuth();
   const [usuarios, setUsuarios] = useState<UsuarioConRol[]>([]);

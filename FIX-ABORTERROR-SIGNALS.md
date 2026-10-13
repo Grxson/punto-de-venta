@@ -1,4 +1,4 @@
-# 🔧 Fix: AbortError en Peticiones Duplicadas (React 18 Strict Mode)
+# 🔧 Corrección: AbortError en Peticiones Duplicadas (React 18 Strict Mode)
 
 **Fecha**: 5 de enero de 2026  
 **Problema**: Errores `AbortError: signal is aborted without reason` en peticiones de `/ventas?page=0&size=50`  
@@ -43,7 +43,7 @@ Reintento 2/3 para /ventas?page=0&size=50
 const ventasInicializadasRef = useRef(false);
 
 useEffect(() => {
-  // Solo cargar una vez al montar el componente (ignorar Strict Mode double-mount)
+  // Solo cargar una vez al montar el componente (ignorar el doble montaje de Strict Mode)
   if (!ventasInicializadasRef.current) {
     ventasInicializadasRef.current = true;
     loadVentas();
@@ -118,7 +118,7 @@ catch (error: any) {
 
 ---
 
-## 🧪 Comportamiento Después del Fix
+## 🧪 Comportamiento Después de la Corrección
 
 ### Antes (Con errores):
 ```

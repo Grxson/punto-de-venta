@@ -17,36 +17,61 @@ import { ExpandMore, ExpandLess, Edit, Delete } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+/** Gasto registrado, con los datos ya resueltos que necesita la fila. */
 interface Gasto {
+  /** Identificador del gasto. */
   id: number;
+  /** Id de la categoría de gasto. */
   categoriaGastoId: number;
+  /** Nombre de la categoría de gasto. */
   categoriaGastoNombre: string;
+  /** Id del proveedor, si se registró. */
   proveedorId?: number;
+  /** Nombre del proveedor, si se registró. */
   proveedorNombre?: string;
+  /** Monto del gasto. */
   monto: number;
+  /** Fecha del gasto en formato ISO. */
   fecha: string;
+  /** Id del método de pago utilizado. */
   metodoPagoId?: number;
+  /** Nombre del método de pago utilizado. */
   metodoPagoNombre?: string;
+  /** Referencia o folio del comprobante. */
   referencia?: string;
+  /** Nota o descripción libre del gasto. */
   nota?: string;
+  /** Tipo de gasto (por ejemplo, Administrativo u Operacional). */
   tipoGasto?: string;
+  /** URL del comprobante adjunto. */
   comprobanteUrl?: string;
+  /** Id del usuario que registró el gasto. */
   usuarioId?: number;
+  /** Nombre del usuario que registró el gasto. */
   usuarioNombre?: string;
+  /** Fecha de creación del registro. */
   createdAt: string;
 }
 
 interface ExpandableExpenseRowProps {
+  /** Gastos que comparten el mismo grupo horario. */
   gastos: Gasto[];
+  /** Hora del grupo en formato "HH:mm". */
   timeGroup: string; // Formato: "HH:mm"
+  /** Abre la edición de un gasto concreto. */
   onEdit?: (gasto: Gasto) => void;
+  /** Solicita la eliminación de un gasto por su id. */
   onDelete?: (gastoId: number) => void;
+  /** Indica que hay una operación en curso para deshabilitar las acciones. */
   isLoading?: boolean;
 }
 
 /**
- * Fila expandible de gastos agrupados por hora
- * Muestra un resumen compacto y permite expandir para ver detalles
+ * Fila expandible con gastos agrupados por hora.
+ * Muestra un resumen compacto del grupo y permite expandirlo para ver cada gasto
+ * o verlos todos en un Popper cuando el grupo tiene varias entradas.
+ *
+ * @param props - Propiedades descritas en {@link ExpandableExpenseRowProps}.
  */
 export default function ExpandableExpenseRow({
   gastos,

@@ -1,4 +1,4 @@
--- H2 schema for local dev, mirroring core Railway tables needed for ventas/pagos
+-- Esquema H2 para desarrollo local, reflejando las tablas principales de Railway necesarias para ventas/pagos
 
 CREATE TABLE IF NOT EXISTS sucursales (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS productos (
   FOREIGN KEY (producto_base_id) REFERENCES productos(id)
 );
 
--- metodos_pago: Railway uses integer flags; use BOOLEAN for H2 but allow 0/1 inserts
+-- metodos_pago: Railway usa banderas enteras; se usa BOOLEAN para H2 pero se permiten inserciones con 0/1
 CREATE TABLE IF NOT EXISTS metodos_pago (
   id BIGINT AUTO_INCREMENT PRIMARY KEY,
   nombre VARCHAR(100) UNIQUE NOT NULL,

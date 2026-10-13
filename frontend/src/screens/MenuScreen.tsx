@@ -11,6 +11,11 @@ import {
 import { useMenu } from '../hooks/useMenu';
 import { CategoriaDTO, ProductoSucursalDTO } from '../types/menu';
 
+/**
+ * Catálogo de productos filtrable por categoría.
+ *
+ * @returns Las pestañas de categorías y la cuadrícula de productos.
+ */
 export function MenuScreen() {
   const { categorias, productosAgrupados, agregarAlCarrito, isLoading } = useMenu();
   const [selectedCategoria, setSelectedCategoria] = useState<number | null>(null);

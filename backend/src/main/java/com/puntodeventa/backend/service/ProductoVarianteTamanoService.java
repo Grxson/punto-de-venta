@@ -17,6 +17,9 @@ import java.util.stream.Collectors;
 
 /**
  * Servicio para gestionar la relación entre productos/variantes y sus tamaños.
+ * Un tamaño es una presentación del producto (por ejemplo grande o Chico) que
+ * puede llevar un recargo sobre el precio base; la relación guarda además el
+ * orden en que se ofrecen.
  */
 @Service
 @RequiredArgsConstructor
@@ -28,7 +31,11 @@ public class ProductoVarianteTamanoService {
     private final ProductoTamanoRepository tamanoRepository;
 
     /**
-     * Obtiene todos los tamaños de una variante/producto
+     * Obtiene todos los tamaños de una variante/producto.
+     *
+     * @param productoId Identificador del producto o variante.
+     * @return Lista de DTO con los tamaños asignados.
+     * @throws EntityNotFoundException si el producto no existe.
      */
     @Transactional(readOnly = true)
     public List<ProductoVarianteTamanoDTO> obtenerTamanosPorProducto(Long productoId) {
@@ -40,7 +47,11 @@ public class ProductoVarianteTamanoService {
     }
 
     /**
-     * Obtiene una relación producto-tamaño por ID
+     * Obtiene una relación producto-tamaño por su identificador.
+     *
+     * @param id Identificador de la relación.
+     * @return DTO de la relación encontrada.
+     * @throws EntityNotFoundException si la relación no existe.
      */
     @Transactional(readOnly = true)
     public ProductoVarianteTamanoDTO obtenerPorId(Long id) {
@@ -50,7 +61,11 @@ public class ProductoVarianteTamanoService {
     }
 
     /**
-     * Verifica si un producto tiene un tamaño específico
+     * Verifica si un producto tiene un tamaño específico.
+     *
+     * @param productoId Identificador del producto o variante.
+     * @param tamanoId   Identificador del tamaño.
+     * @return {@code true} si el tamaño está asignado al producto.
      */
     @Transactional(readOnly = true)
     public boolean existeTamanoEnProducto(Long productoId, Long tamanoId) {
@@ -58,7 +73,14 @@ public class ProductoVarianteTamanoService {
     }
 
     /**
-     * Agrega un tamaño a un producto/variante
+     * Agrega un tamaño a un producto/variante.
+     *
+     * @param productoId Identificador del producto o variante.
+     * @param tamanoId   Identificador del tamaño a asignar.
+     * @param orden      Posición en el menú; si es {@code null} se toma cero.
+     * @return DTO de la relación creada.
+     * @throws EntityNotFoundException si el producto o el tamaño no existen.
+     * @throws IllegalArgumentException si el tamaño ya está asignado al producto.
      */
     public ProductoVarianteTamanoDTO agregarTamano(Long productoId, Long tamanoId, Integer orden) {
         Producto producto = productoRepository.findById(productoId)
@@ -83,7 +105,12 @@ public class ProductoVarianteTamanoService {
     }
 
     /**
-     * Actualiza el orden de un tamaño en un producto
+     * Actualiza el orden de un tamaño en un producto.
+     *
+     * @param id          Identificador de la relación a actualizar.
+     * @param nuevoOrden  Nueva posición en el menú; si es {@code null} se toma cero.
+     * @return DTO de la relación actualizada.
+     * @throws EntityNotFoundException si la relación no existe.
      */
     public ProductoVarianteTamanoDTO actualizarOrden(Long id, Integer nuevoOrden) {
         ProductoVarianteTamano varianteTamano = varianteTamanoRepository.findById(id)
@@ -95,7 +122,10 @@ public class ProductoVarianteTamanoService {
     }
 
     /**
-     * Elimina un tamaño de un producto
+     * Elimina un tamaño de un producto.
+     *
+     * @param id Identificador de la relación a eliminar.
+     * @throws EntityNotFoundException si la relación no existe.
      */
     public void eliminarTamano(Long id) {
         if (!varianteTamanoRepository.existsById(id)) {
@@ -105,7 +135,11 @@ public class ProductoVarianteTamanoService {
     }
 
     /**
-     * Elimina todos los tamaños de un producto (usar con cuidado)
+     * Elimina todos los tamaños de un producto.
+     * ⚠️ Elimina en cascada todas las relaciones: úsese solo al rehacer la
+     * composición de tamaños del producto.
+     *
+     * @param productoId Identificador del producto o variante.
      */
     public void eliminarTodosPorProducto(Long productoId) {
         List<ProductoVarianteTamano> tamanosProducto = varianteTamanoRepository.findByProductoId(productoId);
@@ -113,7 +147,11 @@ public class ProductoVarianteTamanoService {
     }
 
     /**
-     * Obtiene todos los productos que usan un tamaño específico
+     * Obtiene todos los productos que usan un tamaño específico.
+     *
+     * @param tamanoId Identificador del tamaño.
+     * @return Lista de DTO con las relaciones que usan ese tamaño.
+     * @throws EntityNotFoundException si el tamaño no existe.
      */
     @Transactional(readOnly = true)
     public List<ProductoVarianteTamanoDTO> obtenerProductosPorTamano(Long tamanoId) {
@@ -125,7 +163,12 @@ public class ProductoVarianteTamanoService {
     }
 
     /**
-     * Convierte una entidad a DTO
+     * Convierte una entidad a DTO.
+     * El recargo del tamaño se proyecta porque el cliente lo necesita para calcular
+     * el precio final sin consultar el tamaño por separado.
+     *
+     * @param varianteTamano Relación producto-tamaño a proyectar.
+     * @return DTO con el producto, el tamaño y su recargo.
      */
     private ProductoVarianteTamanoDTO toDTO(ProductoVarianteTamano varianteTamano) {
         return new ProductoVarianteTamanoDTO(
@@ -138,12 +181,24 @@ public class ProductoVarianteTamanoService {
                 varianteTamano.getOrden());
     }
 
+    /**
+     * Valida que exista el producto antes de operar sobre sus tamaños.
+     *
+     * @param productoId Identificador del producto o variante.
+     * @throws EntityNotFoundException si el producto no existe.
+     */
     private void verificarProductoExiste(Long productoId) {
         if (!productoRepository.existsById(productoId)) {
             throw new EntityNotFoundException("Producto no encontrado: " + productoId);
         }
     }
 
+    /**
+     * Valida que exista el tamaño antes de buscar los productos que lo usan.
+     *
+     * @param tamanoId Identificador del tamaño.
+     * @throws EntityNotFoundException si el tamaño no existe.
+     */
     private void verificarTamanoExiste(Long tamanoId) {
         if (!tamanoRepository.existsById(tamanoId)) {
             throw new EntityNotFoundException("Tamano no encontrado: " + tamanoId);

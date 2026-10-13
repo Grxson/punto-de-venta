@@ -1,12 +1,12 @@
 /**
- * Hooks de React Query para subcategorías de productos
- * Implementa caché y sincronización de datos con el backend
+ * Hooks de React Query para subcategorías de productos.
+ * Implementan `cache` y sincronización de datos con el backend.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { subcategoriasService, type CategoriaSubcategoria, type CreateSubcategoriaRequest } from '../services/subcategorias.service';
 
-// Query keys para subcategorías
+/** Fábrica de claves de `cache` de React Query para subcategorías. */
 export const subcategoriasKeys = {
   all: ['subcategorias'] as const,
   lists: () => [...subcategoriasKeys.all, 'list'] as const,
@@ -14,8 +14,10 @@ export const subcategoriasKeys = {
 };
 
 /**
- * Hook para obtener subcategorías de una categoría
- * Caché: 10 minutos (dato estático)
+ * Obtiene las subcategorías de una categoría.
+ *
+ * @param categoriaId - Id de la categoría; si es `null`, vacío o inválido, la consulta no se ejecuta.
+ * @returns Resultado de `useQuery` con las subcategorías. `cache`: 10 minutos.
  */
 export const useSubcategorias = (categoriaId: number | null | '') => {
   return useQuery({
@@ -27,8 +29,9 @@ export const useSubcategorias = (categoriaId: number | null | '') => {
 };
 
 /**
- * Hook para crear subcategoría
- * Invalida automáticamente el caché de subcategorías
+ * Crea una subcategoría e invalida la lista de su categoría.
+ *
+ * @returns Resultado de `useMutation` que espera `{ categoriaId, data }`.
  */
 export const useCrearSubcategoria = () => {
   const queryClient = useQueryClient();
@@ -44,8 +47,9 @@ export const useCrearSubcategoria = () => {
 };
 
 /**
- * Hook para actualizar subcategoría
- * Invalida automáticamente el caché
+ * Actualiza una subcategoría e invalida la lista de su categoría.
+ *
+ * @returns Resultado de `useMutation` que espera `{ categoriaId, subcategoriaId, data }`.
  */
 export const useActualizarSubcategoria = () => {
   const queryClient = useQueryClient();
@@ -61,8 +65,9 @@ export const useActualizarSubcategoria = () => {
 };
 
 /**
- * Hook para eliminar subcategoría
- * Invalida automáticamente el caché y fuerza refetch inmediato
+ * Elimina una subcategoría e invalida la lista de su categoría con `refetch` inmediato.
+ *
+ * @returns Resultado de `useMutation` que espera `{ categoriaId, subcategoriaId }`.
  */
 export const useEliminarSubcategoria = () => {
   const queryClient = useQueryClient();

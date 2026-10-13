@@ -1,27 +1,34 @@
 import { useCallback, useRef, useEffect } from 'react';
 
 /**
- * OPTIMIZACIÓN PASO 2.6: Request Batching
- * 
- * Hook para agrupar múltiples requests en una sola petición.
- * Útil para evitar múltiples peticiones simultáneas al mismo endpoint.
- * 
+ * OPTIMIZACIÓN PASO 2.6: agrupación de peticiones (Request Batching).
+ *
+ * Agrupa múltiples peticiones idénticas en una sola y evita peticiones
+ * simultáneas al mismo endpoint.
+ *
  * Ejemplo:
  * const batchFetch = useRequestBatching();
  * const resultado1 = batchFetch(() => fetch('/api/productos/1'));
  * const resultado2 = batchFetch(() => fetch('/api/productos/2'));
- * // Los dos requests se combinan en uno
+ * // Las dos peticiones se combinan en una
  */
 
+/** Petición en curso registrada dentro de un batch. */
 interface BatchRequest<T> {
+  /** Clave que identifica la petición. */
   key: string;
+  /** Promesa asociada a la petición. */
   promise: Promise<T>;
+  /** Marca de tiempo de creación. */
   timestamp: number;
 }
 
 interface BatchConfig {
+  /** Tiempo de espera para agrupar peticiones, en milisegundos. */
   delay?: number; // Tiempo de espera para agrupar requests (ms)
+  /** Máximo de peticiones a agrupar. */
   maxSize?: number; // Máximo de requests a agrupar
+  /** Tiempo de vida del resultado cacheado, en milisegundos. */
   ttl?: number; // Tiempo de vida de la batched request (ms)
 }
 
@@ -31,6 +38,12 @@ const defaultConfig: BatchConfig = {
   ttl: 5 * 60 * 1000, // 5 minutos de caché para resultados
 };
 
+/**
+ * Agrupa y deduplica peticiones con `cache` temporal por clave.
+ *
+ * @param config - Ajustes opcionales de `delay`, `maxSize` y `ttl`; se combinan con los valores por defecto.
+ * @returns Función `batchFetch(requestFn, key?)` que ejecuta la petición reutilizando el `cache` o el batch activo.
+ */
 export function useRequestBatching(config: BatchConfig = {}) {
   const mergedConfig = { ...defaultConfig, ...config };
   const batchMap = useRef<Map<string, BatchRequest<any>>>(new Map());
@@ -120,8 +133,11 @@ export function useRequestBatching(config: BatchConfig = {}) {
 }
 
 /**
- * Hook para deduplicar requests idénticos
- * Cualquier request duplicado dentro del tiempo TTL reutiliza el caché
+ * Deduplica peticiones idénticas: cualquier petición repetida dentro del
+ * tiempo `ttl` reutiliza el `cache` de la primera.
+ *
+ * @param ttl - Tiempo de vida en milisegundos del `cache` de peticiones (por defecto 5 minutos).
+ * @returns Función `dedupe(requestFn, key)` que ejecuta o reutiliza la petición según su clave.
  */
 export function useRequestDeduplication(ttl: number = 5 * 60 * 1000) {
   const requestMap = useRef<Map<string, { promise: Promise<any>; timestamp: number }>>(new Map());

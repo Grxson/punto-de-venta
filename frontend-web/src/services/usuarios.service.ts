@@ -1,5 +1,5 @@
 /**
- * Servicio para API calls relacionados con usuarios
+ * Servicio con llamadas a la API relacionadas con usuarios.
  */
 
 import apiService from './api.service';
@@ -9,9 +9,12 @@ const API_BASE = '/auth/usuarios';
 
 export const usuariosService = {
   /**
-   * Obtener todos los usuarios de una sucursal
-   * @param sucursalId - ID de la sucursal
-   * @param activo - true=activos, false=inactivos, undefined=todos (sin filtro)
+   * Obtiene los usuarios de una sucursal.
+   *
+   * @param sucursalId - ID de la sucursal.
+   * @param activo - `true` para activos, `false` para inactivos y `undefined`
+   *   para no filtrar (devuelve todos).
+   * @returns La lista de usuarios, o `[]` si la petición falla.
    */
   obtenerPorSucursal: async (sucursalId: number, activo?: boolean) => {
     try {
@@ -37,7 +40,10 @@ export const usuariosService = {
   },
 
   /**
-   * Obtener un usuario por ID
+   * Obtiene un usuario por su ID.
+   *
+   * @param id - ID del usuario.
+   * @returns El usuario, o `null` si no existe o la petición falla.
    */
   obtenerPorId: async (id: number) => {
     try {
@@ -54,7 +60,10 @@ export const usuariosService = {
   },
 
   /**
-   * Crear nuevo usuario
+   * Crea un usuario nuevo.
+   *
+   * @param data - Datos del usuario a crear.
+   * @returns El usuario creado, o `undefined` si el backend no devuelve datos.
    */
   crear: async (data: CrearUsuarioRequest) => {
     const response = await apiService.post<Usuario>(API_BASE, data);
@@ -62,7 +71,12 @@ export const usuariosService = {
   },
 
   /**
-   * Actualizar usuario
+   * Actualiza un usuario existente.
+   *
+   * @param id - ID del usuario.
+   * @param data - Campos a actualizar.
+   * @returns El usuario actualizado.
+   * @throws Error si la respuesta del backend indica fallo.
    */
   actualizar: async (id: number, data: EditarUsuarioRequest) => {
     const response = await apiService.put<Usuario>(`${API_BASE}/${id}`, data);
@@ -74,7 +88,12 @@ export const usuariosService = {
   },
 
   /**
-   * Cambiar rol de un usuario
+   * Cambia el rol de un usuario.
+   *
+   * @param id - ID del usuario.
+   * @param rolId - ID del rol a asignar.
+   * @returns El usuario con el rol actualizado.
+   * @throws Error si la respuesta del backend indica fallo.
    */
   cambiarRol: async (id: number, rolId: number) => {
     const response = await apiService.put<Usuario>(`${API_BASE}/${id}/rol?rolId=${rolId}`, {});
@@ -86,7 +105,11 @@ export const usuariosService = {
   },
 
   /**
-   * Desactivar usuario
+   * Desactiva (baja lógica) un usuario.
+   *
+   * @param id - ID del usuario.
+   * @returns `undefined`; el método solo confirma el éxito.
+   * @throws Error si la respuesta del backend indica fallo.
    */
   desactivar: async (id: number) => {
     const response = await apiService.delete<void>(`${API_BASE}/${id}`);
@@ -98,7 +121,10 @@ export const usuariosService = {
   },
 
   /**
-   * Reactivar usuario
+   * Reactiva un usuario previamente desactivado.
+   *
+   * @param id - ID del usuario.
+   * @returns El usuario reactivado.
    */
   reactivar: async (id: number) => {
     const response = await apiService.post<Usuario>(`${API_BASE}/${id}/reactivar`, {});

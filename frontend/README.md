@@ -21,64 +21,64 @@ Aplicación móvil multiplataforma desarrollada con React Native para el sistema
 - CocoaPods
 - Simulador iOS o dispositivo físico
 
-# Getting Started
+# Primeros pasos
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+>**Nota**: Asegúrate de haber completado las instrucciones de [Configuración del entorno de React Native](https://reactnative.dev/docs/environment-setup) hasta el paso "Creating a new application" antes de continuar.
 
-## Step 1: Start the Metro Server
+## Paso 1: Iniciar el servidor Metro
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+Primero debes iniciar **Metro**, el _bundler_ de JavaScript que se distribuye _junto con_ React Native.
 
-To start Metro, run the following command from the _root_ of your React Native project:
+Para iniciar Metro, ejecuta el siguiente comando desde la _raíz_ de tu proyecto React Native:
 
 ```bash
-# using npm
+# con npm
 npm start
 
-# OR using Yarn
+# O con Yarn
 yarn start
 ```
 
-## Step 2: Start your Application
+## Paso 2: Iniciar tu aplicación
 
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
+Deja que Metro Bundler se ejecute en su _propia_ terminal. Abre una terminal _nueva_ desde la _raíz_ de tu proyecto React Native. Ejecuta el siguiente comando para iniciar tu app _Android_ o _iOS_:
 
-### For Android
+### Para Android
 
 ```bash
-# using npm
+# con npm
 npm run android
 
-# OR using Yarn
+# O con Yarn
 yarn android
 ```
 
-### For iOS
+### Para iOS
 
 ```bash
-# using npm
+# con npm
 npm run ios
 
-# OR using Yarn
+# O con Yarn
 yarn ios
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+Si todo está configurado _correctamente_, deberías ver tu nueva app ejecutándose en el _Emulador de Android_ o el _Simulador de iOS_ en breve, siempre que hayas configurado bien tu emulador/simulador.
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+Esta es una forma de ejecutar tu app; también puedes ejecutarla directamente desde Android Studio y Xcode respectivamente.
 
-## Step 3: Modifying your App
+## Paso 3: Modificar tu aplicación
 
-Now that you have successfully run the app, let's modify it.
+Ahora que has ejecutado la app correctamente, vamos a modificarla.
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+1. Abre `App.tsx` en tu editor de texto preferido y edita algunas líneas.
+2. Para **Android**: pulsa la tecla <kbd>R</kbd> dos veces o selecciona **"Reload"** en el **Menú de desarrollador** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (en Windows y Linux) o <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (en macOS)) para ver tus cambios.
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+   Para **iOS**: pulsa <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> en tu Simulador de iOS para recargar la app y ver tus cambios.
 
-## Congratulations! :tada:
+## ¡Felicidades! :tada:
 
-You've successfully run and modified your React Native App. :partying_face:
+Has ejecutado y modificado tu aplicación React Native correctamente. :partying_face:
 
 ## Estructura del proyecto
 
@@ -146,21 +146,21 @@ npm install react-native-paper
 npm install @rneui/themed @rneui/base
 ```
 
-### Now what?
+### ¿Y ahora qué?
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
+- Si quieres agregar este nuevo código React Native a una aplicación existente, consulta la [guía de integración](https://reactnative.dev/docs/integration-with-existing-apps).
+- Si tienes curiosidad por aprender más sobre React Native, consulta la [Introducción a React Native](https://reactnative.dev/docs/getting-started).
 
-# Troubleshooting
+# Solución de problemas
 
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+Si no consigues que funcione, consulta la página de [Solución de problemas](https://reactnative.dev/docs/troubleshooting).
 
-# Learn More
+# Más información
 
-To learn more about React Native, take a look at the following resources:
+Para aprender más sobre React Native, echa un vistazo a los siguientes recursos:
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- [Sitio web de React Native](https://reactnative.dev) - aprende más sobre React Native.
+- [Primeros pasos](https://reactnative.dev/docs/environment-setup) - una **descripción general** de React Native y cómo configurar tu entorno.
+- [Aprende lo básico](https://reactnative.dev/docs/getting-started) - un **recorrido guiado** por lo **básico** de React Native.
+- [Blog](https://reactnative.dev/blog) - lee las últimas **entradas** del **Blog** oficial de React Native.
+- [`@facebook/react-native`](https://github.com/facebook/react-native) - el **repositorio** de código abierto de React Native en GitHub.

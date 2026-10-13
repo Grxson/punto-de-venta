@@ -10,6 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Servicio de registro y consulta de movimientos de inventario.
+ * Cada movimiento documenta una entrada o salida de ingrediente con su costo, y
+ * es la fuente de trazabilidad del stock y de los reportes de consumo.
+ */
 @Service
 public class InventarioMovimientoService {
     @Autowired
@@ -22,6 +27,11 @@ public class InventarioMovimientoService {
     private com.puntodeventa.backend.repository.UnidadRepository unidadRepository;
 
     // Métodos CRUD y de consulta
+    /**
+     * Lista todos los movimientos de inventario.
+     *
+     * @return Lista de DTO con todos los movimientos.
+     */
     @Transactional(readOnly = true)
     public List<InventarioMovimientoDTO> listarTodos() {
         return movimientoRepository.findAll().stream()
@@ -29,6 +39,12 @@ public class InventarioMovimientoService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Obtiene un movimiento por su identificador.
+     *
+     * @param id Identificador del movimiento.
+     * @return DTO del movimiento, o {@code null} si no existe.
+     */
     @Transactional(readOnly = true)
     public InventarioMovimientoDTO obtenerPorId(Long id) {
         return movimientoRepository.findById(id)
@@ -36,6 +52,12 @@ public class InventarioMovimientoService {
             .orElse(null);
     }
 
+    /**
+     * Obtiene los movimientos de un ingrediente.
+     *
+     * @param ingredienteId Identificador del ingrediente.
+     * @return Lista de DTO con los movimientos de ese ingrediente.
+     */
     @Transactional(readOnly = true)
     public List<InventarioMovimientoDTO> obtenerPorIngrediente(Long ingredienteId) {
         return movimientoRepository.findAll().stream()
@@ -44,6 +66,13 @@ public class InventarioMovimientoService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Obtiene los movimientos de un ingrediente filtrados por tipo.
+     *
+     * @param ingredienteId Identificador del ingrediente.
+     * @param tipo          Tipo de movimiento, por ejemplo {@code ENTRADA} o {@code EGRESO}.
+     * @return Lista de DTO con los movimientos coincidentes.
+     */
     @Transactional(readOnly = true)
     public List<InventarioMovimientoDTO> obtenerPorIngredienteYTipo(Long ingredienteId, String tipo) {
         return movimientoRepository.findAll().stream()
@@ -53,6 +82,13 @@ public class InventarioMovimientoService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Obtiene los movimientos dentro de un rango de fechas, con extremos excluidos.
+     *
+     * @param desde Límite inferior del rango.
+     * @param hasta Límite superior del rango.
+     * @return Lista de DTO con los movimientos del rango.
+     */
     @Transactional(readOnly = true)
     public List<InventarioMovimientoDTO> obtenerPorRangoFechas(java.time.LocalDateTime desde, java.time.LocalDateTime hasta) {
         return movimientoRepository.findAll().stream()
@@ -61,6 +97,15 @@ public class InventarioMovimientoService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Registra un movimiento de inventario.
+     * El costo total se calcula como cantidad por costo unitario cuando no viene
+     * informado, y la fecha toma el momento actual si no se envía.
+     *
+     * @param dto Datos del movimiento a registrar.
+     * @return DTO del movimiento persistido.
+     * @throws IllegalArgumentException si el ingrediente o la unidad son obligatorios y no existen.
+     */
     @Transactional
     public InventarioMovimientoDTO registrarMovimiento(InventarioMovimientoDTO dto) {
         // Crear la entidad primero

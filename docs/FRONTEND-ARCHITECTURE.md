@@ -23,7 +23,7 @@ Sistema POS que requiere:
 
 ## 🔄 Opciones Arquitectónicas
 
-### Opción 1: React Web + WebView Wrappers ⚠️
+### Opción 1: React Web + WebView Envoltorios ⚠️
 
 **Arquitectura:**
 ```
@@ -34,7 +34,7 @@ React Native (WebView) → Android/iOS
 Electron (WebView) → Desktop
 ```
 
-**Pros:**
+**Ventajas:**
 - ✅ Una sola base de código (React web puro)
 - ✅ Fácil mantenimiento y actualización
 - ✅ Despliegue centralizado (Railway)
@@ -64,7 +64,7 @@ React Native → Android/iOS (nativo) ✅ YA FUNCIONA
 React Native Web → Web (Railway) 🆕 AGREGAR ESTO
 ```
 
-**Pros:**
+**Ventajas:**
 - ✅ Una base de código para móvil y web
 - ✅ Performance nativa en móvil (ya lo tienes)
 - ✅ Acceso completo a APIs nativas (cámara, impresora, Bluetooth)
@@ -92,7 +92,7 @@ React Native Codebase
 React Native → Android/iOS ✅ YA FUNCIONA
 ```
 
-**Pros:**
+**Ventajas:**
 - ✅ Ya está funcionando
 - ✅ Performance nativa
 - ✅ Acceso completo a APIs nativas
@@ -257,11 +257,11 @@ frontend-web/           # React web puro (Railway)
 │   └── services/
 └── package.json
 
-frontend-mobile/        # React Native wrapper mínimo
+frontend-mobile/        # Envoltorio mínimo de React Native
 ├── App.tsx            # Solo WebView
 └── package.json
 
-frontend-desktop/      # Electron wrapper mínimo
+frontend-desktop/      # Envoltorio mínimo de Electron
 ├── main.js            # Solo WebView
 └── package.json
 ```
@@ -269,7 +269,7 @@ frontend-desktop/      # Electron wrapper mínimo
 ### Ventajas de este enfoque:
 - ✅ Actualizaciones instantáneas (sin rebuilds)
 - ✅ Una sola base de código web
-- ✅ Fácil debugging (herramientas de desarrollo web)
+- ✅ Fácil depuración (herramientas de desarrollo web)
 
 ### Desventajas:
 - ❌ Performance móvil limitada

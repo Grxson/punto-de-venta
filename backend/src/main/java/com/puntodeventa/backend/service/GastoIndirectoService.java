@@ -29,7 +29,9 @@ public class GastoIndirectoService {
     private final SucursalRepository sucursalRepository;
 
     /**
-     * Obtener todos los gastos indirectos de la sucursal actual
+     * Obtiene todos los gastos indirectos de la sucursal actual.
+     *
+     * @return Lista de DTO con los gastos indirectos de la sucursal.
      */
     public List<GastoIndirectoDTO> obtenerPorSucursal() {
         Long sucursalId = SucursalContext.getSucursalId();
@@ -40,7 +42,9 @@ public class GastoIndirectoService {
     }
 
     /**
-     * Obtener solo gastos indirectos activos
+     * Obtiene solo los gastos indirectos activos de la sucursal actual.
+     *
+     * @return Lista de DTO de los gastos con {@code activo} en true.
      */
     public List<GastoIndirectoDTO> obtenerActivos() {
         Long sucursalId = SucursalContext.getSucursalId();
@@ -51,7 +55,11 @@ public class GastoIndirectoService {
     }
 
     /**
-     * Obtener un gasto indirecto por ID
+     * Obtiene un gasto indirecto por su identificador.
+     *
+     * @param id Identificador del gasto indirecto.
+     * @return DTO del gasto encontrado.
+     * @throws RuntimeException si el gasto no existe.
      */
     public GastoIndirectoDTO obtenerPorId(Long id) {
         return gastoIndirectoRepository.findById(id)
@@ -60,7 +68,13 @@ public class GastoIndirectoService {
     }
 
     /**
-     * Crear un nuevo gasto indirecto
+     * Crea un gasto indirecto en la sucursal del usuario.
+     * Los montos no informados se asumen en cero.
+     *
+     * @param dto Datos del gasto indirecto a crear.
+     * @return DTO del gasto creado.
+     * @throws IllegalArgumentException si el nombre es obligatorio, no hay sucursal en el contexto o no existe.
+     * @throws RuntimeException         si ocurre un error inesperado al persistir.
      */
     public GastoIndirectoDTO crear(GastoIndirectoDTO dto) {
         try {
@@ -110,7 +124,12 @@ public class GastoIndirectoService {
     }
 
     /**
-     * Actualizar un gasto indirecto
+     * Actualiza un gasto indirecto existente.
+     *
+     * @param id  Identificador del gasto a actualizar.
+     * @param dto Datos a aplicar sobre el gasto.
+     * @return DTO del gasto actualizado.
+     * @throws RuntimeException si el gasto no existe.
      */
     public GastoIndirectoDTO actualizar(Long id, GastoIndirectoDTO dto) {
         GastoIndirecto gastoIndirecto = gastoIndirectoRepository.findById(id)
@@ -130,7 +149,10 @@ public class GastoIndirectoService {
     }
 
     /**
-     * Eliminar (desactivar) un gasto indirecto
+     * Da de baja un gasto indirecto de forma lógica.
+     *
+     * @param id Identificador del gasto a desactivar.
+     * @throws RuntimeException si el gasto no existe.
      */
     public void eliminar(Long id) {
         GastoIndirecto gastoIndirecto = gastoIndirectoRepository.findById(id)
@@ -143,7 +165,13 @@ public class GastoIndirectoService {
     }
 
     /**
-     * Calcular gasto indirecto por producto
+     * Calcula la parte de gasto indirecto diario que corresponde a cada producto vendido.
+     * Suma el monto diario de todos los gastos activos de la sucursal y lo reparte
+     * entre los productos vendidos; sin ventas no hay costo que asignar.
+     *
+     * @param sucursalId        Identificador de la sucursal.
+     * @param productosVendidos Cantidad de productos vendidos del período.
+     * @return Gasto indirecto por producto, redondeado a dos decimales.
      */
     public BigDecimal calcularGastoPorProducto(Long sucursalId, Long productosVendidos) {
         if (productosVendidos == 0) {

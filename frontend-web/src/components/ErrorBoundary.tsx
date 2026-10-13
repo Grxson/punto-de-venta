@@ -20,17 +20,22 @@ if (sentryDsn) {
 }
 
 interface ErrorBoundaryProps {
+    /** Árbol de componentes cuya renderización queda protegida por el boundary. */
     children: ReactNode;
 }
 
 interface ErrorBoundaryState {
+    /** Indica si se capturó un error y se está mostrando la pantalla de fallo. */
     hasError: boolean;
+    /** Error capturado, o `null` mientras no haya fallo. */
     error: Error | null;
 }
 
 /**
- * Error Boundary global para evitar que la app quede en blanco
- * Captura errores de React y los muestra en una pantalla amigable
+ * Boundary global de errores de React.
+ * Evita que la aplicación quede en blanco: captura los errores de renderizado,
+ * los reporta a Sentry y muestra una pantalla amigable con opciones de reintento.
+ * Si detecta un error de carga de `chunk`, recarga la página una sola vez por sesión.
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     constructor(props: ErrorBoundaryProps) {

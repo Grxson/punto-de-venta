@@ -7,8 +7,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonGetter;
 
 /**
- * DTO para ProductoAtributo
- * Representa un atributo de un producto (Ingrediente, Salsa, Complemento, etc.)
+ * Atributo configurable de un producto, como el ingrediente, la salsa o el complemento que
+ * el cliente puede elegir al pedirlo.
+ *
+ * <p>Se envía como request al crear o actualizar un producto y se devuelve como response
+ * al consultarlo.
+ *
+ * @param id identificador del atributo; {@code null} al crearlo
+ * @param productoId producto al que pertenece el atributo
+ * @param nombre nombre visible del atributo
+ * @param tipo forma de selección: {@code SIMPLE} (una sola opción) o {@code MULTIPLE}
+ *             (varias)
+ * @param requerido si el cliente debe elegir una opción de forma obligatoria
+ * @param orden posición del atributo en el menú
+ * @param activo si el atributo está habilitado
+ * @param opciones opciones disponibles del atributo
  */
 public class ProductoAtributoDTO {
     private Long id;
@@ -20,6 +33,12 @@ public class ProductoAtributoDTO {
     private Boolean activo;
     private List<ProductoAtributoOpcionDTO> opciones;
 
+    /**
+     * Construye el atributo aplicando valores por defecto.
+     *
+     * @throws IllegalArgumentException si el nombre es nulo o vacío, o si el tipo no es
+     *                                  {@code SIMPLE} ni {@code MULTIPLE}
+     */
     @JsonCreator
     public ProductoAtributoDTO(
         @JsonProperty("id") Long id,

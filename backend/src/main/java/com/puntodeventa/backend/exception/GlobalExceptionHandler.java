@@ -25,6 +25,9 @@ public class GlobalExceptionHandler {
 
     /**
      * Maneja excepciones cuando un recurso no es encontrado.
+     *
+     * @param ex excepción con el detalle del recurso ausente
+     * @return respuesta 404 con el cuerpo de error
      */
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
@@ -39,7 +42,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Maneja errores de validación de datos (@Valid).
+     * Maneja errores de validación de datos (@Valid), indexados por campo.
+     *
+     * @param ex excepción con el BindingResult y los errores de campo
+     * @return respuesta 400 con el detalle de cada campo inválido
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationErrors(MethodArgumentNotValidException ex) {
@@ -67,6 +73,9 @@ public class GlobalExceptionHandler {
     /**
      * Auditoría 2026-09-11 (T1.1): validaciones de negocio lanzadas como
      * IllegalArgumentException (ej: descuento cajero > 10%, cantidad <= 0) → 400.
+     *
+     * @param ex excepción con el mensaje de la regla de negocio incumplida
+     * @return respuesta 400 con el mensaje del incumplimiento
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
@@ -83,13 +92,17 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Maneja violaciones de integridad de datos (claves duplicadas, foreign keys, etc).
+     * Maneja violaciones de integridad de datos (claves duplicadas, claves foráneas, etc.).
+     * El mensaje se especializa según el texto de la violación para no filtrar detalles
+     * internos de la base de datos al cliente.
+     *
+     * @param ex excepción de integridad con el detalle técnico
+     * @return respuesta 409 con el mensaje interpretable
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         String message = "Error de integridad de datos";
-        
-        // Intentar extraer mensaje más específico
+
         if (ex.getMessage() != null) {
             if (ex.getMessage().contains("Unique") || ex.getMessage().contains("PRIMARY KEY")) {
                 message = "El registro ya existe o viola una restricción de unicidad";
@@ -112,6 +125,9 @@ public class GlobalExceptionHandler {
      * Maneja rutas no encontradas (404).
      * Boot 3.2+ lanza NoResourceFoundException (springdoc /v3/api-docs y paths estáticos)
      * además de NoHandlerFoundException; sin esto caen en handleGenericException y devuelven 500.
+     *
+     * @param ex excepción de enrutamiento sin manejador o sin recurso estático
+     * @return respuesta 404 con el cuerpo de error
      */
     @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
     public ResponseEntity<ErrorResponse> handleNoHandlerFound(Exception ex) {
@@ -130,6 +146,9 @@ public class GlobalExceptionHandler {
     /**
      * Auditoría 2026-09-11 (T1.1): errores de autenticación de Spring Security → 401.
      * Reemplaza la heurística por texto de IllegalArgumentException.
+     *
+     * @param ex excepción de autenticación de Spring Security
+     * @return respuesta 401 con mensaje genérico
      */
     @ExceptionHandler(org.springframework.security.core.AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthentication(
@@ -147,7 +166,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Auditoría 2026-09-11 (T1.1): sin autorización (403) con body JSON.
+     * Auditoría 2026-09-11 (T1.1): falta de autorización (403) con cuerpo JSON.
+     *
+     * @param ex excepción de acceso denegado
+     * @return respuesta 403 con mensaje genérico
      */
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(
@@ -166,8 +188,11 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Auditoría 2026-09-11 (T1.1): conflicto de optimistic locking (409).
+     * Auditoría 2026-09-11 (T1.1): conflicto de bloqueo optimista (409).
      * Dos usuarios editaron el mismo registro concurrentemente.
+     *
+     * @param ex excepción de bloqueo optimista de Hibernate
+     * @return respuesta 409 indicando que se debe recargar
      */
     @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
     public ResponseEntity<ErrorResponse> handleOptimisticLock(
@@ -185,7 +210,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Auditoría 2026-09-11 (T1.1): violación de constraints de bean validation.
+     * Auditoría 2026-09-11 (T1.1): violación de restricciones de validación de beans.
+     *
+     * @param ex excepción con el conjunto de restricciones incumplidas
+     * @return respuesta 400 con el detalle de cada restricción
      */
     @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(
@@ -207,7 +235,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Auditoría 2026-09-11 (T1.1): body JSON malformado o vacío (400).
+     * Auditoría 2026-09-11 (T1.1): cuerpo JSON malformado o vacío (400).
+     *
+     * @param ex excepción de conversión del cuerpo de la solicitud
+     * @return respuesta 400 con el motivo de la lectura fallida
      */
     @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleMessageNotReadable(
@@ -225,7 +256,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Auditoría 2026-09-11 (T1.1): parámetro de path/query con tipo inválido (400).
+     * Auditoría 2026-09-11 (T1.1): parámetro de ruta o consulta con tipo inválido (400).
+     *
+     * @param ex excepción de conversión de tipo del parámetro
+     * @return respuesta 400 indicando el parámetro y el tipo esperado
      */
     @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(
@@ -248,11 +282,10 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Maneja errores de validación de datos (@Valid).
-     */
-
-    /**
      * Maneja excepciones genéricas no capturadas.
+     *
+     * @param ex excepción inesperada
+     * @return respuesta 500 con el cuerpo de error
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
@@ -269,7 +302,13 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Record para representar la respuesta de error.
+     * Cuerpo uniforme de las respuestas de error de la API.
+     *
+     * @param timestamp momento de generación de la respuesta
+     * @param status código de estado HTTP
+     * @param error descripción corta del tipo de error
+     * @param message detalle legible del error
+     * @param validationErrors errores por campo, presente solo en fallos de validación
      */
     @lombok.Builder
     public record ErrorResponse(

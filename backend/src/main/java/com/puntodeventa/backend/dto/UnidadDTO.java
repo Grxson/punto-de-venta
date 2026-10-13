@@ -7,7 +7,17 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 /**
- * DTO para Unidad de medida.
+ * Unidad de medida con la que se administran ingredientes y recetas (kilogramo, litro,
+ * mililitro, etc.).
+ *
+ * <p>Se envía como request al crear o editar una unidad y se devuelve como response en las
+ * consultas de configuración.
+ *
+ * @param id identificador de la unidad; {@code null} al crearla
+ * @param nombre nombre visible de la unidad
+ * @param abreviatura forma corta de la unidad (por ejemplo, kg o ml)
+ * @param factorBase equivalencia de la unidad respecto de su unidad base
+ * @param descripcion detalle de la unidad
  */
 public record UnidadDTO(
     Long id,

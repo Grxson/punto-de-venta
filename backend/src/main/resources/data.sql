@@ -50,7 +50,7 @@ SELECT 'gerente', '$2b$10$0HJCsTqJjp33o7X76IO1tO4Vaeifah1XFXw24Y010zLwDrUpmUL8i'
 WHERE NOT EXISTS (SELECT 1 FROM usuarios WHERE username = 'gerente');
 
 -- ==============================================
--- Unidades de medida (seed estándar; V025 no corre si flyway deshabilitado)
+-- Unidades de medida (datos iniciales estándar; V025 no corre si flyway está deshabilitado)
 -- ==============================================
 INSERT INTO unidades (nombre, abreviatura, factor_base, descripcion) 
 SELECT 'Kilogramo', 'kg', 1.0, 'Unidad de peso - 1000 gramos'

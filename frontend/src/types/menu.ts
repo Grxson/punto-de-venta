@@ -1,3 +1,6 @@
+/**
+ * Producto del catálogo, independiente de la sucursal.
+ */
 export interface ProductoDTO {
   id: number;
   nombre: string;
@@ -8,12 +11,18 @@ export interface ProductoDTO {
   activo: boolean;
 }
 
+/**
+ * Producto con los datos propios de una sucursal (precio y disponibilidad).
+ */
 export interface ProductoSucursalDTO extends ProductoDTO {
   precio_sucursal: number;
   disponible: number;
   orden_visualizacion: number;
 }
 
+/**
+ * Categoría del menú.
+ */
 export interface CategoriaDTO {
   id: number;
   nombre: string;
@@ -22,6 +31,9 @@ export interface CategoriaDTO {
   activa: boolean;
 }
 
+/**
+ * Artículo del carrito de compra.
+ */
 export interface CarritoItem {
   producto: ProductoSucursalDTO;
   cantidad: number;
@@ -29,11 +41,17 @@ export interface CarritoItem {
   subtotal: number;
 }
 
+/**
+ * Filtros aplicables al menú.
+ */
 export interface MenuFilters {
   categoria?: number;
   busqueda?: string;
 }
 
+/**
+ * Contrato del contexto del menú y el carrito.
+ */
 export interface MenuContextType {
   // Estado
   productos: ProductoSucursalDTO[];

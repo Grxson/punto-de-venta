@@ -83,6 +83,10 @@ public class InventarioMovimientoReporteService {
     /**
      * Genera una lista de todos los días dentro del rango especificado.
      * Útil para mostrar todas las columnas de fecha en la tabla.
+     *
+     * @param inicio Día inicial del rango.
+     * @param fin    Día final del rango, inclusive.
+     * @return Lista de fechas consecutivas dentro del rango.
      */
     private List<LocalDate> generarDiasDelRango(LocalDate inicio, LocalDate fin) {
         List<LocalDate> dias = new ArrayList<>();
@@ -97,6 +101,9 @@ public class InventarioMovimientoReporteService {
     /**
      * Detecta automáticamente qué días tuvieron operación.
      * Evita mostrar columnas vacías.
+     *
+     * @param ventas Ventas del período a inspeccionar.
+     * @return Lista ordenada de días con al menos una venta.
      */
     private List<LocalDate> detectarDiasActivos(List<Venta> ventas) {
         return ventas.stream()
@@ -109,6 +116,10 @@ public class InventarioMovimientoReporteService {
     /**
      * Construye el mapa de productos con sus movimientos diarios.
      * Una sola pasada por los datos para máxima eficiencia.
+     *
+     * @param ventas        Ventas del período.
+     * @param diasOperacion Días que se inicializan aunque no tengan movimiento.
+     * @return Mapa de producto a sus datos diarios y totales.
      */
     private Map<Long, ProductoInventarioDTO> construirMapaProductos(
             List<Venta> ventas,

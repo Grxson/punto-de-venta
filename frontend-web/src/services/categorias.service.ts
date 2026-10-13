@@ -11,7 +11,10 @@ export type { CategoriaProducto, CategoriaFiltros } from '../types/categorias.ty
 
 export const categoriasService = {
   /**
-   * Listar categorías con filtros opcionales
+   * Lista categorías con filtros opcionales.
+   *
+   * @param filtros - Filtros de búsqueda (estado activo y texto).
+   * @returns La respuesta normalizada con la lista de categorías.
    */
   listar: async (filtros?: CategoriaFiltros) => {
     const params = new URLSearchParams();
@@ -31,28 +34,41 @@ export const categoriasService = {
   },
 
   /**
-   * Obtener categoría por ID
+   * Obtiene una categoría por su ID.
+   *
+   * @param id - ID de la categoría.
+   * @returns La respuesta normalizada con la categoría.
    */
   obtener: async (id: number) => {
     return apiService.get<CategoriaProducto>(`${API_ENDPOINTS.CATEGORIES}/${id}`);
   },
 
   /**
-   * Crear nueva categoría
+   * Crea una categoría nueva.
+   *
+   * @param categoria - Datos de la categoría (sin `id`).
+   * @returns La respuesta normalizada con la categoría creada.
    */
   crear: async (categoria: Omit<CategoriaProducto, 'id'>) => {
     return apiService.post<CategoriaProducto>(API_ENDPOINTS.CATEGORIES, categoria);
   },
 
   /**
-   * Actualizar categoría existente
+   * Actualiza una categoría existente.
+   *
+   * @param id - ID de la categoría.
+   * @param categoria - Campos a actualizar (sin `id`).
+   * @returns La respuesta normalizada con la categoría actualizada.
    */
   actualizar: async (id: number, categoria: Partial<Omit<CategoriaProducto, 'id'>>) => {
     return apiService.put<CategoriaProducto>(`${API_ENDPOINTS.CATEGORIES}/${id}`, categoria);
   },
 
   /**
-   * Eliminar categoría (hard delete - eliminación permanente)
+   * Elimina una categoría de forma definitiva (borrado físico).
+   *
+   * @param id - ID de la categoría.
+   * @returns La respuesta normalizada de la eliminación.
    */
   eliminar: async (id: number) => {
     return apiService.delete(`${API_ENDPOINTS.CATEGORIES}/${id}`);

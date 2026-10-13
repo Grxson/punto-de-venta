@@ -3,8 +3,20 @@ package com.puntodeventa.backend.dto;
 import java.io.Serializable;
 
 /**
- * DTO para serialización de LogEntry a JSON/REST.
- * Implementa Serializable para compatibilidad con frameworks de serialización.
+ * Entrada de log expuesta por la API de monitoreo.
+ *
+ * <p>Es el response del endpoint de consulta de logs. Transforma la entidad de log en un
+ * objeto serializable a JSON/REST.
+ *
+ * @param id identificador de la entrada de log
+ * @param level nivel del log ({@code ERROR}, {@code WARN}, {@code INFO}, {@code DEBUG})
+ * @param logger nombre del logger que emitió la entrada
+ * @param message mensaje del log
+ * @param exception traza de la excepción asociada, si la hay
+ * @param timestamp fecha y hora del log en formato de texto
+ * @param thread hilo que emitió el log
+ * @param sucursal sucursal en cuyo contexto se emitió el log
+ * @param usuario usuario en cuyo contexto se emitió el log
  */
 public record LogEntryDTO(
         Long id,
@@ -23,6 +35,12 @@ public record LogEntryDTO(
     /**
      * Constructor compacto (implícito en record).
      * Valida que los campos requeridos no sean nulos.
+     */
+    /**
+     * Valida que los campos requeridos estén presentes.
+     *
+     * @throws IllegalArgumentException si {@code level}, {@code message} o {@code timestamp}
+     *                                  son nulos o vacíos
      */
     public LogEntryDTO {
         if (level == null || level.isBlank()) {

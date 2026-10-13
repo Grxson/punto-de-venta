@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 
 /**
- * OPTIMIZACIÓN PASO 2.7: Service Worker Registration Hook
- * 
- * Registra el Service Worker y maneja actualizaciones
+ * OPTIMIZACIÓN PASO 2.7: registro del Service Worker.
+ *
+ * Registra el Service Worker, avisa cuando hay una nueva versión y revisa
+ * actualizaciones cada hora. No recibe argumentos ni devuelve valor.
  */
 export function useServiceWorkerRegistration() {
   useEffect(() => {
@@ -64,7 +65,9 @@ export function useServiceWorkerRegistration() {
 }
 
 /**
- * Hook para verificar si estamos online/offline
+ * Indica si el navegador tiene conexión a Internet.
+ *
+ * @returns `true` cuando el equipo está `online` y `false` cuando está `offline`.
  */
 export function useOnlineStatus() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);

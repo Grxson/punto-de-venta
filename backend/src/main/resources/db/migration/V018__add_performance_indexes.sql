@@ -1,9 +1,9 @@
 -- =====================================================
--- V017 - Índices de Rendimiento (Performance Indexes)
+-- V017 - Índices de Rendimiento
 -- =====================================================
--- Script para optimización de queries según análisis de rendimiento
+-- Script para optimización de consultas según análisis de rendimiento
 -- Ejecutado: 9 de diciembre de 2025
--- Impacto esperado: -70% en tiempo de búsquedas, -80% en queries N+1
+-- Impacto esperado: -70% en tiempo de búsquedas, -80% en consultas N+1
 
 -- ===== ÍNDICES CRÍTICOS PARA BÚSQUEDAS =====
 
@@ -37,7 +37,7 @@ ON categoria_subcategorias(subcategoria_id);
 CREATE INDEX IF NOT EXISTS idx_ventas_fecha 
 ON ventas(fecha);
 
--- 8. ventas: Búsquedas por sucursal + fecha (multi-branch reporting)
+-- 8. ventas: Búsquedas por sucursal + fecha (reportes multi-sucursal)
 CREATE INDEX IF NOT EXISTS idx_ventas_sucursal_fecha 
 ON ventas(sucursal_id, fecha);
 
@@ -49,13 +49,13 @@ ON ventas_items(venta_id);
 CREATE INDEX IF NOT EXISTS idx_ventas_items_producto_id 
 ON ventas_items(producto_id);
 
--- ===== ÍNDICES PARA GASTOS (Reporting) =====
+-- ===== ÍNDICES PARA GASTOS (Reportes) =====
 
 -- 11. gastos: Búsquedas por fecha (reportes, gráficos)
 CREATE INDEX IF NOT EXISTS idx_gastos_fecha 
 ON gastos(fecha);
 
--- 12. gastos: Búsquedas por sucursal + fecha (segregación multi-branch)
+-- 12. gastos: Búsquedas por sucursal + fecha (segregación multi-sucursal)
 CREATE INDEX IF NOT EXISTS idx_gastos_sucursal_fecha 
 ON gastos(sucursal_id, fecha);
 
@@ -83,17 +83,17 @@ ON rol_permisos(rol_id);
 CREATE INDEX IF NOT EXISTS idx_productos_sucursal_nombre_disponible 
 ON productos(sucursal_id, LOWER(nombre), disponible);
 
--- 18. ventas: Range queries por fechas + sucursal
+-- 18. ventas: Consultas por rango de fechas + sucursal
 CREATE INDEX IF NOT EXISTS idx_ventas_sucursal_fecha_range 
 ON ventas(sucursal_id, fecha DESC);
 
--- 19. gastos: Range queries por fechas + sucursal
+-- 19. gastos: Consultas por rango de fechas + sucursal
 CREATE INDEX IF NOT EXISTS idx_gastos_sucursal_fecha_range 
 ON gastos(sucursal_id, fecha DESC);
 
 -- ===== ÍNDICES PARA CACHÉ Y POPULARIDAD =====
 
--- 20. categoria_productos: Sort por popularidad (menu dinámico)
+-- 20. categoria_productos: Orden por popularidad (menú dinámico)
 CREATE INDEX IF NOT EXISTS idx_categoria_productos_orden 
 ON categoria_productos(categoria_id, orden DESC);
 
@@ -127,7 +127,7 @@ ON ingredientes(producto_id);
 CREATE INDEX IF NOT EXISTS idx_ingredientes_receta_id 
 ON ingredientes(receta_id);
 
--- ===== ÍNDICES PARA MÉRMAS =====
+-- ===== ÍNDICES PARA MÁRMAS =====
 
 -- 27. inventario_movimientos: Tipo de movimiento (control de stock)
 CREATE INDEX IF NOT EXISTS idx_inventario_movimientos_tipo 
@@ -145,17 +145,17 @@ ON descuentos(cliente_id);
 
 -- ===== ÍNDICES PARA PAGOS =====
 
--- 30. metodos_pago: Para listing rápido
+-- 30. metodos_pago: Para listado rápido
 CREATE INDEX IF NOT EXISTS idx_pagos_venta_id 
 ON pagos(venta_id);
 
--- ===== CONSTRAINT INDEXES (Ya creados, solo documentación) =====
--- Nota: Los siguientes índices ya existen por constraints de FK
+-- ===== ÍNDICES DE RESTRICCIONES (Ya creados, solo documentación) =====
+-- Nota: Los siguientes índices ya existen por restricciones de FK
 -- pero los documentamos para referencia:
--- - pk_productos (primary key)
--- - pk_usuarios (primary key)
--- - pk_ventas (primary key)
--- - pk_categorias (primary key)
+-- - pk_productos (clave primaria)
+-- - pk_usuarios (clave primaria)
+-- - pk_ventas (clave primaria)
+-- - pk_categorias (clave primaria)
 -- etc.
 
 -- =====================================================
@@ -164,7 +164,7 @@ ON pagos(venta_id);
 -- Tiempo de búsqueda de productos: 800ms → 100ms (-87%)
 -- Tiempo de búsqueda de ventas: 600ms → 150ms (-75%)
 -- Tiempo de búsqueda de gastos: 500ms → 80ms (-84%)
--- Queries N+1 en categorías: Eliminadas con índices FK
+-- Consultas N+1 en categorías: Eliminadas con índices FK
 -- Almacenamiento índices: ~50-80MB (aceptable)
 -- =====================================================
 

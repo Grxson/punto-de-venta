@@ -24,6 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Servicio de resúmenes y estadísticas de venta.
+ * Distingue dos visiones de costo: la del panel diario, que solo computa gastos
+ * operacionales, y la de reportes, que incluye todos los gastos. Todas las
+ * consultas se acotan a la sucursal del usuario y los agregados se calculan en
+ * la base de datos para evitar cargar ventas en memoria.
+ */
 @Slf4j
 @Service
 @Transactional(readOnly = true)
@@ -43,6 +50,9 @@ public class EstadisticasService {
         /**
          * ✅ DailyStatsPanel: Resumen del día con SOLO GASTOS OPERACIONALES
          * Excluye gastos administrativos, nómina, etc.
+         *
+         * @param fecha Día a resumir.
+         * @return Resumen de ventas y costos operacionales de ese día.
          */
         public ResumenVentasDiaDTO resumenDiaConGastosOperacionales(LocalDate fecha) {
                 LocalDateTime inicio = fecha.atStartOfDay();
@@ -55,6 +65,14 @@ public class EstadisticasService {
          * ✅ DailyStatsPanel: Resumen de rango de fechas con SOLO GASTOS OPERACIONALES
          * Excluye gastos administrativos, nómina, etc.
          * CACHEADO: TTL 5 minutos (CACHE_DYNAMIC_MINUTES)
+         *
+         * Costo total = costo de los productos vendidos + gastos operacionales.
+         * El margen y el ticket promedio se redondean a dos decimales.
+         *
+         * @param desde                 Fecha y hora inicial del período.
+         * @param hasta                 Fecha y hora final del período.
+         * @param fechaRepresentativa   Fecha que se devuelve en el resumen.
+         * @return Resumen del período con gastos operacionales.
          */
         @Cacheable(value = "resumen-ventas", key = "#sucursalId + '_' + #desde.toLocalDate() + '_' + #hasta.toLocalDate()", unless = "#result == null")
         public ResumenVentasDiaDTO resumenRangoConGastosOperacionales(LocalDateTime desde, LocalDateTime hasta,
@@ -112,6 +130,11 @@ public class EstadisticasService {
         /**
          * ✅ Reportes (Corte por Producto, etc.): Resumen con TODOS LOS GASTOS
          * Incluye gastos operacionales, administrativos, nómina, etc.
+         *
+         * @param desde               Fecha y hora inicial del período.
+         * @param hasta               Fecha y hora final del período.
+         * @param fechaRepresentativa Fecha que se devuelve en el resumen.
+         * @return Resumen del período con todos los gastos.
          */
         public ResumenVentasDiaDTO resumenRangoConTodosGastos(LocalDateTime desde, LocalDateTime hasta,
                         LocalDate fechaRepresentativa) {
@@ -166,24 +189,55 @@ public class EstadisticasService {
         }
 
         // ⚠️ DEPRECATED: Mantener para compatibilidad hacia atrás
+        /**
+         * Resumen del día con gastos operacionales.
+         *
+         * @param fecha Día a resumir.
+         * @return Resumen de ventas y costos operacionales de ese día.
+         * @deprecated usar {@link #resumenDiaConGastosOperacionales(LocalDate)}.
+         */
         @Deprecated(forRemoval = true, since = "1.0.0")
         public ResumenVentasDiaDTO resumenDia(LocalDate fecha) {
                 return resumenDiaConGastosOperacionales(fecha);
         }
 
         // ⚠️ DEPRECATED: Mantener para compatibilidad hacia atrás
+        /**
+         * Resumen de un rango con gastos operacionales.
+         *
+         * @param desde               Fecha y hora inicial del período.
+         * @param hasta               Fecha y hora final del período.
+         * @param fechaRepresentativa Fecha que se devuelve en el resumen.
+         * @return Resumen del período con gastos operacionales.
+         * @deprecated usar {@link #resumenRangoConGastosOperacionales(LocalDateTime, LocalDateTime, LocalDate)}.
+         */
         @Deprecated(forRemoval = true, since = "1.0.0")
         public ResumenVentasDiaDTO resumenRango(LocalDateTime desde, LocalDateTime hasta,
                         LocalDate fechaRepresentativa) {
                 return resumenRangoConGastosOperacionales(desde, hasta, fechaRepresentativa);
         }
 
+        /**
+         * Obtiene el rendimiento de los productos más vendidos de un día.
+         *
+         * @param fecha  Día a analizar.
+         * @param limite Número máximo de productos a devolver.
+         * @return Lista de DTO con el rendimiento de los productos top.
+         */
         public List<ProductoRendimientoDTO> rendimientoProductosDia(LocalDate fecha, int limite) {
                 LocalDateTime inicio = fecha.atStartOfDay();
                 LocalDateTime fin = fecha.atTime(LocalTime.MAX);
                 return rendimientoProductosRango(inicio, fin, limite);
         }
 
+        /**
+         * Obtiene el rendimiento de los productos más vendidos en un rango.
+         *
+         * @param desde  Fecha y hora inicial del período.
+         * @param hasta  Fecha y hora final del período.
+         * @param limite Número máximo de productos a devolver.
+         * @return Lista de DTO con el rendimiento de los productos top.
+         */
         public List<ProductoRendimientoDTO> rendimientoProductosRango(LocalDateTime desde, LocalDateTime hasta,
                         int limite) {
                 // CACHEADO: TTL 10 minutos (CACHE_SEMI_STATIC_MINUTES)
@@ -191,6 +245,17 @@ public class EstadisticasService {
                 return rendimientoProductosRangoInternal(desde, hasta, limite, sucursalId);
         }
 
+        /**
+         * Calcula el rendimiento por producto y lo cachea por sucursal y período.
+         * El margen unitario y su porcentaje solo se calculan si el producto tiene
+         * precio y costo estimado conocidos y un precio mayor que cero.
+         *
+         * @param desde      Fecha y hora inicial del período.
+         * @param hasta      Fecha y hora final del período.
+         * @param limite     Número máximo de productos a devolver.
+         * @param sucursalId Identificador de la sucursal, usado como parte de la clave de caché.
+         * @return Lista de DTO con el rendimiento de los productos top.
+         */
         @Cacheable(value = "productos-top", key = "#sucursalId + '_' + #desde.toLocalDate() + '_' + #hasta.toLocalDate() + '_' + #limite", unless = "#result == null || #result.isEmpty()")
         public List<ProductoRendimientoDTO> rendimientoProductosRangoInternal(LocalDateTime desde, LocalDateTime hasta,
                         int limite, Long sucursalId) {
@@ -227,7 +292,7 @@ public class EstadisticasService {
         /**
          * ✅ INVALIDAR CACHES DE REPORTES
          * Se llama automáticamente cuando se crea una venta o gasto
-         * para asegurar que los datos cacheados se actualizan
+         * para asegurar que los datos cacheados se actualizan.
          */
         @CacheEvict(value = { "resumen-ventas", "productos-top" }, allEntries = true)
         public void invalidarCachesReportes() {

@@ -8,7 +8,25 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * DTO para registro de Merma.
+ * Merma: pérdida de un ingrediente durante la operación (caducidad, derrame, error de
+ * preparación, entre otras causas).
+ *
+ * <p>Se envía como request al registrar una merma y se devuelve como response en las
+ * consultas. Toda merma genera un movimiento de inventario que descuenta stock.
+ *
+ * @param id identificador de la merma; {@code null} al registrarla
+ * @param ingredienteId ingrediente que se perdió
+ * @param ingredienteNombre nombre de ese ingrediente (solo lectura)
+ * @param cantidad cantidad perdida
+ * @param unidadId unidad de medida en la que se expresa la cantidad
+ * @param unidadNombre nombre de esa unidad (solo lectura)
+ * @param unidadAbreviatura abreviatura de esa unidad (solo lectura)
+ * @param motivo causa de la merma
+ * @param fecha fecha y hora de la merma
+ * @param responsableId usuario que reporta la merma
+ * @param responsableNombre nombre de ese usuario (solo lectura)
+ * @param costoUnitario costo por unidad en el momento de la merma
+ * @param costoTotal valor total de la pérdida
  */
 public record MermaDTO(
     Long id,

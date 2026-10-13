@@ -18,7 +18,7 @@ dockerfilePath = "backend/Dockerfile"
 startCommand = "java -jar app.jar"  # ❌ Railway ejecuta esto en lugar del ENTRYPOINT
 ```
 
-**Problema**: Railway ejecuta `java -jar app.jar` en el **directorio raíz del container**, pero el Dockerfile establece `WORKDIR /app` y copia el JAR allí. El path es incorrecto.
+**Problema**: Railway ejecuta `java -jar app.jar` en el **directorio raíz del contenedor**, pero el Dockerfile establece `WORKDIR /app` y copia el JAR allí. El path es incorrecto.
 
 ### ✅ Configuración CORRECTA
 ```toml
@@ -82,7 +82,7 @@ startCommand = "java -jar target/*.jar"  # Necesario con buildpacks
 - Build más lento
 - Puede fallar con Java 21
 
-## 🚀 Nuestro Setup Final
+## 🚀 Nuestra Configuración Final
 
 ```toml
 [build]

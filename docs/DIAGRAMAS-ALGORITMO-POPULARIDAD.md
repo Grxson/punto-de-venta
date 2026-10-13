@@ -247,10 +247,10 @@ IMPACTO:
 └─ En baja 50%: Resta 14.7 puntos
 ```
 
-## 7. Flujo de API Request
+## 7. Flujo de Petición a la API
 
 ```
-CLIENT (React Native)
+CLIENTE (React Native)
    │
    ▼
 GET /api/v1/menu/ordenado?columnasGrid=3&diasAnalizar=7
@@ -282,10 +282,10 @@ MenuPopularidadService.obtenerMenuOrdenado()
    └─ Construye MenuGrillaDTO
       │
       ▼
-   JSON Response
+   Respuesta JSON
       │
       ▼
-CLIENT (React Native)
+CLIENTE (React Native)
    │
    ├─ Renderiza grilla
    ├─ Muestra badges de score

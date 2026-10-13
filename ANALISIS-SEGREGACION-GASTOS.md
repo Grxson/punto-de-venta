@@ -2,9 +2,9 @@
 
 **Fecha:** 22 de diciembre de 2025  
 **Nivel de Análisis:** Completo (Frontend + Backend + Base de Datos)  
-**Status:** ✅ Análisis completado + Fix aplicado
+**Estado:** ✅ Análisis completado + Corrección aplicada
 
-> 📄 **DOCUMENTO COMPLEMENTARIO:** [FIX-CACHE-SEGREGACION-SUCURSALES.md](FIX-CACHE-SEGREGACION-SUCURSALES.md) - Detalles técnicos del fix aplicado
+> 📄 **DOCUMENTO COMPLEMENTARIO:** [FIX-CACHE-SEGREGACION-SUCURSALES.md](FIX-CACHE-SEGREGACION-SUCURSALES.md) - Detalles técnicos de la corrección aplicada
 
 ---
 
@@ -211,7 +211,7 @@ CREATE TABLE gastos (
         ON DELETE CASCADE
 );
 
--- ✅ Índice para performance en queries por sucursal
+-- ✅ Índice para rendimiento en consultas por sucursal
 CREATE INDEX idx_gastos_sucursal_fecha 
 ON gastos(sucursal_id, fecha DESC);
 ```
@@ -301,11 +301,11 @@ const loadData = async () => {
 
 ---
 
-## 8. PROBLEMA CRÍTICO IDENTIFICADO Y SOLUCIONADO: Cache SIN Sucursal
+## 8. PROBLEMA CRÍTICO IDENTIFICADO Y SOLUCIONADO: Caché SIN Sucursal
 
 ### 🔴 PROBLEMA ENCONTRADO
 
-En `useReportsCache.ts` (líneas 20-22) **ANTES del fix**:
+En `useReportsCache.ts` (líneas 20-22) **ANTES de la corrección**:
 
 ```typescript
 const getCacheKey = (type: string, desde: string, hasta: string) => {
@@ -358,7 +358,7 @@ const getCacheKey = (type: string, desde: string, hasta: string) => {
 
 **Seguridad:**
 - ✅ Cache ahora está aislado por sucursal
-- ✅ Imposible que User B obtenga datos de User A
+- ✅ Imposible que el Usuario B obtenga datos del Usuario A
 - ✅ Cada sucursal tiene su propia rama de caché
 
 **Rendimiento:**
@@ -368,12 +368,12 @@ const getCacheKey = (type: string, desde: string, hasta: string) => {
 
 **Validación:**
 ```
-Antes del fix:
+Antes de la corrección:
   Mismo cache para todas las sucursales
   Clave: resumen_2025-12-01_2025-12-31
-  ❌ RIESGO: Data mixing si múltiples usuarios activos
+  ❌ RIESGO: Mezcla de datos si múltiples usuarios activos
 
-Después del fix:
+Después de la corrección:
   Cache aislado por sucursal
   Clave: resumen_1_2025-12-01_2025-12-31  (Sucursal 1)
   Clave: resumen_2_2025-12-01_2025-12-31  (Sucursal 2)
@@ -407,7 +407,7 @@ Después del fix:
 - ✅ `useAuth()` proporciona sucursal actual
 - ✅ JWT token contiene sucursal_id (enviado en cada request)
 - ✅ Backend valida y filtra por sucursal automáticamente
-- ✅ Cache incluye sucursalId en clave (FIX APLICADO)
+- ✅ Cache incluye sucursalId en clave (CORRECCIÓN APLICADA)
 
 **Componentes:**
 - ✅ `DailyStatsPanel`: Llama `/api/estadisticas/ventas/dia`
@@ -420,18 +420,18 @@ Después del fix:
 
 | Componente | Estado | Detalles |
 |-----------|--------|----------|
-| Backend Filters | ✅ CORRECTO | SucursalContextFilter en cada request |
-| Service Layer | ✅ CORRECTO | Dos métodos separados con lógica diferente |
-| Database Queries | ✅ CORRECTO | WHERE clause con sucursal_id |
+| Filtros del Backend | ✅ CORRECTO | SucursalContextFilter en cada request |
+| Capa de Servicio | ✅ CORRECTO | Dos métodos separados con lógica diferente |
+| Consultas a la Base de Datos | ✅ CORRECTO | Cláusula WHERE con sucursal_id |
 | Endpoints | ✅ CORRECTO | Rutas diferentes con propósitos distintos |
-| Frontend Cache | ✅ CORRECTO | AHORA incluye sucursalId en clave |
-| **OVERALL** | **✅ SEGURO** | **NO hay riesgo de contaminación de datos** |
+| Caché del Frontend | ✅ CORRECTO | AHORA incluye sucursalId en clave |
+| **GENERAL** | **✅ SEGURO** | **NO hay riesgo de contaminación de datos** |
 
-**Recomendación:** El sistema está listo para usar en PRODUCCIÓN. La segregación de datos está implementada de forma redundante en múltiples niveles (JWT → Filter → Context → Query). El fix del cache cierra el último punto de vulnerabilidad potencial.
+**Recomendación:** El sistema está listo para usar en PRODUCCIÓN. La segregación de datos está implementada de forma redundante en múltiples niveles (JWT → Filtro → Contexto → Consulta). La corrección de la caché cierra el último punto de vulnerabilidad potencial.
 
 ---
 
-## 9. RECOMENDACIÓN: Validación del Cache
+## 9. RECOMENDACIÓN: Validación de la Caché
 
 ### Paso 1: Revisar `useReportsCache.ts`
 
@@ -494,7 +494,7 @@ const cache = useMemo(() => ({
 
 ### 🟢 RIESGO DE MEZCLA DE DATOS
 
-**BAJO** (95% seguro, condicionado a cache)
+**BAJO** (95% seguro, condicionado a la caché)
 
 El backend está correctamente segregado. El único riesgo potencial es en el cache frontend si no se incluye sucursal en la clave.
 

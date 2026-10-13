@@ -12,6 +12,12 @@ import { useAuth } from '../hooks/useAuth';
 import { UserRole, SucursalDTO } from '../types/auth';
 import { apiClient } from '../services/api/axiosInstance';
 
+/**
+ * Devuelve el estilo de insignia correspondiente al rol del usuario.
+ *
+ * @param rol Rol del usuario; si se omite se usa el estilo por defecto.
+ * @returns El objeto de estilo de la insignia del rol.
+ */
 function getRolStyle(rol?: UserRole): any {
   const roleStyles: Record<UserRole, any> = {
     ADMIN: styles.rolADMIN,
@@ -22,6 +28,14 @@ function getRolStyle(rol?: UserRole): any {
   return rol ? roleStyles[rol] : styles.rolUSUARIO;
 }
 
+/**
+ * Pantalla de perfil del usuario.
+ *
+ * Muestra los datos de la cuenta y, para administradores, permite cambiar la
+ * sucursal activa; incluye el cierre de sesión.
+ *
+ * @returns La información de la cuenta y las acciones del usuario.
+ */
 export function ProfileScreen() {
   const { user, sucursal, logout, isAdmin, changeSucursal } = useAuth();
   const [sucursales, setSucursales] = useState<SucursalDTO[]>([]);

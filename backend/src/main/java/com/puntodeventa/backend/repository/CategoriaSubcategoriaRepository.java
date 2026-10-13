@@ -11,13 +11,17 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository para gestión de subcategorías de productos.
+ * Repositorio para gestión de subcategorías de productos.
  */
 @Repository
 public interface CategoriaSubcategoriaRepository extends JpaRepository<CategoriaSubcategoria, Long> {
 
     /**
-     * Obtener todas las subcategorías de una categoría, ordenadas por orden.
+     * Obtiene todas las subcategorías activas de una categoría, ordenadas por orden y luego por nombre.
+     * Existe porque el orden de presentación dentro del menú no coincide con el orden de inserción.
+     *
+     * @param categoriaId ID de la categoría padre
+     * @return lista de subcategorías activas ordenadas
      */
     @Query(value = "SELECT * FROM categoria_subcategorias cs " +
             "WHERE cs.categoria_id = :categoriaId AND cs.activa = true " +
@@ -25,19 +29,31 @@ public interface CategoriaSubcategoriaRepository extends JpaRepository<Categoria
     List<CategoriaSubcategoria> findByCategoriaIdOrderByOrden(@Param("categoriaId") Long categoriaId);
 
     /**
-     * Obtener todas las subcategorías de una sucursal.
+     * Obtiene todas las subcategorías de una sucursal.
      * ✅ SEGREGACIÓN: Filtra por sucursal_id
+     *
+     * @param sucursalId ID de la sucursal
+     * @return lista de subcategorías de la sucursal
      */
     @Query("SELECT cs FROM CategoriaSubcategoria cs WHERE cs.sucursal.id = :sucursalId")
     List<CategoriaSubcategoria> findBySucursal(@Param("sucursalId") Long sucursalId);
 
     /**
-     * Obtener una subcategoría por nombre dentro de una categoría.
+     * Obtiene una subcategoría por nombre dentro de una categoría.
+     *
+     * @param categoriaId ID de la categoría padre
+     * @param nombre      nombre exacto de la subcategoría
+     * @return la subcategoría coincidente, o vacío si no existe
      */
     Optional<CategoriaSubcategoria> findByCategoriaIdAndNombre(Long categoriaId, String nombre);
 
     /**
-     * Verificar si existe una subcategoría en una categoría.
+     * Verifica si existe una subcategoría con un nombre dentro de una categoría.
+     * Existe para validar duplicados antes de insertar.
+     *
+     * @param categoriaId ID de la categoría padre
+     * @param nombre      nombre a comprobar
+     * @return true si ya existe una subcategoría con ese nombre en la categoría
      */
     boolean existsByCategoriaIdAndNombre(Long categoriaId, String nombre);
 }

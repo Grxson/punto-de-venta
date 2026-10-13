@@ -214,7 +214,7 @@ frontend-web/src/pages/admin/
 
 ---
 
-## 🎨 UI/UX Improvements
+## 🎨 Mejoras de UI/UX
 
 ### CompraSimpleForm
 - Card con estructura clara
@@ -259,7 +259,7 @@ frontend-web/src/pages/admin/
 
 ## 🚀 Próximos Pasos (Opcional)
 
-1. **Backend Integration**
+1. **Integración con el Backend**
    - Crear tabla `CompraSimple` en BD
    - Endpoints REST para CRUD
    - Cambiar localStorage por API

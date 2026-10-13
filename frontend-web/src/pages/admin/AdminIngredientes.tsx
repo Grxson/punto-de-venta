@@ -21,6 +21,13 @@ import {
 import { Edit, Delete, CheckCircle, Link as LinkIcon } from '@mui/icons-material';
 import { ingredientesService, Ingrediente, Unidad } from '../../services/ingredientes.service';
 
+/**
+ * Catálogo de ingredientes del panel de administración.
+ * @remarks Es la base del costo de los productos: de aquí sale el costo unitario
+ * de cada insumo y su vínculo con el gasto de compra que lo originó.
+ * @remarks Sólo permite dar de alta y baja lógica: el alta se hace creando el
+ * ingrediente a partir de una compra registrada, en la pantalla de Compras.
+ */
 export default function AdminIngredientes() {
   const [ingredientes, setIngredientes] = useState<Ingrediente[]>([]);
   const [unidades, setUnidades] = useState<Unidad[]>([]);

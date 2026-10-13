@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Profile;
  * 
  * Estrategia:
  * - DEV: Logging detallado incluyendo SQL (asincrónico)
- * - PROD: Solo warnings/errors, sin SQL logging
+ * - PROD: Solo advertencias y errores, sin logging de SQL
  * 
  * Configuración en application.properties:
  * - logging.level.org.hibernate.SQL=DEBUG (solo dev)

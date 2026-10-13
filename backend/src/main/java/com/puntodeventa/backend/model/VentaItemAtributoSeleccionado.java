@@ -25,10 +25,12 @@ import java.time.LocalDateTime;
 @Builder
 public class VentaItemAtributoSeleccionado {
     
+    /** Identificador único de la selección registrada. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    /** Renglón de venta al que pertenece la selección; many-to-one obligatorio, un renglón puede tener varias. */
     @NotNull(message = "El item de venta es obligatorio")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "venta_item_id", nullable = false)
@@ -61,6 +63,7 @@ public class VentaItemAtributoSeleccionado {
     @Column(name = "precio_extra", nullable = false, precision = 12, scale = 2)
     private BigDecimal precioExtra = BigDecimal.ZERO;
     
+    /** Fecha de alta de la selección. */
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

@@ -1,6 +1,6 @@
 # 🕐 ANÁLISIS: Gestión de Zona Horaria
 
-**Status:** ✅ CORRECTAMENTE IMPLEMENTADO  
+**Estado:** ✅ CORRECTAMENTE IMPLEMENTADO  
 **Zona Horaria:** Mexico City (America/Mexico_City)  
 **Fecha:** 22 de diciembre de 2025
 
@@ -37,7 +37,7 @@ LocalDateTime ahora = LocalDateTime.now(ZoneId.of("America/Mexico_City"));
 // ✅ CORRECTO: Si cliente NO envía fecha, usar fecha del servidor
 LocalDate f = fecha != null ? fecha : LocalDate.now();
 
-// ⚠️ Log de advertencia si no se envía fecha (para debugging)
+// ⚠️ Log de advertencia si no se envía fecha (para depuración)
 if (fecha == null) {
     log.warn("⚠️ Fecha no especificada, usando servidor: {}", f);
 }
@@ -46,7 +46,7 @@ if (fecha == null) {
 **Líneas:** 28-35 (Estadísticas)
 **Comportamiento:**
 - Si frontend envía fecha: ✅ Usa esa fecha
-- Si frontend NO envía fecha: Usa fecha del servidor (puede variar si timezones diferentes)
+- Si frontend NO envía fecha: Usa fecha del servidor (puede variar si las zonas horarias son diferentes)
 
 ### Frontend (React + TypeScript)
 
@@ -89,7 +89,7 @@ const hastaISO = toLocalISOString(dateRange.hasta, '23:59:59');
 
 ## 🟢 Validación: ¿Hay Problemas?
 
-### Test Case 1: Usuario en Mexico City
+### Caso de Prueba 1: Usuario en Mexico City
 ```
 Frontend Hora Local:    2025-12-22 14:30:00 (Navaja local del navegador)
 API Recibe:             2025-12-22 14:30:00
@@ -97,7 +97,7 @@ Backend Procesa:        2025-12-22 14:30:00 (ZoneId.of("America/Mexico_City"))
 Resultado:              ✅ CORRECTO
 ```
 
-### Test Case 2: Cambio de Sucursal (Diferente Timezone)
+### Caso de Prueba 2: Cambio de Sucursal (Zona Horaria Diferente)
 ```
 Sucursal A (Mexico City):  UTC-6  (14:30)
 Sucursal B (USA Central):  UTC-6  (14:30)
@@ -107,10 +107,10 @@ Sucursal C (Argentina):    UTC-3  (17:30)
 → Backend verá diferente, pero OK porque:
   - Frontend SIEMPRE envía fecha explícitamente
   - Backend SIEMPRE filtra por sucursal
-  - Timezone del servidor NO afecta datos
+  - La zona horaria del servidor NO afecta los datos
 ```
 
-### Test Case 3: Sin Enviar Fecha (Riesgo)
+### Caso de Prueba 3: Sin Enviar Fecha (Riesgo)
 ```
 Usuario en Mexico:    14:30
 Servidor en USA:      12:30
@@ -122,7 +122,7 @@ Backend calcula día:  ERROR - fecha diferente
 
 ---
 
-## 📊 Matriz de Seguridad de Timezone
+## 📊 Matriz de Seguridad de Zona Horaria
 
 | Escenario | Backend | Frontend | Resultado |
 |-----------|---------|----------|-----------|
@@ -139,14 +139,14 @@ Backend calcula día:  ERROR - fecha diferente
 2. **Frontend:** Nunca convierte a UTC
 3. **AdminReports:** Siempre envía fecha explícita
 4. **CompraService:** Usa `ZoneId.of("America/Mexico_City")`
-5. **Segregación:** No es afectada por timezone (filtrada por `sucursal_id`)
+5. **Segregación:** No es afectada por la zona horaria (filtrada por `sucursal_id`)
 
 ---
 
 ## ⚠️ ¿QUÉ PODRÍA MEJORAR?
 
-### 1. Hacer Timezone Configurable (RECOMENDADO)
-**Problema Actual:** Zone hardcodeada como "America/Mexico_City"
+### 1. Hacer la Zona Horaria Configurable (RECOMENDADO)
+**Problema Actual:** Zona horaria fija como "America/Mexico_City"
 - Si negocio expande a otro país, código necesita cambio
 
 **Solución:**
@@ -161,8 +161,8 @@ private String appTimezone;
 LocalDateTime ahora = LocalDateTime.now(ZoneId.of(appTimezone));
 ```
 
-### 2. Validar que Servidor Tenga Correct Timezone
-**Problema:** Si servidor está en UTC, habrá desajustes
+### 2. Validar que el Servidor Tenga la Zona Horaria Correcta
+**Problema:** Si el servidor está en UTC, habrá desajustes
 
 **Solución en Dockerfile/Railway:**
 ```dockerfile
@@ -171,13 +171,13 @@ ENV TZ=America/Mexico_City
 
 ---
 
-## 🔧 Checklist de Timezone
+## 🔧 Lista de Verificación de Zona Horaria
 
 ### Backend
 - ✅ CompraService usa ZoneId explícito
 - ✅ EstadisticasController valida fecha
 - ✅ Todas las fechas son `LocalDate` o `LocalDateTime`
-- ⚠️ Timezone no es configurable (hardcoded)
+- ⚠️ La zona horaria no es configurable (fija en el código)
 
 ### Frontend
 - ✅ dateHelper evita UTC
@@ -185,10 +185,10 @@ ENV TZ=America/Mexico_City
 - ✅ Zona horaria local preservada
 - ✅ TanStack Query respeta fechas
 
-### Database (PostgreSQL)
-- ✅ Fechas almacenadas sin timezone
-- ✅ Aplicación maneja conversión
-- ✅ Funciona con cualquier servidor timezone
+### Base de Datos (PostgreSQL)
+- ✅ Fechas almacenadas sin zona horaria
+- ✅ La aplicación maneja la conversión
+- ✅ Funciona con cualquier zona horaria de servidor
 
 ---
 
@@ -198,12 +198,12 @@ ENV TZ=America/Mexico_City
 ✅ **NINGUNA** - Sistema funciona correctamente
 
 ### Corto Plazo (Esta semana)
-- Hacer timezone configurable en `application.properties`
-- Documentar timezone esperado en README
+- Hacer la zona horaria configurable en `application.properties`
+- Documentar la zona horaria esperada en el README
 
 ### Largo Plazo (Siguiente mes)
-- Permitir timezone por sucursal (si expanden a múltiples países)
-- Implementar selector de timezone en admin
+- Permitir zona horaria por sucursal (si expanden a múltiples países)
+- Implementar selector de zona horaria en el admin
 
 ---
 
@@ -215,10 +215,10 @@ ENV TZ=America/Mexico_City
 - ✅ Fechas y horas se manejan correctamente
 - ✅ Frontend y backend están sincronizados
 
-**Pueden usar normalmente sin preocupaciones de timezone.**
+**Pueden usar normalmente sin preocupaciones por la zona horaria.**
 
 ---
 
 **Generado:** 2025-12-22  
-**Status:** ✅ VERIFICADO Y CORRECTO
+**Estado:** ✅ VERIFICADO Y CORRECTO
 

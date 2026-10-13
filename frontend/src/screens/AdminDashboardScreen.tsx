@@ -9,6 +9,15 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { useReportes } from '../hooks/useReportes';
 
+/**
+ * Panel de resumen para administradores.
+ *
+ * Muestra los KPIs y el resumen general del periodo activo; si el usuario no
+ * es administrador o los datos aún se están cargando, presenta el estado
+ * correspondiente en lugar de las cifras.
+ *
+ * @returns La vista con los KPIs y el resumen general de ventas y gastos.
+ */
 export function AdminDashboardScreen() {
   const { isAdmin, user, sucursal } = useAuth();
   const { kpis, reporteGeneral, isLoading } = useReportes();

@@ -1,13 +1,16 @@
-/**
- * Hook para manejar logout completo con limpieza de caché
- * Asegura que no haya datos cacheados entre sesiones de diferentes sucursales
- */
-
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { clearClientSession } from '../utils/clientSession';
 
+/**
+ * Hook que ejecuta un logout completo.
+ * Limpia todo el `cache` de React Query y el almacenamiento local/sesión del
+ * usuario, cierra la sesión en `AuthContext` y navega al login. Así se evita
+ * mezclar datos cacheados entre sesiones de distintas sucursales.
+ *
+ * @returns Función `handleLogout` asíncrona que realiza el cierre de sesión.
+ */
 export const useLogout = () => {
   const queryClient = useQueryClient();
   const { logout: authLogout } = useAuth();

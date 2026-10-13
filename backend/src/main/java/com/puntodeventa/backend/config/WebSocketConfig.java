@@ -22,6 +22,11 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    /**
+     * Configura el broker en memoria y los prefijos de destino de STOMP.
+     *
+     * @param config registro del broker de mensajes
+     */
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // Habilitar un broker simple en memoria para mensajes
@@ -35,6 +40,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         config.setUserDestinationPrefix("/user");
     }
 
+    /**
+     * Registra el endpoint WebSocket con soporte SockJS y las restricciones de CORS.
+     *
+     * @param registry registro de endpoints STOMP
+     */
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Endpoint para conexión WebSocket con CORS

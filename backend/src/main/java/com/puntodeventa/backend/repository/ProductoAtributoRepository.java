@@ -15,21 +15,32 @@ import java.util.List;
 public interface ProductoAtributoRepository extends JpaRepository<ProductoAtributo, Long> {
 
     /**
-     * Encuentra todos los atributos activos de un producto
+     * Encuentra todos los atributos activos de un producto con sus opciones precargadas.
      * ✅ ARREGLO: Usar = true en lugar de IS TRUE (activo se almacena como INTEGER)
+     *
+     * @param productoId ID del producto
+     * @return lista de atributos activos, con opciones, ordenados por orden
      */
     @Query("SELECT DISTINCT pa FROM ProductoAtributo pa LEFT JOIN FETCH pa.opciones WHERE pa.producto.id = :productoId AND pa.activo = true ORDER BY pa.orden ASC")
     List<ProductoAtributo> findByProductoIdActivos(@Param("productoId") Long productoId);
 
     /**
-     * Encuentra todos los atributos de un producto (incluyendo inactivos)
+     * Encuentra todos los atributos de un producto (incluyendo inactivos) con sus opciones precargadas.
+     * Usa LEFT JOIN FETCH para evitar el problema N+1 al recorrer las opciones.
+     *
+     * @param productoId ID del producto
+     * @return lista de atributos con opciones, ordenados por orden
      */
     @Query("SELECT DISTINCT pa FROM ProductoAtributo pa LEFT JOIN FETCH pa.opciones WHERE pa.producto.id = :productoId ORDER BY pa.orden ASC")
     List<ProductoAtributo> findByProductoId(@Param("productoId") Long productoId);
 
     /**
-     * Busca atributos por nombre
+     * Busca atributos activos de un producto cuyo nombre contiene el texto indicado.
      * ✅ ARREGLO: Usar = true en lugar de IS TRUE (activo se almacena como INTEGER)
+     *
+     * @param productoId ID del producto
+     * @param nombre     fragmento del nombre a buscar
+     * @return lista de atributos coincidentes con sus opciones
      */
     @Query("SELECT DISTINCT pa FROM ProductoAtributo pa LEFT JOIN FETCH pa.opciones WHERE pa.producto.id = :productoId AND LOWER(pa.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')) AND pa.activo = true")
     List<ProductoAtributo> buscarPorNombre(@Param("productoId") Long productoId, @Param("nombre") String nombre);

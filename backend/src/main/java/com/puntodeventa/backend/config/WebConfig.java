@@ -18,6 +18,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    /**
+     * Registra las reglas de CORS globales para /api/** y /ws/**.
+     *
+     * @param registry registro de configuraciones de CORS
+     */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         // Configuración CORS global para permitir requests del frontend
@@ -45,6 +50,12 @@ public class WebConfig implements WebMvcConfigurer {
             .maxAge(3600);
     }
 
+    /**
+     * Registra los manejadores de recursos estáticos, el dashboard de monitoreo y
+     * los recursos de Swagger UI.
+     *
+     * @param registry registro de manejadores de recursos
+     */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Configurar recursos estáticos solo para rutas específicas

@@ -203,9 +203,9 @@ GET /api/v1/menu/grilla?columnasGrid=4&diasAnalizar=30
 
 Retorna estructura de grilla con posiciones (fila, columna) para cada producto.
 
-## 🎨 Frontend Integration
+## 🎨 Integración con el Frontend
 
-### React Native example
+### Ejemplo con React Native
 
 ```javascript
 // Fetch menú ordenado
@@ -242,7 +242,7 @@ const menu = await response.json();
 }
 
 .producto-card {
-  /* Auto-placement por orden del DOM */
+  /* Colocación automática por orden del DOM */
   background: #fff;
   border-radius: 8px;
   padding: 10px;
@@ -348,7 +348,7 @@ Detecta qué está en alza o baja en tiempo real.
 ### 5. Pruebas A/B
 Compara layouts (3 columnas vs 4) midiendo velocidad de venta.
 
-## 🔍 Debugging
+## 🔍 Depuración
 
 ### Cómo revisar los scores
 
@@ -401,7 +401,7 @@ Donde:
 
 Simula la "frescura" de un producto: mientras más reciente, más relevante.
 
-## ✅ Checklist de Implementación
+## ✅ Lista de Verificación de Implementación
 
 - [ ] `PopularityAlgorithm.java` creado
 - [ ] `ProductoPopularidadDTO.java` creado

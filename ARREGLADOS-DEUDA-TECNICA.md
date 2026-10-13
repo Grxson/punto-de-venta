@@ -20,7 +20,7 @@
 
 **Archivo:** [backend/src/main/java/com/puntodeventa/backend/config/DataInitializer.java](backend/src/main/java/com/puntodeventa/backend/config/DataInitializer.java#L509)
 
-**Impacto:** 🟢 En producción, ahora los errores se registrarán en los logs correctamente, facilitando debugging.
+**Impacto:** 🟢 En producción, ahora los errores se registrarán en los logs correctamente, facilitando la depuración.
 
 ---
 
@@ -117,13 +117,13 @@ for (VentaItemDTO itemDTO : request.items()) {
 
 ## Resumen de Cambios
 
-| Problema | Archivo | Línea | Tipo | Status |
+| Problema | Archivo | Línea | Tipo | Estado |
 |----------|---------|-------|------|--------|
-| `e.printStackTrace()` | DataInitializer.java | 509 | Logging | ✅ HECHO |
-| Version SNAPSHOT | pom.xml | 13 | Config | ✅ HECHO |
+| `e.printStackTrace()` | DataInitializer.java | 509 | Registro de logs | ✅ HECHO |
+| Version SNAPSHOT | pom.xml | 13 | Configuración | ✅ HECHO |
 | No @Transactional | CompraService.java | 105 | Transacción | ✅ HECHO |
 | No validación stock | VentaService.java | 191 | Validación | ✅ HECHO |
-| JWT timeout muy largo | application.properties | 147 | Security | ✅ HECHO |
+| JWT timeout muy largo | application.properties | 147 | Seguridad | ✅ HECHO |
 
 ---
 
@@ -132,16 +132,16 @@ for (VentaItemDTO itemDTO : request.items()) {
 ### Esta semana 🔴
 - [ ] Reemplazar `any` tipos en TypeScript (50+ lugares)
 - [ ] Agregar paginación en AdminReports
-- [ ] Implementar invalidación automática de cache
+- [ ] Implementar invalidación automática de caché
 
 ### Próximas 2 semanas 🟠
-- [ ] Reemplazar `findAll()` con queries paginated
+- [ ] Reemplazar `findAll()` con consultas paginadas
 - [ ] Implementar rate limiting
-- [ ] Agregar error handling genérico en frontend
+- [ ] Agregar manejo de errores genérico en frontend
 
 ### Próximo mes 🟡
-- [ ] Unit tests para servicios críticos
-- [ ] Audit logging (quién cambió qué y cuándo)
+- [ ] Tests unitarios para servicios críticos
+- [ ] Registro de auditoría (quién cambió qué y cuándo)
 - [ ] Backup automático de BD
 
 ---
@@ -166,5 +166,5 @@ cd backend && ./start.sh
 **Generado:** 22 de diciembre 2025  
 **Cambios realizados:** 5 archivos modificados  
 **Riesgo remanente:** BAJO → Los 4 críticos ya están arreglados  
-**Recomendación:** Deploy a staging, test con carga real, después a producción
+**Recomendación:** Desplegar a staging, probar con carga real, después a producción
 

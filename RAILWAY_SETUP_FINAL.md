@@ -5,51 +5,51 @@
 - ✓ Código en GitHub (Grxson/punto-de-venta)
 - ✗ **rootDirectory NO configurado** ← AQUÍ ESTÁ EL PROBLEMA
 
-## Paso a Paso (CON SCREENSHOTS)
+## Paso a Paso (CON CAPTURAS DE PANTALLA)
 
-### Dashboard URL
+### URL del Dashboard
 https://railway.com/project/74b2b2b6-c203-44c5-ab12-86d44534b935
 
-### BACKEND Configuration
+### Configuración del BACKEND
 
-**Step 1**: En dashboard, haz click en cuadro azul **"backend"**
+**Paso 1**: En el dashboard, haz clic en el cuadro azul **"backend"**
 ```
 ┌─────────────────────────────────────────┐
-│  Project: punto de venta                │
+│  Proyecto: punto de venta               │
 │  ┌─────────────┐  ┌─────────────┐      │
 │  │  backend    │  │ frontend-web│      │
-│  │  Online     │  │  Online     │      │
-│  │  (click)    │  │             │      │
+│  │  En línea   │  │  En línea   │      │
+│  │  (clic)     │  │             │      │
 │  └─────────────┘  └─────────────┘      │
 └─────────────────────────────────────────┘
 ```
 
-**Step 2**: Ir a pestaña **"Settings"** (no Build, no Deployments - SETTINGS)
+**Paso 2**: Ir a la pestaña **"Settings"** (no Build, no Deployments - SETTINGS)
 
-**Step 3**: Buscar sección **"Source"** o **"Repository"**
+**Paso 3**: Buscar la sección **"Source"** o **"Repository"**
 
-**Step 4**: Campo **"Root Directory"** (o Root Path / Build Path)
+**Paso 4**: Campo **"Root Directory"** (o Root Path / Build Path)
 ```
-┌─ Source Settings ────────────────────┐
-│ Repository: Grxson/punto-de-venta    │
-│ Branch: main                         │
-│ Root Directory: [_____________]      │
-│                  ↓ ESCRIBIR "backend" │
-└──────────────────────────────────────┘
+┌─ Configuración de Source ─────────────┐
+│ Repository: Grxson/punto-de-venta      │
+│ Branch: main                           │
+│ Root Directory: [_____________]        │
+│                  ↓ ESCRIBIR "backend"  │
+└────────────────────────────────────────┘
 ```
 
-**Step 5**: Click **"Redeploy"** (botón rojo/naranja)
+**Paso 5**: Clic en **"Redeploy"** (botón rojo/naranja)
 
-**Step 6**: Esperar ~8 minutos. Ver logs en "Deployments" tab.
+**Paso 6**: Esperar ~8 minutos. Ver los logs en la pestaña "Deployments".
 
 ---
 
-### FRONTEND-WEB Configuration
+### Configuración del FRONTEND-WEB
 
 Repetir los mismos pasos pero:
-- Click en **"frontend-web"**
+- Clic en **"frontend-web"**
 - Root Directory: **"frontend-web"**
-- Click Redeploy
+- Clic en Redeploy
 - Esperar ~8 minutos
 
 ---
@@ -84,11 +84,11 @@ Prueba en diferentes pestañas:
 1. Settings → Source
 2. Settings → Build
 3. Deployments → Edit Configuration
-4. (Si todo falla) Hacer click en el ⋮ (tres puntos) → Settings
+4. (Si todo falla) Hacer clic en el ⋮ (tres puntos) → Settings
 
 ---
 
-## URLs Finales (después de fix)
+## URLs Finales (después de la corrección)
 
 - Backend: https://backend-production-4bc3.up.railway.app/swagger-ui.html
 - Frontend: https://frontend-web-production-05d0.up.railway.app

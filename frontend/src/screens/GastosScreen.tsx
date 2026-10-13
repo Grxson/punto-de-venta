@@ -11,6 +11,9 @@ import {
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 
+/**
+ * Gasto registrado localmente en la pantalla.
+ */
 interface Gasto {
   id: number;
   categoria: string;
@@ -19,6 +22,14 @@ interface Gasto {
   fecha: string;
 }
 
+/**
+ * Pantalla de registro de gastos del día.
+ *
+ * Captura categoría, descripción y monto, y acumula los gastos en memoria
+ * (aún sin persistencia en el backend), mostrando el total del día.
+ *
+ * @returns El formulario de gasto y la lista con el total acumulado.
+ */
 export function GastosScreen() {
   const { user, sucursal } = useAuth();
   const [categoria, setCategoria] = useState('');

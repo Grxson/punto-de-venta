@@ -2,28 +2,49 @@ import { useState, useCallback, useRef } from 'react';
 import apiService from '../services/api.service';
 import { API_ENDPOINTS } from '../config/api.config';
 
+/** Venta devuelta por la API, con sus totales e ítems asociados. */
 interface Venta {
+  /** Identificador de la venta. */
   id: number;
+  /** Id de la sucursal donde se realizó. */
   sucursalId?: number;
+  /** Nombre de la sucursal donde se realizó. */
   sucursalNombre?: string;
+  /** Fecha de la venta. */
   fecha: string;
+  /** Importe antes de impuestos y descuentos. */
   subtotal: number;
+  /** Importe total de la venta. */
   total: number;
+  /** Impuestos aplicados. */
   impuestos: number;
+  /** Descuento aplicado. */
   descuento: number;
+  /** Canal de venta (por ejemplo, mostrador). */
   canal: string;
+  /** Estado de la venta. */
   estado: string;
+  /** Nota asociada a la venta. */
   nota?: string;
+  /** Id del usuario que registró la venta. */
   usuarioId?: number;
+  /** Nombre del usuario que registró la venta. */
   usuarioNombre?: string;
+  /** Ítems vendidos. */
   items: any[];
+  /** Pagos aplicados a la venta. */
   pagos: any[];
 }
 
+/** Entrada de `cache` con un conjunto de ventas y su paginación. */
 interface SalesCacheEntry {
+  /** Ventas almacenadas en la entrada. */
   data: Venta[];
+  /** Marca de tiempo de cuándo se guardó. */
   timestamp: number;
+  /** Número de la primera página cacheada. */
   page: number;
+  /** Tamaño de página usado en la consulta. */
   size: number;
 }
 
@@ -31,13 +52,15 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 const cache = new Map<string, SalesCacheEntry>();
 
 /**
- * Hook para cachear ventas y evitar peticiones innecesarias
- * 
+ * Cachea ventas para evitar peticiones innecesarias.
+ *
  * Características:
  * - Cachea ventas por período de tiempo
- * - Invalida caché automáticamente después de 5 minutos
- * - Carga de forma secuencial para evitar condiciones de carrera
+ * - Invalida el `cache` automáticamente después de 5 minutos
+ * - Carga las páginas de forma secuencial para evitar condiciones de carrera
  * - Idempotente: ignora llamadas mientras hay una carga en progreso
+ *
+ * @returns Objeto con `allSales`, `loading`, `error`, `loadAllSales`, `invalidateCache`, `clearAllCache` y `hasLoaded`.
  */
 export function useSalesCache() {
   const [allSales, setAllSales] = useState<Venta[]>([]);

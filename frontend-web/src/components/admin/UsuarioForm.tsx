@@ -1,5 +1,6 @@
 /**
- * Formulario para crear y editar usuarios
+ * Formulario de alta y edición de usuarios.
+ * Se muestra dentro de un diálogo y delega el guardado en `onSubmit`.
  */
 
 import { useEffect } from 'react';
@@ -24,20 +25,35 @@ import { useSucursales } from '../../hooks/useSucursales';
 import type { Usuario, CrearUsuarioRequest, EditarUsuarioRequest } from '../../types/usuario.types';
 
 interface UsuarioFormProps {
+  /** Controla la visibilidad del diálogo. */
   open: boolean;
+  /** Usuario a editar; si se omite, el formulario funciona en modo creación. */
   usuario?: Usuario;
+  /** Sucursal preseleccionada al crear un usuario nuevo. */
   sucursalActual?: number;
+  /** Cierra el diálogo sin guardar. */
   onClose: () => void;
+  /** Persiste los datos del formulario; lo resuelve el componente padre. */
   onSubmit: (data: CrearUsuarioRequest | EditarUsuarioRequest) => Promise<void>;
+  /** Indica que el guardado está en curso para deshabilitar los campos. */
   isLoading?: boolean;
+  /** Mensaje de error a mostrar sobre el formulario. */
   error?: string | null;
 }
 
+/** Datos del formulario, con rol y sucursal manejados como texto para los selects. */
 interface UsuarioFormData extends Omit<CrearUsuarioRequest, 'rolId' | 'sucursalId'> {
   rolId: string;
   sucursalId: string;
 }
 
+/**
+ * Diálogo con el formulario de usuario.
+ * Valida los campos, carga los catálogos de roles y sucursales, y en edición
+ * omite la contraseña cuando el campo queda vacío.
+ *
+ * @param props - Propiedades descritas en {@link UsuarioFormProps}.
+ */
 export const UsuarioForm = ({
   open,
   usuario,

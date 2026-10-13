@@ -14,11 +14,28 @@ import java.util.List;
 @Repository
 public interface GastoIndirectoRepository extends JpaRepository<GastoIndirecto, Long> {
     
+    /**
+     * Recupera los conceptos de gasto indirecto activos de una sucursal.
+     *
+     * @param sucursalId ID de la sucursal
+     * @return lista de conceptos activos de la sucursal
+     */
     @Query("SELECT g FROM GastoIndirecto g WHERE g.sucursal.id = :sucursalId AND g.activo = true")
     List<GastoIndirecto> findBySucursalIdAndActivoTrue(@Param("sucursalId") Long sucursalId);
     
+    /**
+     * Recupera todos los conceptos de gasto indirecto de una sucursal, incluidos los inactivos.
+     *
+     * @param sucursalId ID de la sucursal
+     * @return lista de conceptos de la sucursal
+     */
     List<GastoIndirecto> findBySucursalId(Long sucursalId);
     
+    /**
+     * Recupera todos los conceptos de gasto indirecto activos de todas las sucursales.
+     *
+     * @return lista de conceptos activos
+     */
     @Query("SELECT g FROM GastoIndirecto g WHERE g.activo = true")
     List<GastoIndirecto> findByActivoTrue();
 }

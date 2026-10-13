@@ -36,26 +36,45 @@ import { API_ENDPOINTS } from '../../config/api.config';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { getTodayLocalDate, toLocalISOString } from '../../utils/dateHelper';
 
+/** Totales agregados del día devueltos por el `endpoint` diario de estadísticas. */
 interface DailyStats {
+  /** Fecha del resumen en formato `yyyy-MM-dd`. */
   fecha: string;
+  /** Ingreso bruto del día. */
   totalVentas: number;
+  /** Costo de los productos vendidos. */
   totalCostos: number;
+  /** Gastos operativos del día. */
   totalGastos: number;
+  /** `totalVentas - totalCostos`. */
   margenBruto: number;
+  /** Número de tickets emitidos. */
   cantidadVentas: number;
+  /** Unidades vendidas (suma de cantidades). */
   itemsVendidos: number;
+  /** `totalVentas / cantidadVentas`. */
   ticketPromedio: number;
+  /** `margenBruto` como porcentaje sobre las ventas. */
   margenPorcentaje: number;
 }
 
+/** Producto destacado del día con su ingreso. */
 interface ProductoRendimiento {
+  /** Id del producto. */
   productoId: number;
+  /** Nombre del producto. */
   nombre: string;
+  /** Unidades vendidas en el día. */
   unidadesVendidas: number;
+  /** Ingreso generado por el producto. */
   ingresoTotal: number;
 }
 
-// Componente para KPI card minimalista
+/**
+ * Tarjeta KPI del dashboard.
+ * @remarks Recibe `icon`, `title`, `value`, `color`, `subtitle`, `trend` y `loading`
+ * por `props` sin tipar; mientras `loading` está activo muestra un `Skeleton`.
+ */
 const KPICard = ({ 
   icon: Icon, 
   title, 
@@ -133,11 +152,22 @@ const KPICard = ({
   </Fade>
 );
 
+/**
+ * Dashboard de inicio del panel: KPIs del día, ventas por hora y top 5 productos.
+ * @remarks Carga el resumen diario y el `ranking` de productos con la fecha local del
+ * cliente (evita desfases de zona horaria) y se re-ejecuta cuando `refreshTrigger` del
+ * `DashboardContext` cambia tras registrar una venta.
+ */
 export default function AdminDashboard() {
+  /** Resumen del día; `null` mientras no hay datos. */
   const [stats, setStats] = useState<DailyStats | null>(null);
+  /** Top 5 de productos vendidos del día. */
   const [topProductos, setTopProductos] = useState<ProductoRendimiento[]>([]);
+  /** Hora actual formateada, refrescada cada segundo. */
   const [currentTime, setCurrentTime] = useState<string>('');
+  /** Indica la carga inicial o por cambio de `refreshTrigger`. */
   const [loading, setLoading] = useState(true);
+  /** Mensaje de error de la última carga. */
   const [error, setError] = useState<string | null>(null);
   const { refreshTrigger } = useDashboard();
 
@@ -159,6 +189,11 @@ export default function AdminDashboard() {
     }
   }, [refreshTrigger]);
 
+  /**
+   * Carga el resumen del día y el top de productos en paralelo.
+   * @remarks Sólo marca `loading` en la carga inicial; las recargas por `refreshTrigger`
+   * mantienen la UI actual para no parpadear.
+   */
   const loadDashboardData = async () => {
     try {
       if (refreshTrigger === 0) {

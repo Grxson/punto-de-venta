@@ -24,24 +24,39 @@ import { usuariosService } from '../../../services/usuarios.service';
 import ProveedorAutoComplete, { Proveedor } from './ProveedorAutoComplete';
 import SeleccionarIngredientes from './SeleccionarIngredientes';
 
+/** Línea de ingrediente que el usuario va armando dentro del formulario de compra. */
 interface IngredienteSeleccionado {
+  /** Id del ingrediente del catálogo. */
   ingredienteId: number;
+  /** Nombre del ingrediente. */
   ingredienteNombre: string;
+  /** Id de la unidad de compra. */
   unidadId: number;
+  /** Nombre de la unidad. */
   unidadNombre: string;
+  /** Abreviatura de la unidad para la tabla. */
   unidadAbreviatura: string;
+  /** Cantidad comprada en esa unidad. */
   cantidad: number;
+  /** Importe total pagado por la línea. */
   precioTotal: number;
 }
 
+/** Props del formulario de compra. */
 interface CompraFormProps {
+  /** Id de la compra a editar; si se omite, el formulario está en modo creación. */
   compraId?: number;
+  /** Se llama tras guardar correctamente para que la pantalla recargue el listado. */
   onGuardado: () => void;
+  /** Se llama al cancelar la edición/creación. */
   onCancelado: () => void;
 }
 
 /**
- * Formulario para crear/editar una compra
+ * Formulario para crear o editar una compra con proveedor e ingredientes detallados.
+ * @remarks En modo edición (`compraId`) carga la compra y precarga el proveedor y los
+ * ingredientes; el alta/edición de proveedor y la selección de ingredientes se delegan
+ * en `ProveedorAutoComplete` y `SeleccionarIngredientes`.
  */
 export default function CompraForm({ compraId, onGuardado, onCancelado }: CompraFormProps) {
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
@@ -110,7 +125,8 @@ export default function CompraForm({ compraId, onGuardado, onCancelado }: Compra
   };
 
   /**
-   * Eliminar un ingrediente de la compra
+   * Elimina una línea de ingrediente de la compra en curso.
+   * @param ingredienteId - Id del ingrediente a quitar del listado.
    */
   const eliminarIngrediente = (ingredienteId: number) => {
     setIngredientes(ingredientes.filter((i) => i.ingredienteId !== ingredienteId));

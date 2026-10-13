@@ -5,14 +5,19 @@
 import { apiService } from './api.service';
 
 interface GastoIndirecto {
+  /** Ausente antes de guardar el registro. */
   id?: number;
   sucursalId?: number;
   sucursalNombre?: string;
   nombre: string;
   descripcion?: string;
+  /** Monto prorrateado a nivel mensual. */
   montoMensual?: number;
+  /** Monto prorrateado a nivel semanal. */
   montoSemanal?: number;
+  /** Monto prorrateado a nivel diario. */
   montoDiario?: number;
+  /** `false` equivale a baja lógica. */
   activo: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -22,7 +27,9 @@ const BASE_URL = '/gastos-indirectos';
 
 export const gastosIndirectosService = {
   /**
-   * Obtener todos los gastos indirectos
+   * Obtiene todos los gastos indirectos.
+   *
+   * @returns La lista de gastos indirectos, o `[]` si la petición falla.
    */
   obtenerTodos: async () => {
     try {
@@ -39,7 +46,9 @@ export const gastosIndirectosService = {
   },
 
   /**
-   * Obtener gastos indirectos activos
+   * Obtiene los gastos indirectos activos.
+   *
+   * @returns La lista de gastos indirectos activos, o `[]` si la petición falla.
    */
   obtenerActivos: async () => {
     try {
@@ -55,7 +64,10 @@ export const gastosIndirectosService = {
   },
 
   /**
-   * Obtener un gasto indirecto por ID
+   * Obtiene un gasto indirecto por su ID.
+   *
+   * @param id - ID del gasto indirecto.
+   * @returns El gasto indirecto, o `null` si no existe o la petición falla.
    */
   obtenerPorId: async (id: number) => {
     try {
@@ -71,7 +83,11 @@ export const gastosIndirectosService = {
   },
 
   /**
-   * Crear un nuevo gasto indirecto
+   * Crea un gasto indirecto nuevo.
+   *
+   * @param data - Datos del gasto indirecto.
+   * @returns El gasto indirecto creado.
+   * @throws Error si el backend no devuelve datos o indica fallo.
    */
   crear: async (data: GastoIndirecto) => {
     try {
@@ -86,7 +102,12 @@ export const gastosIndirectosService = {
   },
 
   /**
-   * Actualizar un gasto indirecto
+   * Actualiza un gasto indirecto.
+   *
+   * @param id - ID del gasto indirecto.
+   * @param data - Datos del gasto indirecto.
+   * @returns El gasto indirecto actualizado.
+   * @throws Error si el backend no devuelve datos o indica fallo.
    */
   actualizar: async (id: number, data: GastoIndirecto) => {
     try {
@@ -101,7 +122,11 @@ export const gastosIndirectosService = {
   },
 
   /**
-   * Eliminar un gasto indirecto
+   * Elimina un gasto indirecto.
+   *
+   * @param id - ID del gasto indirecto.
+   * @returns `true` si la eliminación fue correcta.
+   * @throws Error si el backend indica fallo.
    */
   eliminar: async (id: number) => {
     try {

@@ -19,7 +19,7 @@ El error que experimentaste era causado por:
 ### 2. Configuración Maven Optimizada
 - **settings.xml**: Configuración de timeouts y reintentos
 - **Descarga paralela**: 5 threads para dependencias
-- **Skip tests**: Omite tests durante build de Railway (ejecutalos localmente)
+- **Omitir tests**: Omite tests durante build de Railway (ejecutalos localmente)
 - **Logs limpios**: Reduce verbosidad de Maven
 
 ### 3. Optimización de Build
@@ -75,7 +75,7 @@ Con estas optimizaciones:
 - **Primer build**: 3-5 minutos (descarga todas las dependencias)
 - **Builds subsecuentes**: 1-2 minutos (usa caché de Docker)
 
-## 🐛 Troubleshooting
+## 🐛 Solución de problemas
 
 ### Error: "Process did not complete successfully"
 **Causa**: Timeout o memoria insuficiente  

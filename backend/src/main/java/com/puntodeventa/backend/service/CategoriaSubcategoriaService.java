@@ -32,10 +32,11 @@ public class CategoriaSubcategoriaService {
         private final SucursalRepository sucursalRepository;
 
         /**
-         * Obtener todas las subcategorías activas de una categoría.
+         * Obtiene todas las subcategorías activas de una categoría.
          * 
          * @param categoriaId ID de la categoría
          * @return Lista de subcategorías ordenadas por orden y nombre
+         * @throws ResourceNotFoundException si la categoría no existe
          */
         @Transactional(readOnly = true)
         public List<CategoriaSubcategoriaDTO> obtenerSubcategoriasPorCategoria(Long categoriaId) {
@@ -54,7 +55,11 @@ public class CategoriaSubcategoriaService {
         }
 
         /**
-         * Obtener una subcategoría por ID.
+         * Obtiene una subcategoría por su identificador.
+         *
+         * @param id Identificador de la subcategoría.
+         * @return DTO de la subcategoría encontrada.
+         * @throws ResourceNotFoundException si la subcategoría no existe.
          */
         @Transactional(readOnly = true)
         public CategoriaSubcategoriaDTO obtenerPorId(Long id) {
@@ -66,7 +71,13 @@ public class CategoriaSubcategoriaService {
         }
 
         /**
-         * Crear una nueva subcategoría.
+         * Crea una nueva subcategoría asignada a la sucursal del usuario.
+         * El orden se calcula como el siguiente libre dentro de la categoría.
+         *
+         * @param dto Datos de la subcategoría a crear.
+         * @return DTO de la subcategoría creada.
+         * @throws ResourceNotFoundException  si la sucursal o la categoría no existen.
+         * @throws IllegalArgumentException   si ya existe una subcategoría con el mismo nombre en la categoría.
          */
         public CategoriaSubcategoriaDTO crear(CategoriaSubcategoriaDTO dto) {
                 log.info("➕ Creando nueva subcategoría: {} en categoría: {}", dto.nombre(), dto.categoriaId());
@@ -112,7 +123,13 @@ public class CategoriaSubcategoriaService {
         }
 
         /**
-         * Actualizar una subcategoría existente.
+         * Actualiza una subcategoría existente.
+         * Si cambia de categoría, se valida que la nueva exista.
+         *
+         * @param id  Identificador de la subcategoría a actualizar.
+         * @param dto Datos a aplicar sobre la subcategoría.
+         * @return DTO de la subcategoría actualizada.
+         * @throws ResourceNotFoundException si la subcategoría o la categoría destino no existen.
          */
         public CategoriaSubcategoriaDTO actualizar(Long id, CategoriaSubcategoriaDTO dto) {
                 log.info("📝 Actualizando subcategoría: {}", id);
@@ -140,7 +157,10 @@ public class CategoriaSubcategoriaService {
         }
 
         /**
-         * Eliminar una subcategoría (soft delete - desactiva).
+         * Da de baja una subcategoría de forma lógica.
+         *
+         * @param id Identificador de la subcategoría a desactivar.
+         * @throws ResourceNotFoundException si la subcategoría no existe.
          */
         public void eliminar(Long id) {
                 log.info("🗑️ Desactivando subcategoría: {}", id);

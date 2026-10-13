@@ -1,12 +1,12 @@
 /**
- * Hooks de React Query para gestión de sucursales
+ * Hooks de React Query para la gestión de sucursales.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sucursalesService } from '../services/sucursales.service';
 import type { CrearSucursalRequest, EditarSucursalRequest } from '../types/sucursal.types';
 
-// Query keys para sucursales
+/** Fábrica de claves de `cache` de React Query para sucursales. */
 export const sucursalesKeys = {
   all: ['sucursales'] as const,
   lists: () => [...sucursalesKeys.all, 'list'] as const,
@@ -17,8 +17,9 @@ export const sucursalesKeys = {
 };
 
 /**
- * Hook para obtener sucursales activas
- * Caché: 10 minutos (datos muy estables)
+ * Obtiene las sucursales activas.
+ *
+ * @returns Resultado de `useQuery` con las sucursales activas. `cache`: 10 minutos.
  */
 export const useSucursales = () => {
   return useQuery({
@@ -29,7 +30,9 @@ export const useSucursales = () => {
 };
 
 /**
- * Hook para obtener todas las sucursales incluyendo inactivas
+ * Obtiene todas las sucursales, incluidas las inactivas.
+ *
+ * @returns Resultado de `useQuery` con la lista completa de sucursales.
  */
 export const useSucursalesConInactivas = () => {
   return useQuery({
@@ -40,7 +43,10 @@ export const useSucursalesConInactivas = () => {
 };
 
 /**
- * Hook para obtener una sucursal por ID
+ * Obtiene una sucursal por su id.
+ *
+ * @param id - Id de la sucursal a consultar.
+ * @returns Resultado de `useQuery` con el detalle de la sucursal.
  */
 export const useSucursal = (id: number) => {
   return useQuery({
@@ -51,7 +57,9 @@ export const useSucursal = (id: number) => {
 };
 
 /**
- * Hook para crear una sucursal
+ * Crea una sucursal e invalida las listas cacheadas.
+ *
+ * @returns Resultado de `useMutation` que espera un `CrearSucursalRequest`.
  */
 export const useCrearSucursal = () => {
   const queryClient = useQueryClient();
@@ -65,7 +73,9 @@ export const useCrearSucursal = () => {
 };
 
 /**
- * Hook para actualizar una sucursal
+ * Actualiza una sucursal e invalida su detalle y las listas.
+ *
+ * @returns Resultado de `useMutation` que espera `{ id, data }`.
  */
 export const useActualizarSucursal = () => {
   const queryClient = useQueryClient();
@@ -81,7 +91,9 @@ export const useActualizarSucursal = () => {
 };
 
 /**
- * Hook para desactivar una sucursal
+ * Desactiva una sucursal e invalida las listas.
+ *
+ * @returns Resultado de `useMutation` que espera el `id` de la sucursal.
  */
 export const useDesactivarSucursal = () => {
   const queryClient = useQueryClient();
@@ -95,7 +107,9 @@ export const useDesactivarSucursal = () => {
 };
 
 /**
- * Hook para reactivar una sucursal
+ * Reactiva una sucursal e invalida las listas.
+ *
+ * @returns Resultado de `useMutation` que espera el `id` de la sucursal.
  */
 export const useReactivarSucursal = () => {
   const queryClient = useQueryClient();

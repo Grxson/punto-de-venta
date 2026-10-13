@@ -180,7 +180,7 @@ graph TD
     A["🔒 CICLO DE VIDA DE SEGURIDAD"]
     
     A --> B["1️⃣ ANÁLISIS DE RIESGOS"]
-    B --> B_DESC["Identificar Amenazas & Assets<br/>STRIDE, OWASP Top 10"]
+    B -->     B_DESC["Identificar Amenazas & Activos<br/>STRIDE, OWASP Top 10"]
     B_DESC --> C["2️⃣ DISEÑO SEGURO"]
     
     C --> C_DESC["Principios CIA<br/>Autenticación & Autorización<br/>Encriptación"]
@@ -189,10 +189,10 @@ graph TD
     D --> D_DESC["Mecanismos Técnicos<br/>Validación & Sanitización<br/>Control de Acceso"]
     D_DESC --> E["4️⃣ PRUEBAS DE SEGURIDAD"]
     
-    E --> E_DESC["Penetration Testing<br/>SAST/DAST<br/>Revisión de Código"]
+    E -->     E_DESC["Pruebas de Penetración<br/>SAST/DAST<br/>Revisión de Código"]
     E_DESC --> F["5️⃣ MONITOREO & AUDITORÍA"]
     
-    F --> F_DESC["Logging<br/>Alertas<br/>Incident Response"]
+    F -->     F_DESC["Registro<br/>Alertas<br/>Respuesta a Incidentes"]
     F_DESC --> G["6️⃣ MEJORA CONTINUA"]
     
     G --> G_DESC["Retroalimentación<br/>Lecciones Aprendidas"]

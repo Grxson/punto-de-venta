@@ -73,7 +73,7 @@ Este documento describe la estructura de datos para el sistema de punto de venta
   - impuestos NUMERIC(12,2) NOT NULL DEFAULT 0
   - descuento NUMERIC(12,2) NOT NULL DEFAULT 0
   - cliente_id FK -> clientes.id NULL
-  - canal TEXT NULL -- mostrador, delivery, etc.
+  - canal TEXT NULL -- mostrador, domicilio (delivery), etc.
   - estado TEXT CHECK (estado IN ('abierta','cerrada','cancelada')) NOT NULL
 - ventas_items
   - id PK
@@ -96,7 +96,7 @@ Este documento describe la estructura de datos para el sistema de punto de venta
   - id PK
   - nombre TEXT NOT NULL -- gr, ml, pieza
   - abreviatura TEXT NOT NULL -- g, ml, pza
-  - factor_base NUMERIC(12,6) NOT NULL -- vs unidad_base del ingrediente
+  - factor_base NUMERIC(12,6) NOT NULL -- frente a la unidad_base del ingrediente
 - ingredientes
   - id PK
   - nombre TEXT NOT NULL
@@ -301,7 +301,7 @@ Refrescar nocturno y bajo demanda tras cierres.
   - Crear movimiento 'merma' y evento en auditoría.
 - Opcional: mantener tabla de saldos por ingrediente (existencias) actualizada por triggers o vía proceso batch nocturno.
 
-## Reglas y constraints
+## Reglas y restricciones (constraints)
 - Checks para tipos (estado de venta, tipo de movimiento, tipo de descuento).
 - Unicidad en catálogos (nombres de métodos de pago, categorías, etc.).
 - No permitir ventas cerradas sin al menos un pago cuyo total >= total de venta (regla de app y/o constraint diferible).
@@ -313,8 +313,8 @@ Refrescar nocturno y bajo demanda tras cierres.
 
 ## Migraciones y mantenimiento
 - Mantener migraciones versionadas (p. ej. con Prisma, Sequelize, Knex o Flyway/liquibase). 
-- Vacío y ANALYZE regulares; monitoreo de consultas lentas.
-- Backups diarios + prueba de restauración.
+- VACUUM y ANALYZE regulares; monitoreo de consultas lentas.
+- Respaldos (backups) diarios + prueba de restauración.
 
 ## Notas finales
 - Este diseño prioriza reportes rápidos por periodo y control de inventario con costo de ventas. Si prefieres FIFO por lotes, anclar costo unitario por lote y consumir en orden; caso contrario, promedio ponderado por ingrediente.

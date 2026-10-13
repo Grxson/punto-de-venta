@@ -10,13 +10,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 
 /**
- * Configuración de CORS para permitir el acceso desde apps móviles y de escritorio.
- * 
- * Esta configuración permite que aplicaciones frontend (React Native, Electron, etc.)
- * puedan consumir la API RESTful sin problemas de CORS.
- * 
- * @author Grxson
- * @version 1.0.0
+ * Configuración de CORS para permitir el acceso desde aplicaciones móviles y de escritorio.
+ *
+ * Permite que las aplicaciones frontend (React Native, Electron, etc.) consuman la
+ * API REST sin problemas de CORS.
+ *
  * @since Java 21
  */
 @Configuration
@@ -37,39 +35,43 @@ public class CorsConfig {
     @Value("${cors.max-age}")
     private long maxAge;
 
+    /**
+     * Construye la configuración de CORS a partir de las propiedades del entorno.
+     *
+     * @return origen de configuración de CORS para todas las rutas
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         var configuration = new CorsConfiguration();
-        
-        // Usar allowedOriginPatterns en lugar de allowedOrigins para permitir "*" con credentials
+
+        // Se usan patrones de origen y no orígenes literales para poder combinar
+        // comodines con el envío de credenciales.
         var origins = parseList(allowedOrigins);
         var methods = parseList(allowedMethods);
         var headers = parseList(allowedHeaders);
-        
+
         if (origins.length > 0) {
-            // Usar allowedOriginPatterns que permite wildcards y funciona con credentials
             configuration.setAllowedOriginPatterns(Arrays.asList(origins));
         } else {
-            // Fallback: permitir todos los orígenes en desarrollo si no hay configuración
+            // Sin configuración explícita se permiten todos los orígenes en desarrollo
             configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         }
-        
+
         if (methods.length > 0) {
             configuration.setAllowedMethods(Arrays.asList(methods));
         } else {
             configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         }
-        
+
         if (headers.length > 0) {
             configuration.setAllowedHeaders(Arrays.asList(headers));
         } else {
             configuration.setAllowedHeaders(Arrays.asList("*"));
         }
-        
+
         configuration.setAllowCredentials(allowCredentials);
         configuration.setMaxAge(maxAge);
-        
-        // Exponer headers necesarios para el frontend
+
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Total-Count"));
 
         var source = new UrlBasedCorsConfigurationSource();
@@ -78,12 +80,10 @@ public class CorsConfig {
     }
 
     /**
-     * Parsea una cadena separada por comas en un array de strings.
-     * Utiliza características de Java 21 para procesamiento eficiente.
-     * Elimina espacios en blanco alrededor de cada valor.
-     * 
-     * @param value Cadena separada por comas
-     * @return Array de strings
+     * Divide una cadena separada por comas y descarta los valores vacíos.
+     *
+     * @param value cadena separada por comas
+     * @return valores sin espacios sobrantes, o un arreglo vacío si la cadena está vacía
      */
     private String[] parseList(String value) {
         if (value == null || value.isBlank()) {

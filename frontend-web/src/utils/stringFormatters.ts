@@ -6,9 +6,9 @@
 /**
  * Limpia el nombre del producto removiendo la categoría entre corchetes
  * Ejemplo: "[DULCES] Molletes - Dulce" → "Molletes - Dulce"
- * 
- * @param nombre - Nombre del producto con posible categoría
- * @returns Nombre sin categoría
+ *
+ * @param nombre - Nombre del producto con posible categoría.
+ * @returns Nombre sin la categoría, o cadena vacía si la entrada era vacía.
  */
 export const limpiarNombreProducto = (nombre: string): string => {
   if (!nombre) return '';
@@ -21,8 +21,8 @@ export const limpiarNombreProducto = (nombre: string): string => {
  * Limpia el nombreVariante removiendo el prefijo "- " si existe
  * Ejemplo: "- Mediano" → "Mediano"
  * 
- * @param nombreVariante - Nombre de la variante con posible prefijo
- * @returns Nombre sin prefijo
+ * @param nombreVariante - Nombre de la variante con posible prefijo.
+ * @returns Nombre sin prefijo, o cadena vacía si la entrada era nula o vacía.
  */
 export const limpiarNombreVariante = (nombreVariante: string | null | undefined): string => {
   if (!nombreVariante) return '';
@@ -32,10 +32,10 @@ export const limpiarNombreVariante = (nombreVariante: string | null | undefined)
 /**
  * Trunca un string a un máximo de caracteres
  * 
- * @param texto - Texto a truncar
- * @param max - Máximo de caracteres
- * @param sufijo - Sufijo a agregar si se trunca (default: '...')
- * @returns Texto truncado
+ * @param texto - Texto a truncar.
+ * @param max - Máximo de caracteres antes de truncar.
+ * @param sufijo - Sufijo a agregar si se trunca (por defecto: '...').
+ * @returns Texto truncado, o el original si ya cabía.
  */
 export const truncarTexto = (texto: string, max: number, sufijo: string = '...'): string => {
   if (!texto || texto.length <= max) return texto;
@@ -45,8 +45,8 @@ export const truncarTexto = (texto: string, max: number, sufijo: string = '...')
 /**
  * Capitaliza la primera letra de cada palabra
  * 
- * @param texto - Texto a capitalizar
- * @returns Texto capitalizado
+ * @param texto - Texto a capitalizar.
+ * @returns Texto capitalizado, o cadena vacía si la entrada era vacía.
  */
 export const capitalizarPalabras = (texto: string): string => {
   if (!texto) return '';
@@ -60,8 +60,8 @@ export const capitalizarPalabras = (texto: string): string => {
 /**
  * Formatea un número como moneda (USD)
  * 
- * @param cantidad - Número a formatear
- * @returns String formateado como moneda
+ * @param cantidad - Número a formatear.
+ * @returns Cadena formateada como moneda.
  */
 export const formatearMoneda = (cantidad: number): string => {
   return new Intl.NumberFormat('es-US', {

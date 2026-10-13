@@ -5,25 +5,37 @@
 import apiService from './api.service';
 
 interface RecetaIngrediente {
+  /** ID del ingrediente. */
   ingredienteId: number;
   ingredienteNombre: string;
+  /** Cantidad necesaria del ingrediente. */
   cantidad: number;
   unidadId: number;
   unidadNombre: string;
   unidadAbreviatura: string;
+  /** Merma teórica esperada del ingrediente, si se conoce. */
   mermaTeorica?: number;
 }
 
 interface Receta {
+  /** ID del producto al que pertenece la receta. */
   productoId: number;
   productoNombre: string;
+  /** Sucursal para la que aplica la receta; `undefined` si es global. */
   sucursalId?: number;
+  /** Líneas de ingredientes que componen la receta. */
   ingredientes: RecetaIngrediente[];
+  /** Suma del coste de los ingredientes. */
   costoDirecto?: number;
+  /** Coste de gastos indirectos imputado. */
   costoIndirecto?: number;
+  /** Coste de mano de obra imputado. */
   manoObra?: number;
+  /** Coste total (directo + indirecto + mano de obra). */
   costoTotal?: number;
+  /** Margen de utilidad objetivo, en porcentaje. */
   porcentajeUtilidadDeseado?: number;
+  /** Precio de venta sugerido calculado a partir del coste y el margen. */
   precioSugerido?: number;
 }
 
@@ -31,7 +43,9 @@ const BASE_URL = '/recetas';
 
 export const recetasService = {
   /**
-   * Obtener recetas de la sucursal actual
+   * Obtiene las recetas de la sucursal actual.
+   *
+   * @returns La lista de recetas, o `[]` si la petición falla.
    */
   obtenerTodas: async (): Promise<Receta[]> => {
     try {
@@ -48,7 +62,10 @@ export const recetasService = {
   },
 
   /**
-   * Obtener una receta por ID de producto
+   * Obtiene la receta de un producto.
+   *
+   * @param productoId - ID del producto.
+   * @returns La receta, o `null` si no existe o la petición falla.
    */
   obtenerPorProducto: async (productoId: number): Promise<Receta | null> => {
     try {
@@ -65,7 +82,11 @@ export const recetasService = {
   },
 
   /**
-   * Crear una nueva receta
+   * Crea una receta nueva.
+   *
+   * @param data - Datos de la receta.
+   * @returns La receta creada.
+   * @throws Error si el backend no devuelve datos o indica fallo.
    */
   crear: async (data: Receta): Promise<Receta> => {
     try {
@@ -80,7 +101,12 @@ export const recetasService = {
   },
 
   /**
-   * Actualizar una receta
+   * Actualiza la receta de un producto.
+   *
+   * @param productoId - ID del producto.
+   * @param data - Datos de la receta.
+   * @returns La receta actualizada.
+   * @throws Error si el backend no devuelve datos o indica fallo.
    */
   actualizar: async (productoId: number, data: Receta): Promise<Receta> => {
     try {
@@ -95,7 +121,11 @@ export const recetasService = {
   },
 
   /**
-   * Eliminar una receta
+   * Elimina la receta de un producto.
+   *
+   * @param productoId - ID del producto.
+   * @returns `true` si la eliminación fue correcta.
+   * @throws Error si el backend indica fallo.
    */
   eliminar: async (productoId: number): Promise<boolean> => {
     try {

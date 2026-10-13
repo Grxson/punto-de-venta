@@ -13,6 +13,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Controlador REST de autenticación y gestión de usuarios.
+ *
+ * Expone el login y el refresco de token JWT, y las operaciones de alta,
+ * consulta, edición y baja de los usuarios del sistema.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Autenticación", description = "Endpoints para autenticación y gestión de usuarios")
@@ -20,6 +26,12 @@ public class AutenticacionController {
     @Autowired
     private UsuarioServicio usuarioServicio;
 
+    /**
+     * Autentica un usuario y devuelve un token JWT.
+     *
+     * @param request credenciales de acceso
+     * @return respuesta con el token y los datos de sesión
+     */
     @PostMapping("/login")
     @Operation(summary = "Login de usuario", description = "Autentica un usuario y retorna un token JWT")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -27,6 +39,12 @@ public class AutenticacionController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Renueva el token JWT a partir de la cabecera Authorization.
+     *
+     * @param authHeader cabecera con el token Bearer
+     * @return nuevo token o 401 si no se proporcionó
+     */
     @PostMapping("/refresh-token")
     @Operation(summary = "Renovar token JWT", description = "Genera un nuevo token JWT usando el token actual")
     public ResponseEntity<LoginResponse> refreshToken(@RequestHeader(value = "Authorization", required = false) String authHeader) {
@@ -39,6 +57,12 @@ public class AutenticacionController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Registra un usuario nuevo en el sistema.
+     *
+     * @param request datos del usuario a crear
+     * @return usuario creado con estado 201
+     */
     @PostMapping("/registro")
     @Operation(summary = "Registrar nuevo usuario", description = "Crea un nuevo usuario en el sistema")
     public ResponseEntity<UsuarioDTO> registrar(@Valid @RequestBody CrearUsuarioRequest request) {
@@ -46,6 +70,12 @@ public class AutenticacionController {
         return ResponseEntity.status(201).body(usuario);
     }
 
+    /**
+     * Crea un usuario nuevo con permisos de administrador.
+     *
+     * @param request datos del usuario a crear
+     * @return usuario creado con estado 201
+     */
     @PostMapping("/usuarios")
     @Operation(summary = "Crear nuevo usuario (Admin)", description = "Crea un nuevo usuario en el sistema con permisos de administrador")
     public ResponseEntity<UsuarioDTO> crearUsuario(@Valid @RequestBody CrearUsuarioRequest request) {
@@ -53,6 +83,12 @@ public class AutenticacionController {
         return ResponseEntity.status(201).body(usuario);
     }
 
+    /**
+     * Obtiene los datos de un usuario por su identificador.
+     *
+     * @param id identificador del usuario
+     * @return datos del usuario
+     */
     @GetMapping("/usuarios/{id}")
     @Operation(summary = "Obtener usuario por ID", description = "Retorna los datos de un usuario específico")
     public ResponseEntity<UsuarioDTO> obtenerUsuario(@PathVariable Long id) {
@@ -60,6 +96,13 @@ public class AutenticacionController {
         return ResponseEntity.ok(usuario);
     }
 
+    /**
+     * Lista los usuarios de una sucursal, con filtro opcional por estado.
+     *
+     * @param sucursalId identificador de la sucursal
+     * @param activo filtra por usuarios activos cuando es verdadero
+     * @return lista de usuarios de la sucursal
+     */
     @GetMapping("/usuarios/sucursal/{sucursalId}")
     @Operation(summary = "Obtener usuarios por sucursal", description = "Retorna todos los usuarios activos de una sucursal")
     public ResponseEntity<?> obtenerUsuariosPorSucursal(
@@ -69,6 +112,13 @@ public class AutenticacionController {
         return ResponseEntity.ok(usuarios);
     }
 
+    /**
+     * Actualiza los datos de un usuario existente.
+     *
+     * @param id identificador del usuario
+     * @param request datos a actualizar
+     * @return usuario actualizado
+     */
     @PutMapping("/usuarios/{id}")
     @Operation(summary = "Actualizar usuario", description = "Actualiza los datos de un usuario")
     public ResponseEntity<UsuarioDTO> actualizarUsuario(
@@ -78,6 +128,12 @@ public class AutenticacionController {
         return ResponseEntity.ok(usuario);
     }
 
+    /**
+     * Desactiva (da de baja) un usuario del sistema.
+     *
+     * @param id identificador del usuario
+     * @return mensaje de confirmación
+     */
     @DeleteMapping("/usuarios/{id}")
     @Operation(summary = "Dar de baja usuario", description = "Desactiva un usuario del sistema")
     public ResponseEntity<?> desactivarUsuario(@PathVariable Long id) {
@@ -87,6 +143,12 @@ public class AutenticacionController {
         }});
     }
 
+    /**
+     * Reactiva un usuario previamente desactivado.
+     *
+     * @param id identificador del usuario
+     * @return usuario reactivado
+     */
     @PostMapping("/usuarios/{id}/reactivar")
     @Operation(summary = "Reactivar usuario", description = "Reactiva un usuario desactivado")
     public ResponseEntity<UsuarioDTO> reactivarUsuario(@PathVariable Long id) {
@@ -94,6 +156,13 @@ public class AutenticacionController {
         return ResponseEntity.ok(usuario);
     }
 
+    /**
+     * Cambia el rol asignado a un usuario.
+     *
+     * @param id identificador del usuario
+     * @param rolId identificador del nuevo rol
+     * @return usuario con el rol actualizado
+     */
     @PutMapping("/usuarios/{id}/rol")
     @Operation(summary = "Cambiar rol de usuario", description = "Cambia el rol asignado a un usuario")
     public ResponseEntity<UsuarioDTO> cambiarRolUsuario(

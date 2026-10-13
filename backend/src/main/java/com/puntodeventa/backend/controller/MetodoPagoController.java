@@ -24,6 +24,11 @@ public class MetodoPagoController {
     
     private final MetodoPagoService metodoPagoService;
     
+    /**
+     * Obtiene todos los métodos de pago.
+     *
+     * @return lista completa de métodos de pago
+     */
     @GetMapping
     @Operation(summary = "Obtener todos los métodos de pago")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -31,6 +36,11 @@ public class MetodoPagoController {
         return ResponseEntity.ok(metodoPagoService.obtenerTodos());
     }
     
+    /**
+     * Obtiene solo los métodos de pago activos.
+     *
+     * @return lista de métodos de pago activos
+     */
     @GetMapping("/activos")
     @Operation(summary = "Obtener métodos de pago activos")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -38,6 +48,12 @@ public class MetodoPagoController {
         return ResponseEntity.ok(metodoPagoService.obtenerActivos());
     }
     
+    /**
+     * Obtiene un método de pago por su identificador.
+     *
+     * @param id identificador del método de pago
+     * @return método de pago encontrado
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Obtener método de pago por ID")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -45,6 +61,12 @@ public class MetodoPagoController {
         return ResponseEntity.ok(metodoPagoService.obtenerPorId(id));
     }
     
+    /**
+     * Crea un método de pago nuevo.
+     *
+     * @param dto datos del método de pago
+     * @return método de pago creado con estado 201
+     */
     @PostMapping
     @Operation(summary = "Crear nuevo método de pago")
     @PreAuthorize("hasRole('ADMIN')")
@@ -53,6 +75,13 @@ public class MetodoPagoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
     
+    /**
+     * Actualiza un método de pago existente.
+     *
+     * @param id identificador del método de pago
+     * @param dto datos a actualizar
+     * @return método de pago actualizado
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar método de pago")
     @PreAuthorize("hasRole('ADMIN')")
@@ -62,6 +91,12 @@ public class MetodoPagoController {
         return ResponseEntity.ok(metodoPagoService.actualizar(id, dto));
     }
     
+    /**
+     * Elimina un método de pago.
+     *
+     * @param id identificador del método de pago
+     * @return sin contenido
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar método de pago")
     @PreAuthorize("hasRole('ADMIN')")

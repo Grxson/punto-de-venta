@@ -28,6 +28,11 @@ public class IngredienteService {
     private final GastoRepository gastoRepository;
     private final InventarioMapper mapper;
 
+    /**
+     * Lista todos los ingredientes activos, ordenados por nombre.
+     *
+     * @return Lista de DTO con los ingredientes activos; no se cachea si viene vacía.
+     */
     @Cacheable(value = "ingredientes", unless = "#result.isEmpty()")
     public List<IngredienteDTO> obtenerTodos() {
         return ingredienteRepository.findAllActivosOrdenado().stream()
@@ -35,6 +40,11 @@ public class IngredienteService {
                 .toList();
     }
 
+    /**
+     * Lista los ingredientes activos, ordenados por nombre.
+     *
+     * @return Lista de DTO de los ingredientes activos.
+     */
     @Cacheable(value = "ingredientes", key = "'activos'")
     public List<IngredienteDTO> obtenerActivos() {
         return ingredienteRepository.findAllActivosOrdenado().stream()
@@ -42,6 +52,13 @@ public class IngredienteService {
                 .toList();
     }
 
+    /**
+     * Obtiene un ingrediente por su identificador.
+     *
+     * @param id Identificador del ingrediente.
+     * @return DTO del ingrediente encontrado.
+     * @throws ResourceNotFoundException si el ingrediente no existe.
+     */
     @Cacheable(value = "ingredientes", key = "#id")
     public IngredienteDTO obtenerPorId(Long id) {
         Ingrediente ingrediente = ingredienteRepository.findById(id)
@@ -49,22 +66,48 @@ public class IngredienteService {
         return mapper.toIngredienteDTO(ingrediente);
     }
 
+    /**
+     * Obtiene los ingredientes de una categoría.
+     *
+     * @param categoria Nombre de la categoría.
+     * @return Lista de DTO con los ingredientes de esa categoría.
+     */
     public List<IngredienteDTO> obtenerPorCategoria(String categoria) {
         return ingredienteRepository.findByCategoria(categoria).stream()
                 .map(mapper::toIngredienteDTO)
                 .toList();
     }
 
+    /**
+     * Obtiene las categorías de ingredientes registradas.
+     *
+     * @return Lista de nombres de categoría distintos.
+     */
     public List<String> obtenerCategorias() {
         return ingredienteRepository.findAllCategorias();
     }
 
+    /**
+     * Busca ingredientes cuyo nombre contenga el texto indicado.
+     *
+     * @param nombre Fragmento de nombre a localizar, sin distinción de mayúsculas.
+     * @return Lista de DTO con los ingredientes coincidentes.
+     */
     public List<IngredienteDTO> buscarPorNombre(String nombre) {
         return ingredienteRepository.findByNombreContainingIgnoreCase(nombre).stream()
                 .map(mapper::toIngredienteDTO)
                 .toList();
     }
 
+    /**
+     * Crea un ingrediente.
+     * Si se vincula a un gasto, se copia su monto al costo total del gasto y se
+     * conserva el factor de conversión textual para la unidad de gasto.
+     *
+     * @param dto Datos del ingrediente a crear.
+     * @return DTO del ingrediente creado.
+     * @throws ResourceNotFoundException si la unidad base, el proveedor, el gasto o la unidad de gasto no existen.
+     */
     @CacheEvict(value = "ingredientes", allEntries = true)
     @Transactional
     public IngredienteDTO crear(IngredienteDTO dto) {
@@ -119,6 +162,17 @@ public class IngredienteService {
         return mapper.toIngredienteDTO(ingrediente);
     }
 
+    /**
+     * Actualiza un ingrediente existente.
+     * Si se deja de vincular a un gasto, se limpian gasto, costo total, unidad de
+     * gasto y factor de conversión para no arrastrar datos obsoletos.
+     *
+     * @param id  Identificador del ingrediente a actualizar.
+     * @param dto Datos a aplicar sobre el ingrediente.
+     * @return DTO del ingrediente actualizado.
+     * @throws ResourceNotFoundException si el ingrediente, la unidad base, el proveedor, el gasto
+     *                                   o la unidad de gasto no existen.
+     */
     @CacheEvict(value = "ingredientes", allEntries = true)
     @Transactional
     public IngredienteDTO actualizar(Long id, IngredienteDTO dto) {
@@ -179,6 +233,12 @@ public class IngredienteService {
         return mapper.toIngredienteDTO(ingrediente);
     }
 
+    /**
+     * Da de baja un ingrediente de forma lógica.
+     *
+     * @param id Identificador del ingrediente a desactivar.
+     * @throws ResourceNotFoundException si el ingrediente no existe.
+     */
     @CacheEvict(value = "ingredientes", allEntries = true)
     @Transactional
     public void eliminar(Long id) {

@@ -6,8 +6,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * DTO optimizado para reporte de movimiento de inventario por producto.
- * Estructura dinámica que solo incluye días con operación.
+ * Reporte de movimientos de inventario por producto.
+ *
+ * <p>Es el response del endpoint de reportes de inventario: entrega una estructura dinámica
+ * que solo incluye los días con operación, en lugar de un rango completo de fechas.
+ *
+ * @param diasOperacion días del periodo que tuvieron algún movimiento
+ * @param productos productos incluidos en el reporte, cada uno con su detalle diario
  */
 public record InventarioMovimientoReporteDTO(
     List<LocalDate> diasOperacion,
@@ -16,6 +21,11 @@ public record InventarioMovimientoReporteDTO(
     
     /**
      * Información de un producto con sus movimientos diarios.
+     *
+     * @param id identificador del producto
+     * @param nombre nombre del producto
+     * @param datos movimientos del producto por día
+     * @param totales totales consolidados del producto en el periodo
      */
     public record ProductoInventarioDTO(
         Long id,
@@ -26,6 +36,12 @@ public record InventarioMovimientoReporteDTO(
     
     /**
      * Movimientos de un producto en un día específico.
+     *
+     * @param inicio stock con el que se abrió el día
+     * @param compra cantidad ingresada por compras del día
+     * @param venta cantidad consumida por ventas del día
+     * @param merma cantidad perdida por mermas del día
+     * @param queda stock con el que cerró el día
      */
     public record DiaMovimientoDTO(
         BigDecimal inicio,

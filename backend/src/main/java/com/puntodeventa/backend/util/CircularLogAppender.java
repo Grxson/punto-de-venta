@@ -16,13 +16,23 @@ public class CircularLogAppender extends AppenderBase<ILoggingEvent> {
     private static LogService logService;
 
     /**
-     * Inyección estática del LogService.
-     * Se llama una vez que el bean está disponible.
+     * Inyecta el {@link LogService} de forma estática.
+     * Logback instancia el appender antes de que exista el contexto de Spring,
+     * por eso se invoca una única vez cuando el bean ya está disponible.
+     *
+     * @param service Servicio destino de las entradas de log.
      */
     public static void setLogService(LogService service) {
         CircularLogAppender.logService = service;
     }
 
+    /**
+     * Traduce cada evento de Logback a una entrada de bitácora y la encola.
+     * Los errores se absorben a propósito: fallar al registrar un log nunca debe
+     * propagarse al flujo de negocio de la aplicación.
+     *
+     * @param event Evento emitido por Logback.
+     */
     @Override
     protected void append(ILoggingEvent event) {
         if (logService == null) {
@@ -32,7 +42,7 @@ public class CircularLogAppender extends AppenderBase<ILoggingEvent> {
         try {
             // Convertir evento de Logback a LogEntry
             LogEntry logEntry = new LogEntry(
-                    System.nanoTime(),  // ID único basado en nanosegundos
+                    System.nanoTime(),  // el nanosegundo evita colisiones de id en ráfagas
                     event.getLevel().levelStr,
                     event.getLoggerName(),
                     event.getFormattedMessage(),
@@ -54,7 +64,12 @@ public class CircularLogAppender extends AppenderBase<ILoggingEvent> {
     }
 
     /**
-     * Formatea la excepción si existe.
+     * Serializa la excepción asociada al evento, si la hay.
+     * El traza se trunca a 10 líneas porque el buffer circular es de tamaño
+     * acotado y una pila completa consumiría el espacio de otras entradas.
+     *
+     * @param event Evento emitido por Logback.
+     * @return Traza formateada, o {@code null} si el evento no trae excepción.
      */
     private String formatThrowable(ILoggingEvent event) {
         if (event.getThrowableProxy() == null) {
@@ -82,8 +97,8 @@ public class CircularLogAppender extends AppenderBase<ILoggingEvent> {
     }
 
     /**
-     * Obtiene la sucursal desde el contexto actual (si existe).
-     * Implementar según tu lógica de negocio.
+     * Resuelve la sucursal activa para etiquetar la entrada de bitácora.
+     * @return Identificador de sucursal, o {@code "DEFAULT"} si no hay contexto.
      */
     private String obtenerSucursal() {
         // TODO: Obtener de contexto de Spring Security o ThreadLocal
@@ -91,8 +106,8 @@ public class CircularLogAppender extends AppenderBase<ILoggingEvent> {
     }
 
     /**
-     * Obtiene el usuario actual desde el contexto.
-     * Implementar según tu lógica de autenticación.
+     * Resuelve el usuario responsable de la operación para etiquetar la entrada.
+     * @return Nombre de usuario, o {@code "SISTEMA"} si no hay contexto.
      */
     private String obtenerUsuario() {
         // TODO: Obtener de Spring Security

@@ -19,16 +19,32 @@ import type { Producto } from '../../types/productos.types';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface ProductosTableProps {
+  /** Productos a listar. */
   productos: Producto[];
+  /** Indica que los productos se están cargando. */
   loading?: boolean;
+  /** Abre la edición del producto seleccionado. */
   onEdit: (producto: Producto) => void;
+  /** Activa o desactiva el producto (borrado lógico). */
   onDelete: (producto: Producto) => void;
+  /** Elimina el producto de forma definitiva; solo se ofrece a administradores. */
   onDeletePermanente?: (producto: Producto) => void;
+  /** Abre la gestión de tamaños/variantes del producto. */
   onView?: (producto: Producto) => void;
+  /** Abre la gestión de ingredientes/componentes del producto. */
   onViewAtributos?: (producto: Producto) => void;
+  /** Indica que una acción de vista está en curso para mostrar spinner. */
   loadingView?: boolean;
 }
 
+/**
+ * Tabla del catálogo de productos.
+ * Muestra producto, SKU, precio, estado y número de variantes, con acciones para
+ * editar, activar/desactivar, gestionar variantes e ingredientes y, para
+ * administradores, eliminar definitivamente.
+ *
+ * @param props - Propiedades descritas en {@link ProductosTableProps}.
+ */
 export default function ProductosTable({
   productos,
   loading = false,

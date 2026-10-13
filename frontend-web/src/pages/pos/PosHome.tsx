@@ -33,48 +33,83 @@ import { useSubcategorias } from '../../hooks/useSubcategorias';
 import { limpiarNombreVariante } from '../../utils/stringFormatters';
 import type { CategoriaSubcategoria } from '../../types/subcategorias.types';
 
+/** Producto del menú del punto de venta, con su posible grupo de variantes. */
 interface Producto {
+  /** Id del producto. */
   id: number;
+  /** Nombre del producto. */
   nombre: string;
+  /** Precio de venta. */
   precio: number;
+  /** Id de la categoría, si tiene. */
   categoriaId: number | null;
+  /** Nombre de la categoría, si tiene. */
   categoriaNombre: string | null;
+  /** Indica si el producto está activo. */
   activo: boolean;
+  /** Indica si debe mostrarse en el menú. */
   disponibleEnMenu?: boolean;
+  /** Id del producto base, si es una variante. */
   productoBaseId?: number | null;
+  /** Nombre de la variante. */
   nombreVariante?: string | null;
+  /** Orden de la variante dentro del grupo. */
   ordenVariante?: number | null;
+  /** Variantes del producto cuando es un producto base. */
   variantes?: Producto[]; // Lista de variantes si este es un producto base
 }
 
+/**
+ * Pantalla principal del punto de venta: catálogo por categoría/subcategoría y carrito.
+ * @remarks Carga productos y categorías, filtra por categoría y subcategoría, y resuelve
+ * la subcategoría de cada producto a partir de un prefijo o palabras clave del nombre.
+ * Guarda la selección en preferencias del usuario y refresca por WebSocket.
+ */
 export default function PosHome() {
   const navigate = useNavigate();
   const location = useLocation();
   const { cart, addToCart, removeFromCart, updateQuantity, updateItemPrice, itemCount, total } = useCart();
+  /** Productos activos y visibles en el menú. */
   const [productos, setProductos] = useState<Producto[]>([]);
+  /** Categorías del menú ordenadas. */
   const [categorias, setCategorias] = useState<{ id: number; nombre: string; orden?: number }[]>([]);
+  /** Categoría seleccionada, restaurada desde preferencias. */
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | null>(() => {
     // Intentar restaurar la categoría guardada al inicializar
     // Nota: esto puede ser null si aún no se han cargado las categorías
     return userPreferencesService.getPosSelectedCategory();
   });
+  /** Subcategoría seleccionada, restaurada desde preferencias. */
   const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<number | null>(() => {
     // Restaurar la subcategoría guardada al montar el componente
     return userPreferencesService.getPosSubcategoryId();
   });
+  /** Indica la carga inicial del catálogo. */
   const [loading, setLoading] = useState(true);
+  /** Indica una recarga manual del menú. */
   const [refreshing, setRefreshing] = useState(false);
+  /** Mensaje de error de la última carga. */
   const [error, setError] = useState<string | null>(null);
+  /** Aviso temporal tras refrescar el menú. */
   const [refreshSuccess, setRefreshSuccess] = useState(false);
+  /** Muestra el mensaje de venta completada. */
   const [ventaExitosa, setVentaExitosa] = useState(false);
+  /** Controla el diálogo de selección de variantes. */
   const [dialogoVariantes, setDialogoVariantes] = useState(false);
+  /** Producto base cuyas variantes se están eligiendo. */
   const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
+  /** Controla el segundo diálogo de variantes (subvariantes). */
   const [dialogoVariantes2, setDialogoVariantes2] = useState(false);
+  /** Variante intermedia en el flujo de dos niveles. */
   const [varianteIntermedia, setVarianteIntermedia] = useState<Producto | null>(null);
+  /** Subvariantes de la variante intermedia. */
   const [subVariantes, setSubVariantes] = useState<Producto[]>([]);
+  /** Estado de expansión del panel del carrito. */
   const [carritoExpandido, setCarritoExpandido] = useState(true);
   // Estado local para edición inline de precio por item del carrito
+  /** Id del ítem del carrito cuyo precio se está editando. */
   const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
+  /** Valor en edición del precio del ítem. */
   const [editingPriceValue, setEditingPriceValue] = useState<string>('');
   const mostrarMensajeRef = useRef(false);
   const timerCompletadoRef = useRef(false);
@@ -174,6 +209,10 @@ export default function PosHome() {
     }
   }, [subcategoriaSeleccionada, categoriaSeleccionada]);
 
+  /**
+   * Carga categorías y productos del menú, y restaura la categoría/subcategoría guardadas.
+   * @remarks Si la categoría guardada ya no existe se limpian las preferencias.
+   */
   const loadData = async () => {
     try {
       setLoading(true);
@@ -234,7 +273,9 @@ export default function PosHome() {
     }
   };
 
-  // Función para actualizar/refrescar el menú sin recarga de página
+  /**
+   * Refresca el menú sin recargar la página y muestra un aviso temporal.
+   */
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
@@ -266,14 +307,23 @@ export default function PosHome() {
     }
   };
 
-  // Función para determinar la subcategoría de un producto de desayunos
-  // Función para obtener el nombre limpio del producto (sin prefijo de subcategoría)
+  /**
+   * Quita del nombre del producto un prefijo de subcategoría `[SUBCATEGORIA]`.
+   * @param nombreProducto - Nombre original del producto.
+   * @returns El nombre sin el prefijo, recortado.
+   */
   const obtenerNombreLimpio = (nombreProducto: string): string => {
     // Remover el prefijo [SUBCATEGORIA] si existe
     return nombreProducto.replace(/^\[[^\]]+\]\s*/, '').trim();
   };
 
-  // Función para obtener la subcategoría de un producto basada en su nombre
+  /**
+   * Resuelve a qué subcategoría pertenece un producto.
+   * @param nombreProducto - Nombre del producto, con posible prefijo `[SUBCATEGORIA]`.
+   * @param subcategoriasDisponibles - Subcategorías de la categoría activa.
+   * @returns El id de la subcategoría, o `null` si no se identifica.
+   * @remarks Primero intenta el prefijo; si no hay, cae a coincidencia por palabras clave.
+   */
   const obtenerSubcategoriaDeProducto = (nombreProducto: string, subcategoriasDisponibles: CategoriaSubcategoria[]): number | null => {
     if (!nombreProducto || subcategoriasDisponibles.length === 0) return null;
 
@@ -316,6 +366,11 @@ export default function PosHome() {
     });
   }
 
+  /**
+   * Maneja el click en una tarjeta de producto.
+   * @param producto - Producto pulsado.
+   * @remarks Si tiene variantes abre el selector; si no, lo agrega directo al carrito.
+   */
   const handleProductoClick = (producto: Producto) => {
     // Si el producto tiene variantes, mostrar diálogo de selección
     if (producto.variantes && producto.variantes.length > 0) {
@@ -327,6 +382,12 @@ export default function PosHome() {
     }
   };
 
+  /**
+   * Selecciona una variante dentro del selector de variantes.
+   * @param variante - Variante pulsada.
+   * @remarks Si la variante tiene subvariantes abre un segundo diálogo; si su precio es
+   * cero (producto aún sin precio final) no la agrega.
+   */
   const handleSeleccionarVariante = async (variante: Producto) => {
     // Si la variante es un grupo con sub-variantes (ej. Jugo Mixto: combinación -> tamaño),
     // abrir segundo diálogo para elegir el tamaño exacto.
@@ -349,6 +410,10 @@ export default function PosHome() {
     agregarVarianteAlCarrito(variante);
   };
 
+  /**
+   * Agrega la variante final al carrito y cierra los diálogos de selección.
+   * @param variante - Variante a agregar.
+   */
   const agregarVarianteAlCarrito = (variante: Producto) => {
     // Agregar directamente al carrito
     const nombreCompleto = variante.nombre.trim();
@@ -372,10 +437,15 @@ export default function PosHome() {
     setSubVariantes([]);
   };
 
+  /**
+   * Agrega al carrito la subvariante elegida.
+   * @param sub - Subvariante seleccionada.
+   */
   const handleSeleccionarSubVariante = (sub: Producto) => {
     agregarVarianteAlCarrito(sub);
   };
 
+  /** Agrega al carrito el producto base cuando se permite venderlo sin variante. */
   const handleAgregarProductoBase = () => {
     if (productoSeleccionado) {
       addToCart(productoSeleccionado);
@@ -384,11 +454,13 @@ export default function PosHome() {
     }
   };
 
+  /** Navega a la pantalla de pago desde el carrito flotante. */
   const handleCarritoClick = () => {
     // Ir directamente a pago desde el carrito flotante
     navigate('/pos/payment');
   };
 
+  /** Oculta el mensaje de venta completada. */
   const handleCerrarVentaExitosa = () => {
     setVentaExitosa(false);
   };

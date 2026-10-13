@@ -6,8 +6,16 @@ import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 
 /**
- * Request para item de compra.
- * Reutilizable en crear y actualizar.
+ * Línea de compra tal como la envía el cliente.
+ *
+ * <p>Versión mínima de {@link CompraItemDTO}: solo lleva los datos que el usuario digita,
+ * sin los campos calculados por el servidor. Se reutiliza tanto en la creación como en la
+ * actualización de una compra.
+ *
+ * @param ingredienteId ingrediente a comprar
+ * @param cantidad      cantidad solicitada; debe ser mayor que cero
+ * @param unidadId      unidad de medida de {@code cantidad}
+ * @param precioTotal   importe total de la línea
  */
 public record CompraItemRequest(
                 @NotNull(message = "El ID del ingrediente es obligatorio") Long ingredienteId,

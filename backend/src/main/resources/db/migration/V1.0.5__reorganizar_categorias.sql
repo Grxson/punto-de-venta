@@ -22,7 +22,7 @@ SELECT 'Chocomilks', TRUE, 6, 1 WHERE NOT EXISTS (SELECT 1 FROM categorias_produ
 UPDATE categorias_productos SET orden = 1 WHERE nombre = 'Desayunos' AND sucursal_id = 1 AND orden <> 1;
 UPDATE categorias_productos SET orden = 7 WHERE nombre = 'Extras' AND sucursal_id = 1 AND orden <> 7;
 
--- 3) Mover productos a sus categorías (UPDATE con subquery por nombre de categoría)
+-- 3) Mover productos a sus categorías (UPDATE con subconsulta por nombre de categoría)
 -- Desayunos: Waffle, Mini Hot Cakes, Molletes, Ingrediente Extra (venían de Especialidades)
 UPDATE productos SET categoria_id = (SELECT id FROM categorias_productos WHERE nombre = 'Desayunos' AND sucursal_id = 1)
 WHERE nombre IN ('Waffle', 'Mini Hot Cakes', 'Molletes', 'Ingrediente Extra') AND sucursal_id = 1

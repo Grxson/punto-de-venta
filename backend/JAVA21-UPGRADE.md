@@ -50,7 +50,7 @@ El proyecto utiliza Spring Boot 3.5.7, que tiene soporte completo para Java 21:
 
 ## Nuevas Características de Java 21 Disponibles
 
-### 1. Pattern Matching for Switch (JEP 441)
+### 1. Pattern Matching en Switch (JEP 441)
 ```java
 // Ejemplo de uso
 String formatObject(Object obj) {
@@ -123,7 +123,7 @@ public class ProductoDTO {
 public record ProductoDTO(Long id, String nombre, BigDecimal precio) {}
 ```
 
-### 2. Usar Pattern Matching en Controllers
+### 2. Usar Pattern Matching en Controladores
 ```java
 @ExceptionHandler
 public ResponseEntity<?> handleException(Exception ex) {
@@ -214,14 +214,14 @@ Agregar en `application.properties` o configurar en el script de inicio:
 
 1. **Refactorizar DTOs a Records**: Migrar gradualmente las clases DTO
 2. **Implementar Virtual Threads**: Para operaciones asíncronas de alto volumen
-3. **Modernizar Switch Statements**: Usar pattern matching donde sea apropiado
+3. **Modernizar sentencias Switch**: Usar pattern matching donde sea apropiado
 4. **Actualizar Tests**: Aprovechar nuevas características para tests más expresivos
 5. **Documentar Patrones**: Crear guías de uso de nuevas características Java 21
 
 ## Recursos Adicionales
 
-- [OpenJDK 21 Release Notes](https://openjdk.org/projects/jdk/21/)
-- [Spring Boot 3.5 Java 21 Support](https://spring.io/blog/2023/09/09/all-together-now-spring-boot-3-2-graalvm-native-images-java-21-and-virtual-threads)
+- [Notas de la versión de OpenJDK 21](https://openjdk.org/projects/jdk/21/)
+- [Soporte de Java 21 en Spring Boot 3.5](https://spring.io/blog/2023/09/09/all-together-now-spring-boot-3-2-graalvm-native-images-java-21-and-virtual-threads)
 - [JEPs en Java 21](https://openjdk.org/projects/jdk/21/)
 
 ## Notas de Compatibilidad

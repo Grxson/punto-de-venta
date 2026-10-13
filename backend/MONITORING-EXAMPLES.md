@@ -1,9 +1,9 @@
 # 🚀 Ejemplos Prácticos del Sistema de Monitoreo
 
-## Escenario 1: Debugging Local
+## Escenario 1: Depuración Local
 
 ### Situación
-Estás desarrollando una nueva feature y quieres ver en tiempo real qué pasa cuando haces cambios.
+Estás desarrollando una nueva funcionalidad y quieres ver en tiempo real qué pasa cuando haces cambios.
 
 ### Solución
 
@@ -17,7 +17,7 @@ cd backend
 ```bash
 watch -n 2 'curl -s http://localhost:8080/api/monitoring/health | jq ".memory"'
 
-# Output cada 2 segundos:
+# Salida cada 2 segundos:
 # {
 #   "max_mb": "2048.00",
 #   "used_mb": "512.25",
@@ -35,16 +35,16 @@ http://localhost:8080/monitoring
 # Ahora verás los logs en tiempo real mientras trabajas
 ```
 
-### Result
+### Resultado
 ```
 ✅ Ver qué logs genera cada cambio
-✅ Detectar memoria leaks
-✅ Identificar bottlenecks
+✅ Detectar fugas de memoria
+✅ Identificar cuellos de botella
 ```
 
 ---
 
-## Escenario 2: Debugging en Railway (Producción)
+## Escenario 2: Depuración en Railway (Producción)
 
 ### Situación
 Tu app en Railway de repente está lenta y no sabes por qué. Los usuarios se quejan.
@@ -58,7 +58,7 @@ https://mi-app.railway.app/monitoring
 
 **Paso 2: Ver estado actual**
 - Tab 🏥 Salud
-  - Memoria: 1024MB / 2048MB ⚠️ (50% usage, normal)
+  - Memoria: 1024MB / 2048MB ⚠️ (50% de uso, normal)
   - Threads: 250 (muchos!)
   - Uptime: 48h
 
@@ -84,7 +84,7 @@ Error encontrado:
 # Contar errores por tipo
 grep ERROR logs-*.txt | cut -d: -f3 | sort | uniq -c | sort -rn
 
-# Output:
+# Salida:
 #  45 Database connection timeout
 #  12 OutOfMemoryError
 #   8 ConnectionRefusedException
@@ -179,11 +179,11 @@ jobs:
           fi
 ```
 
-### Result
+### Resultado
 ```
 ✅ Tests solo corren si el servidor está OK
 ✅ Logs guardados en artifacts
-✅ Fácil debug si algo falla
+✅ Fácil de depurar si algo falla
 ```
 
 ---
@@ -265,7 +265,7 @@ for file in monitoring-logs/metrics-2025-12-*.log; do
 done
 ```
 
-### Result
+### Resultado
 ```
 ✅ Datos históricos de rendimiento
 ✅ Alertas automáticas
@@ -340,19 +340,19 @@ fi
 */5 * * * * /home/user/punto-de-venta/slack-monitor.sh
 ```
 
-### Result
+### Resultado
 ```
 ✅ Notificaciones en tiempo real
-✅ Team se entera de problemas al instante
-✅ Links directos al monitoring panel
+✅ El equipo se entera de problemas al instante
+✅ Enlaces directos al panel de monitoreo
 ```
 
 ---
 
-## Escenario 6: Análisis de Performance
+## Escenario 6: Análisis de Rendimiento
 
 ### Situación
-Necesitas entender cómo está el performance de tu app a lo largo del día.
+Necesitas entender cómo está el rendimiento de tu app a lo largo del día.
 
 ### Solución
 
@@ -381,21 +381,21 @@ jq -s 'map(.cpu.process_cpu_time_seconds | tonumber) | add / length' performance
 ```bash
 #!/bin/bash
 {
-    echo "# Performance Report - $(date)"
+    echo "# Reporte de Rendimiento - $(date)"
     echo ""
-    echo "## Memory Stats"
-    echo "Max Heap: $(jq -s 'map(.memory.heap_used_mb | tonumber) | max' performance.jsonl) MB"
-    echo "Avg Heap: $(jq -s 'map(.memory.heap_used_mb | tonumber) | add / length' performance.jsonl) MB"
+    echo "## Estadísticas de memoria"
+    echo "Heap máximo: $(jq -s 'map(.memory.heap_used_mb | tonumber) | max' performance.jsonl) MB"
+    echo "Heap promedio: $(jq -s 'map(.memory.heap_used_mb | tonumber) | add / length' performance.jsonl) MB"
     echo ""
-    echo "## Thread Stats"
-    echo "Max Threads: $(jq -s 'map(.threads.live_count) | max' performance.jsonl)"
-    echo "Avg Threads: $(jq -s 'map(.threads.live_count) | add / length' performance.jsonl)"
+    echo "## Estadísticas de threads"
+    echo "Threads máximo: $(jq -s 'map(.threads.live_count) | max' performance.jsonl)"
+    echo "Threads promedio: $(jq -s 'map(.threads.live_count) | add / length' performance.jsonl)"
 } > performance-report.md
 
 cat performance-report.md
 ```
 
-### Result
+### Resultado
 ```
 ✅ Datos cuantitativos de rendimiento
 ✅ Identificar picos y valles
@@ -421,7 +421,7 @@ Hubo un problema en producción hace 2 horas. Necesitas investigar qué pasó.
 ./monitor.sh https://mi-app.railway.app errors 1000 > incident-errors.txt
 ```
 
-**2. Analizar timeline**
+**2. Analizar la línea de tiempo**
 ```bash
 # Extrae logs del momento del incidente
 grep "2025-12-08 14:3[0-9]" incident-logs.txt
@@ -457,42 +457,42 @@ grep "14:30" incident-logs.txt | grep -i thread
 grep "connection" incident-errors.txt
 ```
 
-**5. Crear timeline**
+**5. Crear línea de tiempo**
 ```
-14:25 - Sistema normal, 200MB memory, 50 threads
+14:25 - Sistema normal, 200MB de memoria, 50 threads
 14:28 - ERROR: Connection timeout (primero)
-14:29 - Memory sube a 500MB
+14:29 - La memoria sube a 500MB
 14:30 - 200 threads activos (anormal)
 14:31 - OutOfMemoryError
-14:32 - Crash y reinicio
+14:32 - Caída y reinicio
 14:33 - Sistema recuperado
 ```
 
 **6. Documentar**
 ```markdown
-# Post-Mortem: Incident 2025-12-08
+# Post-Mortem: Incidente 2025-12-08
 
-## Timeline
-- 14:28: Connection pool exhausted
-- 14:31: OOM Error
-- 14:32: Auto-restart triggered
+## Línea de tiempo
+- 14:28: Pool de conexiones agotado
+- 14:31: Error OOM
+- 14:32: Reinicio automático activado
 
-## Root Cause
-Database connection leak en endpoint `/api/productos`
-Connected pero no closed después de error
+## Causa raíz
+Fuga de conexión a la base de datos en el endpoint `/api/productos`
+Conectado pero no cerrado después del error
 
-## Fix
-- Cerrar connections en finally block
-- Añadir timeout configurables
-- Mejorar pool monitoring
+## Solución
+- Cerrar conexiones en finally block
+- Añadir timeouts configurables
+- Mejorar el monitoreo del pool
 
-## Prevention
-- Auto-restart en OOM (ya existe)
-- Alert cuando threads > 150
-- Alert cuando memory > 75%
+## Prevención
+- Reinicio automático en OOM (ya existe)
+- Alerta cuando threads > 150
+- Alerta cuando la memoria > 75%
 ```
 
-### Result
+### Resultado
 ```
 ✅ Identificar causa raíz
 ✅ Documentar para el futuro
@@ -506,11 +506,11 @@ Connected pero no closed después de error
 | Escenario | Herramienta | Propósito |
 |-----------|------------|----------|
 | Desarrollo local | Panel web + CLI | Ver logs en vivo |
-| Debug en producción | Panel web | Acceso rápido a logs |
-| Testing automatizado | API REST + bash | Health checks |
+| Depuración en producción | Panel web | Acceso rápido a logs |
+| Pruebas automatizadas | API REST + bash | Health checks |
 | Monitoreo continuo | Cron + script | Datos históricos |
-| Alertas | Slack integration | Notificaciones |
-| Performance analysis | jq + Python | Reportes |
+| Alertas | Integración con Slack | Notificaciones |
+| Análisis de rendimiento | jq + Python | Reportes |
 | Post-mortem | Logs descargados | Análisis detallado |
 
 ---

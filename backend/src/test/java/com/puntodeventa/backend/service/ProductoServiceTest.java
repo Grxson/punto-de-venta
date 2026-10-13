@@ -20,7 +20,7 @@ import java.math.BigDecimal;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests para ProductoService
+ * Pruebas para ProductoService
  * Verifica que la lógica de productos y variantes funciona correctamente
  */
 @SpringBootTest
@@ -144,7 +144,7 @@ class ProductoServiceTest {
         }
 
         /**
-         * ✅ TEST CRÍTICO: Verificar que al editar subcategoría de una variante,
+         * ✅ PRUEBA CRÍTICA: Verificar que al editar subcategoría de una variante,
          * el campo product_base_id se preserva (NO se vuelve NULL)
          */
         @Test
@@ -188,7 +188,7 @@ class ProductoServiceTest {
                 Producto varianteAfter = productoRepository.findById(variante1.getId())
                                 .orElseThrow();
                 assertNotNull(varianteAfter.getProductoBase(),
-                                "❌ BUG: El product_base_id no debe ser NULL después de actualizar la categoría");
+                                "❌ ERROR: El product_base_id no debe ser NULL después de actualizar la categoría");
                 assertEquals(productoBase.getId(), varianteAfter.getProductoBase().getId(),
                                 "product_base_id debe seguir apuntando al mismo producto base");
                 assertEquals(categoria2.getId(), varianteAfter.getCategoria().getId(),
@@ -340,31 +340,31 @@ class ProductoServiceTest {
         }
 
         /**
-         * 🔧 BUG FIX TEST: Verificar que editar categoría de una variante NO anula
+         * 🔧 PRUEBA DE CORRECCIÓN: Verificar que editar categoría de una variante NO anula
          * product_base_id
          * 
-         * Reproduce el flujo del bug:
+         * Reproduce el flujo del error:
          * 1. Crear variante con productoBaseId = X
          * 2. Editar solo la categoría de la variante (sin enviar productoBaseId)
          * 3. Verificar que productoBaseId se mantiene (NO se vuelve null)
          * 
-         * Antes del fix: variante perdía su productoBaseId y se convertía en producto
+         * Antes de la corrección: variante perdía su productoBaseId y se convertía en producto
          * independiente
-         * Después del fix: variante mantiene su relación con el producto base
+         * Después de la corrección: variante mantiene su relación con el producto base
          */
         @Test
         void testEditVarianteCategoryPreservesProductoBaseId() {
                 reinitializeContext();
 
-                // Arrange: Verificar que la variante tiene productoBaseId
+                // Preparación: Verificar que la variante tiene productoBaseId
                 Producto varianteActual = productoRepository.findById(variante1.getId())
                                 .orElseThrow(() -> new RuntimeException("Variante no encontrada"));
                 Long productoBaseIdAntes = varianteActual.getProductoBase().getId();
                 assertEquals(productoBase.getId(), productoBaseIdAntes,
                                 "La variante debe tener una referencia al producto base antes de editar");
 
-                // Act: Editar solo la categoría (SIN enviar productoBaseId en el DTO)
-                // Este es el escenario del bug: frontend envía categoriaId pero no
+                // Ejecución: Editar solo la categoría (SIN enviar productoBaseId en el DTO)
+                // Este es el escenario del error: el frontend envía categoriaId pero no
                 // productoBaseId
                 ProductoDTO updateDTO = new ProductoDTO(
                                 variante1.getId(),
@@ -386,15 +386,15 @@ class ProductoServiceTest {
 
                 ProductoDTO actualizado = productoService.actualizar(variante1.getId(), updateDTO);
 
-                // Assert: Verificar que productoBaseId se preservó
+                // Verificación: Verificar que productoBaseId se preservó
                 assertNotNull(actualizado.productoBaseId(),
-                                "❌ BUG: productoBaseId se volvió NULL después de editar categoría");
+                                "❌ ERROR: productoBaseId se volvió NULL después de editar categoría");
                 assertEquals(productoBase.getId(), actualizado.productoBaseId(),
                                 "La variante debe mantener su referencia al producto base después de editar categoría");
                 assertEquals(categoria2.getId(), actualizado.categoriaId(),
                                 "La categoría debe haberse actualizado correctamente");
 
-                // Verify en BD: Confirmar que la BD también preserva la relación
+                // Verificación en BD: Confirmar que la BD también preserva la relación
                 Producto varianteEnBD = productoRepository.findById(variante1.getId())
                                 .orElseThrow(() -> new RuntimeException("Variante no encontrada en BD"));
                 assertNotNull(varianteEnBD.getProductoBase(),
@@ -404,7 +404,7 @@ class ProductoServiceTest {
         }
 
         /**
-         * 🔒 TEST DE TRANSACCIÓN: Verificar que los cambios son atómicos
+         * 🔒 PRUEBA DE TRANSACCIÓN: Verificar que los cambios son atómicos
          * Si algo falla durante la actualización, la variante NO debe quedar en estado
          * inconsistente
          */
@@ -412,11 +412,11 @@ class ProductoServiceTest {
         void testEditVarianteCategoryTransactional() {
                 reinitializeContext();
 
-                // Arrange
+                // Preparación
                 Long varianteId = variante1.getId();
                 Long productoBaseIdEsperado = productoBase.getId();
 
-                // Act: Actualizar
+                // Ejecución: Actualizar
                 ProductoDTO updateDTO = new ProductoDTO(
                                 varianteId,
                                 variante1.getNombre(),
@@ -437,7 +437,7 @@ class ProductoServiceTest {
 
                 ProductoDTO resultado = productoService.actualizar(varianteId, updateDTO);
 
-                // Assert: Verificar estado atómico
+                // Verificación: Verificar estado atómico
                 assertEquals(categoria2.getId(), resultado.categoriaId(),
                                 "Categoría debe actualizarse");
                 assertEquals(productoBaseIdEsperado, resultado.productoBaseId(),

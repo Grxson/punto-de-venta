@@ -10,6 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Servicio de registro y consulta de mermas.
+ * La merma representa pérdida de ingrediente (caducidad, daño, etc.) y alimenta
+ * el costo de desperdicio; no modifica el stock directamente.
+ */
 @Service
 public class MermaService {
     @Autowired
@@ -25,6 +30,11 @@ public class MermaService {
     private com.puntodeventa.backend.repository.UsuarioRepository usuarioRepository;
 
     // Métodos CRUD y de consulta
+    /**
+     * Lista todas las mermas registradas.
+     *
+     * @return Lista de DTO con todas las mermas.
+     */
     @Transactional(readOnly = true)
     public List<MermaDTO> listarTodas() {
         return mermaRepository.findAll().stream()
@@ -32,6 +42,12 @@ public class MermaService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Obtiene una merma por su identificador.
+     *
+     * @param id Identificador de la merma.
+     * @return DTO de la merma, o {@code null} si no existe.
+     */
     @Transactional(readOnly = true)
     public MermaDTO obtenerPorId(Long id) {
         return mermaRepository.findById(id)
@@ -39,6 +55,12 @@ public class MermaService {
             .orElse(null);
     }
 
+    /**
+     * Obtiene las mermas de un ingrediente.
+     *
+     * @param ingredienteId Identificador del ingrediente.
+     * @return Lista de DTO con las mermas de ese ingrediente.
+     */
     @Transactional(readOnly = true)
     public List<MermaDTO> obtenerPorIngrediente(Long ingredienteId) {
         return mermaRepository.findAll().stream()
@@ -47,6 +69,15 @@ public class MermaService {
             .collect(Collectors.toList());
     }
 
+    /**
+     * Registra una merma.
+     * El costo total se calcula como cantidad por costo unitario cuando no viene
+     * informado, y la fecha toma el momento actual si no se envía.
+     *
+     * @param dto Datos de la merma a registrar.
+     * @return DTO de la merma persistida.
+     * @throws IllegalArgumentException si el ingrediente o la unidad son obligatorios y no existen.
+     */
     @Transactional
     public MermaDTO registrarMerma(MermaDTO dto) {
         // Crear la entidad directamente

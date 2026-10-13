@@ -221,7 +221,7 @@ public ResponseEntity<VentaDTO> cancelarVenta(
 
 ---
 
-### 10. **Cliente Frecuente / Loyalty**
+### 10. **Cliente Frecuente / Lealtad**
 **Estado:** ⏸️ PENDIENTE  
 **Prioridad:** BAJA  
 **Descripción:**
@@ -276,7 +276,7 @@ app.ventas.validar-stock=true
 **Próximos pasos sugeridos:**
 1. Endpoint `GET /api/productos/{id}/costos/historico` (paginado, orden descendente por fecha)
 2. Política de retención (ej: mantener últimos N registros o últimos 18 meses)
-3. Flag de origen adicional (IMPORTACION, AJUSTE_MANUAL)
+3. Indicador de origen adicional (IMPORTACION, AJUSTE_MANUAL)
 4. Integrar en estadísticas para mostrar tendencia de margen.
 
 
@@ -296,7 +296,7 @@ app.ventas.validar-stock=true
 - ✅ quitar referencia de el método de pago de transferencia y tarjeta 
 - Agregar apartado en caso de que vendamos cosas fueras de menú (extraordinarios)
 - ✅ en la ventana de pagar hacer función para editar precio en caso de, solo dar clic al número 
-- ✅ cuando se seleccione el método de pago ya se debe de pagar automáticamente, para no dar clic en el botón de pagar ![alt text](image.png)
+- ✅ cuando se seleccione el método de pago ya se debe de pagar automáticamente, para no dar clic en el botón de pagar ![texto alternativo](image.png)
 - ✅ insumo en gastos como predeterminado, y efectivo por default
 - ✅ en vez de nota - concepto o descripción 
 - ✅ quitar referencia del form de gasto
@@ -330,7 +330,7 @@ app.ventas.validar-stock=true
   - Interfaz `GastoPendiente` para gastos temporales
   - Estado `gastosPendientes` array
   - Métodos `handleAgregarGasto()` y `handleRemoverGasto()`
-  - `handleSubmit()` actualizado para batch submit
+  - `handleSubmit()` actualizado para envío por lotes
   - UI: layout horizontal (4 columnas) + tabla de gastos pendientes
 
 **Cambios clave en lógica:**
@@ -338,10 +338,10 @@ app.ventas.validar-stock=true
 // Auto-selecciona "Insumos" (categoriaId) e "Efectivo" (metodoPagoId) en useEffect
 // handleAgregarGasto valida y agrega a gastosPendientes[]
 // handleSubmit mapea gastosPendientes[] a requests y ejecuta Promise.all()
-// Cada gasto se crea independiente en BD con shared fecha/metodoPagoId
+// Cada gasto se crea independiente en BD con la misma fecha/metodoPagoId
 ```
 
-**Layout UI (Horizontal - 4 columnas):**
+**Diseño de UI (Horizontal - 4 columnas):**
 - Columna 1: Select Categoría (size=small, default="Insumos")
 - Columna 2: TextField Monto (type=number, step=0.01)
 - Columna 3: Select Proveedor (size=small, opcional)

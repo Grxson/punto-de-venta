@@ -130,25 +130,25 @@ Después: Ingrediente | Cant.    | U.     | Merma     | Costo       | X
 ## 🔧 Cambios Técnicos Detallados
 
 ### AdminRecipes.tsx
-- ✅ Changed: Dialog `maxWidth` de "lg" a "md"
-- ✅ Removed: Campos "Descripción" y "Notas"
-- ✅ Removed: Secciones contenedor con box y bordes
-- ✅ Removed: Display de costo directo deshabilitado
-- ✅ Changed: Spacing de `mb: 3` a dinámico (mt: 2, mt: 2.5)
-- ✅ Changed: Padding de `pt: 2` a `pt: 1`
-- ✅ Improved: Layout directo sin componentes intermedios
+- ✅ Cambiado: Dialog `maxWidth` de "lg" a "md"
+- ✅ Eliminado: Campos "Descripción" y "Notas"
+- ✅ Eliminado: Secciones contenedor con box y bordes
+- ✅ Eliminado: Visualización de costo directo deshabilitado
+- ✅ Cambiado: Spacing de `mb: 3` a dinámico (mt: 2, mt: 2.5)
+- ✅ Cambiado: Padding de `pt: 2` a `pt: 1`
+- ✅ Mejorado: Layout directo sin componentes intermedios
 
 ### AgregarIngredientesReceta.tsx
-- ✅ Changed: Button size de "medium" a "small"
-- ✅ Changed: Spacing de `spacing={2}` a `spacing={1}`
-- ✅ Changed: TextField de `margin="normal"` a `margin="dense"` + `size="small"`
-- ✅ Changed: CardContent padding de default a `p: 1.5`
-- ✅ Removed: Título "Agregar Nuevo Ingrediente"
-- ✅ Removed: Información de costo calculado expandida
-- ✅ Removed: Columnas redundantes en tabla
-- ✅ Changed: Header labels más cortos
-- ✅ Changed: Font sizes en tabla a 0.85-0.9rem
-- ✅ Changed: Row height y padding mínimos
+- ✅ Cambiado: Button size de "medium" a "small"
+- ✅ Cambiado: Spacing de `spacing={2}` a `spacing={1}`
+- ✅ Cambiado: TextField de `margin="normal"` a `margin="dense"` + `size="small"`
+- ✅ Cambiado: CardContent padding de default a `p: 1.5`
+- ✅ Eliminado: Título "Agregar Nuevo Ingrediente"
+- ✅ Eliminado: Información de costo calculado expandida
+- ✅ Eliminado: Columnas redundantes en tabla
+- ✅ Cambiado: Etiquetas de encabezado más cortas
+- ✅ Cambiado: Tamaños de fuente en tabla a 0.85-0.9rem
+- ✅ Cambiado: Altura de fila y padding mínimos
 
 ---
 
@@ -170,7 +170,7 @@ Si deseas optimizaciones adicionales:
 
 1. **Colapsar "Costos Adicionales"** - Mostrar solo si son necesarios
 2. **Tabs en lugar de scroll** - Información General | Ingredientes | Configuración
-3. **Inline editing** - Editar cantidad de ingredientes sin modal interno
+3. **Edición en línea** - Editar cantidad de ingredientes sin modal interno
 4. **Guardado automático** - Guardar progresivamente mientras se completa
 
 ---

@@ -6,19 +6,30 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usuariosService } from '../services/usuarios.service';
 import type { Usuario, CrearUsuarioRequest, EditarUsuarioRequest } from '../types/usuario.types';
 
-// Query keys para usuarios
+/**
+ * Fábrica de claves de caché de React Query para usuarios.
+ * Centralizarlas permite invalidar listas y detalles de forma coherente.
+ */
 export const usuariosKeys = {
+  /** Prefijo común de todas las claves de usuarios. */
   all: ['usuarios'] as const,
+  /** Prefijo de las listas de usuarios. */
   lists: () => [...usuariosKeys.all, 'list'] as const,
+  /** Lista de usuarios de una sucursal, opcionalmente filtrada por estado activo. */
   listBySucursal: (sucursalId: number, activo?: boolean) =>
     [...usuariosKeys.lists(), { sucursalId, activo }] as const,
+  /** Prefijo de los detalles de usuario. */
   details: () => [...usuariosKeys.all, 'detail'] as const,
+  /** Detalle de un usuario concreto. */
   detail: (id: number) => [...usuariosKeys.details(), id] as const,
 };
 
 /**
- * Hook para obtener usuarios de una sucursal
- * Caché: 5 minutos
+ * Hook para obtener usuarios de una sucursal.
+ *
+ * @param sucursalId - Id de la sucursal cuyos usuarios se quieren listar.
+ * @param activo - Filtro opcional de estado: `true` solo activos, `false` solo inactivos, `undefined` ambos.
+ * @returns Resultado de `useQuery` con la lista de usuarios de la sucursal.
  */
 export const useUsuarios = (sucursalId: number, activo?: boolean) => {
   return useQuery({
@@ -29,7 +40,10 @@ export const useUsuarios = (sucursalId: number, activo?: boolean) => {
 };
 
 /**
- * Hook para obtener un usuario por ID
+ * Hook para obtener un usuario por su id.
+ *
+ * @param id - Id del usuario a consultar.
+ * @returns Resultado de `useQuery` con el usuario solicitado.
  */
 export const useUsuario = (id: number) => {
   return useQuery({
@@ -40,7 +54,10 @@ export const useUsuario = (id: number) => {
 };
 
 /**
- * Hook para crear un usuario
+ * Hook para crear un usuario.
+ *
+ * @param sucursalId - Sucursal cuya lista se invalida al terminar. Si se omite, se usa la del usuario creado.
+ * @returns Resultado de `useMutation` que expone `mutate`/`mutateAsync`, `isPending`, `error`, etc.
  */
 export const useCrearUsuario = (sucursalId?: number) => {
   const queryClient = useQueryClient();
@@ -70,7 +87,10 @@ export const useCrearUsuario = (sucursalId?: number) => {
 };
 
 /**
- * Hook para actualizar un usuario
+ * Hook para actualizar un usuario.
+ *
+ * @param sucursalId - Sucursal cuya lista se invalida al terminar. Si se omite, se usa la de los datos enviados.
+ * @returns Resultado de `useMutation` que espera `{ id, data }` y expone `mutate`/`mutateAsync`, `isPending`, `error`, etc.
  */
 export const useActualizarUsuario = (sucursalId?: number) => {
   const queryClient = useQueryClient();
@@ -101,7 +121,10 @@ export const useActualizarUsuario = (sucursalId?: number) => {
 };
 
 /**
- * Hook para cambiar rol de un usuario
+ * Hook para cambiar el rol de un usuario.
+ *
+ * @param sucursalId - Sucursal cuya lista se invalida al terminar.
+ * @returns Resultado de `useMutation` que espera `{ id, rolId }` y expone `mutate`/`mutateAsync`, `isPending`, `error`, etc.
  */
 export const useCambiarRol = (sucursalId?: number) => {
   const queryClient = useQueryClient();
@@ -127,7 +150,10 @@ export const useCambiarRol = (sucursalId?: number) => {
 };
 
 /**
- * Hook para desactivar un usuario
+ * Hook para desactivar (borrado lógico) un usuario.
+ *
+ * @param sucursalId - Sucursal cuya lista se invalida al terminar.
+ * @returns Resultado de `useMutation` que espera el `id` del usuario y expone `mutate`/`mutateAsync`, `isPending`, `error`, etc.
  */
 export const useDesactivarUsuario = (sucursalId?: number) => {
   const queryClient = useQueryClient();
@@ -152,7 +178,9 @@ export const useDesactivarUsuario = (sucursalId?: number) => {
 };
 
 /**
- * Hook para reactivar un usuario
+ * Hook para reactivar un usuario.
+ *
+ * @returns Resultado de `useMutation` que espera el `id` del usuario y expone `mutate`/`mutateAsync`, `isPending`, `error`, etc.
  */
 export const useReactivarUsuario = () => {
   const queryClient = useQueryClient();

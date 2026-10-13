@@ -6,7 +6,7 @@
 3. [Documentación de APIs](#documentación-de-apis)
 4. [Modernización con Java 21](#modernización-con-java-21)
 5. [Base de Datos](#base-de-datos)
-6. [Testing con Postman](#testing-con-postman)
+6. [Pruebas con Postman](#pruebas-con-postman)
 7. [Despliegue](#despliegue)
 
 ---
@@ -125,7 +125,7 @@ git tag -a v1.0.0 -m "Release 1.0.0 - Primera versión estable"
 git push origin develop --tags
 ```
 
-#### 4. Verificar Build Info
+#### 4. Verificar la información del build
 El JAR incluye información de build accesible via API:
 ```bash
 # Ejecutar la app
@@ -149,14 +149,14 @@ Respuesta:
 
 ### Empaquetado para Diferentes Plataformas
 
-#### App Móvil (React Native)
+#### Aplicación Móvil (React Native)
 El backend expone una API REST que será consumida por:
 - **Android**: APK/AAB compilado con React Native
 - **iOS**: IPA compilado con React Native
 
 La app móvil consultará `/api/version` para verificar compatibilidad.
 
-#### App de Escritorio (Electron/Tauri - Futuro)
+#### Aplicación de Escritorio (Electron/Tauri - Futuro)
 Similar a móvil, consumirá la misma API REST.
 
 #### Configuración CORS
@@ -396,29 +396,29 @@ spring.datasource.password=${DB_PASSWORD}
    - Usuarios, Roles
    - Inventario (Ingredientes, Recetas, Movimientos)
 
-2. **Crear Repositories** (Spring Data JPA)
-3. **Crear Services** con lógica de negocio
-4. **Crear Controllers** con endpoints REST
+2. **Crear Repositorios** (Spring Data JPA)
+3. **Crear Servicios** con lógica de negocio
+4. **Crear Controladores** con endpoints REST
 5. **Documentar con Swagger**
 
 ---
 
-## 🧪 Testing con Postman
+## 🧪 Pruebas con Postman
 
 ### Importar API a Postman
 
 #### Método 1: Desde OpenAPI JSON (Recomendado)
 1. Iniciar la aplicación: `./mvnw spring-boot:run`
 2. Abrir Postman
-3. Click en **Import**
+3. Haz clic en **Import**
 4. Seleccionar **Link**
 5. Pegar: `http://localhost:8080/api-docs`
-6. Click **Continue** > **Import**
+6. Haz clic **Continue** > **Import**
 7. ✅ La colección completa se importa automáticamente
 
 #### Método 2: Desde Swagger UI
 1. Abrir: http://localhost:8080/swagger-ui.html
-2. Click en el link del OpenAPI JSON (arriba)
+2. Haz clic en el link del OpenAPI JSON (arriba)
 3. Copiar todo el JSON
 4. En Postman: Import > Paste Raw Text > Pegar JSON
 5. Import
@@ -535,15 +535,15 @@ sudo systemctl status puntodeventa
 
 ---
 
-## 📝 Checklist de Desarrollo
+## 📝 Lista de verificación de Desarrollo
 
 ### Antes de Crear un Endpoint
 - [ ] Consultar `docs/datos/modelo-datos.md` y `docs/datos/especificacion-bd.md`
 - [ ] Crear DTO como **Record** en `dto/`
-- [ ] Crear Entity en `model/` (si no existe)
-- [ ] Crear Repository en `repository/`
-- [ ] Crear Service en `service/` con `@Transactional`
-- [ ] Crear Controller en `controller/` con documentación Swagger
+- [ ] Crear Entidad en `model/` (si no existe)
+- [ ] Crear Repositorio en `repository/`
+- [ ] Crear Servicio en `service/` con `@Transactional`
+- [ ] Crear Controlador en `controller/` con documentación Swagger
 - [ ] Usar Pattern Matching donde sea apropiado
 - [ ] Probar en Swagger UI
 - [ ] Exportar a Postman y crear tests

@@ -3,8 +3,21 @@ import { ReporteContextType, ReporteDTO, KPIAdmin } from '../types/reportes';
 import { useAuth } from '../hooks/useAuth';
 import { apiClient } from '../services/api/axiosInstance';
 
+/**
+ * Contexto de reportes de ventas, gastos y ganancias.
+ */
 export const ReporteContext = createContext<ReporteContextType | undefined>(undefined);
 
+/**
+ * Proveedor de los reportes y KPIs.
+ *
+ * El alcance de los datos depende del rol: un administrador recibe el reporte
+ * general, el desglose por sucursal y los KPIs; el resto de usuarios solo
+ * obtiene su reporte personal.
+ *
+ * @param props.children Subárbol que consume el contexto.
+ * @returns El proveedor con el valor de estado y acciones.
+ */
 export function ReporteProvider({ children }: { children: React.ReactNode }) {
   const { isAdmin } = useAuth();
   const [reporteGeneral, setReporteGeneral] = useState<ReporteDTO | null>(null);
@@ -22,6 +35,8 @@ export function ReporteProvider({ children }: { children: React.ReactNode }) {
   const [fechaFin, setFechaFin] = useState<Date>(hoy);
   const [sucursalFiltro, setSucursalFiltro] = useState<number | null>(null);
 
+  // El backend espera fechas en formato ISO (yyyy-MM-dd), por eso se recorta
+  // la marca de tiempo en lugar de enviar el `toISOString()` completo.
   const cargarReportes = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -70,6 +85,14 @@ export function ReporteProvider({ children }: { children: React.ReactNode }) {
     setFechaFin(fin);
   }, []);
 
+  /**
+   * Resuelve el reporte que corresponde a los filtros activos.
+   *
+   * Para un administrador con filtro de sucursal devuelve el reporte de esa
+   * sucursal; en cualquier otro caso devuelve el reporte general.
+   *
+   * @returns El reporte vigente o `null` si aún no se ha cargado.
+   */
   const obtenerReporteActual = useCallback((): ReporteDTO | null => {
     if (!isAdmin) return reporteGeneral;
     if (sucursalFiltro) return reportesPorSucursal.get(sucursalFiltro) || null;

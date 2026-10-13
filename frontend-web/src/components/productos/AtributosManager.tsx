@@ -33,26 +33,46 @@ import {
 import { Edit, Delete, Add, Close } from '@mui/icons-material';
 import apiService from '../../services/api.service';
 
+/** Opción seleccionable dentro de un atributo (ingrediente/componente). */
 interface Opcion {
+  /** Id de la opción, ausente mientras se edita sin guardar. */
   id?: number;
+  /** Nombre visible de la opción. */
   nombre: string;
+  /** Precio adicional que suma la opción al producto. */
   precioExtra: number;
 }
 
+/** Atributo de un producto, con sus opciones de selección. */
 interface Atributo {
+  /** Id del atributo, ausente mientras se edita sin guardar. */
   id?: number;
+  /** Nombre del atributo. */
   nombre: string;
+  /** Permite una sola opción (`SIMPLE`) o varias (`MULTIPLE`). */
   tipo: 'SIMPLE' | 'MULTIPLE';
+  /** Indica si el cliente debe elegir una opción obligatoriamente. */
   requerido: boolean;
+  /** Opciones disponibles del atributo. */
   opciones: Opcion[];
 }
 
 interface AtributosManagerProps {
+  /** Id del producto al que pertenecen los atributos. */
   productoId: number;
+  /** Nombre del producto, usado como contexto en la interfaz. */
   productoNombre: string;
+  /** Notifica al padre que los atributos cambiaron para que refresque sus datos. */
   onUpdate: () => void;
 }
 
+/**
+ * Gestor de ingredientes/componentes de un producto.
+ * Lista los atributos con sus opciones y permite crear, editar y eliminar tanto
+ * atributos como opciones mediante diálogos.
+ *
+ * @param props - Propiedades descritas en {@link AtributosManagerProps}.
+ */
 export default function AtributosManager({ productoId, productoNombre, onUpdate }: AtributosManagerProps) {
   const [atributos, setAtributos] = useState<Atributo[]>([]);
   const [loading, setLoading] = useState(false);

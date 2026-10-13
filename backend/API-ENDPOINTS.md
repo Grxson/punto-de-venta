@@ -577,13 +577,13 @@ Control de pérdidas de ingredientes con motivos y registro histórico.
 | Código | Descripción |
 |--------|-------------|
 | 200 | OK - Solicitud exitosa |
-| 201 | Created - Recurso creado exitosamente |
-| 204 | No Content - Operación exitosa sin contenido de respuesta |
-| 400 | Bad Request - Datos de entrada inválidos |
-| 401 | Unauthorized - Falta autenticación |
-| 403 | Forbidden - Sin permisos para acceder al recurso |
-| 404 | Not Found - Recurso no encontrado |
-| 500 | Internal Server Error - Error interno del servidor |
+| 201 | Creado - Recurso creado exitosamente |
+| 204 | Sin contenido - Operación exitosa sin contenido de respuesta |
+| 400 | Solicitud incorrecta - Datos de entrada inválidos |
+| 401 | No autorizado - Falta autenticación |
+| 403 | Prohibido - Sin permisos para acceder al recurso |
+| 404 | No encontrado - Recurso no encontrado |
+| 500 | Error interno del servidor - Error interno del servidor |
 
 ---
 

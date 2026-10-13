@@ -139,7 +139,7 @@ Características:
 
 ## 📖 Documentación
 
-### 1. API Documentation
+### 1. Documentación de la API
 Se creó `backend/INVENTARIO-API.md` con:
 - Descripción de todos los endpoints
 - Ejemplos de request/response

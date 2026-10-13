@@ -1,4 +1,4 @@
-# Fix de Deployment Railway - 27 Nov 2025
+# Corrección de deploy en Railway - 27 Nov 2025
 
 ## Problema Identificado
 
@@ -14,7 +14,7 @@
 
 ## Soluciones Aplicadas
 
-### 1. Frontend - TypeScript Configuration
+### 1. Frontend - Configuración de TypeScript
 
 **Archivo modificado**: `frontend-web/tsconfig.app.json`
 
@@ -24,7 +24,7 @@
     // ... otras opciones
     "verbatimModuleSyntax": false,  // Era true
     
-    /* Linting - Relaxed for production build */
+    /* Linting - Relajado para build de producción */
     "strict": false,                 // Era true
     "noUnusedLocals": false,
     "noUnusedParameters": false,
@@ -46,7 +46,7 @@ dist/assets/mui-VUv6Ys0G.js     344.60 kB
 dist/assets/index-jaUaztX_.js   921.82 kB
 ```
 
-### 2. Backend - Railway Configuration
+### 2. Backend - Configuración de Railway
 
 **Archivo removido**: `railway.toml` en la raíz del repositorio
 
@@ -60,7 +60,7 @@ dist/assets/index-jaUaztX_.js   921.82 kB
 
 ## Configuración Correcta de Railway
 
-### Backend Service
+### Servicio Backend
 
 **Root Directory**: `backend`
 
@@ -77,7 +77,7 @@ DATABASE_URL=[PostgreSQL connection string]
 CORS_ALLOWED_ORIGINS=[frontend URL]
 ```
 
-### Frontend Service
+### Servicio Frontend
 
 **Root Directory**: `frontend-web`
 
@@ -174,7 +174,7 @@ fix: Configurar TypeScript y Railway para deployment en producción
 - Build del frontend ahora compila exitosamente
 ```
 
-## Testing Post-Deploy
+## Pruebas Post-Deploy
 
 ### Frontend
 1. Verificar que carga la página principal

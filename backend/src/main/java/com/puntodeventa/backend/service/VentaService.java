@@ -21,8 +21,14 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Servicio para gestión de ventas.
- * Incluye lógica de cálculo de totales y descuento de inventario.
+ * Servicio de gestión de ventas.
+ * Concentra el cálculo de totales, la validación de precios y descuentos en
+ * servidor, el descuento automático de inventario por recetas y la reversión de
+ * ese descuento cuando la venta se cancela.
+ * <p>
+ * Toda lectura y escritura se acota a la sucursal del usuario autenticado, que se
+ * toma de {@link SucursalContext}; una sucursal indicada en la petición nunca
+ * amplía ese alcance.
  */
 @Slf4j
 @Service
@@ -47,6 +53,12 @@ public class VentaService {
      * ✅ SEGREGACIÓN: Obtener solo ventas de la sucursal del usuario actual
      * 🔧 OPTIMIZACIÓN: Usa paginación en BD (no en memoria)
      * 📅 FILTRO: Filtra por rango de fechas (por defecto, hoy)
+     *
+     * @param page  Índice de página, comenzando en cero.
+     * @param size  Cantidad de ventas por página.
+     * @param desde Fecha inicial en formato {@code yyyy-MM-dd}, o {@code null} para el día actual.
+     * @param hasta Fecha final en formato {@code yyyy-MM-dd}, o {@code null} para el día actual.
+     * @return Lista de DTO con la página solicitada de ventas.
      */
     public List<VentaDTO> obtenerTodas(int page, int size, String desde, String hasta) {
         Long sucursalId = SucursalContext.getSucursalId();
@@ -76,12 +88,23 @@ public class VentaService {
     }
 
     /**
-     * Sobrecarga para compatibilidad (sin fechas, carga solo de hoy)
+     * Sobrecarga para compatibilidad: sin fechas, carga solo las ventas del día actual.
+     *
+     * @param page Índice de página, comenzando en cero.
+     * @param size Cantidad de ventas por página.
+     * @return Lista de DTO con la página solicitada de ventas de hoy.
      */
     public List<VentaDTO> obtenerTodas(int page, int size) {
         return obtenerTodas(page, size, null, null);
     }
 
+    /**
+     * Obtiene una venta por su identificador.
+     *
+     * @param id Identificador de la venta.
+     * @return DTO de la venta encontrada.
+     * @throws ResourceNotFoundException si la venta no existe o pertenece a otra sucursal.
+     */
     public VentaDTO obtenerPorId(Long id) {
         // ✅ SEGREGACIÓN: Validar que la venta pertenece a la sucursal del usuario
         Long sucursalId = SucursalContext.getSucursalId();
@@ -98,6 +121,9 @@ public class VentaService {
 
     /**
      * ✅ SEGREGACIÓN: Obtener ventas por estado en la sucursal del usuario actual
+     *
+     * @param estado Estado de la venta, por ejemplo {@code cerrada} o {@code cancelada}.
+     * @return Lista de DTO de las ventas de la sucursal con ese estado.
      */
     public List<VentaDTO> obtenerPorEstado(String estado) {
         Long sucursalId = SucursalContext.getSucursalId();
@@ -106,6 +132,14 @@ public class VentaService {
                 .toList();
     }
 
+    /**
+     * Obtiene todas las ventas de una sucursal indicada explícitamente.
+     * No se acota a la sucursal del contexto: es el punto de entrada para reportes
+     * administrativos que sí tienen visibilidad transversal.
+     *
+     * @param sucursalId Identificador de la sucursal consultada.
+     * @return Lista de DTO con todas las ventas de esa sucursal.
+     */
     public List<VentaDTO> obtenerPorSucursal(Long sucursalId) {
         return ventaRepository.findBySucursalId(sucursalId).stream()
                 .map(this::toDTO)
@@ -113,8 +147,11 @@ public class VentaService {
     }
 
     /**
-     * ✅ SEGREGACIÓN: Obtener ventas por rango de fechas en la sucursal del usuario
-     * actual
+     * ✅ SEGREGACIÓN: Obtener ventas por rango de fechas en la sucursal del usuario actual
+     *
+     * @param fechaInicio Fecha y hora iniciales del período, ambas inclusive.
+     * @param fechaFin    Fecha y hora final del período, ambas inclusive.
+     * @return Lista de DTO con las ventas del período.
      */
     public List<VentaDTO> obtenerPorRangoFechas(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         Long sucursalId = SucursalContext.getSucursalId();
@@ -132,6 +169,22 @@ public class VentaService {
         return resultado;
     }
 
+    /**
+     * Registra una venta completa: calcula totales, valida el descuento, exige que
+     * los pagos cubran el total y descuenta el inventario consumido por las recetas.
+     * <p>
+     * La notificación WebSocket se difiere con
+     * {@code TransactionSynchronizationManager} porque emitirla antes del commit
+     * expondría al cliente una venta que todavía podría revertirse.
+     *
+     * @param request Datos de la venta: items, pagos, descuento, canal y nota.
+     * @return DTO de la venta ya persistida.
+     * @throws ResourceNotFoundException si algún producto, método de pago o sucursal no existe.
+     * @throws IllegalArgumentException si una cantidad no es positiva, el descuento excede el
+     *                                  límite del rol o los pagos no cubren el total.
+     * @throws IllegalStateException    si no hay caja o turno activo, o falta stock de un
+     *                                  ingrediente ya trackeado.
+     */
     @Transactional // Permite escritura (sobrescribe readOnly=true de la clase)
     public VentaDTO crearVenta(CrearVentaRequest request) {
         // ✅ SEGREGACIÓN: Auto-obtener sucursal del usuario actual
@@ -326,6 +379,12 @@ public class VentaService {
     /**
      * Selecciona la caja activa de la sucursal. Lanza IllegalStateException si no
      * existe ninguna (Auditoría 2026-09-11, A5/T1.4: sin fallback silencioso).
+     * Ante varias cajas activas se toma la de menor ID para que el resultado sea
+     * estable entre invocaciones.
+     *
+     * @param sucursalId Identificador de la sucursal.
+     * @return Identificador de la caja activa.
+     * @throws IllegalStateException si la sucursal no tiene ninguna caja activa.
      */
     private Long seleccionarCajaActiva(Long sucursalId) {
         return cajaRepository.findFirstBySucursalIdAndActivaTrueOrderByIdAsc(sucursalId)
@@ -335,9 +394,16 @@ public class VentaService {
     }
 
     /**
-     * Selecciona el turno activo de la caja (o de la sucursal si la caja no
-     * tiene). Lanza IllegalStateException si no existe ninguno (Auditoría
-     * 2026-09-11, A5/T1.4: sin fallback silencioso).
+     * Selecciona el turno activo de la caja, o de la sucursal si la caja no tiene.
+     * Lanza IllegalStateException si no existe ninguno (Auditoría 2026-09-11,
+     * A5/T1.4: sin fallback silencioso).
+     * El respaldo a nivel sucursal cubre puntos de venta que registran el turno
+     * sin haber aperturado caja.
+     *
+     * @param sucursalId Identificador de la sucursal.
+     * @param cajaId     Identificador de la caja, puede ser {@code null}.
+     * @return Identificador del turno activo.
+     * @throws IllegalStateException si no hay turno activo ni en la caja ni en la sucursal.
      */
     private Long seleccionarTurnoActivo(Long sucursalId, Long cajaId) {
         Optional<Turno> turno = cajaId != null
@@ -362,6 +428,9 @@ public class VentaService {
      * (existen movimientos ENTRADA/EGRESO).
      * Un ingrediente nunca registrado en inventario se descuenta igual pero sin
      * bloquear la venta (adopción progresiva).
+     *
+     * @param venta Venta ya persistida, cuyos items determinan lo que se consume.
+     * @throws IllegalStateException si falta stock de un ingrediente trackeado.
      */
     private void descontarInventario(Venta venta) {
         LocalDateTime ahora = LocalDateTime.now(java.time.ZoneId.of("America/Mexico_City"));
@@ -449,6 +518,11 @@ public class VentaService {
      * - Precio de request distinto + ADMIN/GERENTE → override permitido y
      * registrado.
      * - Precio de request distinto + CAJERO → se ignora, se usa precio de BD.
+     *
+     * @param itemDTO  Item recibido en la petición, con el precio que envía el cliente.
+     * @param producto Producto del catálogo, con el precio vigente en base de datos.
+     * @param usuario  Usuario autenticado que realiza la venta, puede ser {@code null}.
+     * @return Precio unitario con el que debe gravarse el item.
      */
     // package-private: visible para tests unitarios (T1.7)
     BigDecimal resolverPrecioUnitarioServidor(VentaItemDTO itemDTO, Producto producto, Usuario usuario) {
@@ -473,6 +547,12 @@ public class VentaService {
      * Valida el descuento en servidor (C1).
      * Cajero/rol sin permiso: máximo 10% del subtotal. ADMIN/GERENTE: hasta
      * subtotal.
+     *
+     * @param descuento Descuento solicitado.
+     * @param subtotal  Subtotal de la venta, contra el que se acota el descuento.
+     * @param usuario   Usuario autenticado, puede ser {@code null}.
+     * @throws IllegalArgumentException si el descuento es negativo, excede el subtotal
+     *                                  o supera el 10% para un rol sin permiso.
      */
     // package-private: visible para tests unitarios (T1.7)
     void validarDescuento(BigDecimal descuento, BigDecimal subtotal, Usuario usuario) {
@@ -493,7 +573,15 @@ public class VentaService {
         }
     }
 
-    // Método helper para conversión a DTO
+    /**
+     * Proyecta una venta con sus items y pagos a su DTO.
+     * Los atributos seleccionados del item se dejan fuera a propósito: se cargan
+     * bajo demanda desde {@code VentaItemAtributoSeleccionadoService} para no
+     * multiplicar las consultas en los listados.
+     *
+     * @param venta Entidad a proyectar.
+     * @return DTO con la venta, sus items y sus pagos.
+     */
     private VentaDTO toDTO(Venta venta) {
         List<VentaItemDTO> itemsDTO = venta.getItems().stream()
                 .map(item -> new VentaItemDTO(
@@ -614,6 +702,11 @@ public class VentaService {
      * Revierte los movimientos de inventario generados por una venta.
      * Crea movimientos de tipo "ENTRADA" (devolución) para compensar los "EGRESO"
      * (consumo).
+     * <p>
+     * Solo se revierten los egresos: los movimientos ajenos al consumo se
+     * referencia a la venta pero no fueron producidos por ella.
+     *
+     * @param venta Venta cuyos movimientos de consumo se deben revertir.
      */
     private void revertirMovimientosInventario(Venta venta) {
         // Buscar todos los movimientos de inventario relacionados con esta venta
@@ -627,8 +720,7 @@ public class VentaService {
 
         LocalDateTime ahora = LocalDateTime.now();
 
-// Crear movimiento de reversión (ENTRADA) para cada movimiento de consumo
-            // (EGRESO)
+        // Crear movimiento de reversión (ENTRADA) por cada movimiento de consumo
             for (InventarioMovimiento movimientoOriginal : movimientosVenta) {
                 // Solo revertir movimientos de tipo EGRESO (consumo)
                 if (!"EGRESO".equals(movimientoOriginal.getTipo())) {
@@ -869,6 +961,10 @@ public class VentaService {
 
     /**
      * Obtiene el usuario actual autenticado desde el SecurityContext.
+     * Se degrada a {@code null} ante cualquier fallo porque la identidad del
+     * usuario es información de auditoría, no un requisito para registrar la venta.
+     *
+     * @return Usuario autenticado, o {@code null} si no hay sesión válida.
      */
     private Usuario obtenerUsuarioActual() {
         try {

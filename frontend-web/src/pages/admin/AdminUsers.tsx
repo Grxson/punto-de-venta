@@ -32,14 +32,27 @@ import { UsuarioForm } from '../../components/admin/UsuarioForm';
 import { UsuariosTable } from '../../components/admin/UsuariosTable';
 import type { Usuario, CrearUsuarioRequest, EditarUsuarioRequest } from '../../types/usuario.types';
 
+/**
+ * Pantalla de gestión de usuarios: alta, edición, cambio de rol y desactivación.
+ * @remarks Se apoya en React Query (`useUsuarios`, `useRoles` y las mutaciones de
+ * `useUsuarios`) para cargar y mutar; el filtro por estado combina las consultas de
+ * activos e inactivos de la sucursal del usuario autenticado.
+ */
 export const AdminUsers = () => {
   const { sucursal: sucursalDelUsuario } = useAuth();
+  /** Sucursal activa; limita las consultas a sus usuarios. */
   const [sucursalId, setSucursalId] = useState<number | null>(null);
+  /** Filtro de estado: `undefined` muestra todos, `true`/`false` filtra. */
   const [filtroActivo, setFiltroActivo] = useState<boolean | undefined>(undefined); // undefined = mostrar todos
+  /** Controla la apertura del formulario de usuario. */
   const [formOpen, setFormOpen] = useState(false);
+  /** Usuario en edición; `undefined` implica alta. */
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | undefined>();
+  /** Controla el diálogo de confirmación de desactivación. */
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  /** Id del usuario pendiente de desactivar. */
   const [usuarioToDelete, setUsuarioToDelete] = useState<number | null>(null);
+  /** Notificación inferior con el resultado de la última operación. */
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -86,6 +99,10 @@ export const AdminUsers = () => {
   const cambiarRolMutation = useCambiarRol(sucursalId || undefined);
   const desactivarMutation = useDesactivarUsuario(sucursalId || undefined);
 
+  /**
+   * Abre el formulario en modo alta o edición.
+   * @param usuario - Usuario a editar; sin argumento abre el alta.
+   */
   const handleAbrirForm = (usuario?: Usuario) => {
     setSelectedUsuario(usuario);
     setFormOpen(true);
@@ -96,6 +113,10 @@ export const AdminUsers = () => {
     setSelectedUsuario(undefined);
   };
 
+  /**
+   * Crea o actualiza el usuario según haya uno seleccionado y notifica el resultado.
+   * @param data - Datos validados que emite `UsuarioForm`.
+   */
   const handleGuardarUsuario = async (data: CrearUsuarioRequest | EditarUsuarioRequest) => {
     try {
       if (selectedUsuario) {
@@ -156,6 +177,11 @@ export const AdminUsers = () => {
     setUsuarioToDelete(null);
   };
 
+  /**
+   * Reasigna el rol de un usuario.
+   * @param usuarioId - Id del usuario.
+   * @param rolId - Id del rol destino.
+   */
   const handleCambiarRol = async (usuarioId: number, rolId: number) => {
     try {
       await cambiarRolMutation.mutateAsync({ id: usuarioId, rolId });

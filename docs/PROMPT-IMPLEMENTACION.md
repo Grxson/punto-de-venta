@@ -1,6 +1,6 @@
 # PROMPT DE IMPLEMENTACIÓN — Auditoría Punto de Venta (2026-09-11)
 
-Copia este bloque completo en el agente implementador (main thread o `cavecrew-builder` por fases).
+Copia este bloque completo en el agente implementador (hilo principal o `cavecrew-builder` por fases).
 
 ---
 

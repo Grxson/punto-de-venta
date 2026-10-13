@@ -6,7 +6,7 @@
 ALTER TABLE categoria_subcategorias 
   ALTER COLUMN activa TYPE SMALLINT USING CASE WHEN activa THEN 1 ELSE 0 END;
 
--- Restaurar el constraint NOT NULL
+-- Restaurar la restricción NOT NULL
 ALTER TABLE categoria_subcategorias 
   ALTER COLUMN activa SET NOT NULL;
 

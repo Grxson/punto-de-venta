@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Auditoría 2026-09-11 (T1.7): reglas críticas de ventas.
- * - C1: precio del request ignorado para CAJERO, override solo ADMIN/GERENTE.
+ * - C1: precio del request ignorado para CAJERO, sobrescritura solo ADMIN/GERENTE.
  * - C2: descuento máximo 10% para CAJERO, hasta subtotal para ADMIN/GERENTE.
  */
 @DisplayName("🧮 Reglas de precio y descuento (C1/C2)")
@@ -61,14 +61,14 @@ class VentaServiceValidacionTest {
     }
 
     @Test
-    @DisplayName("✅ ADMIN con precio distinto al de BD: se permite override")
+    @DisplayName("✅ ADMIN con precio distinto al de BD: se permite sobrescribir")
     void testResolverPrecio_Admin_PermiteOverride() {
         Producto producto = productoPrecio(new BigDecimal("50.00"));
         VentaItemDTO item = itemPrecio(new BigDecimal("10.00"));
 
         BigDecimal result = service.resolverPrecioUnitarioServidor(item, producto, usuarioConRol("ADMIN"));
 
-        assertEquals(new BigDecimal("10.00"), result, "El admin puede override el precio");
+        assertEquals(new BigDecimal("10.00"), result, "El admin puede sobrescribir el precio");
     }
 
     @Test

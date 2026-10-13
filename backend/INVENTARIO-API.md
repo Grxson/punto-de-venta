@@ -381,7 +381,7 @@ GET /api/inventario/recetas/producto/1/costo
 
 ## 🔄 Flujo recomendado
 
-1. **Setup inicial:**
+1. **Configuración inicial:**
    - Crear unidades de medida (g, ml, kg, L, pza)
    - Crear proveedores
    

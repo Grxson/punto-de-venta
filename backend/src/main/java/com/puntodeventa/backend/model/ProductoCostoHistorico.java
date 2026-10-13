@@ -25,30 +25,38 @@ import java.time.LocalDateTime;
 @Builder
 public class ProductoCostoHistorico {
 
+    /** Identificador único del registro histórico. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Producto al que corresponde el cálculo; many-to-one obligatorio, un producto acumula varios registros. */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 
+    /** Costo de producción calculado en la fecha del registro. */
     @PositiveOrZero(message = "El costo debe ser positivo o cero")
     @Column(name = "costo", precision = 12, scale = 4)
     private BigDecimal costo;
 
+    /** Precio de venta vigente en la fecha del cálculo. */
     @Column(name = "precio", precision = 12, scale = 2)
     private BigDecimal precio;
 
+    /** Margen en valor absoluto (precio menos costo) al momento del cálculo. */
     @Column(name = "margen_absoluto", precision = 12, scale = 4)
     private BigDecimal margenAbsoluto;
 
+    /** Margen expresado como porcentaje sobre el precio de venta. */
     @Column(name = "margen_porcentaje", precision = 6, scale = 2)
     private BigDecimal margenPorcentaje; // % sobre precio
 
+    /** Fecha en que se calculó el costo; ordena el histórico del producto. */
     @Column(name = "fecha_calculo", nullable = false)
     private LocalDateTime fechaCalculo;
 
+    /** Origen del cálculo; ej: RECETA_RECALCULO_MANUAL, AJUSTE_MANUAL, IMPORTACION. */
     @Column(length = 100)
     private String fuente; // RECETA_RECALCULO_MANUAL, AJUSTE_MANUAL, IMPORTACION, etc.
 }

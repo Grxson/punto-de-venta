@@ -63,7 +63,7 @@ Esto creará el archivo `capacitor.config.ts` (ya incluido en el proyecto).
 
 ---
 
-## 🔧 PASO 3: Configurar Backend URL
+## 🔧 PASO 3: Configurar la URL del Backend
 
 ### 3.1 Editar `capacitor.config.ts`
 
@@ -179,7 +179,7 @@ En Android Studio:
 2. Esperar a que compile
 3. APK se generará en: `android/app/build/outputs/apk/debug/app-debug.apk`
 
-### 4.5 Generar APK de Producción (Signed)
+### 4.5 Generar APK de Producción (firmado)
 
 #### Crear Keystore:
 
@@ -279,8 +279,8 @@ En Xcode:
 2. **Product → Archive**
 3. **Distribute App**
 4. **Seleccionar método:**
-   - **Development**: Testing interno
-   - **Ad Hoc**: Testing con UDID registrados
+   - **Development**: Pruebas internas
+   - **Ad Hoc**: Pruebas con UDID registrados
    - **App Store**: Publicación en App Store
 
 ### 5.6 Actualizar Versión
@@ -360,11 +360,11 @@ Los ejecutables se generan en `electron/dist/`.
 
 ### 7.1 Sistema de Versionado
 
-Usar **Semantic Versioning** (MAJOR.MINOR.PATCH):
+Usar **Versionado Semántico** (MAJOR.MINOR.PATCH):
 
 - **MAJOR**: Cambios incompatibles con versiones anteriores
 - **MINOR**: Nuevas funcionalidades compatibles
-- **PATCH**: Correcciones de bugs
+- **PATCH**: Correcciones de errores
 
 ### 7.2 Antes de cada Release
 
@@ -403,9 +403,9 @@ git push origin develop --tags
 
 ---
 
-## 🧪 PASO 8: Testing
+## 🧪 PASO 8: Pruebas
 
-### 8.1 Test en Desarrollo
+### 8.1 Pruebas en Desarrollo
 
 ```bash
 # Android
@@ -415,18 +415,18 @@ npm run android
 npm run ios
 ```
 
-### 8.2 Test de Conectividad con Backend
+### 8.2 Prueba de Conectividad con el Backend
 
 Verificar que la app puede conectarse al backend de Railway:
 
 ```typescript
 import apiService from './services/api.service';
 
-// Test de health
+// Prueba de health
 const isHealthy = await apiService.checkHealth();
 console.log('Backend healthy:', isHealthy);
 
-// Test de versión
+// Prueba de versión
 const version = await apiService.getVersion();
 console.log('Backend version:', version.data);
 ```
@@ -445,7 +445,7 @@ console.log('Backend version:', version.data);
 
 ### Escritorio:
 - **Distribución directa**: Compartir ejecutables
-- **Auto-updater**: Configurar Electron Builder con actualización automática
+- **Actualización automática**: Configurar Electron Builder con actualización automática
 
 ---
 
@@ -482,7 +482,7 @@ const token = await EncryptedStorage.getItem('auth_token');
 
 ---
 
-## 🛠️ Troubleshooting
+## 🛠️ Solución de problemas
 
 ### Error: "Cleartext traffic not permitted"
 
@@ -536,7 +536,7 @@ pod install
 
 ---
 
-## ✅ Checklist Final
+## ✅ Lista de verificación final
 
 - [ ] Capacitor instalado e inicializado
 - [ ] `capacitor.config.ts` configurado con URL de Railway

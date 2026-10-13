@@ -22,11 +22,21 @@ import type { Producto } from '../../types/productos.types';
 import { productosService } from '../../services/productos.service';
 
 interface VariantesManagerProps {
+  /** Id del producto base cuyas variantes se gestionan. */
   productoId: number;
+  /** Nombre del producto, usado para construir el nombre de cada variante. */
   productoNombre: string;
+  /** Notifica al padre que las variantes cambiaron para que refresque sus datos. */
   onUpdate: () => void;
 }
 
+/**
+ * Gestor de variantes (tamaños o presentaciones) de un producto.
+ * Lista las variantes existentes y permite crearlas, editarlas y eliminarlas
+ * mediante un diálogo, reutilizando el servicio de productos.
+ *
+ * @param props - Propiedades descritas en {@link VariantesManagerProps}.
+ */
 export default function VariantesManager({ productoId, productoNombre, onUpdate }: VariantesManagerProps) {
   const [variantes, setVariantes] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(false);

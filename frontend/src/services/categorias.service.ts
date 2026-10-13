@@ -12,12 +12,17 @@ import {
   UpdateSubcategoriaRequest,
 } from '../types/categorias.types';
 
+/**
+ * Cliente de las operaciones sobre categorías y subcategorías.
+ */
 class CategoriasService {
   private readonly baseUrl = '/categorias-productos';
   private readonly subcategoriasBaseUrl = '/categorias';
 
   /**
    * Obtener todas las categorías activas
+   *
+   * @returns La lista de categorías con `activa=true`.
    */
   async obtenerCategorias(): Promise<Categoria[]> {
     try {
@@ -38,6 +43,9 @@ class CategoriasService {
 
   /**
    * Obtener una categoría por ID
+   *
+   * @param id Identificador de la categoría.
+   * @returns La categoría solicitada.
    */
   async obtenerCategoriaPorId(id: number): Promise<Categoria> {
     try {
@@ -58,6 +66,9 @@ class CategoriasService {
 
   /**
    * Obtener todas las subcategorías activas de una categoría
+   *
+   * @param categoriaId Identificador de la categoría padre.
+   * @returns Las subcategorías de esa categoría.
    */
   async obtenerSubcategorias(categoriaId: number): Promise<Subcategoria[]> {
     try {
@@ -81,6 +92,11 @@ class CategoriasService {
 
   /**
    * Obtener una categoría con sus subcategorías
+   *
+   * Ambas consultas se lanzan en paralelo porque son independientes entre sí.
+   *
+   * @param categoriaId Identificador de la categoría.
+   * @returns La categoría con su lista de subcategorías activas.
    */
   async obtenerCategoriaConSubcategorias(
     categoriaId: number
@@ -106,6 +122,10 @@ class CategoriasService {
 
   /**
    * Crear una nueva subcategoría
+   *
+   * @param categoriaId Categoría a la que pertenece la nueva subcategoría.
+   * @param datos Nombre, descripción, orden y estado.
+   * @returns La subcategoría creada.
    */
   async crearSubcategoria(
     categoriaId: number,
@@ -137,6 +157,11 @@ class CategoriasService {
 
   /**
    * Actualizar una subcategoría existente
+   *
+   * @param categoriaId Categoría que contiene la subcategoría.
+   * @param subcategoriaId Identificador de la subcategoría a actualizar.
+   * @param datos Campos a modificar.
+   * @returns La subcategoría ya actualizada.
    */
   async actualizarSubcategoria(
     categoriaId: number,
@@ -165,6 +190,10 @@ class CategoriasService {
 
   /**
    * Eliminar una subcategoría (borrado lógico)
+   *
+   * @param categoriaId Categoría que contiene la subcategoría.
+   * @param subcategoriaId Identificador de la subcategoría a eliminar.
+   * @returns Promesa resuelta cuando el backend confirma el borrado.
    */
   async eliminarSubcategoria(
     categoriaId: number,
@@ -189,6 +218,11 @@ class CategoriasService {
 
   /**
    * Obtener todas las categorías con sus subcategorías
+   *
+   * Una categoría que falle se degrada a una lista de subcategorías vacía en
+   * lugar de abortar la carga completa.
+   *
+   * @returns Todas las categorías, cada una con sus subcategorías.
    */
   async obtenerTodasCategoriasConSubcategorias(): Promise<
     CategoriaWithSubcategorias[]
@@ -216,5 +250,5 @@ class CategoriasService {
   }
 }
 
-// Singleton export
+// Instancia única compartida por toda la aplicación
 export const categoriasService = new CategoriasService();

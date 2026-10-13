@@ -17,30 +17,42 @@ import {
 import { Add, Edit, Delete, Close } from '@mui/icons-material';
 import apiService from '../../../services/api.service';
 
+/** Proveedor del catálogo, tal como lo expone `/inventario/proveedores`. */
 export interface Proveedor {
+  /** Id del proveedor en el backend. */
   id: number;
+  /** Nombre o razón social. */
   nombre: string;
+  /** RUC opcional. */
   ruc?: string;
+  /** Teléfono de contacto opcional. */
   telefono?: string;
+  /** Email de contacto opcional. */
   email?: string;
 }
 
+/** Props del selector de proveedores con alta y edición inline. */
 interface ProveedorAutoCompleteProps {
+  /** Proveedor seleccionado; `null` cuando no hay ninguno. */
   value: Proveedor | null;
+  /** Notifica el cambio de selección (o `null` al limpiar/eliminar). */
   onChange: (proveedor: Proveedor | null) => void;
+  /** Etiqueta del campo; por defecto `Proveedor`. */
   label?: string;
+  /** Marca el campo como obligatorio en el formulario padre. */
   required?: boolean;
+  /** Ocupa todo el ancho disponible; `true` por defecto. */
   fullWidth?: boolean;
+  /** Densidad visual del `Autocomplete`. */
   size?: 'small' | 'medium';
 }
 
 /**
- * Componente Autocomplete inteligente para proveedores
- * Permite:
- * - Seleccionar de proveedores existentes
- * - Crear nuevo proveedor escribiendo el nombre
- * - Editar proveedores existentes inline
- * - Eliminar proveedores
+ * Autocomplete de proveedores para el formulario de compras.
+ * Permite elegir uno existente, crear otro escribiendo un nombre sin coincidencias,
+ * o editar/eliminar los ya listados sin salir del formulario.
+ * @remarks Mantiene su propia lista de proveedores en `useState` y la recarga al
+ * montar; al crear o editar propaga el resultado al padre con `onChange`.
  */
 export default function ProveedorAutoComplete({
   value,
@@ -93,7 +105,9 @@ export default function ProveedorAutoComplete({
   };
 
   /**
-   * Abrir dialog para editar proveedor
+   * Abre el dialog en modo edición precargando los datos del proveedor.
+   * @param e - Evento del click; se detiene para no seleccionar la opción del listado.
+   * @param proveedor - Proveedor a editar.
    */
   const handleAbrirEditarProveedor = (e: React.MouseEvent, proveedor: Proveedor) => {
     e.stopPropagation();
@@ -166,7 +180,9 @@ export default function ProveedorAutoComplete({
   };
 
   /**
-   * Eliminar proveedor
+   * Elimina el proveedor tras confirmar, y limpia la selección si era el activo.
+   * @param e - Evento del click; se detiene para no seleccionar la opción del listado.
+   * @param proveedor - Proveedor a eliminar.
    */
   const handleEliminarProveedor = async (e: React.MouseEvent, proveedor: Proveedor) => {
     e.stopPropagation();

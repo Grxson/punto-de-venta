@@ -1,5 +1,11 @@
+/**
+ * Roles disponibles en el sistema.
+ */
 export type UserRole = 'ADMIN' | 'GERENTE' | 'VENDEDOR' | 'USUARIO';
 
+/**
+ * Usuario autenticado tal como lo devuelve el backend.
+ */
 export interface UsuarioDTO {
   id: number;
   nombre: string;
@@ -10,6 +16,9 @@ export interface UsuarioDTO {
   permisos?: string[];
 }
 
+/**
+ * Sucursal (punto de venta).
+ */
 export interface SucursalDTO {
   id: number;
   nombre: string;
@@ -19,17 +28,26 @@ export interface SucursalDTO {
   activa: boolean;
 }
 
+/**
+ * Cuerpo de la petición de inicio de sesión.
+ */
 export interface LoginRequest {
   username: string;
   password: string;
 }
 
+/**
+ * Respuesta del backend tras un inicio de sesión correcto.
+ */
 export interface LoginResponse {
   token: string;
   usuario: UsuarioDTO;
   sucursal: SucursalDTO;
 }
 
+/**
+ * Contrato del contexto de autenticación y sesión.
+ */
 export interface AuthContextType {
   // Estado
   user: UsuarioDTO | null;

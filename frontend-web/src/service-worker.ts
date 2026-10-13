@@ -2,9 +2,9 @@
  * OPTIMIZACIÓN PASO 2.7: Service Worker con Workbox
  * 
  * Estrategia de caché para PWA:
- * 1. Assets estáticos (JS, CSS, fonts): Cache first
+ * 1. Assets estáticos (JS, CSS, fuentes): Cache first
  * 2. Imágenes: Cache first
- * 3. API requests: Network first, fallback a caché
+ * 3. Peticiones a la API: Network first, con fallback a caché
  * 4. HTML: Stale while revalidate
  */
 
@@ -19,11 +19,11 @@ import {
 
 declare const self: ServiceWorkerGlobalScope;
 
-// Precache los archivos manifesto de Vite
+// Precarga los archivos manifesto de Vite
 precacheAndRoute(self.__WB_MANIFEST || []);
 
 // ============================================
-// Estrategia 1: Assets estáticos (JS, CSS, fonts)
+// Estrategia 1: Assets estáticos (JS, CSS, fuentes)
 // Cache first
 // ============================================
 registerRoute(
@@ -48,7 +48,7 @@ registerRoute(
 );
 
 // ============================================
-// Estrategia 3: API requests
+// Estrategia 3: Peticiones a la API
 // Network first con fallback a caché
 // ============================================
 registerRoute(

@@ -4,7 +4,7 @@
 
 Las siguientes variables deben estar configuradas en Railway para el servicio `frontend-web`:
 
-### Build-time Variables (Vite)
+### Variables en tiempo de build (Vite)
 ```env
 VITE_API_URL_PROD=https://punto-de-venta-production-d424.up.railway.app/api
 VITE_API_URL_STAGING=https://punto-de-venta-staging.up.railway.app/api
@@ -13,7 +13,7 @@ VITE_API_RETRIES=3
 VITE_APP_ENV=production
 ```
 
-### Runtime Variables
+### Variables en tiempo de ejecución
 ```env
 PORT=8080
 NODE_ENV=production
@@ -34,7 +34,7 @@ NODE_ENV=production
 ## Healthcheck
 
 - Endpoint: `GET /health`
-- Response: `200 OK`
+- Respuesta: `200 OK`
 - Usado por Railway para verificar que el servicio está listo
 
 ## Build

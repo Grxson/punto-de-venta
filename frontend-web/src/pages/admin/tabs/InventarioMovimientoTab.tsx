@@ -14,13 +14,17 @@ import InventarioMovimientoTabla from '../../../components/reportes/InventarioMo
 import { useInventarioMovimiento } from '../../../hooks/useInventarioMovimiento';
 import type { DateRangeValue } from '../../../types/dateRange.types';
 
+/** Props del tab de movimiento de inventario. */
 interface InventarioMovimientoTabProps {
+  /** Rango de fechas activo en la pantalla de reportes. */
   dateRange: DateRangeValue;
 }
 
 /**
  * Tab para mostrar el reporte de movimiento de inventario.
  * Utiliza el rango de fechas proporcionado por el componente padre (AdminReports).
+ * @remarks Delegar la carga en `useInventarioMovimiento` mantiene el caché entre
+ * cambios de tab; el botón de actualizar sólo fuerza un `refetch` del rango actual.
  */
 export const InventarioMovimientoTab: React.FC<InventarioMovimientoTabProps> = ({ dateRange }) => {
   // Hook optimizado con caché automático

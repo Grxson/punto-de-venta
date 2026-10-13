@@ -16,23 +16,42 @@ import { API_ENDPOINTS } from '../config/api.config';
 import { websocketService } from '../services/websocket.service';
 import { getTodayLocalDate, toLocalISOString } from '../utils/dateHelper';
 
+/** Estadísticas agregadas de ventas de un día. */
 interface DailyStats {
+  /** Fecha a la que corresponden las estadísticas. */
   fecha: string;
+  /** Total facturado en ventas. */
   totalVentas: number;
+  /** Costo total de los productos vendidos. */
   totalCostos: number;
   totalGastos?: number; // Gastos operativos (separado de costos de productos)
+  /** Ganancia bruta del día. */
   margenBruto: number;
+  /** Número de ventas registradas. */
   cantidadVentas: number;
+  /** Unidades vendidas en total. */
   itemsVendidos: number;
+  /** Importe promedio por venta. */
   ticketPromedio: number;
+  /** Margen expresado como porcentaje. */
   margenPorcentaje: number;
 }
 
+/** Total de ventas acumulado por método de pago. */
 interface DesglosePago {
+  /** Nombre del método de pago (por ejemplo, Efectivo o Tarjeta). */
   metodoPago: string;
+  /** Monto total cobrado con ese método. */
   total: number;
 }
 
+/**
+ * Panel flotante con el resumen de ventas del día.
+ * Muestra ventas totales, desglose por método de pago, gastos y neto; se
+ * actualiza en vivo por WebSocket y con un `fallback` de consulta cada 30 segundos.
+ *
+ * @returns Tarjeta colapsable con las estadísticas diarias del punto de venta.
+ */
 export default function DailyStatsPanel() {
   const [stats, setStats] = useState<DailyStats | null>(null);
   const [desglosePagos, setDesglosePagos] = useState<DesglosePago[]>([]);

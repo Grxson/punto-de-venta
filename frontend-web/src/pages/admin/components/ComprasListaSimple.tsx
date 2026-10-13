@@ -19,24 +19,36 @@ import { Delete, Edit } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
 import { ingredientesService, Unidad } from '../../../services/ingredientes.service';
 
+/** Compra mínima persistida en `localStorage` (ver `CompraSimpleForm`). */
 interface CompraSimple {
+  /** Id local generado al registrar la compra. */
   id: number;
+  /** Nombre del producto o insumo. */
   nombre: string;
+  /** Fecha de la compra en formato `yyyy-MM-dd`. */
   fecha: string;
+  /** Cantidad comprada. */
   cantidad: number;
+  /** Id de la unidad de medida. */
   unidadId: number;
+  /** Nombre de la unidad resuelto aparte; no se persiste. */
   unidadNombre?: string;
+  /** Abreviatura de la unidad resuelto aparte; no se persiste. */
   unidadAbreviatura?: string;
+  /** Importe total pagado. */
   precioTotal: number;
 }
 
+/** Props del listado de compras simples. */
 interface ComprasListaSimpleProps {
+  /** Cambia su valor para forzar la recarga desde la pantalla padre. */
   refreshTrigger?: number;
 }
 
 /**
- * Lista las compras simples registradas
- * Permite: ver, editar, eliminar, crear ingrediente desde compra
+ * Lista las compras simples guardadas en `localStorage`.
+ * @remarks Sólo permite ver y eliminar; el alta la hace `CompraSimpleForm`. Resuelve
+ * la abreviatura de la unidad cruzando con el catálogo de unidades de la API.
  */
 export default function ComprasListaSimple({ refreshTrigger = 0 }: ComprasListaSimpleProps) {
   const [compras, setCompras] = useState<CompraSimple[]>([]);
@@ -52,6 +64,7 @@ export default function ComprasListaSimple({ refreshTrigger = 0 }: ComprasListaS
     cargarUnidades();
   }, [refreshTrigger]);
 
+  /** Carga las compras simples desde `localStorage`. */
   const cargarCompras = async () => {
     setLoading(true);
     setError(null);
@@ -66,6 +79,7 @@ export default function ComprasListaSimple({ refreshTrigger = 0 }: ComprasListaS
     }
   };
 
+  /** Carga el catálogo de unidades para resolver la abreviatura de cada compra. */
   const cargarUnidades = async () => {
     try {
       const data = await ingredientesService.obtenerUnidades();
@@ -94,6 +108,11 @@ export default function ComprasListaSimple({ refreshTrigger = 0 }: ComprasListaS
     }
   };
 
+  /**
+   * Devuelve la abreviatura de la unidad asociada a una compra.
+   * @param unidadId - Id de la unidad a resolver.
+   * @returns La abreviatura, o `un` si la unidad no está en el catálogo.
+   */
   const obtenerNombreUnidad = (unidadId: number) => {
     const unidad = unidades.find((u) => u.id === unidadId);
     return unidad ? unidad.abreviatura : 'un';

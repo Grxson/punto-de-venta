@@ -6,6 +6,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useLogout } from '../hooks/useLogout';
 import DailyStatsPanel from '../components/DailyStatsPanel';
 
+/**
+ * Layout del punto de venta.
+ * Envuelve las vistas de venta con la barra superior, el menú lateral
+ * desplegable, el contenedor de la ruta activa (`Outlet`) y el panel flotante
+ * de estadísticas del día.
+ */
 export default function PosLayout() {
   const navigate = useNavigate();
   const location = useLocation();

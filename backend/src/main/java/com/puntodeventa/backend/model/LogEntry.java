@@ -8,15 +8,24 @@ import java.time.format.DateTimeFormatter;
  * Se almacena en un buffer circular en memoria para acceso rápido.
  */
 public class LogEntry {
+    /** Identificador secuencial de la entrada dentro del buffer. */
     private final Long id;
-    private final String level;           // ERROR, WARN, INFO, DEBUG
-    private final String logger;          // Clase que generó el log
-    private final String message;         // Mensaje del log
-    private final String exception;       // Stack trace si aplica
+    /** Nivel de severidad del evento: ERROR, WARN, INFO, DEBUG. */
+    private final String level;
+    /** Nombre del logger (clase) que generó la entrada. */
+    private final String logger;
+    /** Texto del mensaje registrado. */
+    private final String message;
+    /** Stack trace asociado al evento; es null si no hubo excepción. */
+    private final String exception;
+    /** Momento en que se capturó la entrada. */
     private final LocalDateTime timestamp;
-    private final String thread;          // Thread que generó el log
-    private final String sucursal;        // Sucursal desde donde se generó
-    private final String usuario;         // Usuario que causó el log (si aplica)
+    /** Hilo de ejecución que generó la entrada. */
+    private final String thread;
+    /** Sucursal desde la que se generó la entrada. */
+    private final String sucursal;
+    /** Usuario que originó la entrada; es null si no aplica. */
+    private final String usuario;
 
     public LogEntry(
             Long id, 

@@ -11,23 +11,23 @@
 
 ## Particionamiento por tiempo
 - Tablas grandes por fecha (mensual): ventas, ventas_items, pagos, inventario_movimientos.
-- Benefit: consultas por rango más rápidas y mantenimiento por partición (vacuum/archivado).
+- Beneficio: consultas por rango más rápidas y mantenimiento por partición (vacuum/archivado).
 
 ## Vistas materializadas / tablas sumario
 - Resúmenes diarios/semanales/mensuales de: ventas, costo de ventas, merma, gastos.
-- Refresco programado (cada noche) y on-demand para cierres.
+- Refresco programado (cada noche) y bajo demanda para cierres.
 
 ## Concurrencia y transacciones
 - Confirmar venta en transacción: crear venta, items, pagos y movimientos de consumo.
-- Evitar deadlocks con orden consistente de escrituras.
+- Evitar bloqueos mutuos (deadlocks) con orden consistente de escrituras.
 
 ## Backups y retención
-- Backups diarios + WAL; pruebas de restauración periódicas.
+- Respaldos (backups) diarios + WAL; pruebas de restauración periódicas.
 - Retención de crudos 12-24 meses y sumarios históricos más largos.
 
 ## Observabilidad
 - Log de consultas lentas, métricas de DB, y alarmas por colas de bloqueos.
 
 ## Escala futura
-- Read replicas para reportes pesados.
+- Réplicas de lectura (read replicas) para reportes pesados.
 - Exportación a CSV/Parquet para BI externo (opcional).

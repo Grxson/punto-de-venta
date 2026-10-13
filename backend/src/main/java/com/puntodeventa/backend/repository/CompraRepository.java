@@ -12,14 +12,18 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository para Compra - Queries optimizadas y segregadas por sucursal.
+ * Repositorio para Compra - consultas optimizadas y segregadas por sucursal.
  */
 @Repository
 public interface CompraRepository extends JpaRepository<Compra, Long> {
 
     /**
-     * Obtener compras de una sucursal con paginación.
+     * Obtiene compras de una sucursal con paginación.
      * ✅ Segregación: Solo datos de la sucursal especificada
+     *
+     * @param sucursalId ID de la sucursal
+     * @param pageable   paginación y orden solicitados
+     * @return página de compras de la sucursal ordenadas por fecha descendente
      */
     @Query("""
                 SELECT c FROM Compra c
@@ -31,8 +35,14 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
             Pageable pageable);
 
     /**
-     * Obtener compras por rango de fechas y estado.
+     * Obtiene compras por rango de fechas y estado.
      * ✅ Optimizado con índices en BD
+     *
+     * @param sucursalId ID de la sucursal
+     * @param inicio     fecha de inicio del rango (inclusive)
+     * @param fin        fecha de fin del rango (inclusive)
+     * @param estado     estado de la compra a filtrar
+     * @return lista de compras coincidentes ordenadas por fecha descendente
      */
     @Query("""
                 SELECT c FROM Compra c
@@ -48,7 +58,12 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
             @Param("estado") String estado);
 
     /**
-     * Obtener compras por proveedor en una sucursal.
+     * Obtiene compras de un proveedor dentro de una sucursal, con paginación.
+     *
+     * @param sucursalId  ID de la sucursal
+     * @param proveedorId ID del proveedor
+     * @param pageable    paginación y orden solicitados
+     * @return página de compras del proveedor ordenadas por fecha descendente
      */
     @Query("""
                 SELECT c FROM Compra c
@@ -62,7 +77,12 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
             Pageable pageable);
 
     /**
-     * Obtener compra con items (eager loading).
+     * Obtiene una compra con sus renglones precargados.
+     * Usa LEFT JOIN FETCH para evitar el problema N+1 al recorrer los renglones.
+     *
+     * @param id         ID de la compra
+     * @param sucursalId ID de la sucursal propietaria
+     * @return la compra con sus renglones, o vacío si no existe en la sucursal
      */
     @Query("""
                 SELECT DISTINCT c FROM Compra c
@@ -74,13 +94,21 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
             @Param("sucursalId") Long sucursalId);
 
     /**
-     * Contar compras pendientes en una sucursal (para dashboard).
+     * Cuenta las compras pendientes de recepción de una sucursal (para el dashboard).
+     *
+     * @param sucursalId ID de la sucursal
+     * @return número de compras en estado 'pendiente'
      */
     @Query("SELECT COUNT(c) FROM Compra c WHERE c.sucursal.id = :sucursalId AND c.estado = 'pendiente'")
     Long countPendientes(@Param("sucursalId") Long sucursalId);
 
     /**
-     * Obtener últimas compras de usuario (preferencias).
+     * Obtiene las últimas compras capturadas por un usuario, para reutilizar sus preferencias de registro.
+     *
+     * @param sucursalId ID de la sucursal
+     * @param usuarioId  ID del usuario
+     * @param pageable   paginación que limita el número de resultados
+     * @return lista de compras del usuario ordenadas por fecha descendente
      */
     @Query("""
                 SELECT c FROM Compra c

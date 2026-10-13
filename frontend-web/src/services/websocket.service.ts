@@ -1,18 +1,32 @@
+/**
+ * Servicio de comunicación en tiempo real.
+ *
+ * Envuelve STOMP sobre SockJS para recibir avisos de cambios en productos,
+ * ventas, estadísticas e inventario, y los reenvía a los suscriptores por
+ * topic. La reconexión es responsabilidad del cliente STOMP (5 s entre
+ * intentos, con tope de aviso a los 5 reintentos).
+ */
+
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { API_CONFIG } from '../config/api.config';
 import { toWebSocketEndpoint } from '../utils/websocketUrl';
 
+/** Mensaje normalizado que entrega la API por WebSocket. */
 export interface WebSocketMessage {
+  /** Discriminante del evento, p. ej. `VENTA_CREADA`. */
   tipo: string;
   entidad: string;
   entidadId: number | null;
   datos: any;
+  /** Marca de tiempo ISO del evento en el backend. */
   timestamp: string;
 }
 
+/** Función que atiende un mensaje de un topic concreto. */
 type MessageHandler = (message: WebSocketMessage) => void;
 
+/** Envoltura mínima del frame STOMP que llega por la suscripción. */
 interface StompMessage {
   body: string;
   headers: Record<string, string>;
@@ -21,6 +35,7 @@ interface StompMessage {
   nack?: () => void;
 }
 
+/** Suscripción viva a un destino STOMP. */
 type StompSubscription = {
   id: string;
   unsubscribe: () => void;
@@ -28,7 +43,9 @@ type StompSubscription = {
 
 class WebSocketService {
   private client: Client | null = null;
+  /** Suscripciones activas por destino, para poder cerrarlas al desconectar. */
   private subscriptions: Map<string, StompSubscription> = new Map();
+  /** Suscriptores por topic; un `Set` evita registrar dos veces el mismo manejador. */
   private handlers: Map<string, Set<MessageHandler>> = new Map();
   private connected: boolean = false;
   private reconnectAttempts: number = 0;
@@ -38,19 +55,28 @@ class WebSocketService {
     this.initializeClient();
   }
 
+  /**
+   * Crea el cliente STOMP con su fábrica de sockets y sus callbacks de ciclo
+   * de vida. Se construye de nuevo si la instancia anterior se perdió.
+   */
   private initializeClient() {
-    // Leer env vars en RUNTIME (después del build)
+    // El endpoint se deriva de API_CONFIG en RUNTIME (no en build) por el mismo
+    // motivo que api.config: Railway inyecta las variables tras compilar.
     const wsEndpoint = toWebSocketEndpoint(API_CONFIG.apiUrl);
 
 
     this.client = new Client({
       webSocketFactory: () => new SockJS(wsEndpoint) as any,
       reconnectDelay: 5000,
+      // Heartbeat por debajo del timeout por defecto del broker: detecta
+      // conexiones muertas que el TCP aún no ha cerrado.
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       onConnect: () => {
         this.connected = true;
         this.reconnectAttempts = 0;
+        // Las suscripciones se rehacen en cada reconexión: el broker las
+        // descarta al cerrarse la conexión.
         this.subscribeToTopics();
       },
       onDisconnect: () => {
@@ -67,6 +93,10 @@ class WebSocketService {
     });
   }
 
+  /**
+   * Abre la conexión si no lo está ya.
+   * Es idempotente: llamarlo con la conexión activa no hace nada.
+   */
   connect() {
     if (!this.client) {
       this.initializeClient();
@@ -77,6 +107,9 @@ class WebSocketService {
     }
   }
 
+  /**
+   * Cierra la conexión y cancela todas las suscripciones.
+   */
   disconnect() {
     if (this.client) {
       this.subscriptions.forEach((subscription) => {
@@ -88,6 +121,10 @@ class WebSocketService {
     }
   }
 
+  /**
+   * Suscribe a los topics de la aplicación. Se invoca en cada conexión
+   * correcta, no una sola vez.
+   */
   private subscribeToTopics() {
     this.subscribe('/topic/productos', (message) => {
       this.handleMessage('productos', message);
@@ -134,6 +171,13 @@ class WebSocketService {
     }
   }
 
+  /**
+   * Registra un manejador para un topic.
+   *
+   * @param topic - Nombre del topic a escuchar.
+   * @param handler - Callback que recibe cada mensaje del topic.
+   * @returns Función para cancelar la suscripción de ese manejador.
+   */
   on(topic: string, handler: MessageHandler): () => void {
     if (!this.handlers.has(topic)) {
       this.handlers.set(topic, new Set());
@@ -154,6 +198,12 @@ class WebSocketService {
     };
   }
 
+  /**
+   * Quita un manejador registrado previamente.
+   *
+   * @param topic - Nombre del topic.
+   * @param handler - Callback a eliminar.
+   */
   off(topic: string, handler: MessageHandler) {
     const handlers = this.handlers.get(topic);
     if (handlers) {
@@ -161,6 +211,11 @@ class WebSocketService {
     }
   }
 
+  /**
+   * Indica si el socket está conectado.
+   *
+   * @returns `true` si hay conexión activa.
+   */
   isConnected(): boolean {
     return this.connected;
   }

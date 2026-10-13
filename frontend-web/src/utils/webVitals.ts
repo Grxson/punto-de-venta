@@ -8,30 +8,42 @@ import {
 } from 'web-vitals';
 
 /**
- * OPTIMIZACIÓN PASO 2.8: Web Vitals Monitoring
- * 
- * Monitorear Core Web Vitals:
+ * OPTIMIZACIÓN PASO 2.8: Monitoreo de Core Web Vitals
+ *
+ * Umbrales de referencia de las métricas de rendimiento que se siguen:
  * - LCP (Largest Contentful Paint): < 2.5s
- * - INP (Interaction to Next Paint): < 200ms (reemplaza FID)
+ * - INP (Interaction to Next Paint): < 200ms (reemplaza a FID)
  * - CLS (Cumulative Layout Shift): < 0.1
  * - FCP (First Contentful Paint)
  * - TTFB (Time to First Byte)
  */
 
 interface WebVitalMetrics {
+  /** Nombre de la métrica (LCP, INP, CLS, FCP, TTFB). */
   name: string;
+  /** Valor medido, ya redondeado a entero. */
   value: number;
+  /** Veredicto frente a los umbrales de Google. */
   rating: 'good' | 'needs-improvement' | 'poor';
+  /** Diferencia respecto a la medición anterior. */
   delta: number;
+  /** Identificador único de la medición. */
   id: string;
+  /** Tipo de navegación que originó la medición. */
   navigationType: string;
 }
 
-// Almacenar métricas para enviar al backend
+// Cola de métricas pendiente de enviar. Se agrupan para no generar una
+// petición por cada métrica.
 const metricsQueue: WebVitalMetrics[] = [];
 
 /**
- * Clasificar métrica como good/needs-improvement/poor
+ * Clasifica una métrica como 'good', 'needs-improvement' o 'poor'
+ * según los umbrales de Google para ese nombre concreto.
+ *
+ * @param name - Nombre de la métrica.
+ * @param value - Valor medido.
+ * @returns La clasificación resultante.
  */
 function getRating(name: string, value: number): WebVitalMetrics['rating'] {
   switch (name) {
@@ -51,7 +63,12 @@ function getRating(name: string, value: number): WebVitalMetrics['rating'] {
 }
 
 /**
- * Enviar métricas al backend
+ * Envía un lote de métricas al backend.
+ *
+ * Nunca propaga errores: el monitoreo de rendimiento es secundario y no debe
+ * romper ni ensuciar la consola de la aplicación.
+ *
+ * @param metrics - Métricas a enviar. Si la lista está vacía no se llama al backend.
  */
 async function sendMetricsToBackend(metrics: WebVitalMetrics[]) {
   if (metrics.length === 0) return;
@@ -80,7 +97,10 @@ async function sendMetricsToBackend(metrics: WebVitalMetrics[]) {
 }
 
 /**
- * Procesar métrica
+ * Normaliza una métrica de la librería `web-vitals`, la encola y dispara el
+ * envío cuando se han acumulado las cinco métricas del ciclo.
+ *
+ * @param metric - Métrica reportada por `web-vitals`.
  */
 function processMetric(metric: Metric) {
   const vitals: WebVitalMetrics = {
@@ -106,12 +126,14 @@ function processMetric(metric: Metric) {
 }
 
 /**
- * Hook para inicializar monitoreo de Web Vitals
+ * Registra los listeners de Core Web Vitals.
+ *
+ * Llamar una sola vez al arrancar la app: cada llamada vuelve a suscribir los
+ * callbacks y una misma métrica se contaría tantas veces como se invoque.
  */
 export function useWebVitals() {
-  // Usar useEffect para inicializar
+  // Registrar callbacks para cada métrica
   if (typeof window !== 'undefined' && 'addEventListener' in window) {
-    // Registrar callbacks para cada métrica
     onCLS(processMetric);
     onINP(processMetric);
     onFCP(processMetric);
@@ -122,7 +144,11 @@ export function useWebVitals() {
 }
 
 /**
- * Utilidad para registrar métricas personalizadas
+ * Registra una métrica de rendimiento medida por la propia aplicación
+ * (por ejemplo, el tiempo de una acción de negocio).
+ *
+ * @param name - Nombre de la métrica.
+ * @param value - Valor medido; se redondea a entero.
  */
 export function reportWebVital(name: string, value: number) {
   const metric = {
@@ -141,8 +167,8 @@ export function reportWebVital(name: string, value: number) {
 }
 
 /**
- * Forzar envío de métricas pendientes
- * Útil llamar al descargar la página
+ * Fuerza el envío de las métricas que quedaran en la cola.
+ * Útil llamar al descargar la página, para no perderlas.
  */
 export function flushMetrics() {
   if (metricsQueue.length > 0) {

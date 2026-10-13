@@ -18,7 +18,7 @@ ALTER TABLE categorias_productos ADD CONSTRAINT IF NOT EXISTS fk_categoria_sucur
 CREATE INDEX IF NOT EXISTS idx_categoria_sucursal ON categorias_productos(sucursal_id);
 CREATE INDEX IF NOT EXISTS idx_categoria_activa ON categorias_productos(activa);
 
--- Paso 6: Remover el constraint unique del nombre (si existe) y crear uno nuevo por (nombre, sucursal_id)
+-- Paso 6: Remover la restricción única del nombre (si existe) y crear una nueva por (nombre, sucursal_id)
 ALTER TABLE categorias_productos DROP CONSTRAINT IF EXISTS categorias_productos_nombre_key CASCADE;
 ALTER TABLE categorias_productos DROP CONSTRAINT IF EXISTS uq_categoria_nombre_sucursal;
 ALTER TABLE categorias_productos ADD CONSTRAINT uq_categoria_nombre_sucursal 

@@ -1,4 +1,4 @@
--- V1.0.2: Stock actual en ingredientes + optimistic locking (@Version)
+-- V1.0.2: Stock actual en ingredientes + bloqueo optimista (@Version)
 -- Auditoría 2026-09-11 (T0.2, T0.6)
 
 -- 1. Stock actual (unidad base) en ingredientes, inicializado desde historial de movimientos
@@ -15,7 +15,7 @@ SET stock_actual = COALESCE((
       AND m.unidad_id = i.unidad_base_id
 ), 0);
 
--- 2. Columnas version para optimistic locking (evitar lost updates)
+-- 2. Columnas version para bloqueo optimista (evitar actualizaciones perdidas)
 ALTER TABLE productos ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
 ALTER TABLE ingredientes ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
 ALTER TABLE ventas ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;

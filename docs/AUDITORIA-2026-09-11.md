@@ -138,7 +138,7 @@ AGENTS.md: dice "HTTP Basic Auth, JWT planned" (JWT YA implementado), "26 migrat
 
 ---
 
-## 5. ROADMAP POR FASES
+## 5. HOJA DE RUTA POR FASES
 
 **Fase 0 — Seguridad/corrección (2-3 días)**
 1. C1: precios/cantidad/descuento recalculados en servidor; override con permiso.

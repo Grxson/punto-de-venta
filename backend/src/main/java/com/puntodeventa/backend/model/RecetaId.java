@@ -14,6 +14,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RecetaId implements Serializable {
+    /** Identificador del producto que forma parte de la clave compuesta. */
     private Long productoId;
+    /** Identificador del ingrediente que forma parte de la clave compuesta. */
     private Long ingredienteId;
 }

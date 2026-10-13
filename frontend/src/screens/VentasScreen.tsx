@@ -11,6 +11,11 @@ import {
 import { useAuth } from '../hooks/useAuth';
 import { useMenu } from '../hooks/useMenu';
 
+/**
+ * Pantalla de creación de ventas a partir del carrito actual.
+ *
+ * @returns El resumen del carrito, las notas opcionales y el botón de cobro.
+ */
 export function VentasScreen() {
   const { user, sucursal } = useAuth();
   const { carrito, totalCarrito, limpiarCarrito } = useMenu();

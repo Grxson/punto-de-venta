@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Controlador REST para gestión de Gastos Indirectos
+ * Controlador REST de gastos indirectos.
+ *
+ * Gestiona los gastos indirectos de la sucursal actual: consulta, alta,
+ * actualización y baja lógica.
  */
 @Slf4j
 @RestController
@@ -25,6 +28,11 @@ public class GastoIndirectoController {
 
     private final GastoIndirectoService gastoIndirectoService;
 
+    /**
+     * Obtiene todos los gastos indirectos de la sucursal actual.
+     *
+     * @return lista de gastos indirectos
+     */
     @GetMapping
     @Operation(summary = "Obtener todos los gastos indirectos de la sucursal actual")
     public ResponseEntity<List<GastoIndirectoDTO>> obtenerTodos() {
@@ -32,6 +40,11 @@ public class GastoIndirectoController {
         return ResponseEntity.ok(gastoIndirectoService.obtenerPorSucursal());
     }
 
+    /**
+     * Obtiene los gastos indirectos activos.
+     *
+     * @return lista de gastos indirectos activos
+     */
     @GetMapping("/activos")
     @Operation(summary = "Obtener gastos indirectos activos")
     public ResponseEntity<List<GastoIndirectoDTO>> obtenerActivos() {
@@ -39,6 +52,12 @@ public class GastoIndirectoController {
         return ResponseEntity.ok(gastoIndirectoService.obtenerActivos());
     }
 
+    /**
+     * Obtiene un gasto indirecto por su identificador.
+     *
+     * @param id identificador del gasto indirecto
+     * @return gasto indirecto encontrado
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Obtener un gasto indirecto por ID")
     public ResponseEntity<GastoIndirectoDTO> obtenerPorId(@PathVariable Long id) {
@@ -46,6 +65,12 @@ public class GastoIndirectoController {
         return ResponseEntity.ok(gastoIndirectoService.obtenerPorId(id));
     }
 
+    /**
+     * Crea un gasto indirecto nuevo.
+     *
+     * @param dto datos del gasto indirecto
+     * @return gasto indirecto creado
+     */
     @PostMapping
     @Operation(summary = "Crear un nuevo gasto indirecto")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -64,6 +89,13 @@ public class GastoIndirectoController {
         }
     }
 
+    /**
+     * Actualiza un gasto indirecto existente.
+     *
+     * @param id identificador del gasto indirecto
+     * @param dto datos a actualizar
+     * @return gasto indirecto actualizado
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar un gasto indirecto")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -72,6 +104,12 @@ public class GastoIndirectoController {
         return ResponseEntity.ok(gastoIndirectoService.actualizar(id, dto));
     }
 
+    /**
+     * Desactiva un gasto indirecto.
+     *
+     * @param id identificador del gasto indirecto
+     * @return sin contenido
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar (desactivar) un gasto indirecto")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")

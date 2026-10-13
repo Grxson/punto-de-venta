@@ -24,7 +24,9 @@ public class ProductoTamanoService {
     private final ProductoTamanoRepository tamanoRepository;
 
     /**
-     * Obtiene todos los tamaños activos
+     * Obtiene todos los tamaños activos.
+     *
+     * @return Lista de DTO de los tamaños activos.
      */
     @Transactional(readOnly = true)
     public List<ProductoTamanoDTO> obtenerTodosActivos() {
@@ -35,7 +37,11 @@ public class ProductoTamanoService {
     }
 
     /**
-     * Obtiene un tamaño por ID
+     * Obtiene un tamaño por su identificador.
+     *
+     * @param id Identificador del tamaño.
+     * @return DTO del tamaño encontrado.
+     * @throws EntityNotFoundException si el tamaño no existe.
      */
     @Transactional(readOnly = true)
     public ProductoTamanoDTO obtenerPorId(Long id) {
@@ -45,7 +51,11 @@ public class ProductoTamanoService {
     }
 
     /**
-     * Obtiene un tamaño por nombre
+     * Obtiene un tamaño por su nombre, sin distinción de mayúsculas.
+     *
+     * @param nombre Nombre del tamaño.
+     * @return DTO del tamaño encontrado.
+     * @throws EntityNotFoundException si no existe un tamaño con ese nombre.
      */
     @Transactional(readOnly = true)
     public ProductoTamanoDTO obtenerPorNombre(String nombre) {
@@ -55,7 +65,10 @@ public class ProductoTamanoService {
     }
 
     /**
-     * Busca tamaños por nombre
+     * Busca tamaños cuyo nombre coincida con el texto indicado.
+     *
+     * @param nombre Fragmento de nombre a localizar.
+     * @return Lista de DTO con los tamaños coincidentes.
      */
     @Transactional(readOnly = true)
     public List<ProductoTamanoDTO> buscar(String nombre) {
@@ -66,7 +79,12 @@ public class ProductoTamanoService {
     }
 
     /**
-     * Crea un nuevo tamaño
+     * Crea un tamaño.
+     * El precio extra y el orden toman cero si no se envían, y nace activo.
+     *
+     * @param dto Datos del tamaño a crear.
+     * @return DTO del tamaño creado.
+     * @throws IllegalArgumentException si ya existe un tamaño con el mismo nombre.
      */
     public ProductoTamanoDTO crear(ProductoTamanoDTO dto) {
         // Verificar que no existe un tamaño con el mismo nombre
@@ -88,7 +106,15 @@ public class ProductoTamanoService {
     }
 
     /**
-     * Actualiza un tamaño existente
+     * Actualiza un tamaño existente.
+     * El nombre duplicado solo se comprueba cuando cambia, para no chocar consigo
+     * mismo.
+     *
+     * @param id  Identificador del tamaño a actualizar.
+     * @param dto Datos a aplicar sobre el tamaño.
+     * @return DTO del tamaño actualizado.
+     * @throws EntityNotFoundException   si el tamaño no existe.
+     * @throws IllegalArgumentException  si ya existe otro tamaño con el nuevo nombre.
      */
     public ProductoTamanoDTO actualizar(Long id, ProductoTamanoDTO dto) {
         ProductoTamano tamano = tamanoRepository.findById(id)
@@ -113,7 +139,10 @@ public class ProductoTamanoService {
     }
 
     /**
-     * Desactiva un tamaño (soft delete)
+     * Desactiva un tamaño sin borrar la fila.
+     *
+     * @param id Identificador del tamaño a desactivar.
+     * @throws EntityNotFoundException si el tamaño no existe.
      */
     public void desactivar(Long id) {
         ProductoTamano tamano = tamanoRepository.findById(id)
@@ -125,7 +154,10 @@ public class ProductoTamanoService {
     }
 
     /**
-     * Elimina un tamaño (borrado físico)
+     * Elimina un tamaño de forma física.
+     *
+     * @param id Identificador del tamaño a eliminar.
+     * @throws EntityNotFoundException si el tamaño no existe.
      */
     public void eliminar(Long id) {
         if (!tamanoRepository.existsById(id)) {
@@ -134,9 +166,7 @@ public class ProductoTamanoService {
         tamanoRepository.deleteById(id);
     }
 
-    /**
-     * Convierte una entidad a DTO
-     */
+    // Convierte una entidad en su DTO de salida.
     private ProductoTamanoDTO toDTO(ProductoTamano tamano) {
         return new ProductoTamanoDTO(
                 tamano.getId(),

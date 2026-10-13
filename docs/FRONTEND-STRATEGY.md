@@ -57,7 +57,7 @@
 
 **Estrategia:** Usar React Native con WebView que carga tu React Web
 
-**Pros:**
+**Ventajas:**
 - ✅ Migración en 1-2 días
 - ✅ Reutilizas 100% del código web
 - ✅ Acceso a APIs nativas cuando lo necesites
@@ -87,7 +87,7 @@ export default function App() {
 
 **Estrategia:** Reescribir pantallas críticas en React Native
 
-**Pros:**
+**Ventajas:**
 - ✅ Performance nativa máxima
 - ✅ Acceso completo a hardware (escáner, impresora)
 - ✅ Experiencia completamente nativa

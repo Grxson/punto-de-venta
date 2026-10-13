@@ -3,8 +3,20 @@ import { MenuContextType, ProductoSucursalDTO, CategoriaDTO, CarritoItem } from 
 import { useAuth } from '../hooks/useAuth';
 import { apiClient } from '../services/api/axiosInstance';
 
+/**
+ * Contexto del menú (productos, categorías y carrito de compra).
+ */
 export const MenuContext = createContext<MenuContextType | undefined>(undefined);
 
+/**
+ * Proveedor del catálogo y del carrito de compra.
+ *
+ * Los productos se recargan cada vez que cambia la sucursal activa, porque los
+ * precios y el stock son específicos de cada punto de venta.
+ *
+ * @param props.children Subárbol que consume el contexto.
+ * @returns El proveedor con el valor de estado y acciones.
+ */
 export function MenuProvider({ children }: { children: React.ReactNode }) {
   const { sucursal } = useAuth();
   const [productos, setProductos] = useState<ProductoSucursalDTO[]>([]);
@@ -13,7 +25,8 @@ export function MenuProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Propiedades derivadas
+  // Se recalcula en cada render a partir de `productos`, para no desincronizar
+  // el índice por categoría si la lista cambia.
   const productosAgrupados = new Map<number, ProductoSucursalDTO[]>();
   productos.forEach((prod) => {
     const items = productosAgrupados.get(prod.categoria_id) || [];

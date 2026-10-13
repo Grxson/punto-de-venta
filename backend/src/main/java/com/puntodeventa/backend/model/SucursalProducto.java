@@ -35,15 +35,18 @@ import java.time.LocalDateTime;
 @Builder
 public class SucursalProducto {
 
+    /** Identificador único de la configuración producto-sucursal. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Sucursal que ofrece el producto; many-to-one obligatorio y de carga anticipada (EAGER) para el menú. */
     @NotNull(message = "La sucursal es obligatoria")
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sucursal_id", nullable = false)
     private Sucursal sucursal;
 
+    /** Producto ofrecido en la sucursal; many-to-one obligatorio y de carga anticipada (EAGER) para el menú. */
     @NotNull(message = "El producto es obligatorio")
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "producto_id", nullable = false)
@@ -100,9 +103,11 @@ public class SucursalProducto {
     @Column(length = 500)
     private String notas;
 
+    /** Fecha de alta de la configuración; no se modifica. */
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    /** Fecha de la última modificación de la configuración. */
     @Column(nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now();
 

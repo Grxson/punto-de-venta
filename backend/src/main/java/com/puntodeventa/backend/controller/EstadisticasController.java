@@ -13,6 +13,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Controlador REST de estadísticas de ventas y productos.
+ *
+ * Ofrece resúmenes por día y por rango de fechas, con distintos criterios de
+ * gastos según el caso de uso (operacionales para el panel diario, todos para
+ * reportes).
+ */
 @RestController
 @RequestMapping("/api/estadisticas")
 @Tag(name = "Estadísticas", description = "Endpoints para métricas y análisis de desempeño de ventas y productos")
@@ -20,10 +27,21 @@ public class EstadisticasController {
 
     private final EstadisticasService estadisticasService;
 
+    /**
+     * Crea el controlador con el servicio de estadísticas.
+     *
+     * @param estadisticasService servicio de estadísticas
+     */
     public EstadisticasController(EstadisticasService estadisticasService) {
         this.estadisticasService = estadisticasService;
     }
 
+    /**
+     * Obtiene el resumen de ventas de un día.
+     *
+     * @param fecha fecha a consultar; si es nula se usa la fecha del servidor
+     * @return resumen del día con gastos operacionales
+     */
     @GetMapping("/ventas/dia")
     @Operation(summary = "Resumen de ventas del día", description = "Parámetro 'fecha' es opcional. Si no se envía, usa la fecha del servidor (puede tener offset si zona horaria es diferente). ✅ SOLO GASTOS OPERACIONALES")
     public ResponseEntity<ResumenVentasDiaDTO> resumenDia(
@@ -40,6 +58,13 @@ public class EstadisticasController {
         return ResponseEntity.ok(estadisticasService.resumenDiaConGastosOperacionales(f));
     }
 
+    /**
+     * Obtiene el resumen de ventas de un rango de fechas para reportes.
+     *
+     * @param desde inicio del rango
+     * @param hasta fin del rango
+     * @return resumen del rango con todos los gastos
+     */
     @GetMapping("/ventas/rango")
     @Operation(summary = "Resumen de ventas en rango - Para reportes (Corte por Producto, etc.)", description = "✅ INCLUYE TODOS LOS GASTOS: operacionales + administrativos + nómina + etc.")
     public ResponseEntity<ResumenVentasDiaDTO> resumenRango(
@@ -56,6 +81,13 @@ public class EstadisticasController {
         return ResponseEntity.ok(estadisticasService.resumenRangoConTodosGastos(desde, hasta, fechaRepresentativa));
     }
 
+    /**
+     * Obtiene los productos de mejor rendimiento en un día.
+     *
+     * @param fecha fecha a consultar; si es nula se usa la fecha del servidor
+     * @param limite número máximo de productos a devolver
+     * @return lista de productos ordenados por ingreso
+     */
     @GetMapping("/productos/dia")
     @Operation(summary = "Rendimiento de productos en un día", description = "Top N productos ordenados por ingreso")
     public ResponseEntity<List<ProductoRendimientoDTO>> rendimientoProductosDia(
@@ -65,6 +97,14 @@ public class EstadisticasController {
         return ResponseEntity.ok(estadisticasService.rendimientoProductosDia(f, limite));
     }
 
+    /**
+     * Obtiene los productos de mejor rendimiento en un rango de fechas.
+     *
+     * @param desde inicio del rango
+     * @param hasta fin del rango
+     * @param limite número máximo de productos a devolver
+     * @return lista de productos ordenados por ingreso
+     */
     @GetMapping("/productos/rango")
     @Operation(summary = "Rendimiento de productos en rango", description = "Top N productos ordenados por ingreso")
     public ResponseEntity<List<ProductoRendimientoDTO>> rendimientoProductosRango(

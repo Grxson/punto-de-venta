@@ -1,4 +1,4 @@
--- Seed: menú real "Jugos y Licuados Doña Chuy"
+-- Datos iniciales: menú real "Jugos y Licuados Doña Chuy"
 -- Reemplaza catálogo demo (productos de la sucursal 1). Idempotente.
 -- Patrón: producto base (producto_base_id NULL) + variantes (precio propio).
 

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLogout } from '../hooks/useLogout';
 
+/** Elementos del menú lateral del panel administrativo. */
 const menuItems = [
   { text: 'Dashboard', icon: <Dashboard />, path: '/admin' },
   { text: 'Ventas', icon: <PointOfSale />, path: '/admin/sales' },
@@ -20,6 +21,11 @@ const menuItems = [
   { text: 'Usuarios', icon: <Group />, path: '/admin/usuarios' },
 ];
 
+/**
+ * Layout del panel administrativo.
+ * Envuelve las vistas de administración con la barra superior, el menú lateral
+ * desplegable y el contenedor donde se renderiza la ruta activa (`Outlet`).
+ */
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();

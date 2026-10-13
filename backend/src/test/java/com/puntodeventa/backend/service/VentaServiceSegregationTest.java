@@ -26,7 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests de segregación de datos por sucursal para VentaService.
+ * Pruebas de segregación de datos por sucursal para VentaService.
  * 
  * Verifica que:
  * 1. Un usuario NO puede ver ventas de otra sucursal
@@ -56,7 +56,7 @@ class VentaServiceSegregationTest {
 
     @BeforeEach
     void setUp() {
-        // Limpiar contexto antes de cada test
+        // Limpiar contexto antes de cada prueba
         SucursalContext.clear();
 
         // Crear sucursales de prueba
@@ -86,20 +86,20 @@ class VentaServiceSegregationTest {
     }
 
     // ============================================================
-    // TESTS: obtenerPorId() - Validación de Segregación
+    // PRUEBAS: obtenerPorId() - Validación de Segregación
     // ============================================================
 
     @Test
     @DisplayName("✅ Usuario de Sucursal 1 puede ver su propia venta")
     void testObtenerPorId_UserSucursal1_AccessOwnVenta() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
         when(ventaRepository.findById(100L)).thenReturn(Optional.of(ventaSucursal1));
 
-        // Act
+        // Ejecución
         VentaDTO resultado = ventaService.obtenerPorId(100L);
 
-        // Assert
+        // Verificación
         assertNotNull(resultado);
         assertEquals(100L, resultado.id());
         assertEquals(1L, resultado.sucursalId());
@@ -109,11 +109,11 @@ class VentaServiceSegregationTest {
     @Test
     @DisplayName("❌ Usuario de Sucursal 2 NO puede ver venta de Sucursal 1")
     void testObtenerPorId_UserSucursal2_CantAccessSucursal1Venta() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(2L, "Sucursal 2");
         when(ventaRepository.findById(100L)).thenReturn(Optional.of(ventaSucursal1));
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> ventaService.obtenerPorId(100L),
@@ -126,14 +126,14 @@ class VentaServiceSegregationTest {
     @Test
     @DisplayName("✅ Usuario de Sucursal 2 puede ver su propia venta")
     void testObtenerPorId_UserSucursal2_AccessOwnVenta() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(2L, "Sucursal 2");
         when(ventaRepository.findById(200L)).thenReturn(Optional.of(ventaSucursal2));
 
-        // Act
+        // Ejecución
         VentaDTO resultado = ventaService.obtenerPorId(200L);
 
-        // Assert
+        // Verificación
         assertNotNull(resultado);
         assertEquals(200L, resultado.id());
         assertEquals(2L, resultado.sucursalId());
@@ -143,11 +143,11 @@ class VentaServiceSegregationTest {
     @Test
     @DisplayName("❌ Usuario de Sucursal 1 NO puede ver venta de Sucursal 2")
     void testObtenerPorId_UserSucursal1_CantAccessSucursal2Venta() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
         when(ventaRepository.findById(200L)).thenReturn(Optional.of(ventaSucursal2));
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> ventaService.obtenerPorId(200L),
@@ -159,7 +159,7 @@ class VentaServiceSegregationTest {
     @Test
     @DisplayName("❌ Venta sin sucursal asignada no puede ser accedida")
     void testObtenerPorId_VentaWithoutSucursal_ThrowsException() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
 
         Venta ventaSinSucursal = new Venta();
@@ -168,7 +168,7 @@ class VentaServiceSegregationTest {
 
         when(ventaRepository.findById(999L)).thenReturn(Optional.of(ventaSinSucursal));
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> ventaService.obtenerPorId(999L),
@@ -178,22 +178,22 @@ class VentaServiceSegregationTest {
     }
 
     // ============================================================
-    // TESTS: cancelarVenta() - Validación de Segregación
+    // PRUEBAS: cancelarVenta() - Validación de Segregación
     // ============================================================
 
     @Test
     @DisplayName("✅ Usuario de Sucursal 1 puede cancelar su propia venta")
     void testCancelarVenta_UserSucursal1_CancelOwnVenta() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
         when(ventaRepository.findById(100L)).thenReturn(Optional.of(ventaSucursal1));
         when(ventaRepository.save(any(Venta.class))).thenReturn(ventaSucursal1);
         when(inventarioMovimientoRepository.findByRefTipoAndRefId(any(), any())).thenReturn(java.util.List.of());
 
-        // Act
+        // Ejecución
         VentaDTO resultado = ventaService.cancelarVenta(100L, "Error en el registro");
 
-        // Assert
+        // Verificación
         assertNotNull(resultado);
         assertEquals("cancelada", ventaSucursal1.getEstado());
         verify(ventaRepository).findById(100L);
@@ -203,11 +203,11 @@ class VentaServiceSegregationTest {
     @Test
     @DisplayName("❌ Usuario de Sucursal 2 NO puede cancelar venta de Sucursal 1")
     void testCancelarVenta_UserSucursal2_CantCancelSucursal1Venta() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(2L, "Sucursal 2");
         when(ventaRepository.findById(100L)).thenReturn(Optional.of(ventaSucursal1));
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> ventaService.cancelarVenta(100L, "Error en el registro"),
@@ -224,16 +224,16 @@ class VentaServiceSegregationTest {
     @Test
     @DisplayName("✅ Usuario de Sucursal 2 puede cancelar su propia venta")
     void testCancelarVenta_UserSucursal2_CancelOwnVenta() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(2L, "Sucursal 2");
         when(ventaRepository.findById(200L)).thenReturn(Optional.of(ventaSucursal2));
         when(ventaRepository.save(any(Venta.class))).thenReturn(ventaSucursal2);
         when(inventarioMovimientoRepository.findByRefTipoAndRefId(any(), any())).thenReturn(java.util.List.of());
 
-        // Act
+        // Ejecución
         VentaDTO resultado = ventaService.cancelarVenta(200L, "Error en el registro");
 
-        // Assert
+        // Verificación
         assertNotNull(resultado);
         assertEquals("cancelada", ventaSucursal2.getEstado());
         verify(ventaRepository).findById(200L);
@@ -243,11 +243,11 @@ class VentaServiceSegregationTest {
     @Test
     @DisplayName("❌ Usuario de Sucursal 1 NO puede cancelar venta de Sucursal 2")
     void testCancelarVenta_UserSucursal1_CantCancelSucursal2Venta() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
         when(ventaRepository.findById(200L)).thenReturn(Optional.of(ventaSucursal2));
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> ventaService.cancelarVenta(200L, "Error en el registro"),
@@ -263,10 +263,10 @@ class VentaServiceSegregationTest {
     @Test
     @DisplayName("❌ Cancelar venta sin motivo lanza excepción")
     void testCancelarVenta_SinMotivo_ThrowsException() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
 
-        // Act & Assert
+        // Ejecución y verificación
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
                 () -> ventaService.cancelarVenta(100L, null),
@@ -279,12 +279,12 @@ class VentaServiceSegregationTest {
     @Test
     @DisplayName("❌ Cancelar venta ya cancelada lanza excepción")
     void testCancelarVenta_YaCancelada_ThrowsException() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
         ventaSucursal1.setEstado("cancelada"); // Ya está cancelada
         when(ventaRepository.findById(100L)).thenReturn(Optional.of(ventaSucursal1));
 
-        // Act & Assert
+        // Ejecución y verificación
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
                 () -> ventaService.cancelarVenta(100L, "Error duplicado"),
@@ -295,17 +295,17 @@ class VentaServiceSegregationTest {
     }
 
     // ============================================================
-    // TESTS: Casos extremos y seguridad
+    // PRUEBAS: Casos extremos y seguridad
     // ============================================================
 
     @Test
     @DisplayName("❌ Venta inexistente lanza ResourceNotFoundException")
     void testObtenerPorId_VentaNoExiste_ThrowsException() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
         when(ventaRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> ventaService.obtenerPorId(999L),
@@ -316,7 +316,7 @@ class VentaServiceSegregationTest {
 
     @AfterEach
     void tearDown() {
-        // Limpiar contexto después de cada test
+        // Limpiar contexto después de cada prueba
         SucursalContext.clear();
     }
 }

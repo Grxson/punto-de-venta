@@ -22,18 +22,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfigurationSource;
 
 /**
- * Configuración de seguridad para la API con JWT.
- * 
+ * Configuración de seguridad de la API basada en JWT.
+ *
  * Configuración actual:
- * - Autenticación JWT
- * - CSRF deshabilitado (para APIs RESTful stateless)
- * - Sesiones stateless
+ * - Autenticación por JWT
+ * - CSRF deshabilitado, al tratarse de una API REST sin estado
+ * - Sesiones sin estado
  * - Swagger UI público
- * - H2 Console público (solo desarrollo)
+ * - Consola H2 pública, solo en desarrollo
  * - Endpoints de autenticación públicos
- * 
- * @author Grxson
- * @version 1.0.0
+ *
  * @since Java 21
  */
 @Configuration
@@ -61,11 +59,23 @@ public class SecurityConfig {
     @Autowired
     private CorsConfigurationSource corsConfigurationSource;
 
+    /**
+     * Proporciona el codificador de contraseñas usado al guardar y comparar credenciales.
+     *
+     * @return codificador BCrypt
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Construye el gestor de autenticación basado en el proveedor DAO.
+     *
+     * @param http contexto de seguridad de Spring Security
+     * @return gestor de autenticación configurado
+     * @throws Exception si la configuración de Spring Security no es válida
+     */
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         AuthenticationManagerBuilder authenticationManagerBuilder = http
@@ -75,6 +85,11 @@ public class SecurityConfig {
         return authenticationManagerBuilder.build();
     }
 
+    /**
+     * Crea el proveedor de autenticación que valida contra la base de datos.
+     *
+     * @return proveedor configurado con el servicio de usuarios y el codificador de contraseñas
+     */
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -83,64 +98,68 @@ public class SecurityConfig {
         return provider;
     }
 
+    /**
+     * Define la cadena de filtros de seguridad: CORS, autorización por endpoint y
+     * orden de ejecución de los filtros propios.
+     *
+     * @param http contexto de seguridad de Spring Security
+     * @return cadena de filtros ya construida
+     * @throws Exception si la configuración de Spring Security no es válida
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Configurar CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
-                // Deshabilitar CSRF para API RESTful
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // Sesiones stateless (sin estado)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Configurar autorización de requests
-.authorizeHttpRequests(auth -> auth
-                // Endpoints públicos - IMPORTANTE: El orden importa, estos se evalúan primero
+                .authorizeHttpRequests(auth -> auth
+                // Endpoints públicos: el orden importa, se evalúan primero
                 .requestMatchers("/api/auth/login").permitAll()
-                // Refresh: el JWT llega expirado, JwtAuthenticationFilter lo deja pasar
-                // a propósito y el controlador renueva la sesión
+                // El refresco recibe un JWT caducado, JwtAuthenticationFilter lo deja
+                // pasar a propósito y el controlador renueva la sesión
                 .requestMatchers("/api/auth/refresh-token").permitAll()
-                // NOTA: /api/auth/register y el resto de /api/auth requieren autenticación
-                // (evitar alta y gestión de usuarios sin login)
+                // /api/auth/register y el resto de /api/auth requieren autenticación,
+                // para no permitir el alta ni la gestión de usuarios sin iniciar sesión
                 .requestMatchers("/api/categorias/**").permitAll() // Subcategorías para el formulario de
                                                                    // productos
                 .requestMatchers("/api/v1/menu/**").permitAll() // Menú dinámico por popularidad
-                .requestMatchers("/api/v1/metrics/web-vitals").permitAll() // Telemetría de navegador (sin auth)
+                .requestMatchers("/api/v1/metrics/web-vitals").permitAll() // Telemetría de navegador, sin autenticación
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                // REST de actuator (metrics, prometheus, info) y métricas internas requieren auth
+                // El REST de actuator (metrics, prometheus, info) y las métricas internas sí requieren autenticación
                 .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/api-docs",
                         "/api-docs/**")
                 .permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/monitoring").permitAll() // Dashboard HTML (datos vía /api/monitoring protegido)
+                .requestMatchers("/monitoring").permitAll() // Dashboard HTML, los datos van por /api/monitoring protegido
                 .requestMatchers("/api/monitoring/**").permitAll() // Autenticado por MonitoringAuthFilter
-                .requestMatchers("/ws/**", "/topic/**", "/queue/**", "/user/**", "/app/**").permitAll() // WebSocket
-                                                                                                        // endpoints
+                .requestMatchers("/ws/**", "/topic/**", "/queue/**", "/user/**", "/app/**").permitAll() // Extremos
+                                                                                                          // del WebSocket
                 .requestMatchers("/error").permitAll()
 
-                // Permitir OPTIONS para CORS preflight
+                // Permitir OPTIONS para el preflight de CORS
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 
                 // Auditoría 2026-09-11 (A14): RBAC explícito por endpoint.
-                // Ventas y métodos de pago: los 3 roles (el cajero opera el POS)
+                // Ventas y métodos de pago: los tres roles, ya que el cajero opera el punto de venta
                 .requestMatchers("/api/ventas/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_CAJERO", "ROLE_GERENTE")
-                // Productos: lectura para todos, escritura SOLO ADMIN
+                // Productos: lectura para todos, escritura solo ADMIN
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/inventario/productos/**")
                 .hasAnyAuthority("ROLE_ADMIN", "ROLE_CAJERO", "ROLE_GERENTE")
                 .requestMatchers("/api/inventario/productos/**").hasAuthority("ROLE_ADMIN")
-                // Categorías de producto: lectura para todos, escritura SOLO ADMIN
+                // Categorías de producto: lectura para todos, escritura solo ADMIN
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/inventario/categorias-productos/**")
                 .hasAnyAuthority("ROLE_ADMIN", "ROLE_CAJERO", "ROLE_GERENTE")
                 .requestMatchers("/api/inventario/categorias-productos/**").hasAuthority("ROLE_ADMIN")
-                // Atributos/variantes/tamaños de productos: escritura ADMIN
+                // Atributos, variantes y tamaños de producto: escritura ADMIN
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/productos/**")
                 .hasAnyAuthority("ROLE_ADMIN", "ROLE_CAJERO", "ROLE_GERENTE")
                 .requestMatchers("/api/v1/productos/**").hasAuthority("ROLE_ADMIN")
-                // Admin + Gerente: compras, finanzas, reportes, estadísticas, inventario
-                // completo, mano de obra, catálogos, usuarios
+                // ADMIN y GERENTE: compras, finanzas, reportes, estadísticas, inventario
+                // completo, mano de obra, catálogos y usuarios
                 .requestMatchers("/api/compras/**", "/api/finanzas/**", "/api/reportes/**",
                         "/api/estadisticas/**", "/api/ingredientes/**", "/api/recetas/**",
                         "/api/inventario/movimientos/**", "/api/inventario/mermas/**",
@@ -153,20 +172,19 @@ public class SecurityConfig {
                 // Todos los demás endpoints requieren autenticación
                 .anyRequest().authenticated())
 
-                // Agregar filtro de Rate Limiting PRIMERO para proteger desde el inicio
+                // El límite de tasa se aplica el primero para proteger desde la entrada
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // Agregar filtro de Query Profiling para métricas de performance
                 .addFilterBefore(queryProfilerFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // Agregar filtro de monitoreo ANTES del JWT para que valide primero
-                .addFilterBefore(monitoringAuthFilter, UsernamePasswordAuthenticationFilter.class)                // Agregar filtro JWT antes del filtro de autenticación
+                // El filtro de monitoreo va antes del JWT para que valide primero
+                .addFilterBefore(monitoringAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
-                // Agregar filtro de contexto de sucursal (después del JWT para acceder al usuario autenticado)
+                // El contexto de sucursal va después del JWT, para acceder al usuario autenticado
                 .addFilterAfter(sucursalContextFilter, JwtAuthenticationFilter.class)
 
-                // Configuración para H2 Console (solo desarrollo)
+                // La consola H2 solo se usa en desarrollo
                 .headers(headers -> headers
                         .frameOptions(frame -> frame.sameOrigin()));
 

@@ -8,7 +8,20 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * DTO para actualizar una venta existente (PUT).
+ * Cuerpo de la petición PUT para corregir una venta ya registrada.
+ *
+ * <p>A diferencia de {@link CrearVentaRequest}, aquí las líneas y los pagos se reenvían
+ * completos: la venta se reconstruye con lo recibido. Se usa sobre todo para anular o
+ * corregir cobros mal digitados, por lo que se exige conservar {@code items} y {@code pagos}.
+ *
+ * @param sucursalId sucursal donde se registró la venta; si es {@code null} se conserva la actual
+ * @param items     líneas de la venta, al menos una
+ * @param pagos     medios de pago que componen la venta, al menos uno (admite pago mixto)
+ * @param descuento descuento aplicado al total; {@code null} se interpreta como cero
+ * @param nota      observación interna del vendedor
+ * @param fecha     fecha de la venta en texto libre; si es vacía se conserva la existente
+ * @param canal     origen de la venta ({@code POS}, {@code WEB}, {@code APP}); {@code null} o
+ *                  vacío se normaliza a {@code POS}
  */
 public record ActualizarVentaRequest(
         Long sucursalId,

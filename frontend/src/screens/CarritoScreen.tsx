@@ -10,6 +10,12 @@ import {
 import { useMenu } from '../hooks/useMenu';
 import { CarritoItem } from '../types/menu';
 
+/**
+ * Pantalla del carrito de compra con control de cantidades y total.
+ *
+ * @returns La lista de artículos y el pie con el total; si el carrito está
+ *          vacío, un mensaje informativo.
+ */
 export function CarritoScreen() {
   const { carrito, actualizarCantidad, totalCarrito, cantidadCarrito, limpiarCarrito } =
     useMenu();

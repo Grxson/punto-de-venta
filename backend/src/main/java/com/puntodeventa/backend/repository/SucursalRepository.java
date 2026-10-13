@@ -13,8 +13,20 @@ import java.util.List;
 @Repository
 public interface SucursalRepository extends JpaRepository<Sucursal, Long> {
     
+    /**
+     * Recupera las sucursales activas.
+     *
+     * @return lista de sucursales con activo = true
+     */
     @Query("SELECT s FROM Sucursal s WHERE s.activo = true")
     List<Sucursal> findByActivoTrue();
+
+    /**
+     * Recupera las sucursales inactivas.
+     * Existe para consultar las sucursales retiradas sin borrar su histórico.
+     *
+     * @return lista de sucursales con activo = false
+     */
     @Query("SELECT s FROM Sucursal s WHERE s.activo = false")
     List<Sucursal> findByActivoFalse();
 }

@@ -1,18 +1,29 @@
 /**
  * Servicio centralizado para peticiones HTTP
  * Maneja autenticación, errores y reintentos
+ *
+ * Envuelve `fetch` para devolver siempre un resultado tipado
+ * (`ApiResponse`) en lugar de lanzar excepciones, de modo que las pantallas
+ * puedan validar `success` sin envolver cada llamada en un `try/catch`.
  */
 
 import { API_CONFIG, DEFAULT_HEADERS, API_ENDPOINTS } from '../config/api.config';
 
+/**
+ * Opciones comunes de una petición.
+ */
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   headers?: Record<string, string>;
   body?: any;
   timeout?: number;
+  /** Cuando es `false`, omite la cabecera `Authorization`. */
   requiresAuth?: boolean;
 }
 
+/**
+ * Resultado normalizado de una petición, exitoso o no.
+ */
 interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
@@ -21,6 +32,9 @@ interface ApiResponse<T = any> {
   statusCode?: number;
 }
 
+/**
+ * Cliente HTTP basado en la configuración de `api.config.ts`.
+ */
 class ApiService {
   private baseUrl: string;
   private timeout: number;
@@ -34,6 +48,9 @@ class ApiService {
 
   /**
    * Obtener token de autenticación
+   *
+   * @returns El token actual, o `null` si aún no se ha implementado el
+   *          almacenamiento seguro.
    */
   private getAuthToken(): string | null {
     // TODO: Implementar storage seguro (AsyncStorage, SecureStore)
@@ -42,6 +59,9 @@ class ApiService {
 
   /**
    * Construir headers de la petición
+   *
+   * @param options Opciones de la petición actual.
+   * @returns Las cabeceras comunes fusionadas con las de la llamada.
    */
   private buildHeaders(options: RequestOptions): Record<string, string> {
     const headers = { ...DEFAULT_HEADERS, ...options.headers };
@@ -59,6 +79,14 @@ class ApiService {
 
   /**
    * Realizar petición HTTP con timeout
+   *
+   * `fetch` no soporta timeout por sí solo, así que se recurre a
+   * `AbortController` para poder cancelar la petición pendiente.
+   *
+   * @param url URL completa a la que se solicita.
+   * @param options Opciones pasadas a `fetch`.
+   * @param timeout Milisegundos antes de abortar.
+   * @returns La respuesta cruda de `fetch`.
    */
   private async fetchWithTimeout(
     url: string,
@@ -83,6 +111,14 @@ class ApiService {
 
   /**
    * Realizar petición con reintentos
+   *
+   * Solo reintenta ante `AbortError` (tiempo de espera agotado): un 4xx o 5xx
+   * se devuelve tal cual, porque repetirlo no cambiaría el resultado.
+   *
+   * @param endpoint Ruta relativa al backend.
+   * @param options Opciones de la petición.
+   * @param attempt Número de intento actual, usado para el retardo progresivo.
+   * @returns La respuesta normalizada del intento.
    */
   private async requestWithRetry<T>(
     endpoint: string,
@@ -155,6 +191,9 @@ class ApiService {
 
   /**
    * Delay helper para reintentos
+   *
+   * @param ms Milisegundos a esperar.
+   * @returns Promesa resuelta al cumplirse el tiempo.
    */
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -162,24 +201,65 @@ class ApiService {
 
   /**
    * Métodos públicos HTTP
+   *
+   * Cada verbo delega en `requestWithRetry` y solo se diferencia en el
+   * método HTTP y en si admite cuerpo.
    */
 
+  /**
+   * Realiza una petición GET.
+   *
+   * @param endpoint Ruta relativa al backend.
+   * @param options Opciones adicionales (cabeceras, timeout, autenticación).
+   * @returns La respuesta normalizada.
+   */
   async get<T = any>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, { ...options, method: 'GET' });
   }
 
+  /**
+   * Realiza una petición POST.
+   *
+   * @param endpoint Ruta relativa al backend.
+   * @param body Cuerpo que se serializa como JSON.
+   * @param options Opciones adicionales.
+   * @returns La respuesta normalizada.
+   */
   async post<T = any>(endpoint: string, body?: any, options?: Omit<RequestOptions, 'method'>): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, { ...options, body, method: 'POST' });
   }
 
+  /**
+   * Realiza una petición PUT.
+   *
+   * @param endpoint Ruta relativa al backend.
+   * @param body Cuerpo que se serializa como JSON.
+   * @param options Opciones adicionales.
+   * @returns La respuesta normalizada.
+   */
   async put<T = any>(endpoint: string, body?: any, options?: Omit<RequestOptions, 'method'>): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, { ...options, body, method: 'PUT' });
   }
 
+  /**
+   * Realiza una petición PATCH.
+   *
+   * @param endpoint Ruta relativa al backend.
+   * @param body Cuerpo que se serializa como JSON.
+   * @param options Opciones adicionales.
+   * @returns La respuesta normalizada.
+   */
   async patch<T = any>(endpoint: string, body?: any, options?: Omit<RequestOptions, 'method'>): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, { ...options, body, method: 'PATCH' });
   }
 
+  /**
+   * Realiza una petición DELETE.
+   *
+   * @param endpoint Ruta relativa al backend.
+   * @param options Opciones adicionales.
+   * @returns La respuesta normalizada.
+   */
   async delete<T = any>(endpoint: string, options?: Omit<RequestOptions, 'method' | 'body'>): Promise<ApiResponse<T>> {
     return this.requestWithRetry<T>(endpoint, { ...options, method: 'DELETE' });
   }
@@ -190,6 +270,8 @@ class ApiService {
 
   /**
    * Verificar conectividad con el backend
+   *
+   * @returns `true` si el backend responde con estado `UP`.
    */
   async checkHealth(): Promise<boolean> {
     try {
@@ -202,6 +284,8 @@ class ApiService {
 
   /**
    * Obtener versión del backend
+   *
+   * @returns La respuesta normalizada con la versión del backend.
    */
   async getVersion(): Promise<ApiResponse<any>> {
     return this.get(API_ENDPOINTS.VERSION, { requiresAuth: false });
@@ -209,6 +293,8 @@ class ApiService {
 
   /**
    * Cambiar URL base (útil para testing)
+   *
+   * @param url Nueva URL base del backend.
    */
   setBaseUrl(url: string): void {
     this.baseUrl = url;

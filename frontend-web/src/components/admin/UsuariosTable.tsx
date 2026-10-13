@@ -1,5 +1,5 @@
 /**
- * Tabla para listar usuarios
+ * Tabla de usuarios con búsqueda, filtros y paginación.
  */
 
 import {
@@ -29,14 +29,26 @@ import type { Usuario } from '../../types/usuario.types';
 import type { Rol } from '../../types/rol.types';
 
 interface UsuariosTableProps {
+  /** Usuarios a mostrar; por defecto lista vacía. */
   usuarios?: Usuario[];
+  /** Roles disponibles para el filtro y el cambio rápido de rol. */
   roles?: Rol[];
+  /** Indica que los usuarios se están cargando. */
   isLoading?: boolean;
+  /** Abre la edición del usuario seleccionado. */
   onEdit: (usuario: Usuario) => void;
+  /** Solicita la eliminación del usuario indicado. */
   onDelete: (usuarioId: number) => void;
+  /** Cambia el rol de un usuario desde la propia fila. */
   onChangeRole: (usuarioId: number, rolId: number) => void;
 }
 
+/**
+ * Tabla de usuarios con filtros de texto, rol y estado, además de paginación.
+ * Permite editar, eliminar y reasignar el rol directamente desde cada fila.
+ *
+ * @param props - Propiedades descritas en {@link UsuariosTableProps}.
+ */
 export const UsuariosTable = ({
   usuarios = [],
   roles = [],

@@ -13,9 +13,22 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repositorio de renglones de venta: expone agregados de rendimiento por producto para reportes.
+ */
 @Repository
 public interface VentaItemRepository extends JpaRepository<VentaItem, Long> {
 
+    /**
+     * Obtiene el ranking de productos por ingreso en un rango de fechas y sucursal.
+     * Agrega cantidades e importes en base de datos para no traer los renglones a memoria.
+     *
+     * @param inicio     fecha de inicio del periodo (inclusive)
+     * @param fin        fecha de fin del periodo (inclusive)
+     * @param sucursalId ID de la sucursal
+     * @param pageable   límite de resultados del ranking
+     * @return lista de agregados por producto ordenada por subtotal descendente
+     */
     @Query("""
             SELECT new com.puntodeventa.backend.dto.aggregate.ProductoRendimientoAggregate(
                 i.producto.id,
@@ -41,6 +54,10 @@ public interface VentaItemRepository extends JpaRepository<VentaItem, Long> {
      * Obtiene las estadísticas de venta de un producto desde una fecha en adelante.
      * Incluye: frecuencia (número de transacciones), cantidad total, ingreso y
      * última venta.
+     *
+     * @param productoId ID del producto
+     * @param desde      fecha desde la que se acumulan las ventas
+     * @return agregado de estadísticas del producto, o vacío si no tiene ventas en el periodo
      */
     @Query("""
             SELECT new com.puntodeventa.backend.dto.aggregate.ProductoEstadisticasAggregate(
@@ -64,6 +81,10 @@ public interface VentaItemRepository extends JpaRepository<VentaItem, Long> {
      * Obtiene estadísticas para todos los productos desde una fecha.
      * Retorna solo productos que tienen ventas en el período especificado.
      * ✅ SEGREGACIÓN: Filtra por sucursal de la venta
+     *
+     * @param desde      fecha desde la que se acumulan las ventas
+     * @param sucursalId ID de la sucursal
+     * @return lista de agregados por producto
      */
     @Query("""
             SELECT new com.puntodeventa.backend.dto.aggregate.ProductoEstadisticasAggregate(

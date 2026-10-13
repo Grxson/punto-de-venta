@@ -22,6 +22,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Servicio de gestión del catálogo de productos.
+ * Modela productos base y sus variantes (talla, presentación, etc.), y acota
+ * toda operación a la sucursal del usuario tomada de {@code SucursalContext}.
+ * Las consultas usan {@code LEFT JOIN FETCH} y cache por identificador para
+ * evitar el problema N+1 al listar variantes.
+ */
 @Slf4j
 @Service
 @Transactional
@@ -37,6 +44,16 @@ public class ProductoService {
         this.sucursalRepository = sucursalRepository;
     }
 
+    /**
+     * Lista los productos de la sucursal del usuario con filtros opcionales.
+     * Los filtros se aplican en memoria sobre el resultado ya hidratado.
+     *
+     * @param activo      Filtro por estado activo; vacío para no filtrar.
+     * @param enMenu      Filtro por disponibilidad en menú; vacío para no filtrar.
+     * @param categoriaId Filtro por categoría; vacío para no filtrar.
+     * @param q           Texto a buscar en el nombre; vacío para no filtrar.
+     * @return Lista de DTO con los productos que cumplen los filtros.
+     */
     @Transactional(readOnly = true)
     public List<ProductoDTO> listar(Optional<Boolean> activo, Optional<Boolean> enMenu, Optional<Long> categoriaId,
             Optional<String> q) {
@@ -65,6 +82,16 @@ public class ProductoService {
      * Antes: findBySucursalIdAndProductoBaseIdIsNull() + toDTOWithVariantes() = 1+N queries
      * Después: findProductosBaseConVariantes() = 1 query con JOIN FETCH
      * Impacto esperado: De 5.8 segundos a ~200ms (96% mejora)
+     *
+     * La paginación se aplica en memoria sobre la lista ya filtrada porque los
+     * filtros son dinámicos y no se pueden empujar a la consulta.
+     *
+     * @param pageable    Configuración de página y tamaño.
+     * @param activo      Filtro por estado activo; vacío para no filtrar.
+     * @param enMenu      Filtro por disponibilidad en menú; vacío para no filtrar.
+     * @param categoriaId Filtro por categoría; vacío para no filtrar.
+     * @param q           Texto a buscar en el nombre; vacío para no filtrar.
+     * @return Página de DTO con los productos que cumplen los filtros.
      */
     @Transactional(readOnly = true)
     public Page<ProductoDTO> listarPaginado(
@@ -102,6 +129,15 @@ public class ProductoService {
         return new PageImpl<>(pageContent, pageable, dtos.size());
     }
 
+    /**
+     * Obtiene un producto de la sucursal del usuario.
+     * Si es un producto base, se proyecta con sus variantes activas; si es una
+     * variante, se proyecta sin anidar más niveles.
+     *
+     * @param id Identificador del producto o variante.
+     * @return DTO del producto encontrado.
+     * @throws ResourceNotFoundException si el producto no existe o pertenece a otra sucursal.
+     */
     @Cacheable(value = "productos", key = "#id")
     @Transactional(readOnly = true)
     public ProductoDTO obtener(Long id) {
@@ -133,6 +169,10 @@ public class ProductoService {
      * Antes: findAll() + filter = N+1 queries
      * Después: findVariantesByProductoBaseId() = 1 query
      * Impacto: -70% queries para obtener variantes
+     *
+     * @param productoBaseId Identificador del producto base.
+     * @return Lista de DTO con las variantes del producto base.
+     * @throws ResourceNotFoundException si el producto base no existe o pertenece a otra sucursal.
      */
     @Cacheable(value = "productos", key = "'variantes-' + #productoBaseId")
     @Transactional(readOnly = true)
@@ -155,6 +195,13 @@ public class ProductoService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Crea un producto y lo asigna a la sucursal del usuario.
+     *
+     * @param dto Datos del producto a crear.
+     * @return DTO del producto creado.
+     * @throws ResourceNotFoundException si la sucursal o la categoría no existen.
+     */
     @CacheEvict(value = "productos", allEntries = true)
     public ProductoDTO crear(ProductoDTO dto) {
         // ✅ SEGREGACIÓN: Auto-asignar sucursal del usuario actual
@@ -170,6 +217,19 @@ public class ProductoService {
         return toDTO(guardado);
     }
 
+    /**
+     * Actualiza un producto de la sucursal del usuario.
+     * Si el producto aún no tenía sucursal, se le asigna la actual; si ya tenía
+     * otra, se rechaza la operación. Para variantes se valida que no se repita el
+     * {@code nombreVariante} dentro del mismo producto base.
+     *
+     * @param id  Identificador del producto a actualizar.
+     * @param dto Datos a aplicar sobre el producto.
+     * @return DTO del producto actualizado.
+     * @throws ResourceNotFoundException si el producto, la sucursal o la categoría no existen,
+     *                                   o el producto pertenece a otra sucursal.
+     * @throws IllegalArgumentException  si ya existe una variante con el mismo nombre en el producto base.
+     */
     @CacheEvict(value = "productos", allEntries = true)
     public ProductoDTO actualizar(Long id, ProductoDTO dto) {
         // ✅ SEGREGACIÓN: Validar que el producto pertenece a la sucursal del usuario
@@ -209,6 +269,12 @@ public class ProductoService {
         return toDTO(guardado);
     }
 
+    /**
+     * Da de baja un producto de forma lógica, desactivando también sus variantes.
+     *
+     * @param id Identificador del producto a desactivar.
+     * @throws ResourceNotFoundException si el producto no existe o pertenece a otra sucursal.
+     */
     @CacheEvict(value = "productos", allEntries = true)
     public void eliminar(Long id) {
         // ✅ SEGREGACIÓN: Validar que el producto pertenece a la sucursal del usuario
@@ -239,6 +305,9 @@ public class ProductoService {
      * Elimina en cascada:
      * - Todas las variantes del producto base
      * - El producto base
+     *
+     * @param id Identificador del producto a eliminar.
+     * @throws ResourceNotFoundException si el producto no existe o pertenece a otra sucursal.
      */
     @CacheEvict(value = "productos", allEntries = true)
     public void eliminarDefinitivamente(Long id) {
@@ -266,6 +335,14 @@ public class ProductoService {
         log.info("Producto eliminado definitivamente: {} (ID: {})", p.getNombre(), id);
     }
 
+    /**
+     * Cambia el estado activo de un producto.
+     *
+     * @param id     Identificador del producto.
+     * @param activo Nuevo estado activo.
+     * @return DTO del producto actualizado.
+     * @throws ResourceNotFoundException si el producto no existe.
+     */
     public ProductoDTO cambiarEstado(Long id, boolean activo) {
         Producto p = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con id: " + id));
@@ -273,6 +350,15 @@ public class ProductoService {
         return toDTO(productoRepository.save(p));
     }
 
+    /**
+     * Crea una variante heredando nombre base, categoría, descripción y precio del
+     * producto base; el nombre completo se arma como {@code base - variante}.
+     *
+     * @param productoBaseId Identificador del producto base.
+     * @param dto            Datos de la variante a crear.
+     * @return DTO de la variante creada.
+     * @throws ResourceNotFoundException si el producto base no existe.
+     */
     @CacheEvict(value = "productos", allEntries = true)
     public ProductoDTO crearVariante(Long productoBaseId, ProductoDTO dto) {
         // Verificar que el producto base existe

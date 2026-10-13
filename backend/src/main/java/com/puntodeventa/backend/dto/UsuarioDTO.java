@@ -7,7 +7,23 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * DTO para Usuario con información de Rol anidada
+ * Usuario del sistema, con su rol y su sucursal asignada.
+ *
+ * <p>Es el response de los endpoints de usuarios y del alta de sesión: nunca incluye la
+ * contraseña. Se usa tanto en el panel de administración como en el login.
+ *
+ * @param id identificador del usuario
+ * @param nombre nombre de pila del usuario
+ * @param apellido apellido del usuario
+ * @param email correo institucional
+ * @param username nombre de acceso
+ * @param activo si el usuario puede iniciar sesión
+ * @param rol rol asignado al usuario
+ * @param rolNombre nombre del rol; se conserva para compatibilidad hacia atrás
+ * @param sucursalId sucursal a la que está asignado el usuario
+ * @param ultimoAcceso momento del último inicio de sesión
+ * @param createdAt momento de creación del usuario
+ * @param updatedAt momento de la última modificación
  */
 @Data
 @NoArgsConstructor
@@ -29,7 +45,12 @@ public class UsuarioDTO {
     private LocalDateTime updatedAt;
     
     /**
-     * DTO anidado para Rol dentro de Usuario
+     * Rol del usuario anidado dentro de su ficha.
+     *
+     * @param id identificador del rol
+     * @param nombre nombre del rol
+     * @param descripcion detalle de las funciones del rol
+     * @param activo si el rol puede asignarse a nuevos usuarios
      */
     @Data
     @NoArgsConstructor

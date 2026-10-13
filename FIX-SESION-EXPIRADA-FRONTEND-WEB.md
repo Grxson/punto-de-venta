@@ -1,4 +1,4 @@
-# 🔴 ANÁLISIS Y FIX: Ventana en Blanco al Expirar Sesión - Frontend-Web
+# 🔴 ANÁLISIS Y CORRECCIÓN: Ventana en Blanco al Expirar Sesión - Frontend-Web
 
 ## 📋 Problema Identificado
 
@@ -17,7 +17,7 @@ En producción, la aplicación se refresca de la nada y queda en blanco, con la 
 
 El token JWT ha expirado, pero el frontend-web tiene **deficiencias críticas** en el manejo de autenticación:
 
-1. **❌ No hay validación de token expirado** - La app envía requests con token inválido
+1. **❌ No hay validación de token expirado** - La app envía peticiones con token inválido
 2. **❌ No hay refresh token** - No puede renovar automáticamente el JWT
 3. **❌ No hay manejo de error 401** - Cuando el backend rechaza, falla catastróficamente
 4. **❌ No hay error boundary** - Sin pantalla de error, solo queda en blanco
@@ -116,7 +116,7 @@ if (response.status === 401) {
 **Beneficio**: 
 - Redirecciones seguras (no recursivas)
 - Parámetro `?expired=true` para mostrar mensaje
-- No reintentar requests de auth que ya fallaron
+- No reintentar peticiones de autenticación que ya fallaron
 
 ---
 
@@ -192,7 +192,7 @@ useEffect(() => {
     window.history.replaceState({}, document.title, '/login');
   }
   
-  // Buscar en sessionStorage (legacy)
+  // Buscar en sessionStorage (obsoleto)
   const expiredMsg = sessionStorage.getItem('sessionExpiredMessage');
   if (expiredMsg) {
     setSessionExpiredMessage(expiredMsg);
@@ -210,9 +210,9 @@ useEffect(() => {
 ### Antes (❌ PROBLEMA)
 ```
 1. Token expira
-2. Frontend envía request con token inválido
+2. Frontend envía petición con token inválido
 3. Backend retorna 401
-4. Frontend no maneja error
+4. Frontend no maneja el error
 5. App queda en estado inconsistente
 6. Pantalla queda en blanco
 ```
@@ -235,14 +235,14 @@ useEffect(() => {
 
 ## 🧪 Cómo Probar
 
-### Test 1: Token Expirado Manualmente
+### Prueba 1: Token Expirado Manualmente
 ```javascript
 // En consola del navegador
 localStorage.removeItem('auth_token');
 // Refrescar la página - debería redirigir a login
 ```
 
-### Test 2: Simular 401 del Backend
+### Prueba 2: Simular 401 del Backend
 ```javascript
 // El backend debe retornar 401 cuando el token es inválido
 // Editar el token en localStorage:
@@ -251,7 +251,7 @@ localStorage.setItem('auth_token', oldToken + 'invalid');
 // Hacer una petición - debería mostrar error y redirigir
 ```
 
-### Test 3: Error Boundary
+### Prueba 3: Error Boundary
 ```javascript
 // Lanzar un error en la consola
 throw new Error('Test error');
@@ -267,16 +267,16 @@ throw new Error('Test error');
    - Genera refresh token de larga duración (7 días)
    - Frontend intenta refrescar automáticamente antes de expirar
 
-2. **Agregar Countdown Visual**
+2. **Agregar Cuenta Regresiva Visual**
    - Mostrar aviso "Tu sesión expirará en 5 minutos"
-   - Permitir renovar con un click
+   - Permitir renovar con un clic
 
 3. **Persistencia Segura**
-   - Usar httpOnly cookies en lugar de localStorage
+   - Usar cookies httpOnly en lugar de localStorage
    - Proteger contra XSS
 
-4. **Sync entre Pestañas**
-   - Si se logout en una pestaña, logout en todas
+4. **Sincronización entre Pestañas**
+   - Si se cierra sesión en una pestaña, se cierra sesión en todas
 
 ---
 
@@ -292,23 +292,23 @@ throw new Error('Test error');
 
 ---
 
-## 🚀 Desplegador
+## 🚀 Despliegue
 
 Para aplicar estos cambios en producción:
 
 ```bash
-# 1. Asegurar que están todos los archivos commiteados
+# 1. Asegurar que están todos los archivos confirmados en el commit
 git status
 
 # 2. Hacer commit
 git add frontend-web/src/
 git commit -m "fix: Manejar correctamente expiración de sesión en frontend-web"
 
-# 3. Mergear a develop
+# 3. Fusionar con develop
 git checkout develop
 git merge feature/fix-session-expiry
 
-# 4. Deployear a producción
+# 4. Desplegar a producción
 # Seguir el pipeline CD/CI de Railway
 ```
 

@@ -24,6 +24,11 @@ public class MetodoPagoService {
 
     private final MetodoPagoRepository metodoPagoRepository;
 
+    /**
+     * Lista todos los métodos de pago, incluidos los inactivos.
+     *
+     * @return Lista de DTO con el catálogo completo; no se cachea si viene vacía.
+     */
     @Cacheable(value = "metodos-pago", unless = "#result.isEmpty()")
     public List<MetodoPagoDTO> obtenerTodos() {
         return metodoPagoRepository.findAll().stream()
@@ -31,6 +36,11 @@ public class MetodoPagoService {
                 .toList();
     }
 
+    /**
+     * Lista los métodos de pago activos.
+     *
+     * @return Lista de DTO de los métodos con {@code activo} en true.
+     */
     @Cacheable(value = "metodos-pago", key = "'activos'")
     public List<MetodoPagoDTO> obtenerActivos() {
         return metodoPagoRepository.findByActivoTrue().stream()
@@ -38,6 +48,13 @@ public class MetodoPagoService {
                 .toList();
     }
 
+    /**
+     * Obtiene un método de pago por su identificador.
+     *
+     * @param id Identificador del método de pago.
+     * @return DTO del método encontrado.
+     * @throws ResourceNotFoundException si el método no existe.
+     */
     @Cacheable(value = "metodos-pago", key = "#id")
     public MetodoPagoDTO obtenerPorId(Long id) {
         MetodoPago metodoPago = metodoPagoRepository.findById(id)
@@ -45,6 +62,12 @@ public class MetodoPagoService {
         return toDTO(metodoPago);
     }
 
+    /**
+     * Crea un método de pago.
+     *
+     * @param dto Datos del método a crear.
+     * @return DTO del método creado.
+     */
     @CacheEvict(value = "metodos-pago", allEntries = true)
     @Transactional
     public MetodoPagoDTO crear(MetodoPagoDTO dto) {
@@ -59,6 +82,14 @@ public class MetodoPagoService {
         return toDTO(guardado);
     }
 
+    /**
+     * Actualiza un método de pago existente.
+     *
+     * @param id  Identificador del método a actualizar.
+     * @param dto Datos a aplicar sobre el método.
+     * @return DTO del método actualizado.
+     * @throws ResourceNotFoundException si el método no existe.
+     */
     @CacheEvict(value = "metodos-pago", allEntries = true)
     @Transactional
     public MetodoPagoDTO actualizar(Long id, MetodoPagoDTO dto) {
@@ -74,6 +105,13 @@ public class MetodoPagoService {
         return toDTO(actualizado);
     }
 
+    /**
+     * Elimina un método de pago de forma física.
+     * Al no referenciarse desde el historial, el borrado no rompe integridad.
+     *
+     * @param id Identificador del método a eliminar.
+     * @throws ResourceNotFoundException si el método no existe.
+     */
     @CacheEvict(value = "metodos-pago", allEntries = true)
     @Transactional
     public void eliminar(Long id) {
@@ -83,7 +121,7 @@ public class MetodoPagoService {
         metodoPagoRepository.deleteById(id);
     }
 
-    // Método helper para conversión a DTO
+    // Convierte una entidad en su DTO de salida.
     private MetodoPagoDTO toDTO(MetodoPago metodoPago) {
         return new MetodoPagoDTO(
                 metodoPago.getId(),

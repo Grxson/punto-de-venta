@@ -5,15 +5,21 @@
 import { apiService } from './api.service';
 
 interface ManoObra {
+  /** Ausente antes de guardar el registro. */
   id?: number;
   sucursalId?: number;
   sucursalNombre?: string;
   usuarioId?: number;
   usuarioNombre?: string;
+  /** Puesto o función desempeñada. */
   puesto: string;
+  /** Salario mensual, cuando el pago se define por mes. */
   salarioMensual?: number;
+  /** Pago por turno, cuando el pago se define por jornada. */
   pagoPorTurno?: number;
+  /** Periodo de pago asociado. */
   periodo?: string;
+  /** `false` equivale a baja lógica. */
   activo: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -23,7 +29,9 @@ const BASE_URL = '/mano-obra';
 
 export const manoObraService = {
   /**
-   * Obtener toda la mano de obra
+   * Obtiene todos los registros de mano de obra.
+   *
+   * @returns La lista de registros, o `[]` si la petición falla.
    */
   obtenerTodas: async () => {
     try {
@@ -40,7 +48,9 @@ export const manoObraService = {
   },
 
   /**
-   * Obtener mano de obra activa
+   * Obtiene los registros de mano de obra activos.
+   *
+   * @returns La lista de registros activos, o `[]` si la petición falla.
    */
   obtenerActivos: async () => {
     try {
@@ -56,7 +66,10 @@ export const manoObraService = {
   },
 
   /**
-   * Obtener un registro de mano de obra por ID
+   * Obtiene un registro de mano de obra por su ID.
+   *
+   * @param id - ID del registro.
+   * @returns El registro, o `null` si no existe o la petición falla.
    */
   obtenerPorId: async (id: number) => {
     try {
@@ -72,7 +85,11 @@ export const manoObraService = {
   },
 
   /**
-   * Crear un nuevo registro de mano de obra
+   * Crea un registro de mano de obra nuevo.
+   *
+   * @param data - Datos del registro.
+   * @returns El registro creado.
+   * @throws Error si el backend no devuelve datos o indica fallo.
    */
   crear: async (data: ManoObra) => {
     try {
@@ -87,7 +104,12 @@ export const manoObraService = {
   },
 
   /**
-   * Actualizar un registro de mano de obra
+   * Actualiza un registro de mano de obra.
+   *
+   * @param id - ID del registro.
+   * @param data - Datos del registro.
+   * @returns El registro actualizado.
+   * @throws Error si el backend no devuelve datos o indica fallo.
    */
   actualizar: async (id: number, data: ManoObra) => {
     try {
@@ -102,7 +124,11 @@ export const manoObraService = {
   },
 
   /**
-   * Eliminar un registro de mano de obra
+   * Elimina un registro de mano de obra.
+   *
+   * @param id - ID del registro.
+   * @returns `true` si la eliminación fue correcta.
+   * @throws Error si el backend indica fallo.
    */
   eliminar: async (id: number) => {
     try {

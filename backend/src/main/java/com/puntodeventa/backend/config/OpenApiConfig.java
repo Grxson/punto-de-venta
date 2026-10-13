@@ -44,6 +44,12 @@ public class OpenApiConfig {
     @Value("${server.port}")
     private String serverPort;
 
+    /**
+     * Define el documento OpenAPI con la información, los servidores y los esquemas
+     * de seguridad de la API.
+     *
+     * @return documento OpenAPI configurado
+     */
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()

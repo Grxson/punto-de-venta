@@ -1,12 +1,12 @@
 /**
- * Hooks de React Query para productos
- * Implementa caché y sincronización de datos con el backend
+ * Hooks de React Query para productos.
+ * Implementan `cache` y sincronización de datos con el backend.
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productosService, type Producto, type ProductoFiltros } from '../services/productos.service';
 
-// Query keys para productos
+/** Fábrica de claves de `cache` de React Query para productos. */
 export const productosKeys = {
   all: ['productos'] as const,
   lists: () => [...productosKeys.all, 'list'] as const,
@@ -16,8 +16,10 @@ export const productosKeys = {
 };
 
 /**
- * Hook para listar productos
- * Caché: 5 minutos (semi-estático)
+ * Lista productos, opcionalmente filtrados.
+ *
+ * @param filtros - Filtros de búsqueda enviados al servicio.
+ * @returns Resultado de `useQuery` con la lista de productos. `cache`: 5 minutos.
  */
 export const useProductos = (filtros?: ProductoFiltros) => {
   return useQuery({
@@ -28,8 +30,10 @@ export const useProductos = (filtros?: ProductoFiltros) => {
 };
 
 /**
- * Hook para obtener un producto específico
- * Caché: 5 minutos (semi-estático)
+ * Obtiene un producto específico por su id.
+ *
+ * @param id - Id del producto; si no es válido, la consulta no se ejecuta.
+ * @returns Resultado de `useQuery` con el detalle del producto. `cache`: 5 minutos.
  */
 export const useProducto = (id: number) => {
   return useQuery({
@@ -41,8 +45,9 @@ export const useProducto = (id: number) => {
 };
 
 /**
- * Hook para crear producto
- * Invalida automáticamente el caché de productos
+ * Crea un producto e invalida las listas cacheadas.
+ *
+ * @returns Resultado de `useMutation` que espera los datos del producto sin `id` ni `variantes`.
  */
 export const useCrearProducto = () => {
   const queryClient = useQueryClient();
@@ -58,8 +63,10 @@ export const useCrearProducto = () => {
 };
 
 /**
- * Hook para actualizar producto
- * Invalida automáticamente el caché
+ * Actualiza un producto e invalida listas y su detalle.
+ * Lanza un error si el servicio responde sin éxito.
+ *
+ * @returns Resultado de `useMutation` que espera `{ id, producto }`.
  */
 export const useActualizarProducto = () => {
   const queryClient = useQueryClient();
@@ -86,8 +93,9 @@ export const useActualizarProducto = () => {
 };
 
 /**
- * Hook para eliminar producto (borrado lógico)
- * Invalida automáticamente el caché
+ * Elimina un producto mediante borrado lógico e invalida las listas.
+ *
+ * @returns Resultado de `useMutation` que espera el `id` del producto.
  */
 export const useEliminarProducto = () => {
   const queryClient = useQueryClient();
@@ -102,8 +110,10 @@ export const useEliminarProducto = () => {
 };
 
 /**
- * Hook para eliminar producto permanentemente
- * Invalida automáticamente el caché
+ * Elimina un producto de forma definitiva e invalida las listas.
+ * Lanza un error si el servicio responde sin éxito.
+ *
+ * @returns Resultado de `useMutation` que espera el `id` del producto.
  */
 export const useEliminarProductoPermanente = () => {
   const queryClient = useQueryClient();
@@ -131,8 +141,10 @@ export const useEliminarProductoPermanente = () => {
 };
 
 /**
- * Hook para crear variante de un producto
- * Invalida automáticamente el caché
+ * Crea una variante de un producto e invalida las listas.
+ * Lanza un error si el servicio responde sin éxito.
+ *
+ * @returns Resultado de `useMutation` que espera `{ productoBaseId, variante }`.
  */
 export const useCrearVariante = () => {
   const queryClient = useQueryClient();

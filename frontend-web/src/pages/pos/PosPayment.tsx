@@ -16,14 +16,25 @@ import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/api.service';
 import { API_ENDPOINTS } from '../../config/api.config';
 
+/** Método de pago configurado por el administrador. */
 interface MetodoPago {
+  /** Id del método de pago. */
   id: number;
+  /** Nombre visible en los botones (Efectivo, Tarjeta, etc.). */
   nombre: string;
+  /** Si el cobro exige capturar una referencia (transferencia, cheque). */
   requiereReferencia: boolean;
+  /** Sólo se ofrecen los métodos activos. */
   activo: boolean;
+  /** Detalle opcional para mostrar al cajero. */
   descripcion?: string;
 }
 
+/**
+ * Cobro del carrito: resumen de la venta, elección de método y registro de la venta.
+ * @remarks Es el paso que descuenta inventario y deja el ticket registrado. Al
+ * terminar limpia el carrito y devuelve al cajero al inicio del punto de venta.
+ */
 export default function PosPayment() {
   const navigate = useNavigate();
   const { cart, total, clearCart } = useCart();
@@ -33,12 +44,18 @@ export default function PosPayment() {
   const [loading, setLoading] = useState(false);
   const [loadingMetodos, setLoadingMetodos] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false); // Prevenir pagos duplicados
+  const [isProcessing, setIsProcessing] = useState(false);
 
+  // Los métodos de pago se piden al montar: sin ellos no se puede cobrar
   useEffect(() => {
     loadMetodosPago();
   }, []);
 
+  /**
+   * Carga los métodos de pago activos y preselecciona el primero.
+   * @remarks Se usa `useEffect` en lugar de React Query porque la lista cambia muy
+   * rara vez y sólo se necesita una vez al entrar a la pantalla.
+   */
   const loadMetodosPago = async () => {
     try {
       setLoadingMetodos(true);
@@ -46,7 +63,6 @@ export default function PosPayment() {
       const response = await apiService.get(API_ENDPOINTS.PAYMENT_METHODS + '/activos');
       if (response.success && response.data) {
         setMetodosPago(response.data);
-        // Seleccionar el primer método por defecto
         if (response.data.length > 0) {
           setMetodoSeleccionado(response.data[0]);
         } else {
@@ -63,8 +79,14 @@ export default function PosPayment() {
     }
   };
 
+  /**
+   * Registra la venta con el método elegido y, si el backend responde bien,
+   * vacía el carrito y vuelve al inicio del punto de venta.
+   * @remarks `isProcessing` bloquea el doble clic para no cobrar dos veces:
+   * los botones de método y de confirmación quedan deshabilitados mientras dura
+   * la petición. Los fallos lo restablecen para permitir el reintento.
+   */
   const handleProcesarPago = async () => {
-    // Prevenir ejecución duplicada si ya está procesando
     if (isProcessing) {
       console.warn('⚠️ Pago ya está siendo procesado, ignora');
       return;
@@ -81,11 +103,11 @@ export default function PosPayment() {
     }
 
     try {
-      setIsProcessing(true); // Marcar como procesando
+      setIsProcessing(true);
       setLoading(true);
       setError(null);
 
-      // Preparar items de venta (usar overridePrice si fue editado)
+      // El precio unitario manda el override cuando el cajero lo editó
       const items = cart.map((item) => {
         const unitPrice = item.overridePrice ?? item.producto.precio;
         return {
@@ -96,18 +118,18 @@ export default function PosPayment() {
         };
       });
 
-      // Preparar pago
+      // El POS cobra un solo método, así que el pago siempre es uno
       const pagos = [
         {
           metodoPagoId: metodoSeleccionado.id,
           monto: total,
-          referencia: null, // Siempre null, no se usa
+          referencia: null,
         },
       ];
 
-      // Crear venta
       const ventaRequest = {
-        sucursalId: sucursal?.id || 1, // Usar sucursal del contexto (del JWT)
+        // La sucursal sale del JWT del usuario, no se la elige en el formulario
+        sucursalId: sucursal?.id || 1,
         items,
         pagos,
         canal: 'POS',
@@ -116,26 +138,29 @@ export default function PosPayment() {
       const response = await apiService.post(API_ENDPOINTS.SALES, ventaRequest);
 
       if (response.success) {
-        // Limpiar carrito
         clearCart();
-        // Guardar indicador de venta exitosa en localStorage como respaldo
+        // Respaldo por si el usuario navega fuera antes de leer el aviso
         localStorage.setItem('ventaExitosa', 'true');
-        // Redirigir a home con mensaje de éxito
         navigate('/pos', { state: { ventaExitosa: true } });
       } else {
         setError(response.error || 'Error al procesar la venta');
-        setIsProcessing(false); // Permitir reintentos en caso de error
+        setIsProcessing(false);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al procesar el pago');
-      setIsProcessing(false); // Permitir reintentos en caso de error
+      setIsProcessing(false);
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * Selecciona el método de pago activo y limpia el error anterior.
+   * @remarks Seleccionar no cobra: el cobro exige pulsar "Confirmar Pago", para
+   * que un toque accidental no cierre la venta.
+   * @param metodo - Método de pago que el cajero acaba de elegir.
+   */
   const handleMetodoClick = (metodo: MetodoPago) => {
-    // Clic único selecciona el método; la confirmación es explícita con "Confirmar Pago"
     if (isProcessing) {
       return;
     }
@@ -182,7 +207,7 @@ export default function PosPayment() {
             mb: 2,
             maxHeight: '300px',
             overflowY: 'auto',
-            pr: 1, // Padding derecho para separar del scrollbar
+            pr: 1,
             '&::-webkit-scrollbar': {
               width: '8px',
             },

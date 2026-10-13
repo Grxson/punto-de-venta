@@ -99,7 +99,7 @@ Cada sucursal necesita:
 
 ### Tabla: `sucursal_productos`
 
-Tabla intermedia **many-to-many** entre sucursales y productos.
+Tabla intermedia **muchos a muchos** entre sucursales y productos.
 
 ```sql
 CREATE TABLE sucursal_productos (
@@ -121,7 +121,7 @@ CREATE TABLE sucursal_productos (
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     
-    -- Constraints
+    -- Restricciones
     UNIQUE(sucursal_id, producto_id),
     FOREIGN KEY (sucursal_id) REFERENCES sucursales(id),
     FOREIGN KEY (producto_id) REFERENCES productos(id)
@@ -680,7 +680,7 @@ export function MenuScreen() {
 
 ---
 
-## ✅ Checklist de Implementación
+## ✅ Lista de Verificación de Implementación
 
 - [x] Modelo `SucursalProducto` creado
 - [x] Tabla `sucursal_productos` con migraciones
@@ -728,7 +728,7 @@ P: ¿Dónde se guarda la sucursal actual?
 R: En ThreadLocal durante el request. Se limpia automáticamente.
 
 P: ¿Qué pasa si elimino un usuario?  
-R: Sus ventas/gastos se mantienen (softdelete del usuario).
+R: Sus ventas/gastos se mantienen (borrado lógico del usuario).
 
 P: ¿Puedo usar precios dinámicos?  
 R: Sí, `sucursal_productos.precio_sucursal` sobreescribe el precio base.

@@ -8,18 +8,32 @@ import apiService from '../../../services/api.service';
 import { API_ENDPOINTS } from '../../../config/api.config';
 import type { ResumenVentas, ProductoRendimiento, VentaDetalle, GastoDetallado } from '../types/reportTypes';
 
+/** Resultado de una carga de reportes: datos ya normalizados a número. */
 interface ReportDataResult {
+  /** Totales del rango según el backend; `null` si ese endpoint falló. */
   resumen: ResumenVentas | null;
+  /** Ranking de los 10 productos con mayor ingreso en el rango. */
   productosTop: ProductoRendimiento[];
+  /** Ventas individuales del rango, base de los cálculos del cliente. */
   ventas: VentaDetalle[];
+  /** Suma de los gastos del rango. */
   gastosDia: number;
+  /** Gastos del rango con categoría y proveedor resueltos. */
   gastosDetallados: GastoDetallado[];
+  /** Mensaje de error legible; `null` si la carga fue correcta. */
   error: string | null;
 }
 
 export const useReportData = () => {
   /**
-   * Carga todos los datos de reportes para un rango de fechas
+   * Carga en paralelo los datos de reportes para un rango de fechas.
+   * @remarks Nunca lanza excepción: los fallos se devuelven en `error` y el resto de
+   * campos quedan vacíos, para que el reporte muestre ceros en vez de romperse.
+   * Todos los importes pasan por `parseFloat` porque PostgreSQL devuelve los
+   * `numeric` como texto.
+   * @param desdeISO - Fecha inicial del rango en formato ISO.
+   * @param hastaISO - Fecha final del rango en formato ISO.
+   * @returns Objeto con los datos normalizados a número o el mensaje de error.
    */
   const loadReportData = useCallback(async (desdeISO: string, hastaISO: string): Promise<ReportDataResult> => {
     const result: ReportDataResult = {
@@ -35,9 +49,10 @@ export const useReportData = () => {
       const desdeQ = encodeURIComponent(desdeISO);
       const hastaQ = encodeURIComponent(hastaISO);
 
-      // Auditoría 2026-09-11 (T1.3): requests en paralelo (antes secuenciales =>
-      // latencia = suma de los 4 endpoints). El endpoint agregado tipo
-      // /reportes/completo queda pendiente de decisión (cambio de contrato).
+      // Auditoría 2026-09-11 (T1.3): las peticiones van en paralelo (antes eran
+      // secuenciales y la latencia era la suma de los 4 endpoints). Un endpoint
+      // agregado tipo /reportes/completo queda pendiente de decisión, ya que
+      // implicaría un cambio de contrato.
       const [resumenResponse, productosResponse, ventasResponse, gastosResponse] = await Promise.all([
         apiService.get(`${API_ENDPOINTS.STATS_SALES_RANGE}?desde=${desdeQ}&hasta=${hastaQ}`),
         apiService.get(`${API_ENDPOINTS.STATS_PRODUCTS_RANGE}?desde=${desdeQ}&hasta=${hastaQ}&limite=10`),
@@ -59,7 +74,6 @@ export const useReportData = () => {
         };
       }
 
-      // Cargar productos más vendidos
       if (productosResponse.success && productosResponse.data) {
         result.productosTop = productosResponse.data.map((p: any) => ({
           productoId: p.productoId,
@@ -75,22 +89,21 @@ export const useReportData = () => {
         }));
       }
 
-      // Cargar ventas detalladas
       if (ventasResponse.success && ventasResponse.data) {
         result.ventas = ventasResponse.data;
       }
 
-      // Cargar gastos
       if (gastosResponse && gastosResponse.success && Array.isArray(gastosResponse.data)) {
         const desde = new Date(desdeISO);
         const hasta = new Date(hastaISO);
 
+        // El backend no acota por hora, así que el día se recorta aquí: sin esto
+        // el total del día arrastraría gastos de la tarde del último día del rango.
         const gastosFiltrados = gastosResponse.data.filter((g: any) => {
           const fechaGasto = g.fecha ? new Date(g.fecha) : null;
           return fechaGasto && fechaGasto >= desde && fechaGasto <= hasta;
         });
 
-        // Mapear y almacenar gastos detallados
         result.gastosDetallados = gastosFiltrados.map((g: any) => ({
           id: g.id,
           monto: parseFloat(g.monto) || 0,
@@ -100,10 +113,9 @@ export const useReportData = () => {
           fecha: g.fecha || '',
         }));
 
-        // Calcular total
         result.gastosDia = result.gastosDetallados.reduce((sum, gasto) => sum + gasto.monto, 0);
       } else {
-        // Si el endpoint de gastos falla, simplemente no mostrar gastos
+        // Si el endpoint de gastos falla, el reporte se muestra sin gastos
         result.gastosDia = 0;
         result.gastosDetallados = [];
       }

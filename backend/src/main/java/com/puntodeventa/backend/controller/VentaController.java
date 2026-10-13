@@ -30,6 +30,15 @@ public class VentaController {
 
     private final VentaService ventaService;
 
+    /**
+     * Obtiene las ventas con paginación y filtro de fechas.
+     *
+     * @param page página a devolver (0-indexed)
+     * @param size tamaño de página, acotado al rango 1-500
+     * @param desde fecha inicial opcional (yyyy-MM-dd)
+     * @param hasta fecha final opcional (yyyy-MM-dd)
+     * @return lista de ventas que cumplen los filtros
+     */
     @GetMapping
     @Operation(summary = "Obtener ventas con paginación y filtro de fechas", description = "Por defecto retorna ventas de hoy. Parámetros: page (0-indexed), size (1-500), desde (opcional, formato: yyyy-MM-dd), hasta (opcional)")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -48,6 +57,12 @@ public class VentaController {
         return ResponseEntity.ok(ventaService.obtenerTodas(page, size, desde, hasta));
     }
 
+    /**
+     * Obtiene una venta por su identificador.
+     *
+     * @param id identificador de la venta
+     * @return venta encontrada
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Obtener venta por ID")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -55,6 +70,12 @@ public class VentaController {
         return ResponseEntity.ok(ventaService.obtenerPorId(id));
     }
 
+    /**
+     * Obtiene las ventas con un estado concreto.
+     *
+     * @param estado estado de la venta: abierta, cerrada o cancelada
+     * @return ventas con ese estado
+     */
     @GetMapping("/estado/{estado}")
     @Operation(summary = "Obtener ventas por estado", description = "Estados: abierta, cerrada, cancelada")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -62,6 +83,12 @@ public class VentaController {
         return ResponseEntity.ok(ventaService.obtenerPorEstado(estado));
     }
 
+    /**
+     * Obtiene las ventas de una sucursal.
+     *
+     * @param sucursalId identificador de la sucursal
+     * @return ventas de la sucursal
+     */
     @GetMapping("/sucursal/{sucursalId}")
     @Operation(summary = "Obtener ventas por sucursal")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -69,6 +96,13 @@ public class VentaController {
         return ResponseEntity.ok(ventaService.obtenerPorSucursal(sucursalId));
     }
 
+    /**
+     * Obtiene las ventas dentro de un rango de fechas.
+     *
+     * @param desde inicio del rango
+     * @param hasta fin del rango
+     * @return ventas del rango
+     */
     @GetMapping("/rango")
     @Operation(summary = "Obtener ventas por rango de fechas", description = "Formato: yyyy-MM-dd'T'HH:mm:ss (ejemplo: 2025-01-01T00:00:00)")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -78,6 +112,12 @@ public class VentaController {
         return ResponseEntity.ok(ventaService.obtenerPorRangoFechas(desde, hasta));
     }
 
+    /**
+     * Registra una venta nueva y descuenta el inventario.
+     *
+     * @param request datos de la venta con sus items y pagos
+     * @return venta creada con estado 201
+     */
     @PostMapping
     @Operation(summary = "Crear nueva venta", description = "Registra una venta completa con items y pagos. Descuenta inventario automáticamente.")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -86,6 +126,13 @@ public class VentaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ventaCreada);
     }
 
+    /**
+     * Actualiza una venta existente, revirtiendo y recalculando el inventario.
+     *
+     * @param id identificador de la venta
+     * @param request datos a actualizar
+     * @return venta actualizada
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar venta", description = "Actualiza una venta existente, revirtiendo y recalculando movimientos de inventario. "
             +
@@ -99,6 +146,13 @@ public class VentaController {
         return ResponseEntity.ok(ventaActualizada);
     }
 
+    /**
+     * Cancela una venta y revierte el inventario asociado.
+     *
+     * @param id identificador de la venta
+     * @param motivo motivo obligatorio de la cancelación
+     * @return venta cancelada
+     */
     @PutMapping("/{id}/cancelar")
     @Operation(summary = "Cancelar venta", description = "Cancela una venta y revierte los movimientos de inventario asociados. "
             +
@@ -112,6 +166,13 @@ public class VentaController {
         return ResponseEntity.ok(ventaCancelada);
     }
 
+    /**
+     * Actualiza únicamente la fecha de una venta existente.
+     *
+     * @param id identificador de la venta
+     * @param fecha nueva fecha de la venta
+     * @return venta actualizada
+     */
     @PutMapping("/{id}/fecha")
     @Operation(summary = "Actualizar fecha de venta", description = "Actualiza únicamente la fecha de una venta existente. "
             +
@@ -128,6 +189,12 @@ public class VentaController {
         return ResponseEntity.ok(ventaActualizada);
     }
 
+    /**
+     * Elimina permanentemente una venta (solo ADMIN).
+     *
+     * @param id identificador de la venta
+     * @return sin contenido
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar venta definitivamente", description = "Elimina permanentemente una venta de la base de datos. "
             +
@@ -139,6 +206,13 @@ public class VentaController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Obtiene el desglose de ventas por método de pago en un rango de fechas.
+     *
+     * @param desde inicio del rango
+     * @param hasta fin del rango
+     * @return total recaudado por método de pago
+     */
     @GetMapping("/resumen/metodos-pago")
     @Operation(summary = "Obtener desglose de ventas por método de pago", description = "Devuelve el total recaudado por cada método de pago (Efectivo, Tarjeta, etc.) "
             +

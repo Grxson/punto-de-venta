@@ -1,17 +1,23 @@
 /**
  * Configuración de API para diferentes ambientes
- * 
+ *
  * Desarrollo: Backend local
  * Staging: Railway staging
  * Producción: Railway production
  */
 
 interface ApiConfig {
+  /** URL base del backend, incluyendo el prefijo `/api`. */
   apiUrl: string;
+  /** Tiempo máximo de espera de una petición, en milisegundos. */
   timeout: number;
+  /** Número máximo de reintentos ante fallos de red. */
   retries: number;
 }
 
+/**
+ * Conjunto de configuraciones por ambiente.
+ */
 interface Environment {
   dev: ApiConfig;
   staging: ApiConfig;
@@ -41,7 +47,13 @@ const ENV: Environment = {
 };
 
 /**
- * Obtener configuración según el ambiente
+ * Obtener configuración según el ambiente.
+ *
+ * La detección se hace en tiempo de ejecución (y no solo en build) para que
+ * el mismo binario pueda apuntar a staging o producción cambiando la variable
+ * de entorno, sin necesidad de recompilar.
+ *
+ * @returns La configuración del ambiente detectado.
  */
 const getEnvVars = (): ApiConfig => {
   // Detectar ambiente
@@ -74,6 +86,8 @@ export const DEFAULT_HEADERS = {
 
 /**
  * Endpoints de la API
+ *
+ * Se centralizan aquí para evitar rutas escritas a mano en cada pantalla.
  */
 export const API_ENDPOINTS = {
   // Autenticación

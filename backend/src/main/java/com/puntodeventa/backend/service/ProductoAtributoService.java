@@ -35,7 +35,11 @@ public class ProductoAtributoService {
     // ============================================================
     
     /**
-     * Obtiene todos los atributos activos de un producto
+     * Obtiene todos los atributos activos de un producto.
+     *
+     * @param productoId Identificador del producto.
+     * @return Lista de DTO de los atributos activos.
+     * @throws EntityNotFoundException si el producto no existe.
      */
     @Transactional(readOnly = true)
     public List<ProductoAtributoDTO> obtenerAtributosActivos(Long productoId) {
@@ -47,7 +51,11 @@ public class ProductoAtributoService {
     }
     
     /**
-     * Obtiene todos los atributos de un producto (incluyendo inactivos)
+     * Obtiene todos los atributos de un producto, incluidos los inactivos.
+     *
+     * @param productoId Identificador del producto.
+     * @return Lista de DTO con todos los atributos del producto.
+     * @throws EntityNotFoundException si el producto no existe.
      */
     @Transactional(readOnly = true)
     public List<ProductoAtributoDTO> obtenerTodosAtributos(Long productoId) {
@@ -59,7 +67,11 @@ public class ProductoAtributoService {
     }
     
     /**
-     * Obtiene un atributo por ID
+     * Obtiene un atributo por su identificador.
+     *
+     * @param atributoId Identificador del atributo.
+     * @return DTO del atributo encontrado.
+     * @throws EntityNotFoundException si el atributo no existe.
      */
     @Transactional(readOnly = true)
     public ProductoAtributoDTO obtenerAtributoPorId(Long atributoId) {
@@ -69,7 +81,13 @@ public class ProductoAtributoService {
     }
     
     /**
-     * Crea un nuevo atributo para un producto
+     * Crea un atributo para un producto y, si el DTO trae opciones, las persiste en
+     * el mismo alta.
+     *
+     * @param productoId Identificador del producto.
+     * @param dto        Datos del atributo, con sus opciones opcionales.
+     * @return DTO del atributo creado.
+     * @throws EntityNotFoundException si el producto no existe.
      */
     public ProductoAtributoDTO crearAtributo(Long productoId, ProductoAtributoDTO dto) {
         Producto producto = productoRepository.findById(productoId)
@@ -106,7 +124,12 @@ public class ProductoAtributoService {
     }
     
     /**
-     * Actualiza un atributo existente
+     * Actualiza un atributo existente.
+     *
+     * @param atributoId Identificador del atributo a actualizar.
+     * @param dto        Datos a aplicar sobre el atributo.
+     * @return DTO del atributo actualizado.
+     * @throws EntityNotFoundException si el atributo no existe.
      */
     public ProductoAtributoDTO actualizarAtributo(Long atributoId, ProductoAtributoDTO dto) {
         ProductoAtributo atributo = atributoRepository.findById(atributoId)
@@ -124,7 +147,10 @@ public class ProductoAtributoService {
     }
     
     /**
-     * Desactiva un atributo
+     * Desactiva un atributo sin borrar la fila.
+     *
+     * @param atributoId Identificador del atributo a desactivar.
+     * @throws EntityNotFoundException si el atributo no existe.
      */
     public void desactivarAtributo(Long atributoId) {
         ProductoAtributo atributo = atributoRepository.findById(atributoId)
@@ -136,7 +162,10 @@ public class ProductoAtributoService {
     }
     
     /**
-     * Elimina un atributo (borrado físico)
+     * Elimina un atributo de forma física.
+     *
+     * @param atributoId Identificador del atributo a eliminar.
+     * @throws EntityNotFoundException si el atributo no existe.
      */
     public void eliminarAtributo(Long atributoId) {
         if (!atributoRepository.existsById(atributoId)) {
@@ -150,7 +179,11 @@ public class ProductoAtributoService {
     // ============================================================
     
     /**
-     * Obtiene todas las opciones activas de un atributo
+     * Obtiene todas las opciones activas de un atributo.
+     *
+     * @param atributoId Identificador del atributo.
+     * @return Lista de DTO de las opciones activas.
+     * @throws EntityNotFoundException si el atributo no existe.
      */
     @Transactional(readOnly = true)
     public List<ProductoAtributoOpcionDTO> obtenerOpcionesActivas(Long atributoId) {
@@ -162,7 +195,11 @@ public class ProductoAtributoService {
     }
     
     /**
-     * Obtiene todas las opciones de un atributo (incluyendo inactivas)
+     * Obtiene todas las opciones de un atributo, incluidas las inactivas.
+     *
+     * @param atributoId Identificador del atributo.
+     * @return Lista de DTO con todas las opciones del atributo.
+     * @throws EntityNotFoundException si el atributo no existe.
      */
     @Transactional(readOnly = true)
     public List<ProductoAtributoOpcionDTO> obtenerTodasOpciones(Long atributoId) {
@@ -174,7 +211,11 @@ public class ProductoAtributoService {
     }
     
     /**
-     * Obtiene una opción por ID
+     * Obtiene una opción por su identificador.
+     *
+     * @param opcionId Identificador de la opción.
+     * @return DTO de la opción encontrada.
+     * @throws EntityNotFoundException si la opción no existe.
      */
     @Transactional(readOnly = true)
     public ProductoAtributoOpcionDTO obtenerOpcionPorId(Long opcionId) {
@@ -184,7 +225,12 @@ public class ProductoAtributoService {
     }
     
     /**
-     * Crea una nueva opción para un atributo
+     * Crea una opción para un atributo.
+     *
+     * @param atributoId Identificador del atributo.
+     * @param dto        Datos de la opción a crear.
+     * @return DTO de la opción creada.
+     * @throws EntityNotFoundException si el atributo no existe.
      */
     public ProductoAtributoOpcionDTO crearOpcion(Long atributoId, ProductoAtributoOpcionDTO dto) {
         ProductoAtributo atributo = atributoRepository.findById(atributoId)
@@ -204,7 +250,12 @@ public class ProductoAtributoService {
     }
     
     /**
-     * Actualiza una opción existente
+     * Actualiza una opción existente.
+     *
+     * @param opcionId Identificador de la opción a actualizar.
+     * @param dto      Datos a aplicar sobre la opción.
+     * @return DTO de la opción actualizada.
+     * @throws EntityNotFoundException si la opción no existe.
      */
     public ProductoAtributoOpcionDTO actualizarOpcion(Long opcionId, ProductoAtributoOpcionDTO dto) {
         ProductoAtributoOpcion opcion = opcionRepository.findById(opcionId)
@@ -221,7 +272,10 @@ public class ProductoAtributoService {
     }
     
     /**
-     * Desactiva una opción
+     * Desactiva una opción sin borrar la fila.
+     *
+     * @param opcionId Identificador de la opción a desactivar.
+     * @throws EntityNotFoundException si la opción no existe.
      */
     public void desactivarOpcion(Long opcionId) {
         ProductoAtributoOpcion opcion = opcionRepository.findById(opcionId)
@@ -233,7 +287,10 @@ public class ProductoAtributoService {
     }
     
     /**
-     * Elimina una opción (borrado físico)
+     * Elimina una opción de forma física.
+     *
+     * @param opcionId Identificador de la opción a eliminar.
+     * @throws EntityNotFoundException si la opción no existe.
      */
     public void eliminarOpcion(Long opcionId) {
         if (!opcionRepository.existsById(opcionId)) {

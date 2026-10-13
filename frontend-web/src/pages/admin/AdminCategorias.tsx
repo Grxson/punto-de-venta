@@ -35,31 +35,55 @@ import { useSubcategorias, useCrearSubcategoria, useActualizarSubcategoria, useE
 import type { CategoriaProducto } from '../../types/categorias.types';
 import type { CategoriaSubcategoria } from '../../types/subcategorias.types';
 
+/**
+ * Pantalla de administración del menú: categorías y sus subcategorías.
+ * @remarks Gestiona el CRUD de ambas con React Query, permite reordenarlas
+ * intercambiando el campo `orden` con la vecina, y filtra categorías por estado. La
+ * lista de subcategorías depende de la categoría seleccionada.
+ */
 export default function AdminCategorias() {
   // Estados del componente primero (ANTES de los hooks que los usan)
+  /** Categoría seleccionada; define qué subcategorías se muestran. */
   const [selectedCategoria, setSelectedCategoria] = useState<CategoriaProducto | null>(null);
 
   // Diálogo de categoría
+  /** Controla el diálogo de alta/edición de categoría. */
   const [openCategoriaDialog, setOpenCategoriaDialog] = useState(false);
+  /** Categoría en edición; `null` implica alta. */
   const [editingCategoria, setEditingCategoria] = useState<CategoriaProducto | null>(null);
+  /** Nombre del formulario de categoría. */
   const [formCategoriaNombre, setFormCategoriaNombre] = useState('');
+  /** Descripción del formulario de categoría. */
   const [formCategoriaDescripcion, setFormCategoriaDescripcion] = useState('');
+  /** Orden de visualización del formulario de categoría. */
   const [formCategoriaOrden, setFormCategoriaOrden] = useState(0);
+  /** Estado activa/inactiva del formulario de categoría. */
   const [formCategoriaActiva, setFormCategoriaActiva] = useState(true);
 
   // Diálogo de subcategoría
+  /** Controla el diálogo de alta/edición de subcategoría. */
   const [openSubcategoriaDialog, setOpenSubcategoriaDialog] = useState(false);
+  /** Subcategoría en edición; `null` implica alta. */
   const [editingSubcategoria, setEditingSubcategoria] = useState<CategoriaSubcategoria | null>(null);
+  /** Nombre del formulario de subcategoría. */
   const [formSubcategoriaNombre, setFormSubcategoriaNombre] = useState('');
+  /** Descripción del formulario de subcategoría. */
   const [formSubcategoriaDescripcion, setFormSubcategoriaDescripcion] = useState('');
+  /** Orden de visualización del formulario de subcategoría. */
   const [formSubcategoriaOrden, setFormSubcategoriaOrden] = useState(0);
+  /** Estado activa/inactiva del formulario de subcategoría. */
   const [formSubcategoriaActiva, setFormSubcategoriaActiva] = useState(true);
 
   // Mensajes y filtros
+  /** Mensaje de éxito temporal. */
   const [successMessage, setSuccessMessage] = useState('');
+  /** Mensaje de error temporal. */
   const [errorMessage, setErrorMessage] = useState('');
+  /** Filtro de estado de categorías. */
   const [filterActivos, setFilterActivos] = useState<'todos' | 'activas' | 'inactivas'>('todos');
+  /** Controla el diálogo de confirmación de eliminación. */
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
+  /** Elemento (categoría o subcategoría) pendiente de eliminar. */
   const [itemToDelete, setItemToDelete] = useState<{ type: 'categoria' | 'subcategoria'; item: any } | null>(null);
 
   // Hooks de React Query (AHORA que los estados ya existen)
@@ -91,6 +115,13 @@ export default function AdminCategorias() {
 
   // ==================== REORDENAMIENTO DE CATEGORÍAS ====================
 
+  /**
+   * Mueve una categoría una posición arriba o abajo intercambiando su orden con la vecina.
+   * @param categoria - Categoría a mover.
+   * @param direccion - Hacia dónde moverla en el listado.
+   * @remarks Hace dos `mutateAsync` porque el `orden` es una propiedad de cada entidad;
+   * no existe un `endpoint` de reordenamiento por lote.
+   */
   const handleMoverCategoria = async (categoria: CategoriaProducto, direccion: 'arriba' | 'abajo') => {
     try {
       const indiceActual = categoriasOrdenadas.findIndex(c => c.id === categoria.id);
@@ -133,6 +164,11 @@ export default function AdminCategorias() {
 
   // ==================== REORDENAMIENTO DE SUBCATEGORÍAS ====================
 
+  /**
+   * Mueve una subcategoría una posición arriba o abajo dentro de su categoría.
+   * @param subcategoria - Subcategoría a mover.
+   * @param direccion - Hacia dónde moverla en el listado.
+   */
   const handleMoverSubcategoria = async (subcategoria: CategoriaSubcategoria, direccion: 'arriba' | 'abajo') => {
     if (!selectedCategoria) return;
     try {
@@ -189,6 +225,10 @@ export default function AdminCategorias() {
     setOpenCategoriaDialog(true);
   };
 
+  /**
+   * Abre el diálogo de categoría en modo edición precargando sus datos.
+   * @param categoria - Categoría a editar.
+   */
   const handleOpenEditCategoria = (categoria: CategoriaProducto) => {
     setEditingCategoria(categoria);
     setFormCategoriaNombre(categoria.nombre);
@@ -198,6 +238,7 @@ export default function AdminCategorias() {
     setOpenCategoriaDialog(true);
   };
 
+  /** Crea o actualiza la categoría del formulario según haya edición activa. */
   const handleSaveCategoria = async () => {
     if (!formCategoriaNombre.trim()) {
       setErrorMessage('El nombre es obligatorio');
@@ -255,6 +296,10 @@ export default function AdminCategorias() {
     setOpenSubcategoriaDialog(true);
   };
 
+  /**
+   * Abre el diálogo de subcategoría en modo edición.
+   * @param subcategoria - Subcategoría a editar.
+   */
   const handleOpenEditSubcategoria = (subcategoria: CategoriaSubcategoria) => {
     setEditingSubcategoria(subcategoria);
     setFormSubcategoriaNombre(subcategoria.nombre);
@@ -264,6 +309,7 @@ export default function AdminCategorias() {
     setOpenSubcategoriaDialog(true);
   };
 
+  /** Crea o actualiza la subcategoría del formulario según haya edición activa. */
   const handleSaveSubcategoria = async () => {
     if (!selectedCategoria) return;
     if (!formSubcategoriaNombre.trim()) {

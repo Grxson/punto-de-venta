@@ -26,26 +26,41 @@ import {
 import { Add, Delete } from '@mui/icons-material';
 import { ingredientesService, Ingrediente, Unidad } from '../../../services/ingredientes.service';
 
+/** Línea de ingrediente con su cantidad y precio, tal como la consume `CompraForm`. */
 interface IngredienteSeleccionado {
+  /** Id del ingrediente del catálogo. */
   ingredienteId: number;
+  /** Nombre del ingrediente. */
   ingredienteNombre: string;
+  /** Id de la unidad base. */
   unidadId: number;
+  /** Nombre de la unidad base. */
   unidadNombre: string;
+  /** Abreviatura de la unidad base. */
   unidadAbreviatura: string;
+  /** Cantidad comprada. */
   cantidad: number;
+  /** Importe total pagado por la línea. */
   precioTotal: number;
 }
 
+/** Props del modal de selección de ingredientes. */
 interface SeleccionarIngredientesProps {
+  /** Controla la visibilidad del modal. */
   open: boolean;
+  /** Cierra el modal sin confirmar. */
   onClose: () => void;
+  /** Entrega al padre la lista de ingredientes elegidos al confirmar. */
   onSeleccionar: (ingredientes: IngredienteSeleccionado[]) => void;
+  /** Lista previa que ya tenía el formulario, para editarla. */
   ingredientesIniciales?: IngredienteSeleccionado[];
 }
 
 /**
- * Modal para seleccionar ingredientes en una compra
- * Permite agregar múltiples ingredientes con cantidad y precio unitario
+ * Modal para armar la lista de ingredientes de una compra.
+ * @remarks Permite buscar en el catálogo, agregar líneas con cantidad y precio, y dar
+ * de alta un ingrediente nuevo sin salir del modal; la lista se precarga con
+ * `ingredientesIniciales` cuando se edita una compra.
  */
 export default function SeleccionarIngredientes({
   open,
@@ -90,6 +105,7 @@ export default function SeleccionarIngredientes({
     }
   }, [open]);
 
+  /** Carga el catálogo de ingredientes activos para el `Autocomplete`. */
   const cargarIngredientes = async () => {
     setLoading(true);
     setError(null);
@@ -103,6 +119,9 @@ export default function SeleccionarIngredientes({
     }
   };
 
+  /**
+   * Carga las unidades de medida y preselecciona la primera en el alta de ingredientes.
+   */
   const cargarUnidades = async () => {
     try {
       const data = await ingredientesService.obtenerUnidades();
@@ -235,7 +254,8 @@ export default function SeleccionarIngredientes({
   };
 
   /**
-   * Eliminar un ingrediente de la lista
+   * Elimina una línea del listado de seleccionados.
+   * @param ingredienteId - Id del ingrediente a quitar.
    */
   const eliminarIngrediente = (ingredienteId: number) => {
     setIngredientesSeleccionados(
@@ -244,7 +264,9 @@ export default function SeleccionarIngredientes({
   };
 
   /**
-   * Actualizar cantidad de un ingrediente
+   * Actualiza la cantidad de una línea ya seleccionada.
+   * @param ingredienteId - Id del ingrediente de la línea.
+   * @param nuevaCantidad - Nueva cantidad ingresada.
    */
   const actualizarCantidad = (ingredienteId: number, nuevaCantidad: number) => {
     setIngredientesSeleccionados(
@@ -255,7 +277,9 @@ export default function SeleccionarIngredientes({
   };
 
   /**
-   * Actualizar precio total
+   * Actualiza el precio total de una línea ya seleccionada.
+   * @param ingredienteId - Id del ingrediente de la línea.
+   * @param nuevoPrecio - Nuevo importe total ingresado.
    */
   const actualizarPrecio = (ingredienteId: number, nuevoPrecio: number) => {
     setIngredientesSeleccionados(

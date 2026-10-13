@@ -1,13 +1,18 @@
 import { QueryClient } from '@tanstack/react-query';
 
 /**
- * OPTIMIZACIÓN PASO 2.5: React Query Caching Strategy
- * 
- * Configuración avanzada del QueryClient con estrategia de caché por tipo de dato:
+ * OPTIMIZACIÓN PASO 2.5: Estrategia de caché de React Query
+ *
+ * El `QueryClient` se configura con una estrategia de caché según el tipo de
+ * dato, para no servir datos rancios en el POS ni hacer peticiones de más a la
+ * API:
  * - Datos estáticos (catálogos): 10 minutos, gcTime 30 min
  * - Datos semi-estáticos (productos, inventario): 5 minutos, gcTime 15 min
  * - Datos dinámicos (ventas, turnos activos): 30 segundos, gcTime 5 min
  * - Muy dinámicos (estadísticas): sin caché (0 seg)
+ *
+ * Este bloque fija los valores por defecto; cada hook puede apartarse de ellos
+ * pasando su perfil de `queryDefaults` en `queryOptions`.
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,10 +21,13 @@ export const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000, // 5 minutos - datos semi-estáticos
       gcTime: 10 * 60 * 1000, // 10 minutos - tiempo en caché (antes cacheTime)
       retry: 1, // Reintentar 1 vez en caso de error
-      refetchOnWindowFocus: false, // No refetch automático al volver a la ventana
+      // En un POS el refocus es constante (el cajero salta entre ventanas de la
+      // caja): refetch al volver a enfocar genera carga innecesaria.
+      refetchOnWindowFocus: false,
       refetchOnMount: true, // Refetch solo si los datos están stale
       refetchOnReconnect: true, // Refetch solo si los datos están stale
-      // NUEVA OPTIMIZACIÓN: Request deduplication automática
+      // Deduplicación automática de peticiones: varias queries con la misma
+      // clave comparten una única llamada a la API.
       networkMode: 'always', // Permitir queries sin conexión
     },
     mutations: {
@@ -31,8 +39,8 @@ export const queryClient = new QueryClient({
 });
 
 /**
- * Configuración específica por tipo de query
- * Usar en los hooks con el parámetro queryOptions
+ * Perfiles de cacheabilidad por tipo de dato.
+ * Usar en los hooks vía el parámetro `queryOptions` de `useQuery`.
  */
 export const queryDefaults = {
   // ESTÁTICOS (10 min): Datos que casi nunca cambian

@@ -8,13 +8,16 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * Repository para CompraItem - Queries optimizadas.
+ * Repositorio para CompraItem - consultas optimizadas.
  */
 @Repository
 public interface CompraItemRepository extends JpaRepository<CompraItem, Long> {
 
     /**
-     * Obtener items de una compra.
+     * Obtiene los renglones de una compra ordenados por ID.
+     *
+     * @param compraId ID de la compra
+     * @return lista de renglones de la compra
      */
     @Query("""
                 SELECT ci FROM CompraItem ci
@@ -24,7 +27,10 @@ public interface CompraItemRepository extends JpaRepository<CompraItem, Long> {
     List<CompraItem> findByCompraId(@Param("compraId") Long compraId);
 
     /**
-     * Eliminar todos los items de una compra.
+     * Elimina todos los renglones de una compra.
+     * Existe para vaciar el detalle antes de reescribirlo.
+     *
+     * @param compraId ID de la compra cuyos renglones se eliminan
      */
     void deleteByCompraId(@Param("compraId") Long compraId);
 }

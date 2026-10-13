@@ -3,8 +3,20 @@ import { AuthContextType, UsuarioDTO, SucursalDTO, LoginRequest, LoginResponse }
 import { apiClient } from '../services/api/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+/**
+ * Contexto de autenticación y sesión.
+ *
+ * La sesión se persiste en `AsyncStorage` para sobrevivir al cierre de la app:
+ * al montar, `checkAuth` rehidrata el estado desde el almacenamiento local.
+ */
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Proveedor del estado de sesión y de las acciones de autenticación.
+ *
+ * @param props.children Subárbol que consume el contexto.
+ * @returns El proveedor con el valor de estado y acciones.
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UsuarioDTO | null>(null);
   const [sucursal, setSucursal] = useState<SucursalDTO | null>(null);
@@ -177,6 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Rehidratación inicial de la sesión al abrir la app.
     checkAuth();
   }, [checkAuth]);
 

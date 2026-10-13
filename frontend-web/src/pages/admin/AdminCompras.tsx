@@ -5,32 +5,38 @@ import ComprasListaSimple from './components/ComprasListaSimple';
 import CrearIngredienteDesdeCompra from './components/CrearIngredienteDesdeCompra';
 
 /**
- * AdminCompras - Gestión de compras simples
- * 
- * Flujo:
- * 1. Registrar Compra Simple (nombre, fecha, cantidad, unidad, precio)
- * 2. Ver Compras Simples
- * 3. Crear Ingrediente desde Compra (calcular costo unitario basado en rendimiento)
+ * Pantalla de gestión de compras del panel de administración.
+ * @remarks El flujo es de tres pasos: registrar una compra simple (nombre, fecha,
+ * cantidad, unidad y precio), revisar el listado y, desde una compra concreta,
+ * crear el ingrediente correspondiente calculando su costo unitario según el
+ * rendimiento declarado.
  */
 export default function AdminCompras() {
-  const [currentTab, setCurrentTab] = useState(1); // Por defecto: Ver Compras Simples
+  const [currentTab, setCurrentTab] = useState(1);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [modalCrearIngrediente, setModalCrearIngrediente] = useState(false);
 
+  /**
+   * Cambia de pestaña.
+   * @param event - Evento de React del `Tabs`, no se usa.
+   * @param newValue - Índice de la pestaña seleccionada.
+   */
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
   };
 
   /**
-   * Después de guardar una compra simple, volver al listado
+   * Al guardar una compra simple, refresca el listado y vuelve a él.
+   * @remarks El listado es controlado por el padre, así que el aviso de "guardado"
+   * viaja como prop en lugar de gestionarse con su propio estado.
    */
   const handleGuardadoCompraSimple = () => {
     setRefreshTrigger((prev) => prev + 1);
-    setCurrentTab(1); // Ir al listado de compras simples
+    setCurrentTab(1);
   };
 
   /**
-   * Al crear un ingrediente, volver al listado
+   * Cierra el modal y refresca el listado tras crear un ingrediente.
    */
   const handleIngredienteCreado = () => {
     setModalCrearIngrediente(false);

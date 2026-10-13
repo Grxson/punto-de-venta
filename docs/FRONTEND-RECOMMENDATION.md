@@ -21,7 +21,7 @@
 
 **Factibilidad:** Media-Alta
 
-**Pros:**
+**Ventajas:**
 - ✅ Una base de código
 - ✅ Performance nativa en móvil
 - ✅ Ya tienes React Native funcionando
@@ -63,7 +63,7 @@
     └─────────┘        └─────────┘
 ```
 
-**Pros:**
+**Ventajas:**
 - ✅ **React Web es simple y maduro** (Create React App o Vite)
 - ✅ **Librerías completas para web** (Material-UI, Ant Design, Recharts, etc.)
 - ✅ **Tablas y gráficos potentes** (react-table, Chart.js, etc.)
@@ -86,7 +86,7 @@
 
 **Factibilidad:** Alta (pero no recomendado)
 
-**Pros:**
+**Ventajas:**
 - ✅ Una base de código web
 - ✅ Desarrollo rápido
 
@@ -232,7 +232,7 @@ npm run build
 
 ---
 
-## ✅ Checklist de Decisión
+## ✅ Lista de Verificación de Decisión
 
 **Elige React Web + React Native si:**
 - ✅ Quieres desarrollo rápido para web

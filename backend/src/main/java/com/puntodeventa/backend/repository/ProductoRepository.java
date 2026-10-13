@@ -15,31 +15,87 @@ import java.util.Optional;
 @Repository
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
+    /**
+     * Recupera todos los productos activos.
+     *
+     * @return lista de productos con activo = true
+     */
     @Query("SELECT p FROM Producto p WHERE p.activo = true")
     List<Producto> findByActivoTrue();
 
+    /**
+     * Recupera los productos visibles en el menú.
+     *
+     * @return lista de productos con disponibleEnMenu = true
+     */
     @Query("SELECT p FROM Producto p WHERE p.disponibleEnMenu = true")
     List<Producto> findByDisponibleEnMenuTrue();
 
+    /**
+     * Recupera los productos de una categoría.
+     *
+     * @param categoriaId ID de la categoría
+     * @return lista de productos de la categoría
+     */
     List<Producto> findByCategoriaId(Long categoriaId);
 
+    /**
+     * Busca productos cuyo nombre contiene el texto indicado, sin distinguir mayúsculas.
+     *
+     * @param nombre fragmento del nombre a buscar
+     * @return lista de productos coincidentes
+     */
     List<Producto> findByNombreContainingIgnoreCase(String nombre);
 
     // Métodos para variantes
+    /**
+     * Recupera las variantes de un producto base ordenadas por su orden de presentación.
+     *
+     * @param productoBaseId ID del producto base
+     * @return lista de variantes ordenadas por ordenVariante
+     */
     List<Producto> findByProductoBaseIdOrderByOrdenVarianteAsc(Long productoBaseId);
 
+    /**
+     * Recupera los productos que no son variantes de otro (productos base).
+     *
+     * @return lista de productos con productoBase nulo
+     */
     List<Producto> findByProductoBaseIdIsNull();
 
+    /**
+     * Recupera los productos base activos.
+     *
+     * @return lista de productos base con activo = true
+     */
     @Query("SELECT p FROM Producto p WHERE p.productoBase.id IS NULL AND p.activo = true")
     List<Producto> findByProductoBaseIdIsNullAndActivoTrue();
 
+    /**
+     * Recupera los productos base visibles en el menú.
+     *
+     * @return lista de productos base con disponibleEnMenu = true
+     */
     @Query("SELECT p FROM Producto p WHERE p.productoBase.id IS NULL AND p.disponibleEnMenu = true")
     List<Producto> findByProductoBaseIdIsNullAndDisponibleEnMenuTrue();
 
     // Buscar por SKU
+    /**
+     * Busca un producto por su código interno de inventario.
+     *
+     * @param sku código interno del producto
+     * @return el producto coincidente, o vacío si no existe
+     */
     Optional<Producto> findBySku(String sku);
 
     // Contar variantes de un producto base - EFICIENTE CON QUERY
+    /**
+     * Cuenta las variantes de un producto base.
+     * Usa COUNT en base de datos para no cargar las variantes en memoria.
+     *
+     * @param productoBaseId ID del producto base
+     * @return número de variantes del producto base
+     */
     @Query("SELECT COUNT(p) FROM Producto p WHERE p.productoBase.id = :productoBaseId")
     long countVariantesByProductoBaseId(@Param("productoBaseId") Long productoBaseId);
 

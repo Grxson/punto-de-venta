@@ -40,6 +40,13 @@ public class DataInitializer {
         @Autowired(required = false)
         private MetodoPagoService metodoPagoService;
 
+        /**
+         * Carga los datos de prueba al arrancar: limpia y recrea sucursal, roles y
+         * usuarios, y carga los métodos de pago y el menú de ejemplo. ⚠️ Solo se
+         * ejecuta con el perfil H2.
+         *
+         * @return runner que realiza la carga durante el arranque
+         */
         @Bean
         public CommandLineRunner loadData() {
                 return args -> {

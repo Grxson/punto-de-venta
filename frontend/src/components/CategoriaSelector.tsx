@@ -19,10 +19,19 @@ import { useCategorias } from '../hooks/useCategorias';
 import { CategoriaWithSubcategorias } from '../types/categorias.types';
 
 interface CategoriaSelectorProps {
+  /** Se invoca con el id y el nombre de la subcategoría pulsada. */
   onSelectSubcategoria?: (subcategoriaId: number, nombre: string) => void;
+  /** Resalta la subcategoría indicada como la activa. */
   selectedSubcategoriaId?: number | null;
 }
 
+/**
+ * Selector de categorías y subcategorías.
+ *
+ * @param props.onSelectSubcategoria Callback con la subcategoría elegida.
+ * @param props.selectedSubcategoriaId Id de la subcategoría a resaltar.
+ * @returns Las pestañas de categorías y, debajo, sus subcategorías.
+ */
 export const CategoriaSelector: React.FC<CategoriaSelectorProps> = ({
   onSelectSubcategoria,
   selectedSubcategoriaId,

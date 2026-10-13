@@ -8,7 +8,23 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * DTO para items de venta.
+ * Línea de una venta: un producto con su cantidad, precio y opciones elegidas.
+ *
+ * <p>Viaja dentro del request de creación o actualización de una venta y también dentro
+ * del response del detalle de la venta.
+ *
+ * @param id identificador de la línea; {@code null} al crearla
+ * @param productoId producto vendido
+ * @param productoNombre nombre de ese producto (solo lectura)
+ * @param cantidad unidades vendidas; debe ser mayor que cero
+ * @param precioUnitario precio por unidad al momento de la venta
+ * @param subtotal importe de la línea antes de impuestos y descuentos
+ * @param costoEstimado costo estimado de la línea, usado para calcular el margen
+ * @param nota observación del vendedor para esta línea
+ * @param tamañoId tamaño elegido para el producto, si aplica
+ * @param tamañoNombre nombre de ese tamaño (solo lectura)
+ * @param precioExtraTamano importe adicional del tamaño elegido
+ * @param atributosSeleccionados atributos y opciones elegidos por el cliente
  */
 public record VentaItemDTO(
     Long id,

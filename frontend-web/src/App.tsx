@@ -2,14 +2,14 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { useEffect, useState, Suspense, lazy } from 'react';
 
-// Context
+// Contextos
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { DashboardProvider, useDashboard } from './contexts/DashboardContext';
 import { websocketService } from './services/websocket.service';
 import { userPreferencesService } from './services/userPreferences.service';
 
-// Components
+// Componentes
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -18,17 +18,17 @@ import ErrorBoundary from './components/ErrorBoundary';
 import PosLayout from './layouts/PosLayout';
 import AdminLayout from './layouts/AdminLayout';
 
-// OPTIMIZACIÓN PASO 2.1: Code Splitting con lazy()
+// OPTIMIZACIÓN PASO 2.1: Code splitting con lazy()
 // Importar solo cuando se necesitan (lazy loading)
 const Login = lazy(() => import('./pages/auth/Login'));
 
-// POS Routes - Lazy loaded
+// Rutas POS - carga diferida (lazy)
 const PosHome = lazy(() => import('./pages/pos/PosHome'));
 const PosPayment = lazy(() => import('./pages/pos/PosPayment'));
 const PosExpenses = lazy(() => import('./pages/pos/PosExpenses'));
 const PosSales = lazy(() => import('./pages/pos/PosSales'));
 
-// Admin Routes - Lazy loaded (estos son los más pesados)
+// Rutas Admin - carga diferida (lazy); son las más pesadas
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
 const AdminInventory = lazy(() => import('./pages/admin/AdminInventory'));
@@ -43,8 +43,8 @@ const AdminMermas = lazy(() => import('./pages/admin/AdminMermas'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
 
 /**
- * OPTIMIZACIÓN PASO 2.1: Loading fallback component
- * Se muestra mientras se carga un chunk lazy
+ * OPTIMIZACIÓN PASO 2.1: Componente de respaldo de carga
+ * Se muestra mientras se carga un chunk de carga diferida
  */
 function LoadingFallback() {
   return (
@@ -62,7 +62,7 @@ function LoadingFallback() {
   );
 }
 
-// Theme optimizado para táctil
+// Tema optimizado para pantalla táctil
 const theme = createTheme({
   palette: {
     mode: 'light',
@@ -121,7 +121,7 @@ function WebSocketHandlers() {
   useEffect(() => {
     websocketService.connect();
 
-    // Handler global para estadísticas - ejecutar inmediatamente
+    // Manejador global para estadísticas - ejecutar inmediatamente
     const unsubscribeEstadisticas = websocketService.on('estadisticas', (message) => {
       if (message.tipo === 'ESTADISTICAS_ACTUALIZADAS') {
         // Ejecutar inmediatamente sin delay
@@ -129,7 +129,7 @@ function WebSocketHandlers() {
       }
     });
 
-    // Handler global para ventas - ejecutar inmediatamente
+    // Manejador global para ventas - ejecutar inmediatamente
     const unsubscribeVentas = websocketService.on('ventas', (message) => {
       if (message.tipo === 'VENTA_CREADA') {
         // Ejecutar inmediatamente sin delay
@@ -205,13 +205,13 @@ function AppRoutes() {
       <RouteTracker />
       <RouteRestorer />
 
-      {/* OPTIMIZACIÓN PASO 2.1: Suspense wrapper para lazy-loaded routes */}
+      {/* OPTIMIZACIÓN PASO 2.1: Suspense wrapper para rutas de carga diferida */}
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
-          {/* Auth - No lazy (necesario para login) */}
+          {/* Auth - sin carga diferida (necesario para el login) */}
           <Route path="/login" element={<Login />} />
 
-          {/* POS Routes - Lazy loaded con Suspense */}
+          {/* Rutas POS - carga diferida con Suspense */}
           <Route
             path="/pos"
             element={
@@ -226,7 +226,7 @@ function AppRoutes() {
             <Route path="sales" element={<PosSales />} />
           </Route>
 
-          {/* Admin Routes - Lazy loaded con Suspense */}
+          {/* Rutas Admin - carga diferida con Suspense */}
           <Route
             path="/admin"
             element={
@@ -249,7 +249,7 @@ function AppRoutes() {
             <Route path="usuarios" element={<AdminUsers />} />
           </Route>
 
-          {/* Default redirect */}
+          {/* Redirección por defecto */}
           <Route path="/" element={<Navigate to="/pos" replace />} />
         </Routes>
       </Suspense>

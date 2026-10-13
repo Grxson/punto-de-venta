@@ -7,10 +7,15 @@ export interface CompraListado {
   id: number;
   proveedorId: number;
   proveedorNombre: string;
+  /** Fecha de la compra. */
   fecha: string;
+  /** Estado del ciclo de vida de la compra. */
   estado: 'pendiente' | 'recibida' | 'cancelada' | 'rechazada';
+  /** Importe total de la compra. */
   montoTotal: number;
+  /** Número de líneas de la compra. */
   cantidadItems: number;
+  /** Número de factura del proveedor, si lo hay. */
   numeroFactura?: string;
   sucursalId?: number;
   sucursalNombre?: string;
@@ -19,7 +24,9 @@ export interface CompraListado {
   updatedAt?: string;
 }
 
+/** Detalle completo de una compra, con sus líneas. */
 export interface CompraDetalle extends CompraListado {
+  /** Líneas de detalle de la compra. */
   items: CompraItem[];
   montoTotal: number;
   sucursalId?: number;
@@ -30,18 +37,24 @@ export interface CompraDetalle extends CompraListado {
   notas?: string;
 }
 
+/** Línea de detalle de una compra. */
 export interface CompraItem {
   id: number;
   compraId: number;
   ingredienteId: number;
   ingredienteNombre: string;
+  /** Cantidad pedida. */
   cantidad: number;
   unidadId: number;
   unidadNombre: string;
   unidadAbreviatura: string;
+  /** Importe total de la línea. */
   precioTotal: number;
+  /** Precio por unidad. */
   precioUnitario: number;
+  /** Importe de la línea. */
   subtotal: number;
+  /** Cantidad efectivamente recibida. */
   cantidadRecibida?: number;
 }
 
@@ -51,12 +64,16 @@ export interface CompraItem {
 export interface CrearCompraRequest {
   proveedorId: number;
   fecha: string;
+  /** Líneas de la compra. */
   items: {
     ingredienteId: number;
+    /** Cantidad pedida. */
     cantidad: number;
     unidadId: number;
+    /** Importe total de la línea. */
     precioTotal: number;
   }[];
+  /** Observaciones libres sobre la compra. */
   observaciones?: string;
 }
 
@@ -66,12 +83,16 @@ export interface CrearCompraRequest {
 export interface ActualizarCompraRequest {
   proveedorId: number;
   fecha: string;
+  /** Líneas de la compra. */
   items: {
     ingredienteId: number;
+    /** Cantidad pedida. */
     cantidad: number;
     unidadId: number;
+    /** Importe total de la línea. */
     precioTotal: number;
   }[];
+  /** Observaciones libres sobre la compra. */
   observaciones?: string;
 }
 
@@ -79,8 +100,10 @@ export interface ActualizarCompraRequest {
  * Request para recibir una compra
  */
 export interface RecibirCompraRequest {
+  /** Cantidades recibidas por cada línea de la compra. */
   items: {
     compraItemId: number;
+    /** Cantidad efectivamente recibida. */
     cantidadRecibida: number;
   }[];
 }
@@ -92,7 +115,12 @@ const BASE_URL = '/compras';
  */
 export const comprasService = {
   /**
-   * Listar todas las compras de la sucursal actual (paginadas)
+   * Lista las compras de la sucursal actual (paginadas).
+   *
+   * @param page - Número de página (base 0).
+   * @param size - Tamaño de página.
+   * @returns El payload paginado de compras; si no hay datos, un objeto vacío.
+   * @throws Error si el backend indica fallo.
    */
   async listar(page: number = 0, size: number = 20): Promise<any> {
     const endpoint = `${BASE_URL}?page=${page}&size=${size}`;
@@ -104,7 +132,11 @@ export const comprasService = {
   },
 
   /**
-   * Obtener una compra completa por ID
+   * Obtiene una compra completa por su ID.
+   *
+   * @param id - ID de la compra.
+   * @returns El detalle de la compra.
+   * @throws Error si el backend indica fallo.
    */
   async obtener(id: number): Promise<CompraDetalle> {
     const endpoint = `${BASE_URL}/${id}`;
@@ -116,7 +148,11 @@ export const comprasService = {
   },
 
   /**
-   * Crear una nueva compra
+   * Crea una compra nueva.
+   *
+   * @param data - Datos de la compra.
+   * @returns El detalle de la compra creada.
+   * @throws Error si el backend indica fallo.
    */
   async crear(data: CrearCompraRequest): Promise<CompraDetalle> {
     const endpoint = BASE_URL;
@@ -128,7 +164,12 @@ export const comprasService = {
   },
 
   /**
-   * Actualizar una compra existente
+   * Actualiza una compra existente.
+   *
+   * @param id - ID de la compra.
+   * @param data - Datos de la compra.
+   * @returns El detalle de la compra actualizada.
+   * @throws Error si el backend indica fallo.
    */
   async actualizar(id: number, data: ActualizarCompraRequest): Promise<CompraDetalle> {
     const endpoint = `${BASE_URL}/${id}`;
@@ -140,7 +181,11 @@ export const comprasService = {
   },
 
   /**
-   * Eliminar una compra (delete definitivo)
+   * Elimina una compra de forma definitiva.
+   *
+   * @param id - ID de la compra.
+   * @returns `undefined`; el método solo confirma el éxito.
+   * @throws Error si el backend indica fallo.
    */
   async eliminar(id: number): Promise<void> {
     const endpoint = `${BASE_URL}/${id}`;
@@ -151,7 +196,12 @@ export const comprasService = {
   },
 
   /**
-   * Registrar recepción de una compra (cambiar estado a recibida)
+   * Registra la recepción de una compra (cambia su estado a recibida).
+   *
+   * @param id - ID de la compra.
+   * @param data - Cantidades recibidas por línea.
+   * @returns El detalle de la compra recibida.
+   * @throws Error si el backend indica fallo.
    */
   async recibirCompra(id: number, data: RecibirCompraRequest): Promise<CompraDetalle> {
     const endpoint = `${BASE_URL}/${id}/recibir`;
@@ -163,7 +213,13 @@ export const comprasService = {
   },
 
   /**
-   * Obtener compras por proveedor
+   * Obtiene las compras asociadas a un proveedor.
+   *
+   * @param proveedorId - ID del proveedor.
+   * @param page - Número de página (base 0).
+   * @param size - Tamaño de página.
+   * @returns El payload paginado de compras; si no hay datos, un objeto vacío.
+   * @throws Error si el backend indica fallo.
    */
   async obtenerPorProveedor(proveedorId: number, page: number = 0, size: number = 20): Promise<any> {
     const endpoint = `${BASE_URL}/proveedor/${proveedorId}?page=${page}&size=${size}`;
@@ -175,7 +231,13 @@ export const comprasService = {
   },
 
   /**
-   * Filtrar compras por rango de fechas y estado
+   * Filtra compras por rango de fechas y estado.
+   *
+   * @param inicio - Fecha inicial del rango.
+   * @param fin - Fecha final del rango.
+   * @param estado - Estado por el que filtrar; por defecto `pendiente`.
+   * @returns La lista de compras coincidentes, o `[]` si no hay datos.
+   * @throws Error si el backend indica fallo.
    */
   async filtrar(
     inicio: string,

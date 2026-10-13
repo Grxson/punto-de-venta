@@ -22,7 +22,7 @@ import java.util.Map;
  * - ULTRA-DINÁMICOS (2-3 min): Menú por popularidad
  * - VENTAS (1 min): Datos de ventas del día
  * 
- * Impacto esperado: -40% latencia, +80% cache hit rate
+ * Impacto esperado: -40% latencia, +80% tasa de aciertos de caché
  */
 @Configuration
 @EnableCaching
@@ -35,7 +35,7 @@ public class CacheConfig {
     private static final int CACHE_MENU_MINUTES = 3;           // Menú popularidad
     private static final int CACHE_SALES_MINUTES = 1;          // Ventas
 
-    // ===== TAMAÑOS DE CACHÉ (optimizado para 50 branches × 20 users) =====
+    // ===== TAMAÑOS DE CACHÉ (optimizado para 50 sucursales × 20 usuarios) =====
     private static final int CACHE_STATIC_SIZE = 500;          // Categorías pequeño
     private static final int CACHE_PRODUCTS_SIZE = 5000;       // Muchos productos
     private static final int CACHE_INVENTORY_SIZE = 2000;      // Inventario
@@ -89,7 +89,7 @@ public class CacheConfig {
             buildCache(CACHE_MENU_SIZE, CACHE_MENU_MINUTES));
 
         // Auditoría 2026-09-11 (A3): cachés huérfanas registradas (antes caían al
-        // builder default sin TTL ni tamaño acotado)
+        // builder por defecto sin TTL ni tamaño acotado)
         cacheManager.registerCustomCache("productos-top",
             buildCache(CACHE_MENU_SIZE, CACHE_DYNAMIC_MINUTES));
         cacheManager.registerCustomCache("productosSucursal",

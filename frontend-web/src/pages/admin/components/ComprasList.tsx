@@ -26,14 +26,20 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { comprasService, CompraListado } from '../../../services/compras.service';
 
+/** Props del listado paginado de compras. */
 interface ComprasListProps {
+  /** Abre el formulario de edición para la compra indicada (sólo si está pendiente). */
   onEditar: (compraId: number) => void;
+  /** Abre el formulario de alta de una compra nueva. */
   onCrear: () => void;
+  /** Cambia su valor para forzar la recarga del listado desde la pantalla padre. */
   refreshTrigger?: number;
 }
 
 /**
- * Tabla con listado de compras
+ * Tabla paginada de compras con acciones de ver, editar y eliminar.
+ * @remarks Recarga al cambiar de página, de filas por página o de `refreshTrigger`;
+ * las filas no pendientes sólo permiten ver el detalle.
  */
 export default function ComprasList({ onEditar, onCrear, refreshTrigger = 0 }: ComprasListProps) {
   const [compras, setCompras] = useState<CompraListado[]>([]);
@@ -79,7 +85,8 @@ export default function ComprasList({ onEditar, onCrear, refreshTrigger = 0 }: C
   };
 
   /**
-   * Ver detalles de una compra
+   * Abre el dialog de detalle cargando la compra completa desde la API.
+   * @param compraId - Id de la compra a consultar.
    */
   const verDetalles = async (compraId: number) => {
     try {

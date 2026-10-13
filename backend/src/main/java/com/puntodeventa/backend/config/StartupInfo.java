@@ -23,6 +23,9 @@ public class StartupInfo {
         this.environment = environment;
     }
 
+    /**
+     * Publica en el log las URLs útiles de la aplicación cuando termina de arrancar.
+     */
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
         try {

@@ -32,6 +32,11 @@ public class GastoService {
     private final WebSocketNotificationService notificationService;
     private final EstadisticasService estadisticasService;
 
+    /**
+     * Lista los gastos de la sucursal del usuario.
+     *
+     * @return Lista de DTO con los gastos de la sucursal.
+     */
     public List<GastoDTO> obtenerTodos() {
         Long sucursalId = SucursalContext.getSucursalId();
         return gastoRepository.findBySucursalId(sucursalId).stream()
@@ -39,18 +44,37 @@ public class GastoService {
                 .toList();
     }
 
+    /**
+     * Lista los gastos de una sucursal indicada explícitamente.
+     *
+     * @param sucursalId Identificador de la sucursal consultada.
+     * @return Lista de DTO con los gastos de esa sucursal.
+     */
     public List<GastoDTO> obtenerPorSucursal(Long sucursalId) {
         return gastoRepository.findBySucursalId(sucursalId).stream()
                 .map(this::toDTO)
                 .toList();
     }
 
+    /**
+     * Lista los gastos de una categoría.
+     *
+     * @param categoriaGastoId Identificador de la categoría de gasto.
+     * @return Lista de DTO con los gastos de esa categoría.
+     */
     public List<GastoDTO> obtenerPorCategoria(Long categoriaGastoId) {
         return gastoRepository.findByCategoriaGastoId(categoriaGastoId).stream()
                 .map(this::toDTO)
                 .toList();
     }
 
+    /**
+     * Lista los gastos de la sucursal del usuario dentro de un rango de fechas.
+     *
+     * @param fechaInicio Fecha y hora inicial del período.
+     * @param fechaFin    Fecha y hora final del período.
+     * @return Lista de DTO con los gastos del rango.
+     */
     public List<GastoDTO> obtenerPorRangoFechas(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         Long sucursalId = SucursalContext.getSucursalId();
         return gastoRepository.findBySucursalAndFechaBetween(sucursalId, fechaInicio, fechaFin).stream()
@@ -58,6 +82,13 @@ public class GastoService {
                 .toList();
     }
 
+    /**
+     * Obtiene un gasto por su identificador, validando la sucursal.
+     *
+     * @param id Identificador del gasto.
+     * @return DTO del gasto encontrado.
+     * @throws ResourceNotFoundException si el gasto no existe o pertenece a otra sucursal.
+     */
     public GastoDTO obtenerPorId(Long id) {
         // ✅ SEGREGACIÓN: Validar que el gasto pertenece a la sucursal del usuario
         Long sucursalId = SucursalContext.getSucursalId();
@@ -72,6 +103,16 @@ public class GastoService {
         return toDTO(gasto);
     }
 
+    /**
+     * Crea un gasto en la sucursal del usuario.
+     * La sucursal siempre se toma del contexto y no de la petición. Tras persistir,
+     * invalida las caches de reportes y difiere la notificación WebSocket al
+     * {@code afterCommit} para no anunciar un gasto que aún podría revertirse.
+     *
+     * @param request Datos del gasto a crear.
+     * @return DTO del gasto creado.
+     * @throws ResourceNotFoundException si la categoría, el proveedor, la sucursal o el método de pago no existen.
+     */
     @Transactional
     public GastoDTO crear(CrearGastoRequest request) {
         // SEGREGACIÓN: Auto-asignar sucursal del usuario actual
@@ -156,6 +197,12 @@ public class GastoService {
         return gastoDTO;
     }
 
+    /**
+     * Elimina un gasto de forma física, validando que pertenezca a la sucursal del usuario.
+     *
+     * @param id Identificador del gasto.
+     * @throws ResourceNotFoundException si el gasto no existe o pertenece a otra sucursal.
+     */
     @Transactional
     public void eliminar(Long id) {
         // ✅ SEGREGACIÓN: Validar que el gasto pertenece a la sucursal del usuario
@@ -172,6 +219,17 @@ public class GastoService {
         gastoRepository.delete(gasto);
     }
 
+    /**
+     * Actualiza un gasto existente, validando que pertenezca a la sucursal del usuario.
+     * La sucursal no puede modificarse: se fija en el alta. El proveedor se limpia
+     * si la petición no lo informa.
+     *
+     * @param id      Identificador del gasto a actualizar.
+     * @param request Datos a aplicar sobre el gasto.
+     * @return DTO del gasto actualizado.
+     * @throws ResourceNotFoundException si el gasto, la categoría, el proveedor o el método de pago no existen,
+     *                                   o el gasto pertenece a otra sucursal.
+     */
     @Transactional
     public GastoDTO actualizar(Long id, CrearGastoRequest request) {
         // ✅ SEGREGACIÓN: Validar que el gasto pertenece a la sucursal del usuario
@@ -251,6 +309,15 @@ public class GastoService {
         return toDTO(actualizado);
     }
 
+    /**
+     * Busca gastos de la categoría "Insumos" por texto en referencia o nota.
+     * La categoría se resuelve primero para la sucursal y, si no existe, a nivel
+     * global; sin categoría "Insumos" no hay resultados posibles.
+     *
+     * @param busqueda Texto a buscar; vacío para listar todos los insumos.
+     * @return Lista de DTO con los gastos de insumos coincidentes.
+     * @throws ResourceNotFoundException si no existe la categoría "Insumos".
+     */
     public List<GastoDTO> buscarGastosInsumos(String busqueda) {
         Long sucursalId = SucursalContext.getSucursalId();
 

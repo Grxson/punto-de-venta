@@ -29,45 +29,55 @@ import java.util.List;
 @Builder
 public class ProductoAtributo {
 
+    /** Identificador único del atributo. */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Producto al que pertenece el atributo; many-to-one obligatorio, un producto declara varios atributos. */
     @NotNull(message = "El producto es obligatorio")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 
+    /** Nombre del atributo tal como se pregunta al cliente. */
     @NotBlank(message = "El nombre del atributo es obligatorio")
     @Column(nullable = false, length = 100)
     private String nombre;
 
+    /** Modo de selección del atributo: SIMPLE (una opción) o MULTIPLE (varias). */
     @NotNull(message = "El tipo es obligatorio")
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private TipoAtributo tipo;
 
+    /** Si es true, el punto de venta exige elegir al menos una opción antes de cobrar. */
     @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(nullable = false, columnDefinition = "BOOLEAN")
     @Builder.Default
     private Boolean requerido = false;
 
+    /** Posición del atributo en el menú; menor número se muestra primero. */
     @Column(nullable = false)
     @Builder.Default
     private Integer orden = 0;
 
+    /** Si es false, el atributo se oculta del menú sin eliminar sus opciones. */
     @JdbcTypeCode(SqlTypes.BOOLEAN)
     @Column(nullable = false, columnDefinition = "BOOLEAN")
     @Builder.Default
     private Boolean activo = true;
 
+    /** Fecha de alta del atributo. */
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    /** Fecha de la última modificación. */
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private LocalDateTime updatedAt;
 
+    /** Opciones del atributo; one-to-many en cascada: al eliminar el atributo se borran sus opciones. */
     @OneToMany(mappedBy = "atributo", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductoAtributoOpcion> opciones;
 

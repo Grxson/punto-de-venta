@@ -24,6 +24,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Servicio de gestión de cuentas de usuario y sesión.
+ * Valida unicidad de credenciales, cifra contraseñas con el {@code PasswordEncoder}
+ * y emite los tokens JWT que transportan la identidad, el rol y la sucursal del
+ * usuario en cada petición.
+ */
 @Slf4j
 @Service
 public class UsuarioServicio {
@@ -47,11 +53,18 @@ public class UsuarioServicio {
     private JwtUtil jwtUtil;
 
     /**
-     * Crear un nuevo usuario
+     * Crea un nuevo usuario.
+     * El usuario nace activo y affiliated a la sucursal indicada en la petición.
+     *
+     * @param request Datos de alta, incluida la contraseña en texto plano.
+     * @return DTO del usuario creado, sin datos sensibles.
+     * @throws IllegalArgumentException si el username o el email ya están en uso.
+     * @throws EntityNotFoundException si el rol o la sucursal no existen.
      */
     @Transactional
     public UsuarioDTO crearUsuario(CrearUsuarioRequest request) {
-        // Validar que el usuario no exista
+        // El username y el email son claves de acceso: se validan antes de tocar
+        // cualquier campo para no cifrar una contraseña que después se rechaza.
         if (usuarioRepository.findByUsername(request.username()).isPresent()) {
             throw new IllegalArgumentException("El username ya existe: " + request.username());
         }
@@ -83,7 +96,15 @@ public class UsuarioServicio {
     }
 
     /**
-     * Login del usuario
+     * Autentica al usuario y emite su token JWT.
+     * La sucursal del token se toma de la ficha del usuario, nunca de la petición,
+     * porque delimita el alcance de datos de cada sesión.
+     *
+     * @param request Credenciales del usuario.
+     * @return Respuesta con el token, el perfil del usuario y un mensaje de resultado.
+     * @throws AuthenticationException si las credenciales son inválidas.
+     * @throws EntityNotFoundException si el usuario autenticado no existe en la base de datos.
+     * @throws IllegalStateException si el usuario no tiene sucursal asignada.
      */
     public LoginResponse login(LoginRequest request) {
         try {
@@ -123,7 +144,15 @@ public class UsuarioServicio {
     }
 
     /**
-     * Renovar token JWT - Se llama cuando el token está a punto de expirar o ya expiró
+     * Renueva el token JWT de un usuario.
+     * Se invoca cuando el token está por expirar o ya expiró. No se revalida la
+     * contraseña porque el token ya demostró autenticidad; sí se comprueba que la
+     * cuenta siga activa y con sucursal asignada.
+     *
+     * @param expiredToken Token previo, incluso ya vencido.
+     * @return Respuesta con el token nuevo, el perfil del usuario y un mensaje de resultado.
+     * @throws EntityNotFoundException si el usuario del token no existe.
+     * @throws IllegalStateException si el usuario está inactivo o no tiene sucursal asignada.
      */
     public LoginResponse refreshToken(String expiredToken) {
         try {
@@ -158,7 +187,11 @@ public class UsuarioServicio {
     }
 
     /**
-     * Obtener usuario por ID
+     * Obtiene un usuario por su identificador.
+     *
+     * @param id Identificador del usuario.
+     * @return DTO del usuario encontrado.
+     * @throws EntityNotFoundException si el usuario no existe.
      */
     public UsuarioDTO obtenerUsuario(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
@@ -167,7 +200,13 @@ public class UsuarioServicio {
     }
 
     /**
-     * Obtener todos los usuarios por sucursal
+     * Obtiene los usuarios de una sucursal, opcionalmente filtrando por estado.
+     *
+     * @param sucursalId Identificador de la sucursal.
+     * @param activo     {@code true} solo activos, {@code false} solo inactivos,
+     *                   {@code null} para no filtrar.
+     * @return Lista de DTO de los usuarios de la sucursal.
+     * @throws RuntimeException si la consulta a la base de datos falla.
      */
     public List<UsuarioDTO> obtenerUsuariosPorSucursal(Long sucursalId, Boolean activo) {
         try {
@@ -181,7 +220,15 @@ public class UsuarioServicio {
     }
 
     /**
-     * Actualizar usuario
+     * Actualiza los datos de un usuario.
+     * Una contraseña vacía o nula se interpreta como "sin cambio", para que el
+     * formulario de edición no esté obligado a reenviarla.
+     *
+     * @param id      Identificador del usuario a actualizar.
+     * @param request Datos a actualizar, incluida la contraseña opcional.
+     * @return DTO del usuario ya persistido.
+     * @throws EntityNotFoundException si el usuario, el rol o la sucursal no existen.
+     * @throws IllegalArgumentException si el email o el username pertenecen a otro usuario.
      */
     @Transactional
     public UsuarioDTO actualizarUsuario(Long id, EditarUsuarioRequest request) {
@@ -220,7 +267,12 @@ public class UsuarioServicio {
     }
 
     /**
-     * Dar de baja (desactivar) usuario
+     * Da de baja un usuario sin borrar su historial.
+     * Se conserva la fila porque las ventas y los movimientos de inventario ya
+     * la referencian; la baja es lógica y reversible con {@link #reactivarUsuario}.
+     *
+     * @param id Identificador del usuario.
+     * @throws EntityNotFoundException si el usuario no existe.
      */
     @Transactional
     public void desactivarUsuario(Long id) {
@@ -236,7 +288,11 @@ public class UsuarioServicio {
     }
 
     /**
-     * Reactivar usuario
+     * Reactiva un usuario dado de baja previamente.
+     *
+     * @param id Identificador del usuario.
+     * @return DTO del usuario reactivado.
+     * @throws EntityNotFoundException si el usuario no existe.
      */
     @Transactional
     public UsuarioDTO reactivarUsuario(Long id) {
@@ -251,7 +307,14 @@ public class UsuarioServicio {
     }
 
     /**
-     * Cambiar rol de un usuario
+     * Cambia el rol de un usuario.
+     * El rol se sustituye por completo y no se fusiona con el anterior: el
+     * permiso efectivo siempre es el del último rol asignado.
+     *
+     * @param id    Identificador del usuario.
+     * @param rolId Identificador del nuevo rol.
+     * @return DTO del usuario con el rol actualizado.
+     * @throws EntityNotFoundException si el usuario o el rol no existen.
      */
     @Transactional
     public UsuarioDTO cambiarRol(Long id, Long rolId) {
@@ -269,7 +332,11 @@ public class UsuarioServicio {
     }
 
     /**
-     * Mapear Usuario a UsuarioDTO
+     * Proyecta la entidad de usuario a su DTO.
+     * La contraseña nunca se proyecta: sale del modelo de salida por diseño.
+     *
+     * @param usuario Entidad a proyectar.
+     * @return DTO con los datos del usuario y su rol anidado, si lo tiene.
      */
     private UsuarioDTO mapearADTO(Usuario usuario) {
         UsuarioDTO.RolDTO rolDTO = null;

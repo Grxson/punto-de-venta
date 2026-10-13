@@ -4,9 +4,17 @@ import { useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
+  /** Contenido protegido que solo se renderiza con sesión activa. */
   children: React.ReactNode;
 }
 
+/**
+ * Ruta protegida por autenticación.
+ * Muestra un indicador de carga mientras se restaura la sesión y redirige al
+ * login cuando no hay usuario autenticado.
+ *
+ * @param props.children - Vista que se muestra cuando hay sesión activa.
+ */
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Usar useContext directamente para evitar errores durante hot reload
   const authContext = useContext(AuthContext);

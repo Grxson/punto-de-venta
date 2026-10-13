@@ -30,6 +30,11 @@ public class CategoriaGastoService {
     private final CategoriaGastoRepository categoriaGastoRepository;
     private final SucursalRepository sucursalRepository;
 
+    /**
+     * Lista todas las categorías de gasto de la sucursal del usuario, incluidas las inactivas.
+     *
+     * @return Lista de DTO con el catálogo de categorías de la sucursal.
+     */
     public List<CategoriaGastoDTO> obtenerTodas() {
         Long sucursalId = SucursalContext.getSucursalId();
         return categoriaGastoRepository.findBySucursalId(sucursalId).stream()
@@ -37,6 +42,11 @@ public class CategoriaGastoService {
                 .toList();
     }
 
+    /**
+     * Lista las categorías de gasto activas de la sucursal del usuario.
+     *
+     * @return Lista de DTO de las categorías con {@code activo} en true.
+     */
     public List<CategoriaGastoDTO> obtenerActivas() {
         Long sucursalId = SucursalContext.getSucursalId();
         return categoriaGastoRepository.findBySucursalIdAndActivoTrue(sucursalId).stream()
@@ -44,12 +54,26 @@ public class CategoriaGastoService {
                 .toList();
     }
 
+    /**
+     * Obtiene una categoría de gasto por su identificador.
+     *
+     * @param id Identificador de la categoría.
+     * @return DTO de la categoría encontrada.
+     * @throws ResourceNotFoundException si la categoría no existe.
+     */
     public CategoriaGastoDTO obtenerPorId(Long id) {
         CategoriaGasto categoria = categoriaGastoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría de gasto no encontrada con id: " + id));
         return toDTO(categoria);
     }
 
+    /**
+     * Crea una categoría de gasto en la sucursal del usuario.
+     *
+     * @param dto Datos de la categoría a crear.
+     * @return DTO de la categoría creada.
+     * @throws ResourceNotFoundException si la sucursal no existe.
+     */
     @CacheEvict(value = "categorias-gastos", allEntries = true)
     @Transactional
     public CategoriaGastoDTO crear(CategoriaGastoDTO dto) {
@@ -69,6 +93,14 @@ public class CategoriaGastoService {
         return toDTO(categoria);
     }
 
+    /**
+     * Actualiza una categoría de gasto existente.
+     *
+     * @param id  Identificador de la categoría a actualizar.
+     * @param dto Datos a aplicar sobre la categoría.
+     * @return DTO de la categoría actualizada.
+     * @throws ResourceNotFoundException si la categoría no existe.
+     */
     @CacheEvict(value = "categorias-gastos", allEntries = true)
     @Transactional
     public CategoriaGastoDTO actualizar(Long id, CategoriaGastoDTO dto) {
@@ -85,6 +117,13 @@ public class CategoriaGastoService {
         return toDTO(categoria);
     }
 
+    /**
+     * Da de baja una categoría de gasto de forma lógica.
+     * No se borra la fila porque los gastos históricos la referencian.
+     *
+     * @param id Identificador de la categoría a desactivar.
+     * @throws ResourceNotFoundException si la categoría no existe.
+     */
     @CacheEvict(value = "categorias-gastos", allEntries = true)
     @Transactional
     public void eliminar(Long id) {

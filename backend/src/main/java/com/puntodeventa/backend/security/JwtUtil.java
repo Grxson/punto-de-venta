@@ -12,21 +12,30 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Utilidad de emisión y lectura de tokens JWT firmados con HS256.
+ * Los claims incluyen el identificador del usuario, su rol y su sucursal.
+ */
 @Component
 public class JwtUtil {
 
-    // Auditoría 2026-09-11 (C4): sin fallback de secreto. La property jwt.secret
-    // debe resolverse desde el entorno (JWT_SECRET) o el arranque falla.
+    // Auditoría 2026-09-11 (C4): sin valor por defecto para el secreto. La property
+    // jwt.secret debe resolverse desde el entorno (JWT_SECRET) o el arranque falla.
     @Value("${jwt.secret}")
     private String jwtSecret;
 
     @Value("${jwt.expiration:604800000}") // 7 días por defecto (604800000 ms)
     private long jwtExpiration;
 
+    /**
+     * Verifica al arrancar que el secreto cumple los requisitos de longitud de HS256.
+     *
+     * @throws IllegalStateException si el secreto está vacío o tiene menos de 32 caracteres
+     */
     @PostConstruct
     void validarSecret() {
-        // Fail-fast: secreto vacío/corto → aplicar no levanta.
-        // Keys.hmacShaKeyFor exige >= 256 bits (32 bytes) para HS256.
+        // Fallo inmediato: un secreto vacío o corto impide firmar y validar tokens.
+        // Keys.hmacShaKeyFor exige al menos 256 bits (32 bytes) para HS256.
         if (jwtSecret == null || jwtSecret.isBlank() || jwtSecret.length() < 32) {
             throw new IllegalStateException(
                     "JWT_SECRET no configurada o demasiado corta (< 32 chars). "
@@ -34,23 +43,38 @@ public class JwtUtil {
         }
     }
 
+    /**
+     * Construye la clave de firma a partir del secreto configurado.
+     *
+     * @return clave simétrica para HS256
+     */
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
     /**
-     * Generar un JWT para un usuario
+     * Genera un JWT para un usuario.
+     *
+     * @param username nombre de usuario, que queda como sujeto del token
+     * @param usuarioId identificador del usuario, incluido como claim
+     * @param rolNombre nombre del rol, incluido como claim
+     * @param sucursalId sucursal del usuario, incluida como claim
+     * @return token JWT firmado
      */
     public String generateToken(String username, Long usuarioId, String rolNombre, Long sucursalId) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("usuarioId", usuarioId);
         claims.put("rol", rolNombre);
-        claims.put("sucursalId", sucursalId);  // Sucursal del usuario
+        claims.put("sucursalId", sucursalId);
         return createToken(claims, username);
     }
 
     /**
-     * Crear el token JWT
+     * Construye y firma el token JWT con los claims indicados.
+     *
+     * @param claims claims a incluir en el token
+     * @param subject sujeto del token
+     * @return token JWT firmado
      */
     private String createToken(Map<String, Object> claims, String subject) {
         Date now = new Date();
@@ -66,7 +90,10 @@ public class JwtUtil {
     }
 
     /**
-     * Obtener el username del token
+     * Obtiene el nombre de usuario del token.
+     *
+     * @param token token JWT firmado
+     * @return nombre de usuario almacenado en el sujeto del token
      */
     public String extractUsername(String token) {
         return Jwts.parser()
@@ -78,12 +105,14 @@ public class JwtUtil {
     }
 
     /**
-     * Obtener el usuarioId del token
-     * Funciona incluso con tokens expirados (para refresh token)
+     * Obtiene el identificador de usuario del token.
+     * Funciona incluso con tokens caducados, para poder usarlos en el refresco.
+     *
+     * @param token token JWT firmado
+     * @return identificador del usuario
      */
     public Long extractUsuarioId(String token) {
         try {
-            // Primero intentar con verificación normal (token válido)
             return ((Number) Jwts.parser()
                     .verifyWith(getSigningKey())
                     .build()
@@ -91,15 +120,16 @@ public class JwtUtil {
                     .getPayload()
                     .get("usuarioId")).longValue();
         } catch (ExpiredJwtException e) {
-            // Si está expirado, extraer sin verificación de expiration
-            // pero manteniendo verificación de firma
+            // La caducidad no invalida la firma, así que los claims siguen siendo de fiar.
             return ((Number) e.getClaims().get("usuarioId")).longValue();
         }
     }
-    
+
     /**
-     * Extraer username del token incluso si está expirado
-     * Usado para refresh token
+     * Extrae el nombre de usuario del token aunque esté caducado, para el refresco de token.
+     *
+     * @param token token JWT firmado
+     * @return nombre de usuario del sujeto del token
      */
     public String extractUsernameFromExpiredToken(String token) {
         try {
@@ -110,13 +140,15 @@ public class JwtUtil {
                     .getPayload()
                     .getSubject();
         } catch (ExpiredJwtException e) {
-            // Extraer del token expirado
             return e.getClaims().getSubject();
         }
     }
 
     /**
-     * Obtener el rol del token
+     * Obtiene el rol del token.
+     *
+     * @param token token JWT firmado
+     * @return nombre del rol o {@code null} si el claim no está presente
      */
     public String extractRol(String token) {
         return (String) Jwts.parser()
@@ -128,8 +160,11 @@ public class JwtUtil {
     }
 
     /**
-     * Obtener la sucursal del token
-     * @throws IllegalArgumentException si sucursalId no existe o no es válido
+     * Obtiene la sucursal del token.
+     *
+     * @param token token JWT firmado
+     * @return identificador de la sucursal del usuario
+     * @throws IllegalArgumentException si el claim {@code sucursalId} falta o no es numérico
      */
     public Long extractSucursalId(String token) {
         Object sucursalObj = Jwts.parser()
@@ -151,7 +186,10 @@ public class JwtUtil {
     }
 
     /**
-     * Validar si el token es válido
+     * Valida la firma y la vigencia del token.
+     *
+     * @param token token JWT firmado
+     * @return {@code true} si el token es válido y no ha caducado
      */
     public boolean isTokenValid(String token) {
         try {
@@ -161,7 +199,6 @@ public class JwtUtil {
                     .parseSignedClaims(token);
             return true;
         } catch (ExpiredJwtException e) {
-            // Token expirado
             return false;
         } catch (Exception e) {
             return false;
@@ -169,8 +206,10 @@ public class JwtUtil {
     }
 
     /**
-     * Verificar si un token está expirado
-     * @return true si el token está expirado
+     * Verifica si un token ha caducado.
+     *
+     * @param token token JWT firmado
+     * @return {@code true} si el token ha caducado
      */
     public boolean isTokenExpired(String token) {
         try {
@@ -178,11 +217,13 @@ public class JwtUtil {
                     .verifyWith(getSigningKey())
                     .build()
                     .parseSignedClaims(token);
-            return false;  // Token válido
+            return false;
         } catch (ExpiredJwtException e) {
-            return true;  // Token expirado
+            return true;
         } catch (Exception e) {
-            return false;  // Otro tipo de error
+            // Cualquier otro fallo (firma inválida, token corrupto) no se
+            // interpreta como caducidad: quien llama decide con isTokenValid.
+            return false;
         }
     }
 }

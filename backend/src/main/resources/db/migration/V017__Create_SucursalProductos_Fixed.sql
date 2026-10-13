@@ -1,4 +1,4 @@
--- Migration: Crear tabla sucursal_productos para multi-sucursal
+-- Migración: Crear tabla sucursal_productos para multi-sucursal
 -- Fecha: 2025-12-06
 -- Descripción: Tabla intermedia para definir qué productos están disponibles en cada sucursal
 
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS sucursal_productos (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
-    -- Constraints
+    -- Restricciones
     UNIQUE KEY uk_sucursal_producto (sucursal_id, producto_id),
     FOREIGN KEY fk_sucursal_producto_sucursal (sucursal_id) 
         REFERENCES sucursales(id) ON DELETE CASCADE,
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS sucursal_productos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Inicializar datos: Asignar todos los productos activos a todas las sucursales activas
--- Esto crea la relación many-to-many base
+-- Esto crea la relación base de muchos a muchos
 INSERT INTO sucursal_productos (sucursal_id, producto_id, disponible, orden_visualizacion, created_at, updated_at)
 SELECT s.id, p.id, 1, 0, NOW(), NOW()
 FROM sucursales s

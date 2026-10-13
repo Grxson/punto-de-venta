@@ -81,11 +81,11 @@ public class PopularityAlgorithm {
         LocalDateTime ahora = LocalDateTime.now();
         long minutosDesdeUltimaVenta = java.time.temporal.ChronoUnit.MINUTES.between(ultimaVenta, ahora);
 
-        // Usando función exponencial decreciente
-        // Factor se reduce a la mitad cada 480 minutos (8 horas)
+        // Decaimiento exponencial: el peso se reduce a la mitad cada 480 minutos
+        // (8 horas), de modo que la bonificación por recencia caduca en un turno.
         double factor = Math.exp(-minutosDesdeUltimaVenta / 480.0);
 
-        return Math.min(factor, 1.0); // Cap a 1.0
+        return Math.min(factor, 1.0); // el tope protege contra minutos negativos por desfase de zona horaria
     }
 
     /**
@@ -103,7 +103,7 @@ public class PopularityAlgorithm {
         }
 
         double tasa = (double) (ventasRecientes - ventasAntiguas) / ventasAntiguas;
-        // Normalizar a rango (-1, 1) usando función tanh inversa
+        // tanh acota la tasa al rango (-1, 1) sin recorte explícito
         return Math.tanh(tasa);
     }
 
@@ -212,10 +212,18 @@ public class PopularityAlgorithm {
     }
 
     /**
-     * Registro de posición en grilla.
+     * Coordenadas de un producto dentro de la grilla del menú.
+     *
+     * @param fila    Índice de fila, contando desde cero hacia abajo.
+     * @param columna Índice de columna, contando desde cero hacia la derecha.
      */
     public record GridPosition(int fila, int columna) {
 
+        /**
+         * Representación legible para trazas de depuración.
+         *
+         * @return Texto con la fila y la columna.
+         */
         @Override
         public String toString() {
             return "Fila " + fila + ", Columna " + columna;

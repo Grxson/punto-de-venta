@@ -11,6 +11,11 @@ import {
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
 
+/**
+ * Pantalla de inicio de sesión.
+ *
+ * @returns El formulario de credenciales.
+ */
 export function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

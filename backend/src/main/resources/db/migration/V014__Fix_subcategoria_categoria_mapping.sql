@@ -1,8 +1,8 @@
--- ✅ SEGREGACIÓN: Corregir mapping de subcategorías a categorías por sucursal
+-- ✅ SEGREGACIÓN: Corregir mapeo de subcategorías a categorías por sucursal
 -- Las subcategorías de sucursal 2 necesitan apuntar a categorías de sucursal 2, no sucursal 1
 
 -- Actualizar subcategorías de sucursal 2 para apuntar a sus categorías correctas
--- Usa subquery que busca la categoría de sucursal 2 con el mismo nombre
+-- Usa subconsulta que busca la categoría de sucursal 2 con el mismo nombre
 UPDATE categoria_subcategorias cs
 SET categoria_id = (
     SELECT s2.id

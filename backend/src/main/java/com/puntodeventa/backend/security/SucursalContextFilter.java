@@ -18,25 +18,25 @@ import java.io.IOException;
 import io.jsonwebtoken.JwtException;
 
 /**
- * Filtro que establece el contexto de sucursal para cada request.
- * 
+ * Filtro que establece el contexto de sucursal de cada solicitud.
+ *
  * Flujo:
- * 1. Obtiene el token JWT del header Authorization
- * 2. Extrae la sucursal_id del JWT (primera opción - más confiable)
- * 3. Si no hay JWT o no contiene sucursal, obtiene del usuario en BD
- * 4. Establece la sucursal en SucursalContext
- * 5. Continúa el request
+ * 1. Obtiene el token JWT de la cabecera Authorization
+ * 2. Extrae el sucursal_id del JWT (primera opción, más fiable)
+ * 3. Si no hay JWT o no contiene sucursal, la obtiene del usuario en la base de datos
+ * 4. Establece la sucursal en {@link SucursalContext}
+ * 5. Continúa con la solicitud
  * 6. Limpia el contexto al final
- * 
- * Headers soportados:
- * - Authorization: Bearer <JWT> - Token con sucursal_id incluido
- * - X-Sucursal-Id: ID de la sucursal (solo si el usuario es admin, para cambiar
- * de sucursal)
- * 
+ *
+ * Cabeceras admitidas:
+ * - Authorization: Bearer &lt;JWT&gt;, token con el sucursal_id incluido
+ * - X-Sucursal-Id: identificador de la sucursal, aceptado solo si el usuario es
+ *   administrador, para cambiar de sucursal
+ *
  * Prioridad:
- * 1. Sucursal del JWT (más confiable porque viene del token autenticado)
- * 2. Header X-Sucursal-Id (si es admin y lo proporciona)
- * 3. Sucursal del usuario en BD (fallback)
+ * 1. Sucursal del JWT, la más fiable por proceder del token autenticado
+ * 2. Cabecera X-Sucursal-Id, si es administrador y la envía
+ * 3. Sucursal del usuario en la base de datos, como último recurso
  */
 @Component
 public class SucursalContextFilter extends OncePerRequestFilter {
@@ -48,15 +48,16 @@ public class SucursalContextFilter extends OncePerRequestFilter {
     private JwtUtil jwtUtil;
 
     /**
-     * Ignora el endpoint de login, refresco de token, rutas estáticas, dashboard de
-     * monitoreo, APIs de monitoreo y WebSocket para no exigir contexto de sucursal
-     * en estas rutas públicas.
+     * Ignora el endpoint de login, el refresco de token, las rutas estáticas, el
+     * dashboard y las APIs de monitoreo y el WebSocket, para no exigir contexto de
+     * sucursal en estas rutas públicas.
+     *
+     * @param request solicitud HTTP en curso
+     * @return {@code true} si la ruta está exenta del filtro
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        // Permitir acceso público a recursos estáticos, dashboard de monitoreo y
-        // WebSocket
         return path.equals("/api/auth/login") ||
                 path.equals("/api/auth/refresh-token") ||
                 path.startsWith("/monitoring") ||
@@ -67,9 +68,19 @@ public class SucursalContextFilter extends OncePerRequestFilter {
                 path.startsWith("/images/") ||
                 path.startsWith("/favicon.ico") ||
                 path.startsWith("/error") ||
-                path.startsWith("/ws/"); // Ignorar WebSocket handshake y conexiones
+                path.startsWith("/ws/"); // El handshake y las conexiones WebSocket se ignoran
     }
 
+    /**
+     * Resuelve la sucursal de la solicitud y la publica en el contexto. Si no puede
+     * resolverse, responde 401 y no deja continuar la cadena.
+     *
+     * @param request solicitud HTTP en curso
+     * @param response respuesta HTTP en curso
+     * @param filterChain cadena de filtros a continuar
+     * @throws ServletException si falla el filtrado delegado
+     * @throws IOException si falla la lectura o escritura de la solicitud o la respuesta
+     */
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -78,7 +89,6 @@ public class SucursalContextFilter extends OncePerRequestFilter {
             String sucursalNombre = null;
             String rolNombre = null;
 
-            // PASO 1: Intentar obtener sucursal del JWT
             String bearerToken = extractBearerToken(request);
             if (bearerToken != null && jwtUtil != null && jwtUtil.isTokenValid(bearerToken)) {
                 try {
@@ -88,7 +98,7 @@ public class SucursalContextFilter extends OncePerRequestFilter {
                     logger.info("✅ [SucursalContextFilter] Sucursal obtenida del JWT: " + sucursalId + " | Rol: "
                             + rolNombre + " | Usuario: " + usernameFromToken);
                 } catch (IllegalArgumentException e) {
-                    // MEJORADO: Distinción clara entre errores
+                    // Distingue el claim ausente o mal formado de otros fallos.
                     logger.error(
                             "❌ [SucursalContextFilter] Token JWT inválido - sucursalId no encontrado o mal formado: "
                                     + e.getMessage(),
@@ -105,7 +115,7 @@ public class SucursalContextFilter extends OncePerRequestFilter {
                 logger.warn("⚠️ [SucursalContextFilter] No hay token Bearer válido en el request");
             }
 
-            // PASO 2: Si el JWT no tiene sucursal, obtener de la BD (fallback)
+            // Último recurso: sucursal del usuario en la base de datos.
             if (sucursalId == null && usuarioRepository != null) {
                 logger.info("ℹ️ [SucursalContextFilter] Sucursal no obtenida del JWT, intentando fallback a BD");
                 Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -118,7 +128,8 @@ public class SucursalContextFilter extends OncePerRequestFilter {
 
                         logger.debug("✅ Usuario encontrado en BD: " + username);
 
-                        // Acceder a los valores lazy-loaded dentro del contexto de la sesión
+                        // Los valores se leen aquí, dentro de la sesión, para
+                        // evitar el acceso perezoso fuera de ella.
                         if (usuario.getSucursal() != null) {
                             sucursalId = usuario.getSucursal().getId();
                             sucursalNombre = usuario.getSucursal().getNombre();
@@ -144,7 +155,6 @@ public class SucursalContextFilter extends OncePerRequestFilter {
                 }
             }
 
-            // PASO 3: Si es admin, permitir cambiar de sucursal con header X-Sucursal-Id
             if (rolNombre != null && rolNombre.equalsIgnoreCase("ADMIN")) {
                 String sucursalHeader = request.getHeader("X-Sucursal-Id");
                 if (sucursalHeader != null && !sucursalHeader.isBlank()) {
@@ -159,7 +169,6 @@ public class SucursalContextFilter extends OncePerRequestFilter {
                 }
             }
 
-            // PASO 4: Establecer el contexto con valores seguros
             if (sucursalId != null) {
                 if (sucursalNombre == null) {
                     sucursalNombre = "Sucursal-" + sucursalId;
@@ -168,9 +177,8 @@ public class SucursalContextFilter extends OncePerRequestFilter {
                 logger.info("📍 [SucursalContextFilter] ✅ SucursalContext establecido: ID=" + sucursalId
                         + ", Nombre=" + sucursalNombre + " | Request: " + request.getRequestURI());
             } else {
-                // CRÍTICO: No se pudo obtener sucursal_id de ningún origen
-                // Auditoría 2026-09-11 (C3): sin sucursal resuelta → 401, no se
-                // continúa el request con contexto indeterminado.
+                // Auditoría 2026-09-11 (C3): sin sucursal resuelta se responde 401,
+                // nunca se continúa con un contexto indeterminado.
                 logger.error("❌ [SucursalContextFilter] CRÍTICO - No se pudo obtener sucursal_id de:");
                 logger.error("   - JWT (no contiene sucursalId o token inválido)");
                 logger.error("   - BD (usuario no autenticado, no encontrado, o sin sucursal asignada)");
@@ -188,21 +196,25 @@ public class SucursalContextFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             logger.error("❌ [SucursalContextFilter] EXCEPCIÓN INESPERADA en filter: " + e.getMessage()
                     + " | Exception: " + e.getClass().getName(), e);
-            // Auditoría 2026-09-11 (C3): SIN fallback a sucursal 1. Error interno del
-            // filtro → 401 y abortar request (contexto inseguro no se propaga).
+            // Auditoría 2026-09-11 (C3): sin recurso a la sucursal 1. Un error interno
+            // del filtro responde 401 y aborta, en lugar de propagar un contexto inseguro.
             if (!response.isCommitted()) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType("application/json;charset=UTF-8");
                 response.getWriter().write("{\"error\":\"Sucursal no resuelta: error interno del filtro\"}");
             }
         } finally {
-            // Limpiar el contexto al final del request
+            // Los hilos se reutilizan: sin limpiar, la sucursal se arrastraría
+            // a la siguiente solicitud.
             SucursalContext.clear();
         }
     }
 
     /**
-     * Extrae el token Bearer del header Authorization
+     * Extrae el token de la cabecera Authorization con el esquema Bearer.
+     *
+     * @param request solicitud HTTP en curso
+     * @return el token sin el prefijo {@code Bearer } o {@code null} si no viene
      */
     private String extractBearerToken(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");

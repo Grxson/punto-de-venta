@@ -26,7 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests de segregación de datos por sucursal para GastoService.
+ * Pruebas de segregación de datos por sucursal para GastoService.
  * 
  * Verifica que:
  * 1. Un usuario NO puede ver gastos de otra sucursal
@@ -54,7 +54,7 @@ class GastoServiceSegregationTest {
 
     @BeforeEach
     void setUp() {
-        // Limpiar contexto antes de cada test
+        // Limpiar contexto antes de cada prueba
         SucursalContext.clear();
 
         // Crear sucursales de prueba
@@ -89,20 +89,20 @@ class GastoServiceSegregationTest {
     }
 
     // ============================================================
-    // TESTS: obtenerPorId() - Validación de Segregación
+    // PRUEBAS: obtenerPorId() - Validación de Segregación
     // ============================================================
 
     @Test
     @DisplayName("✅ Usuario de Sucursal 1 puede ver su propio gasto")
     void testObtenerPorId_UserSucursal1_AccessOwnGasto() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
         when(gastoRepository.findById(100L)).thenReturn(Optional.of(gastoSucursal1));
 
-        // Act
+        // Ejecución
         GastoDTO resultado = gastoService.obtenerPorId(100L);
 
-        // Assert
+        // Verificación
         assertNotNull(resultado);
         assertEquals(100L, resultado.id());
         assertEquals(1L, resultado.sucursalId());
@@ -112,11 +112,11 @@ class GastoServiceSegregationTest {
     @Test
     @DisplayName("❌ Usuario de Sucursal 2 NO puede ver gasto de Sucursal 1")
     void testObtenerPorId_UserSucursal2_CantAccessSucursal1Gasto() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(2L, "Sucursal 2");
         when(gastoRepository.findById(100L)).thenReturn(Optional.of(gastoSucursal1));
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> gastoService.obtenerPorId(100L),
@@ -129,14 +129,14 @@ class GastoServiceSegregationTest {
     @Test
     @DisplayName("✅ Usuario de Sucursal 2 puede ver su propio gasto")
     void testObtenerPorId_UserSucursal2_AccessOwnGasto() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(2L, "Sucursal 2");
         when(gastoRepository.findById(200L)).thenReturn(Optional.of(gastoSucursal2));
 
-        // Act
+        // Ejecución
         GastoDTO resultado = gastoService.obtenerPorId(200L);
 
-        // Assert
+        // Verificación
         assertNotNull(resultado);
         assertEquals(200L, resultado.id());
         assertEquals(2L, resultado.sucursalId());
@@ -146,11 +146,11 @@ class GastoServiceSegregationTest {
     @Test
     @DisplayName("❌ Usuario de Sucursal 1 NO puede ver gasto de Sucursal 2")
     void testObtenerPorId_UserSucursal1_CantAccessSucursal2Gasto() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
         when(gastoRepository.findById(200L)).thenReturn(Optional.of(gastoSucursal2));
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> gastoService.obtenerPorId(200L),
@@ -162,7 +162,7 @@ class GastoServiceSegregationTest {
     @Test
     @DisplayName("❌ Gasto sin sucursal asignada no puede ser accedido")
     void testObtenerPorId_GastoWithoutSucursal_ThrowsException() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
 
         Gasto gastoSinSucursal = new Gasto();
@@ -171,7 +171,7 @@ class GastoServiceSegregationTest {
 
         when(gastoRepository.findById(999L)).thenReturn(Optional.of(gastoSinSucursal));
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> gastoService.obtenerPorId(999L),
@@ -181,20 +181,20 @@ class GastoServiceSegregationTest {
     }
 
     // ============================================================
-    // TESTS: eliminar() - Validación de Segregación
+    // PRUEBAS: eliminar() - Validación de Segregación
     // ============================================================
 
     @Test
     @DisplayName("✅ Usuario de Sucursal 1 puede eliminar su propio gasto")
     void testEliminar_UserSucursal1_DeleteOwnGasto() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
         when(gastoRepository.findById(100L)).thenReturn(Optional.of(gastoSucursal1));
 
-        // Act
+        // Ejecución
         gastoService.eliminar(100L);
 
-        // Assert
+        // Verificación
         verify(gastoRepository).findById(100L);
         verify(gastoRepository).delete(gastoSucursal1);
     }
@@ -202,11 +202,11 @@ class GastoServiceSegregationTest {
     @Test
     @DisplayName("❌ Usuario de Sucursal 2 NO puede eliminar gasto de Sucursal 1")
     void testEliminar_UserSucursal2_CantDeleteSucursal1Gasto() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(2L, "Sucursal 2");
         when(gastoRepository.findById(100L)).thenReturn(Optional.of(gastoSucursal1));
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> gastoService.eliminar(100L),
@@ -219,14 +219,14 @@ class GastoServiceSegregationTest {
     @Test
     @DisplayName("✅ Usuario de Sucursal 2 puede eliminar su propio gasto")
     void testEliminar_UserSucursal2_DeleteOwnGasto() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(2L, "Sucursal 2");
         when(gastoRepository.findById(200L)).thenReturn(Optional.of(gastoSucursal2));
 
-        // Act
+        // Ejecución
         gastoService.eliminar(200L);
 
-        // Assert
+        // Verificación
         verify(gastoRepository).findById(200L);
         verify(gastoRepository).delete(gastoSucursal2);
     }
@@ -234,11 +234,11 @@ class GastoServiceSegregationTest {
     @Test
     @DisplayName("❌ Usuario de Sucursal 1 NO puede eliminar gasto de Sucursal 2")
     void testEliminar_UserSucursal1_CantDeleteSucursal2Gasto() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
         when(gastoRepository.findById(200L)).thenReturn(Optional.of(gastoSucursal2));
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> gastoService.eliminar(200L),
@@ -249,17 +249,17 @@ class GastoServiceSegregationTest {
     }
 
     // ============================================================
-    // TESTS: Casos extremos y seguridad
+    // PRUEBAS: Casos extremos y seguridad
     // ============================================================
 
     @Test
     @DisplayName("❌ Gasto inexistente lanza ResourceNotFoundException")
     void testObtenerPorId_GastoNoExiste_ThrowsException() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
         when(gastoRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> gastoService.obtenerPorId(999L),
@@ -271,11 +271,11 @@ class GastoServiceSegregationTest {
     @Test
     @DisplayName("❌ Eliminar gasto inexistente lanza excepción")
     void testEliminar_GastoNoExiste_ThrowsException() {
-        // Arrange
+        // Preparación
         SucursalContext.setSucursal(1L, "Sucursal 1");
         when(gastoRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // Act & Assert
+        // Ejecución y verificación
         ResourceNotFoundException exception = assertThrows(
                 ResourceNotFoundException.class,
                 () -> gastoService.eliminar(999L),
@@ -286,7 +286,7 @@ class GastoServiceSegregationTest {
 
     @AfterEach
     void tearDown() {
-        // Limpiar contexto después de cada test
+        // Limpiar contexto después de cada prueba
         SucursalContext.clear();
     }
 }

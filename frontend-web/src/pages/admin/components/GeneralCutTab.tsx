@@ -21,18 +21,27 @@ import { es } from 'date-fns/locale';
 import { useReportCalculations } from '../hooks';
 import type { VentaDetalle, GastoDetallado, GastosPorCategoriaYProveedor } from '../types/reportTypes';
 
+/** Props del corte general: ventas y gastos ya cargados por `AdminReports`. */
 interface GeneralCutTabProps {
+  /** Ventas individuales del rango seleccionado. */
   ventas: VentaDetalle[];
+  /** Total de gastos del rango, en importe. */
   gastosDia: number;
+  /** Rango de fechas activo, en formato `yyyy-MM-dd`. */
   dateRange: {
+    /** Fecha inicial. */
     desde: string;
+    /** Fecha final. */
     hasta: string;
   };
+  /** Gastos del rango con categoría y proveedor resueltos, para el desglose anidado. */
   gastosDetallados?: GastoDetallado[];
 }
 
 /**
- * Utilidad: Oscurecer color de fondo para hover
+ * Oscurece el color de fondo de una fila al pasar el cursor.
+ * @param bg - Color de fondo en hex; si no está en el mapa, se devuelve igual.
+ * @returns El color oscurecido correspondiente, o el mismo si no hay equivalencia.
  */
 function adjustBgHover(bg: string): string {
   const hexMap: Record<string, string> = {
@@ -46,17 +55,24 @@ function adjustBgHover(bg: string): string {
   return hexMap[bg] || bg;
 }
 
-/**
- * Fila de datos expandible simple - Para filas sin sub-detalles
- */
+/** Props de una fila expandible del corte. */
 interface ExpandableDataRowProps {
+  /** Texto de la etiqueta a la izquierda. */
   label: string;
+  /** Valor formateado a la derecha. */
   value: string;
+  /** Color del valor; hereda el del tema si se omite. */
   color?: string;
+  /** Color de fondo de la fila. */
   bg?: string;
+  /** Sub-filas opcionales que se muestran al expandir. */
   details?: Array<{ label: string; value: string }>;
 }
 
+/**
+ * Fila de totales expandible para el corte.
+ * @remarks Sólo es clickeable cuando recibe `details`; en ese caso alterna su expansión.
+ */
 function ExpandableDataRow({ label, value, color, bg, details }: ExpandableDataRowProps) {
   const [expanded, setExpanded] = useState(false);
   const hasDetails = details && details.length > 0;
@@ -125,13 +141,17 @@ function ExpandableDataRow({ label, value, color, bg, details }: ExpandableDataR
   );
 }
 
-/**
- * Fila de gastos expandible ANIDADA - Nivel 1: Categoría, Nivel 2: Proveedor
- */
+/** Props de la fila de gastos con desglose anidado. */
 interface NestedGastoRowProps {
+  /** Gastos agrupados por categoría y, dentro, por proveedor. */
   gastosPorCategoria: GastosPorCategoriaYProveedor[];
 }
 
+/**
+ * Fila de gastos expandible de dos niveles: nivel 1 categoría, nivel 2 proveedor.
+ * @remarks El segundo nivel abre un `Popper` con los gastos individuales del proveedor
+ * y se cierra al hacer clic fuera.
+ */
 function NestedGastoRow({ gastosPorCategoria }: NestedGastoRowProps) {
   const [expandedCategoria, setExpandedCategoria] = useState<string | null>(null);
   const [popoverOpen, setPopoverOpen] = useState<{ [key: string]: boolean }>({});
@@ -325,16 +345,16 @@ function NestedGastoRow({ gastosPorCategoria }: NestedGastoRowProps) {
                                     <Typography variant="caption" sx={{ fontSize: '0.65rem', color: '#666', display: 'block', mt: 0.25 }}>
                                       {(() => {
                                         try {
-                                          // Try to parse the fecha - handle multiple formats
+                                          // El backend no normaliza la fecha del gasto: se acepta ISO, "yyyy-MM-dd HH:mm:ss" o sólo "yyyy-MM-dd"
                                           let parsedDate;
                                           if (gasto.fecha.includes('T')) {
-                                            // ISO format: 2025-12-04T18:49:00
+                                            // Formato ISO: 2025-12-04T18:49:00
                                             parsedDate = new Date(gasto.fecha);
                                           } else if (gasto.fecha.includes(' ')) {
-                                            // Format: 2025-12-04 18:49:00
+                                            // Formato: 2025-12-04 18:49:00
                                             parsedDate = parse(gasto.fecha, 'yyyy-MM-dd HH:mm:ss', new Date());
                                           } else {
-                                            // Just date: 2025-12-04
+                                            // Sólo fecha: 2025-12-04
                                             parsedDate = parse(gasto.fecha, 'yyyy-MM-dd', new Date());
                                           }
                                           
@@ -374,6 +394,11 @@ function NestedGastoRow({ gastosPorCategoria }: NestedGastoRowProps) {
   );
 }
 
+/**
+ * Corte general del período seleccionado: venta total, métodos de pago, gastos y ganancia.
+ * @remarks Se apoya en `useReportCalculations` para derivar todos los totales; si no
+ * hay ventas en el rango muestra un aviso en vez de la tabla.
+ */
 export default function GeneralCutTab({
   ventas,
   gastosDia,
@@ -391,7 +416,7 @@ export default function GeneralCutTab({
   const ganancia = calculations.calcularGanancia(totalVentas, gastosDia);
   const netos = calculations.calcularNetos(metodosPago, totalVentas, gastosDia);
 
-  // ✨ NUEVO: Agrupar gastos por categoría Y proveedor (anidado)
+  // ✨ Desglose anidado: sólo se calcula si hay gastos detallados en el rango
   const gastosPorCategoriaYProveedor = gastosDetallados.length > 0
     ? calculations.agruparGastosPorCategoriaYProveedor(gastosDetallados)
     : [];
@@ -402,7 +427,7 @@ export default function GeneralCutTab({
   return (
     <Card sx={{ maxWidth: '600px', mx: 'auto', boxShadow: 'none', border: 1, borderColor: 'divider' }}>
       <CardContent sx={{ p: 0 }}>
-        {/* Header */}
+        {/* Encabezado con el rango de fechas */}
         <Box sx={{ bg: 'grey.50', p: 2, borderBottom: 2, borderColor: 'divider' }}>
           <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
             📅 Corte General

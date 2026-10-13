@@ -130,7 +130,7 @@ Cada vez que actualices el frontend en Railway:
 2. Verifica la conexión a internet
 3. Revisa los logs de Electron (en desarrollo con DevTools)
 
-### CORS errors
+### Errores de CORS
 
 1. Verifica que el backend tiene configurado CORS para el dominio del frontend
 2. Revisa la configuración en `CorsConfig.java` del backend

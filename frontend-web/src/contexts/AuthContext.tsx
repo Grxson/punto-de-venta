@@ -3,49 +3,99 @@ import type { ReactNode } from 'react';
 import apiService from '../services/api.service';
 import { API_ENDPOINTS } from '../config/api.config';
 
+/**
+ * Usuario autenticado, tal como lo expone el backend.
+ */
 interface Usuario {
+  /** Identificador único del usuario. */
   id: number;
+  /** Nombre de usuario para iniciar sesión. */
   username: string;
+  /** Nombre de pila. */
   nombre: string;
+  /** Apellidos (opcional). */
   apellido?: string;
+  /** Correo electrónico (opcional). */
   email?: string;
-  rol?: string | { id: number; nombre: string; activo: boolean }; // Puede ser string o objeto
-  rolNombre?: string; // Campo real del backend
+  /** Rol del usuario. Puede venir como string o como objeto; se normaliza con {@link normalizarRol}. */
+  rol?: string | { id: number; nombre: string; activo: boolean };
+  /** Nombre del rol tal como lo devuelve el backend. */
+  rolNombre?: string;
+  /** Identificador de sucursal con el nombre de campo histórico. */
   idSucursal?: number;
-  sucursalId?: number; // Mantener compatibilidad // ID de la sucursal del usuario
+  /** Identificador de sucursal con el nombre de campo actual; se conserva por compatibilidad con ambas formas. */
+  sucursalId?: number;
+  /** Fecha del último inicio de sesión registrado. */
   ultimoAcceso?: string;
+  /** Fecha de creación del registro. */
   createdAt?: string;
+  /** Fecha de la última actualización del registro. */
   updatedAt?: string;
 }
 
+/**
+ * Sucursal asociada al usuario autenticado.
+ */
 interface Sucursal {
+  /** Identificador único de la sucursal. */
   id: number;
+  /** Nombre visible de la sucursal. */
   nombre: string;
+  /** Dirección física (opcional). */
   direccion?: string;
+  /** Correo electrónico de la sucursal (opcional). */
   email?: string;
+  /** Teléfono de contacto (opcional). */
   telefono?: string;
+  /** Indica si la sucursal está activa. */
   activo: boolean;
 }
 
+/**
+ * Estado global de autenticación disponible para toda la aplicación.
+ */
 interface AuthContextType {
+  /** Usuario autenticado, o `null` si no hay sesión activa. */
   usuario: Usuario | null;
+  /** Sucursal del usuario autenticado, o `null` si aún no se ha resuelto. */
   sucursal: Sucursal | null;
+  /** Token de sesión almacenado en `localStorage`, o `null` si no hay sesión. */
   token: string | null;
+  /** `true` solo si hay token, usuario y formato de token válido. */
   isAuthenticated: boolean;
+  /** Autentica al usuario contra la API y persiste la sesión. Lanza un error si las credenciales son inválidas. */
   login: (username: string, password: string) => Promise<void>;
+  /** Limpia estado, `localStorage` y token de `apiService`, y redirige a `/login`. */
   logout: () => void;
+  /** `true` mientras se restaura la sesión desde `localStorage`; evita parpadeos de rutas protegidas. */
   loading: boolean;
 }
 
+/**
+ * Contexto de autenticación. Se crea como `undefined` para poder detectar
+ * consumidores usados fuera de {@link AuthProvider}.
+ */
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Proveedor de autenticación: restaura la sesión desde `localStorage`,
+ * expone el login/logout y mantiene sincronizado el token con `apiService`.
+ *
+ * @param props.children - Árbol de componentes que recibe el contexto.
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [sucursal, setSucursal] = useState<Sucursal | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Función auxiliar para normalizar el rol
+  /**
+   * Devuelve el rol del usuario como texto plano, pruebando en orden
+   * `rolNombre`, `rol.nombre` y `rol`, porque el backend no siempre envía el mismo campo.
+   *
+   * @param usuario - Objeto usuario crudo devuelto por la API o leído de `localStorage`.
+   * @returns Nombre del rol, o cadena vacía si no se puede determinar.
+   */
   const normalizarRol = (usuario: any): string => {
     // Prioridad: rolNombre > rol.nombre > rol > ''
     if (usuario.rolNombre) return usuario.rolNombre;
@@ -113,6 +163,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
+  /**
+ * Autentica al usuario: obtiene el token, normaliza el rol, resuelve la sucursal
+ * y persiste la sesión en `localStorage`.
+ *
+ * @param username - Nombre de usuario enviado al backend.
+ * @param password - Contraseña enviada al backend.
+ * @throws Error Si el backend no devuelve una respuesta exitosa o la petición falla.
+ */
   const login = async (username: string, password: string) => {
     try {
 
@@ -181,6 +239,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /**
+   * Cierra sesión y fuerza la navegación al login con una recarga completa,
+   * de modo que ningún estado en memoria sobreviva al cambio de usuario.
+   */
   const logout = () => {
     setToken(null);
     setUsuario(null);
@@ -193,7 +255,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = '/login';
   };
 
-  // Función para validar si el token sigue siendo válido
+  /**
+ * Valida el formato del token (JWT de tres segmentos separados por puntos).
+ * No verifica la expiración: esa comprobación la hace el backend al recibirlo.
+ *
+ * @returns `true` si el token existe y tiene el formato esperado.
+ */
   const isTokenValid = (): boolean => {
     if (!token) return false;
     try {
@@ -228,6 +295,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Hook de acceso al contexto de autenticación.
+ *
+ * @returns El estado y las acciones de {@link AuthContext}.
+ * @throws Error Si se usa fuera de {@link AuthProvider}.
+ */
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

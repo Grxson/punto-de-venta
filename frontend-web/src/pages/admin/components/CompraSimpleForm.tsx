@@ -16,24 +16,32 @@ import {
 import { format } from 'date-fns';
 import { ingredientesService, Unidad } from '../../../services/ingredientes.service';
 
+/** Compra mínima sin proveedor, pensada para convertirse luego en ingrediente. */
 interface CompraSimple {
+  /** Nombre del producto o insumo comprado. */
   nombre: string;
+  /** Fecha de la compra en formato `yyyy-MM-dd`. */
   fecha: string;
+  /** Cantidad comprada. */
   cantidad: number;
+  /** Id de la unidad de medida. */
   unidadId: number;
+  /** Importe total pagado. */
   precioTotal: number;
 }
 
+/** Props del formulario de compra simplificada. */
 interface CompraSimpleFormProps {
+  /** Se llama con la compra registrada (ya con id) para continuar el flujo. */
   onGuardado: (compra: CompraSimple & { id?: number }) => void;
+  /** Se llama al cancelar el registro. */
   onCancelado: () => void;
 }
 
 /**
- * Formulario simple para registrar una compra sin necesidad de proveedor
- * Solo: nombre, fecha, cantidad, unidad, precio
- * 
- * Esta compra se puede luego transformar en ingrediente
+ * Formulario simple para registrar una compra sin proveedor ni ingrediente de catálogo.
+ * @remarks Guarda la compra en `localStorage` (clave `comprasSimples`) en vez de llamar
+ * a la API, porque su objetivo es materializarse luego como ingrediente real.
  */
 export default function CompraSimpleForm({ onGuardado, onCancelado }: CompraSimpleFormProps) {
   const [unidades, setUnidades] = useState<Unidad[]>([]);
@@ -54,6 +62,9 @@ export default function CompraSimpleForm({ onGuardado, onCancelado }: CompraSimp
     cargarUnidades();
   }, []);
 
+  /**
+   * Carga las unidades de medida disponibles y preselecciona la primera.
+   */
   const cargarUnidades = async () => {
     try {
       const data = await ingredientesService.obtenerUnidades();
@@ -67,6 +78,11 @@ export default function CompraSimpleForm({ onGuardado, onCancelado }: CompraSimp
     }
   };
 
+  /**
+   * Valida los campos y persiste la compra en `localStorage`.
+   * @remarks El id se genera con `Date.now()` porque el registro es local; al
+   * transformarse en ingrediente ese id temporal deja de usarse.
+   */
   const handleGuardar = async () => {
     // Validar campos
     if (!compra.nombre.trim()) {

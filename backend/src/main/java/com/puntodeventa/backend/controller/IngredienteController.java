@@ -27,6 +27,11 @@ public class IngredienteController {
     private final IngredienteService ingredienteService;
     private final UnidadService unidadService;
     
+    /**
+     * Obtiene todos los ingredientes.
+     *
+     * @return lista completa de ingredientes
+     */
     @GetMapping
     @Operation(summary = "Obtener todos los ingredientes")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -34,6 +39,11 @@ public class IngredienteController {
         return ResponseEntity.ok(ingredienteService.obtenerTodos());
     }
     
+    /**
+     * Obtiene solo los ingredientes activos.
+     *
+     * @return lista de ingredientes activos
+     */
     @GetMapping("/activos")
     @Operation(summary = "Obtener ingredientes activos")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -41,6 +51,11 @@ public class IngredienteController {
         return ResponseEntity.ok(ingredienteService.obtenerActivos());
     }
     
+    /**
+     * Obtiene todas las unidades de medida disponibles.
+     *
+     * @return lista de unidades
+     */
     @GetMapping("/unidades")
     @Operation(summary = "Obtener todas las unidades de medida disponibles")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -48,6 +63,12 @@ public class IngredienteController {
         return ResponseEntity.ok(unidadService.obtenerTodas());
     }
     
+    /**
+     * Obtiene un ingrediente por su identificador.
+     *
+     * @param id identificador del ingrediente
+     * @return ingrediente encontrado
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Obtener ingrediente por ID")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -55,6 +76,12 @@ public class IngredienteController {
         return ResponseEntity.ok(ingredienteService.obtenerPorId(id));
     }
     
+    /**
+     * Obtiene los ingredientes de una categoría.
+     *
+     * @param categoria nombre de la categoría
+     * @return ingredientes de la categoría
+     */
     @GetMapping("/categoria/{categoria}")
     @Operation(summary = "Obtener ingredientes por categoría")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -62,6 +89,11 @@ public class IngredienteController {
         return ResponseEntity.ok(ingredienteService.obtenerPorCategoria(categoria));
     }
     
+    /**
+     * Obtiene todas las categorías de ingredientes.
+     *
+     * @return lista de nombres de categorías
+     */
     @GetMapping("/categorias")
     @Operation(summary = "Obtener todas las categorías de ingredientes")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -69,6 +101,12 @@ public class IngredienteController {
         return ResponseEntity.ok(ingredienteService.obtenerCategorias());
     }
     
+    /**
+     * Busca ingredientes por nombre.
+     *
+     * @param nombre texto a buscar en el nombre
+     * @return ingredientes que coinciden
+     */
     @GetMapping("/buscar")
     @Operation(summary = "Buscar ingredientes por nombre")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -76,6 +114,12 @@ public class IngredienteController {
         return ResponseEntity.ok(ingredienteService.buscarPorNombre(nombre));
     }
     
+    /**
+     * Crea un ingrediente nuevo.
+     *
+     * @param dto datos del ingrediente
+     * @return ingrediente creado con estado 201
+     */
     @PostMapping
     @Operation(summary = "Crear nuevo ingrediente")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -84,6 +128,13 @@ public class IngredienteController {
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
     
+    /**
+     * Actualiza un ingrediente existente.
+     *
+     * @param id identificador del ingrediente
+     * @param dto datos a actualizar
+     * @return ingrediente actualizado
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar ingrediente")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -93,6 +144,12 @@ public class IngredienteController {
         return ResponseEntity.ok(ingredienteService.actualizar(id, dto));
     }
     
+    /**
+     * Elimina un ingrediente mediante borrado lógico.
+     *
+     * @param id identificador del ingrediente
+     * @return sin contenido
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar ingrediente (soft delete)")
     @PreAuthorize("hasRole('ADMIN')")

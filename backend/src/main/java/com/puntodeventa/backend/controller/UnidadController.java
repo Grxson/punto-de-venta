@@ -24,6 +24,11 @@ public class UnidadController {
     
     private final UnidadService unidadService;
     
+    /**
+     * Obtiene todas las unidades de medida.
+     *
+     * @return lista de unidades
+     */
     @GetMapping
     @Operation(summary = "Obtener todas las unidades")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -31,6 +36,12 @@ public class UnidadController {
         return ResponseEntity.ok(unidadService.obtenerTodas());
     }
     
+    /**
+     * Obtiene una unidad de medida por su identificador.
+     *
+     * @param id identificador de la unidad
+     * @return unidad encontrada
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Obtener unidad por ID")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR', 'CAJERO')")
@@ -38,6 +49,12 @@ public class UnidadController {
         return ResponseEntity.ok(unidadService.obtenerPorId(id));
     }
     
+    /**
+     * Crea una unidad de medida nueva.
+     *
+     * @param dto datos de la unidad
+     * @return unidad creada con estado 201
+     */
     @PostMapping
     @Operation(summary = "Crear nueva unidad")
     @PreAuthorize("hasRole('ADMIN')")
@@ -46,6 +63,13 @@ public class UnidadController {
         return ResponseEntity.status(HttpStatus.CREATED).body(creada);
     }
     
+    /**
+     * Actualiza una unidad de medida existente.
+     *
+     * @param id identificador de la unidad
+     * @param dto datos a actualizar
+     * @return unidad actualizada
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar unidad")
     @PreAuthorize("hasRole('ADMIN')")
@@ -55,6 +79,12 @@ public class UnidadController {
         return ResponseEntity.ok(unidadService.actualizar(id, dto));
     }
     
+    /**
+     * Elimina una unidad de medida.
+     *
+     * @param id identificador de la unidad
+     * @return sin contenido
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar unidad")
     @PreAuthorize("hasRole('ADMIN')")

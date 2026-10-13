@@ -8,5 +8,5 @@ flowchart TD
     E --> Q
     C --> Q
     A --> B[Seleccionar categoría del menú]
-    B --> ...
-``
+    B --> CONTINUA["... (continúa el flujo)"]
+```

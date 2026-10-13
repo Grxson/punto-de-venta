@@ -24,6 +24,11 @@ public class ProveedorController {
     
     private final ProveedorService proveedorService;
     
+    /**
+     * Obtiene todos los proveedores.
+     *
+     * @return lista completa de proveedores
+     */
     @GetMapping
     @Operation(summary = "Obtener todos los proveedores")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -31,6 +36,11 @@ public class ProveedorController {
         return ResponseEntity.ok(proveedorService.obtenerTodos());
     }
     
+    /**
+     * Obtiene solo los proveedores activos.
+     *
+     * @return lista de proveedores activos
+     */
     @GetMapping("/activos")
     @Operation(summary = "Obtener proveedores activos")
     @PreAuthorize("hasAnyRole('ADMIN', 'GERENTE', 'CAJERO', 'SUPERVISOR')")
@@ -38,6 +48,12 @@ public class ProveedorController {
         return ResponseEntity.ok(proveedorService.obtenerActivos());
     }
     
+    /**
+     * Obtiene un proveedor por su identificador.
+     *
+     * @param id identificador del proveedor
+     * @return proveedor encontrado
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Obtener proveedor por ID")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -45,6 +61,12 @@ public class ProveedorController {
         return ResponseEntity.ok(proveedorService.obtenerPorId(id));
     }
     
+    /**
+     * Busca proveedores por nombre.
+     *
+     * @param nombre texto a buscar en el nombre
+     * @return proveedores que coinciden
+     */
     @GetMapping("/buscar")
     @Operation(summary = "Buscar proveedores por nombre")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -52,6 +74,12 @@ public class ProveedorController {
         return ResponseEntity.ok(proveedorService.buscarPorNombre(nombre));
     }
     
+    /**
+     * Crea un proveedor nuevo.
+     *
+     * @param dto datos del proveedor
+     * @return proveedor creado con estado 201
+     */
     @PostMapping
     @Operation(summary = "Crear nuevo proveedor")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -60,6 +88,13 @@ public class ProveedorController {
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
     
+    /**
+     * Actualiza un proveedor existente.
+     *
+     * @param id identificador del proveedor
+     * @param dto datos a actualizar
+     * @return proveedor actualizado
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar proveedor")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -69,6 +104,12 @@ public class ProveedorController {
         return ResponseEntity.ok(proveedorService.actualizar(id, dto));
     }
     
+    /**
+     * Elimina un proveedor mediante borrado lógico.
+     *
+     * @param id identificador del proveedor
+     * @return sin contenido
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar proveedor (soft delete)")
     @PreAuthorize("hasRole('ADMIN')")

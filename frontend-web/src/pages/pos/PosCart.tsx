@@ -4,6 +4,11 @@ import { Add, Remove, Delete, ArrowBack, Payment } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 
+/**
+ * Revisión y ajuste del carrito antes del cobro, en el flujo del punto de venta.
+ * @remarks Permite cambiar cantidades, quitar productos y sobrescribir el precio
+ * unitario (descuentos de mostrador) antes de pasar a la pantalla de pago.
+ */
 export default function PosCart() {
   const navigate = useNavigate();
   const { cart, updateQuantity, removeFromCart, total, updateItemPrice } = useCart();
@@ -62,7 +67,8 @@ export default function PosCart() {
                             value={((item.overridePrice ?? item.producto?.precio ?? 0) * item.cantidad)}
                             onChange={(e) => {
                               const totalVal = parseFloat(e.target.value);
-                              // Dividir el total entre la cantidad para obtener el precio unitario
+                              // El campo muestra el total de la línea, así que el precio unitario
+                              // se recalcula dividiendo entre la cantidad
                               const unitPrice = item.cantidad > 0 ? totalVal / item.cantidad : totalVal;
                               updateItemPrice(item.producto.id, isNaN(unitPrice) ? 0 : unitPrice);
                             }}
@@ -70,7 +76,7 @@ export default function PosCart() {
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') setEditingPriceId(null);
                               if (e.key === 'Escape') {
-                                // Reset a precio original al cancelar
+                                // Escape cancela la edición y descarta el precio modificado
                                 updateItemPrice(item.producto.id, item.producto?.precio ?? 0);
                                 setEditingPriceId(null);
                               }

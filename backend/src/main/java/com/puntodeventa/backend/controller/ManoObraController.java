@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Controlador REST para gestión de Mano de Obra
+ * Controlador REST de mano de obra.
+ *
+ * Gestiona los registros de mano de obra y sueldos de la sucursal actual:
+ * consulta, alta, actualización y baja lógica.
  */
 @Slf4j
 @RestController
@@ -25,6 +28,11 @@ public class ManoObraController {
 
     private final ManoObraService manoObraService;
 
+    /**
+     * Obtiene toda la mano de obra de la sucursal actual.
+     *
+     * @return lista de registros de mano de obra
+     */
     @GetMapping
     @Operation(summary = "Obtener toda la mano de obra de la sucursal actual")
     public ResponseEntity<List<ManoObraDTO>> obtenerTodos() {
@@ -32,6 +40,11 @@ public class ManoObraController {
         return ResponseEntity.ok(manoObraService.obtenerPorSucursal());
     }
 
+    /**
+     * Obtiene la mano de obra activa.
+     *
+     * @return lista de registros activos
+     */
     @GetMapping("/activos")
     @Operation(summary = "Obtener mano de obra activa")
     public ResponseEntity<List<ManoObraDTO>> obtenerActivos() {
@@ -39,6 +52,12 @@ public class ManoObraController {
         return ResponseEntity.ok(manoObraService.obtenerActivos());
     }
 
+    /**
+     * Obtiene un registro de mano de obra por su identificador.
+     *
+     * @param id identificador del registro
+     * @return registro encontrado
+     */
     @GetMapping("/{id}")
     @Operation(summary = "Obtener un registro de mano de obra por ID")
     public ResponseEntity<ManoObraDTO> obtenerPorId(@PathVariable Long id) {
@@ -46,6 +65,12 @@ public class ManoObraController {
         return ResponseEntity.ok(manoObraService.obtenerPorId(id));
     }
 
+    /**
+     * Crea un registro de mano de obra nuevo.
+     *
+     * @param dto datos del registro
+     * @return registro creado
+     */
     @PostMapping
     @Operation(summary = "Crear un nuevo registro de mano de obra")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -64,6 +89,13 @@ public class ManoObraController {
         }
     }
 
+    /**
+     * Actualiza un registro de mano de obra existente.
+     *
+     * @param id identificador del registro
+     * @param dto datos a actualizar
+     * @return registro actualizado
+     */
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar un registro de mano de obra")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")
@@ -72,6 +104,12 @@ public class ManoObraController {
         return ResponseEntity.ok(manoObraService.actualizar(id, dto));
     }
 
+    /**
+     * Desactiva un registro de mano de obra.
+     *
+     * @param id identificador del registro
+     * @return sin contenido
+     */
     @DeleteMapping("/{id}")
     @Operation(summary = "Eliminar (desactivar) un registro de mano de obra")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERVISOR')")

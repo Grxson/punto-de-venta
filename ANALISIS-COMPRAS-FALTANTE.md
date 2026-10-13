@@ -199,8 +199,8 @@ Agregar en `CompraForm.tsx`:
 
 3. EDITABILIDAD
    ├─ Compra "pendiente" → Editable (cambiar ingredientes/precios)
-   ├─ Compra "recibida" → Ver only (generó inventario)
-   └─ Compra "cancelada/rechazada" → Ver only
+   ├─ Compra "recibida" → Solo ver (generó inventario)
+   └─ Compra "cancelada/rechazada" → Solo ver
 ```
 
 ---

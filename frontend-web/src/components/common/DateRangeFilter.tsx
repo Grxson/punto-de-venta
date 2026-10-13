@@ -22,10 +22,15 @@ import type { ReactNode } from 'react';
 export type { DateRangeValue };
 
 interface DateRangeFilterProps {
+  /** Notifica el rango de fechas seleccionado (preset o personalizado). */
   onChange: (range: DateRangeValue) => void;
+  /** Rango inicial; sirve para detectar qué preset viene seleccionado. */
   initialRange?: DateRangeValue;
+  /** Muestra u oculta la etiqueta superior del filtro. */
   showLabel?: boolean;
+  /** Texto de la etiqueta superior. */
   label?: string;
+  /** Controles adicionales alineados a la derecha (por ejemplo, un paginador de días). */
   children?: ReactNode;
 }
 
@@ -92,6 +97,13 @@ const getPresetRanges = () => {
 
 type PresetKey = 'hoy' | 'estaSemana' | 'semanaPasada' | 'esteMes' | 'mesPasado' | 'personalizado';
 
+/**
+ * Filtro de rango de fechas con presets y fechas personalizadas.
+ * Ofrece accesos rápidos (Hoy, Esta Semana, Semana Pasada, Este Mes, Mes Pasado)
+ * y campos Desde/Hasta; solo emite el cambio cuando el rango es válido.
+ *
+ * @param props - Propiedades descritas en {@link DateRangeFilterProps}.
+ */
 export default function DateRangeFilter({ 
   onChange, 
   initialRange,

@@ -4,8 +4,10 @@
  */
 
 /**
- * Obtiene la fecha actual en formato YYYY-MM-DD en zona horaria local
- * Evita problemas de desplazamiento de zona horaria
+ * Obtiene la fecha actual en formato YYYY-MM-DD en zona horaria local.
+ * Evita el desplazamiento de un día que produce `toISOString()` cerca de la medianoche.
+ *
+ * @returns Cadena en formato YYYY-MM-DD.
  */
 export const getTodayLocalDate = (): string => {
   const today = new Date();

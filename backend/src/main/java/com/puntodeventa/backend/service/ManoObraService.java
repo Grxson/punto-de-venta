@@ -29,7 +29,9 @@ public class ManoObraService {
     private final SucursalRepository sucursalRepository;
 
     /**
-     * Obtener toda la mano de obra de la sucursal actual
+     * Obtiene toda la mano de obra de la sucursal actual.
+     *
+     * @return Lista de DTO con los registros de mano de obra de la sucursal.
      */
     public List<ManoObraDTO> obtenerPorSucursal() {
         Long sucursalId = SucursalContext.getSucursalId();
@@ -40,7 +42,9 @@ public class ManoObraService {
     }
 
     /**
-     * Obtener solo mano de obra activa
+     * Obtiene solo los registros de mano de obra activos de la sucursal actual.
+     *
+     * @return Lista de DTO de los registros con {@code activo} en true.
      */
     public List<ManoObraDTO> obtenerActivos() {
         Long sucursalId = SucursalContext.getSucursalId();
@@ -51,7 +55,11 @@ public class ManoObraService {
     }
 
     /**
-     * Obtener un registro de mano de obra por ID
+     * Obtiene un registro de mano de obra por su identificador.
+     *
+     * @param id Identificador del registro.
+     * @return DTO del registro encontrado.
+     * @throws RuntimeException si el registro no existe.
      */
     public ManoObraDTO obtenerPorId(Long id) {
         return manoObraRepository.findById(id)
@@ -60,7 +68,13 @@ public class ManoObraService {
     }
 
     /**
-     * Crear un nuevo registro de mano de obra
+     * Crea un registro de mano de obra en la sucursal del usuario.
+     * Los montos no informados se asumen en cero.
+     *
+     * @param dto Datos del registro a crear.
+     * @return DTO del registro creado.
+     * @throws IllegalArgumentException si el puesto es obligatorio, no hay sucursal en el contexto o no existe.
+     * @throws RuntimeException         si ocurre un error inesperado al persistir.
      */
     public ManoObraDTO crear(ManoObraDTO dto) {
         try {
@@ -108,7 +122,12 @@ public class ManoObraService {
     }
 
     /**
-     * Actualizar un registro de mano de obra
+     * Actualiza un registro de mano de obra existente.
+     *
+     * @param id  Identificador del registro a actualizar.
+     * @param dto Datos a aplicar sobre el registro.
+     * @return DTO del registro actualizado.
+     * @throws RuntimeException si el registro no existe.
      */
     public ManoObraDTO actualizar(Long id, ManoObraDTO dto) {
         ManoObra manoObra = manoObraRepository.findById(id)
@@ -127,7 +146,10 @@ public class ManoObraService {
     }
 
     /**
-     * Eliminar (desactivar) un registro de mano de obra
+     * Da de baja un registro de mano de obra de forma lógica.
+     *
+     * @param id Identificador del registro a desactivar.
+     * @throws RuntimeException si el registro no existe.
      */
     public void eliminar(Long id) {
         ManoObra manoObra = manoObraRepository.findById(id)
@@ -140,7 +162,14 @@ public class ManoObraService {
     }
 
     /**
-     * Calcular costo de mano de obra por producto
+     * Calcula el costo de mano de obra diario que corresponde a cada producto vendido.
+     * Normaliza cada registro a costo de un día según su período: el mensual se
+     * divide entre 22 días laborables, el semanal entre 6, y el pago por turno se
+     * usa tal cual. Luego reparte el total entre los productos vendidos.
+     *
+     * @param sucursalId        Identificador de la sucursal.
+     * @param productosVendidos Cantidad de productos vendidos del período.
+     * @return Costo de mano de obra por producto, redondeado a dos decimales.
      */
     public BigDecimal calcularManoObraPorProducto(Long sucursalId, Long productosVendidos) {
         if (productosVendidos == 0) {

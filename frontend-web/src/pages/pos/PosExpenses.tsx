@@ -47,117 +47,204 @@ import type { DateRangeValue } from '../../types/dateRange.types';
 import { acquireLock, releaseLock } from '../../utils/concurrency';
 import { getTodayLocalDate } from '../../utils/dateHelper';
 
+/** Categoría de gasto. */
 interface CategoriaGasto {
+  /** Id de la categoría. */
   id: number;
+  /** Nombre de la categoría. */
   nombre: string;
+  /** Descripción opcional. */
   descripcion?: string;
+  /** Presupuesto mensual asignado, si existe. */
   presupuestoMensual?: number;
+  /** Indica si la categoría está activa. */
   activo: boolean;
 }
 
+/** Proveedor de gastos. */
 interface Proveedor {
+  /** Id del proveedor. */
   id: number;
+  /** Nombre del proveedor. */
   nombre: string;
+  /** Persona de contacto. */
   contacto?: string;
+  /** Teléfono. */
   telefono?: string;
+  /** Email. */
   email?: string;
+  /** Indica si el proveedor está activo. */
   activo: boolean;
 }
 
+/** Método de pago disponible. */
 interface MetodoPago {
+  /** Id del método. */
   id: number;
+  /** Nombre del método. */
   nombre: string;
+  /** Si exige referencia al cobrar. */
   requiereReferencia: boolean;
+  /** Indica si el método está activo. */
   activo: boolean;
 }
 
+/** Gasto registrado tal como lo devuelve la API. */
 interface Gasto {
+  /** Id del gasto. */
   id: number;
+  /** Id de la categoría. */
   categoriaGastoId: number;
+  /** Nombre de la categoría. */
   categoriaGastoNombre: string;
+  /** Id del proveedor, si aplica. */
   proveedorId?: number;
+  /** Nombre del proveedor, si aplica. */
   proveedorNombre?: string;
+  /** Id de la sucursal. */
   sucursalId?: number;
+  /** Nombre de la sucursal. */
   sucursalNombre?: string;
+  /** Importe del gasto. */
   monto: number;
+  /** Fecha del gasto en formato ISO. */
   fecha: string;
+  /** Id del método de pago. */
   metodoPagoId?: number;
+  /** Nombre del método de pago. */
   metodoPagoNombre?: string;
+  /** Referencia o folio del pago. */
   referencia?: string;
+  /** Nota o descripción. */
   nota?: string;
+  /** Tipo de gasto. */
   tipoGasto?: string;
+  /** URL del comprobante. */
   comprobanteUrl?: string;
+  /** Id del usuario que registró el gasto. */
   usuarioId?: number;
+  /** Nombre del usuario que registró el gasto. */
   usuarioNombre?: string;
+  /** Marca de creación del registro. */
   createdAt: string;
 }
 
+/** Cuerpo del `request` para crear un gasto. */
 interface CrearGastoRequest {
+  /** Id de la categoría. */
   categoriaGastoId: number;
+  /** Id del proveedor, si aplica. */
   proveedorId?: number;
+  /** Id de la sucursal. */
   sucursalId: number;
+  /** Importe del gasto. */
   monto: number;
+  /** Fecha del gasto en formato ISO. */
   fecha?: string;
+  /** Id del método de pago. */
   metodoPagoId?: number;
+  /** Referencia o folio. */
   referencia?: string;
+  /** Nota o descripción. */
   nota?: string;
+  /** Tipo de gasto. */
   tipoGasto?: string;
+  /** URL del comprobante. */
   comprobanteUrl?: string;
 }
 
+/** Gasto aún no enviado al backend, en la cola de múltiples altas. */
 interface GastoPendiente {
+  /** Id temporal único para esta sesión. */
   tempId: string; // ID temporal único para esta sesión
+  /** Id de la categoría. */
   categoriaGastoId: number;
+  /** Id del proveedor, si aplica. */
   proveedorId?: number;
+  /** Importe del gasto. */
   monto: number;
+  /** Nota o descripción. */
   nota?: string;
+  /** Tipo de gasto. */
   tipoGasto: string;
 }
 
+/**
+ * Pantalla de registro de gastos del punto de venta.
+ * @remarks Permite registrar varios gastos operacionales en una sola tanda y usar el
+ * componente `ProveedorAutoComplete` para alta rápida de proveedores. Igual que en la
+ * vista de admin, el envío se protege con un lock para evitar el doble submit.
+ */
 export default function PosExpenses() {
   const navigate = useNavigate();
   const { usuario } = useAuth();
   const { categorias: categoriasGastoPredefinidas } = useCategoriasGasto();
+  /** Gastos del rango de fechas. */
   const [gastos, setGastos] = useState<Gasto[]>([]);
+  /** Categorías de gasto. */
   const [categoriasGasto, setCategoriasGasto] = useState<CategoriaGasto[]>([]);
+  /** Proveedores activos. */
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  /** Métodos de pago activos. */
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
   
   // Estado para el filtro de fechas
+  /** Rango de fechas del listado; por defecto, hoy. */
   const [dateRange, setDateRange] = useState<DateRangeValue>({
     desde: getTodayLocalDate(),
     hasta: getTodayLocalDate(),
   });
 
   // Estado del formulario - CAMPOS COMUNES para todos los gastos
+  /** Fecha común a los gastos de la tanda. */
   const [fecha, setFecha] = useState<Date | null>(new Date());
+  /** Método de pago común a los gastos de la tanda. */
   const [metodoPagoId, setMetodoPagoId] = useState<number | ''>('');
 
   // Estado del formulario - CAMPOS POR GASTO
+  /** Categoría del gasto en captura. */
   const [categoriaGastoId, setCategoriaGastoId] = useState<number | ''>('');
+  /** Proveedor del gasto en captura. */
   const [proveedorId, setProveedorId] = useState<number | ''>('');
+  /** Monto del gasto en captura, como texto. */
   const [monto, setMonto] = useState<string>('');
+  /** Nota del gasto en captura. */
   const [nota, setNota] = useState<string>('');
+  /** Referencia del pago en captura. */
   const [referencia, setReferencia] = useState<string>('');
+  /** Tipo de gasto en captura. */
   const [tipoGasto, setTipoGasto] = useState<string>('Operacional');
+  /** Texto de búsqueda del `Autocomplete` de proveedor. */
   const [proveedorSearchText, setProveedorSearchText] = useState<string>('');
+  /** Controla el diálogo de alta rápida de proveedor. */
   const [openNewProveedorDialog, setOpenNewProveedorDialog] = useState(false);
+  /** Nombre del proveedor a crear. */
   const [newProveedorName, setNewProveedorName] = useState<string>('');
 
   // Estado de gastos pendientes (múltiples)
+  /** Cola de gastos a registrar en una sola tanda. */
   const [gastosPendientes, setGastosPendientes] = useState<GastoPendiente[]>([]);
 
   // Estado de la UI
+  /** Indica una operación de carga de gastos. */
   const [loading, setLoading] = useState(false);
+  /** Indica la carga inicial de catálogos. */
   const [loadingData, setLoadingData] = useState(true);
+  /** Indica un envío en curso. */
   const [submitting, setSubmitting] = useState(false);
+  /** Mensaje de error de la última operación. */
   const [error, setError] = useState<string | null>(null);
+  /** Mensaje de éxito temporal. */
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  /** Controla el diálogo de alta/edición de gasto. */
   const [openDialog, setOpenDialog] = useState(false);
+  /** Gasto en edición; `null` implica alta. */
   const [editingGasto, setEditingGasto] = useState<Gasto | null>(null);
+  /** Lock de envío que impide registrar el mismo gasto dos veces. */
   const submissionLock = useRef(false);
 
   // Verificar si el usuario es administrador
+  /** Rol admin, habilita acciones adicionales. */
   const isAdmin = usuario?.rolNombre === 'ADMIN';
 
   useEffect(() => {
@@ -198,6 +285,7 @@ export default function PosExpenses() {
     }
   }, [openDialog, editingGasto, categoriasGasto, metodosPago]);
 
+  /** Carga los gastos del rango de fechas activo. */
   const loadData = async () => {
     try {
       setLoading(true);
@@ -215,6 +303,7 @@ export default function PosExpenses() {
     }
   };
 
+  /** Carga catálogos iniciales: categorías de gasto, proveedores y métodos de pago. */
   const loadInitialData = async () => {
     setLoadingData(true);
     setError(null);
@@ -281,10 +370,18 @@ export default function PosExpenses() {
   // Agrupar gastos visibles por hora de registro
   const gastoGrouped = useGroupExpensesByTime(gastosVisiblesEnTabla);
 
+  /**
+   * Cambia el rango de fechas del filtro.
+   * @param range - Nuevo rango seleccionado.
+   */
   const handleDateRangeChange = (range: DateRangeValue) => {
     setDateRange(range);
   };
 
+  /**
+   * Abre el diálogo en modo edición o en modo alta múltiple.
+   * @param gasto - Gasto a editar; sin argumento abre el alta.
+   */
   const handleOpenDialog = (gasto?: Gasto) => {
     if (gasto) {
       // Modo edición: un gasto existente
@@ -311,6 +408,11 @@ export default function PosExpenses() {
     setError(null);
   };
 
+  /**
+   * Valida y encola el gasto capturado para enviarlo en la tanda.
+   * @remarks Conserva el tipo en `Operacional` y resetea categoría a Insumos para capturas
+   * sucesivas del mismo tipo.
+   */
   const handleAgregarGasto = () => {
     // Validar que monto sea mayor a 0
     if (!monto || parseFloat(monto) <= 0) {
@@ -341,10 +443,15 @@ export default function PosExpenses() {
     setError(null); // Limpiar errores previos
   };
 
+  /**
+   * Elimina un gasto de la cola de pendientes.
+   * @param tempId - Id temporal de la línea a quitar.
+   */
   const handleRemoverGasto = (tempId: string) => {
     setGastosPendientes(gastosPendientes.filter(g => g.tempId !== tempId));
   };
 
+  /** Crea un proveedor al vuelo y lo deja seleccionado en el formulario. */
   const handleAgregarNuevoProveedor = async () => {
     if (!newProveedorName.trim()) {
       setError('El nombre del proveedor es requerido.');
@@ -373,6 +480,12 @@ export default function PosExpenses() {
     }
   };
 
+  /**
+   * Envía la edición o el alta (uno o varios) de gastos al backend.
+   * @param e - Evento del formulario; si viene, se previene el submit por defecto.
+   * @remarks En edición sólo manda la fecha si cambió; el alta múltiple se hace en
+   * paralelo y reporta cuántos gastos fallaron.
+   */
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!acquireLock(submissionLock)) return;
@@ -506,6 +619,10 @@ export default function PosExpenses() {
     }
   };
 
+  /**
+   * Elimina el gasto indicado tras confirmar.
+   * @param gastoId - Id del gasto a eliminar.
+   */
   const handleDelete = async (gastoId: number) => {
     if (!isAdmin) {
       setError('Solo los administradores pueden eliminar gastos.');

@@ -4,22 +4,30 @@ import type { InventarioMovimientoReporteDTO } from '../types/reportes.types';
 import { useAuth } from '../contexts/AuthContext';
 
 interface UseInventarioMovimientoParams {
+  /** Fecha de inicio en formato ISO (`yyyy-MM-dd`). */
   fechaInicio?: string; // ISO format: yyyy-MM-dd
+  /** Fecha de fin en formato ISO (`yyyy-MM-dd`). */
   fechaFin?: string;
 }
 
 interface UseInventarioMovimientoReturn {
+  /** Reporte de movimiento de inventario, o `null` si aún no se ha cargado. */
   reporte: InventarioMovimientoReporteDTO | null;
+  /** Indica que la consulta está en curso. */
   cargando: boolean;
+  /** Mensaje de error de la última consulta, o `null`. */
   error: string | null;
+  /** Vuelve a consultar el reporte para el rango indicado, ignorando el `cache`. */
   refetch: (fechaInicio: string, fechaFin: string) => Promise<void>;
 }
 
 /**
- * Hook optimizado para obtener reporte de movimiento de inventario.
- * - Caché automático en memoria
- * - Evita requests duplicados
- * - Manejo de errores automático
+ * Hook para obtener el reporte de movimiento de inventario.
+ * - `Cache` automático en memoria por sucursal y rango de fechas
+ * - Evita peticiones duplicadas y maneja los errores de conexión
+ *
+ * @param params - Rango de fechas inicial; si se omite, los datos se cargan con `refetch`.
+ * @returns Objeto con `reporte`, `cargando`, `error` y la función `refetch`.
  */
 export const useInventarioMovimiento = (
   params?: UseInventarioMovimientoParams
