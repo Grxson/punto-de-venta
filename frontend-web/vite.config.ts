@@ -1,12 +1,32 @@
 import { defineConfig } from 'vite'
+import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
+import { rmSync } from 'node:fs'
+
+/**
+ * Elimina `mockServiceWorker.js` del build de producción.
+ *
+ * El Service Worker de MSW solo se usa en desarrollo (`dev:mock`); dejarlo
+ * publicado permitiría activar la interceptación si alguien forzara el modo
+ * mock. El bundle de handlers ya queda fuera del build; esto retira también el
+ * archivo estático.
+ */
+const stripMockServiceWorker = (): Plugin => ({
+  name: 'strip-mock-service-worker',
+  apply: 'build',
+  enforce: 'post',
+  closeBundle() {
+    rmSync('dist/mockServiceWorker.js', { force: true })
+  },
+})
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+    stripMockServiceWorker(),
     // PASO 2.3: Bundle analysis
     visualizer({
       open: false,
@@ -20,7 +40,7 @@ export default defineConfig({
       injectRegister: null,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
-        globIgnores: ['**/stats.html'], // Excluir stats.html del precache
+        globIgnores: ['**/stats.html', '**/mockServiceWorker.js'], // Excluir artefactos de desarrollo del precache
         cleanupOutdatedCaches: true,
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
         runtimeCaching: [

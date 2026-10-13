@@ -1,0 +1,27 @@
+# Revisores por ruta (CODEOWNERS).
+#
+# El único propietario verificable en el repositorio es @Grxson (remote
+# `origin` y contacto en `OpenApiConfig`). Antes de activar protecciones de
+# rama en la organización HiQNet-Dev hay que confirmar este handle y, si
+# cambia, actualizarlo aquí. No se inventan usuarios.
+#
+# El frontend-web queda deliberadamente SIN owner para que el colaborador
+# trabaje con libertad; los cambios críticos sí exigen revisión del responsable.
+
+# Backend y reglas de negocio
+/backend/                                                               @Grxson
+
+# Migraciones de base de datos (Flyway)
+/backend/src/main/resources/db/                                        @Grxson
+
+# Configuración de seguridad y filtros
+/backend/src/main/java/com/puntodeventa/backend/config/SecurityConfig.java @Grxson
+/backend/src/main/java/com/puntodeventa/backend/security/               @Grxson
+
+# Contratos compartidos y documentación de dominio
+/docs/                                                                  @Grxson
+
+# CI/CD e infraestructura de despliegue
+/.github/                                                               @Grxson
+/nixpacks.toml                                                          @Grxson
+/railway.json                                                           @Grxson

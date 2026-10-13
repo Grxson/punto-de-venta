@@ -11,7 +11,6 @@ node_modules
 dist
 dist-electron
 *.local
-package-lock.json
 
 # Nixpacks generated files (Railway)
 .nixpacks

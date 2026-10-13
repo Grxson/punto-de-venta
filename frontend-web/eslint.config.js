@@ -35,6 +35,14 @@ export default [
     },
   },
   {
+    files: ['tests/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { ...globals.node, fetch: 'readonly' },
+    },
+  },
+  {
     files: ['verify-build.js'],
     languageOptions: {
       ecmaVersion: 2022,

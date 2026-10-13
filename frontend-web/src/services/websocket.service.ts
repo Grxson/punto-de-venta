@@ -11,6 +11,7 @@ import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { API_CONFIG } from '../config/api.config';
 import { toWebSocketEndpoint } from '../utils/websocketUrl';
+import { MOCKS_ENABLED } from '../mocks/config.ts';
 
 /** Mensaje normalizado que entrega la API por WebSocket. */
 export interface WebSocketMessage {
@@ -52,6 +53,11 @@ class WebSocketService {
   private maxReconnectAttempts: number = 5;
 
   constructor() {
+    // En modo mock no hay backend: se evita abrir SockJS (fallaría y
+    // reintentaría) mientras la interfaz trabaja contra MSW.
+    if (MOCKS_ENABLED) {
+      return;
+    }
     this.initializeClient();
   }
 
@@ -98,6 +104,10 @@ class WebSocketService {
    * Es idempotente: llamarlo con la conexión activa no hace nada.
    */
   connect() {
+    if (MOCKS_ENABLED) {
+      return;
+    }
+
     if (!this.client) {
       this.initializeClient();
     }
