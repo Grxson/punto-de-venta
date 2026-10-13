@@ -41,6 +41,7 @@ const AdminRecipes = lazy(() => import('./pages/admin/AdminRecipes'));
 const AdminCompras = lazy(() => import('./pages/admin/AdminCompras'));
 const AdminMermas = lazy(() => import('./pages/admin/AdminMermas'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminSucursales = lazy(() => import('./pages/admin/AdminSucursales'));
 
 /**
  * OPTIMIZACIÓN PASO 2.1: Componente de respaldo de carga
@@ -247,6 +248,7 @@ function AppRoutes() {
             <Route path="expenses" element={<AdminExpenses />} />
             <Route path="sales" element={<AdminSales />} />
             <Route path="usuarios" element={<AdminUsers />} />
+            <Route path="sucursales" element={<AdminSucursales />} />
           </Route>
 
           {/* Redirección por defecto */}
