@@ -10,6 +10,8 @@
  * `public/env-config.js` en tiempo de ejecución.
  */
 
+import { MOCKS_ENABLED, MOCK_API_BASE_URL } from '../mocks/config.ts';
+
 /**
  * Valores de conexión efectivos para un ambiente concreto.
  */
@@ -46,6 +48,14 @@ interface Environment {
  */
 const getEnvVars = (): ApiConfig => {
   const nodeEnv = import.meta.env.MODE || 'development';
+
+  // Modo mock (MSW): todas las peticiones se resuelven contra el propio
+  // servidor de Vite, donde el Service Worker las intercepta. Ninguna sale al
+  // backend real. Se decide aquí, no en los componentes, para que la UI use el
+  // mismo cliente HTTP en ambos modos.
+  if (MOCKS_ENABLED) {
+    return { apiUrl: MOCK_API_BASE_URL, timeout: 30000, retries: 0 };
+  }
 
   // `window.__ENV__` solo existe si `public/env-config.js` corrió antes que el
   // bundle; por eso se trata como objeto potencialmente vacío.
@@ -84,7 +94,7 @@ const getEnvVars = (): ApiConfig => {
 
 
   // En desarrollo manda el modo de build de Vite.
-  if (nodeEnv === 'development') {
+  if (nodeEnv === 'development' || nodeEnv === 'mock') {
     return ENV.dev;
   }
 
